@@ -8,6 +8,26 @@ function observationKey(observation) {
   return `${requireString(observation.provider, 'provider')}:${requireString(observation.sourceId, 'sourceId')}:${requireString(observation.capturedAt, 'capturedAt')}`;
 }
 
+function sourceRow(observation) {
+  const key = observationKey(observation);
+  return {
+    observation_key: key,
+    provider: observation.provider,
+    source_id: observation.sourceId,
+    source_class: observation.sourceClass,
+    observed_at: observation.observedAt,
+    available_at: observation.availableAt,
+    captured_at: observation.capturedAt,
+    value: observation.value ?? null,
+    data: observation.data ?? null,
+    units: observation.units ?? null,
+    geography: observation.geography ?? null,
+    vintage: observation.vintage === null || observation.vintage === undefined ? null : String(observation.vintage),
+    revision: observation.revision === null || observation.revision === undefined ? null : String(observation.revision),
+    provenance: observation.provenance || {}
+  };
+}
+
 function jsonHeaders(apiKey, prefer = null) {
   const headers = {
     apikey: apiKey,
@@ -77,23 +97,17 @@ export class SupabasePredictionsLedger {
   }
 
   insertSourceObservation(observation) {
-    const key = observationKey(observation);
-    return this.write('pred_source_observations', {
-      observation_key: key,
-      provider: observation.provider,
-      source_id: observation.sourceId,
-      source_class: observation.sourceClass,
-      observed_at: observation.observedAt,
-      available_at: observation.availableAt,
-      captured_at: observation.capturedAt,
-      value: observation.value ?? null,
-      data: observation.data ?? null,
-      units: observation.units ?? null,
-      geography: observation.geography ?? null,
-      vintage: observation.vintage === null || observation.vintage === undefined ? null : String(observation.vintage),
-      revision: observation.revision === null || observation.revision === undefined ? null : String(observation.revision),
-      provenance: observation.provenance || {}
-    }, { conflictColumn: 'observation_key' }).then(() => key);
+    const row = sourceRow(observation);
+    return this.write('pred_source_observations', row, { conflictColumn: 'observation_key' })
+      .then(() => row.observation_key);
+  }
+
+  insertSourceObservations(observations) {
+    if (!Array.isArray(observations) || !observations.length) throw new TypeError('observations must be a non-empty array');
+    if (observations.length > 1000) throw new TypeError('source observation batch cannot exceed 1000 rows');
+    const rows = observations.map(sourceRow);
+    return this.write('pred_source_observations', rows, { conflictColumn: 'observation_key' })
+      .then(() => rows.map((row) => row.observation_key));
   }
 
   insertFeatureSnapshot(snapshot, { context = {}, quality = {} } = {}) {
@@ -170,4 +184,4 @@ export class SupabasePredictionsLedger {
   }
 }
 
-export { observationKey as sourceObservationKey };
+export { observationKey as sourceObservationKey, sourceRow as sourceObservationRow };
