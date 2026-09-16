@@ -35,7 +35,7 @@ test('feature snapshot aggregates source classes and rejects future-known data',
     id: 'fs-1', eventId: 'housing-1', modelId: 'housing-price-baseline', cutoffAt: '2026-09-01T14:00:00Z',
     features: { propdataPriceYoY: 2.4, fhfaHpiYoY: 2.2 }, observations: [official, propdata]
   });
-  assert.deepEqual(snapshot.sourceClasses.sort(), ['official', 'propdata']);
+  assert.deepEqual([...snapshot.sourceClasses].sort(), ['official', 'propdata']);
   assert.equal(snapshot.observations.length, 2);
 
   assert.throws(() => createFeatureSnapshot({
