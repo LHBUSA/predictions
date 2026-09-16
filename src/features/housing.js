@@ -33,6 +33,18 @@ function mortgageObservationFor(observations) {
   ) || null;
 }
 
+function zoriObservationFor(observations) {
+  return observations.find((observation) =>
+    observation?.provider === 'Zillow Research' && String(observation?.sourceId || '').startsWith('zori:')
+  ) || null;
+}
+
+function permitsObservationFor(observations) {
+  return observations.find((observation) =>
+    observation?.provider === 'U.S. Census Bureau' && String(observation?.sourceId || '').startsWith('census-bps:')
+  ) || null;
+}
+
 function monthKey(value) {
   const match = /^(\d{4})-(\d{2})/.exec(String(value || ''));
   return match ? `${match[1]}-${match[2]}` : null;
@@ -84,14 +96,18 @@ export function assembleHousingFeatures(observations = [], {
   const stateObservation = observationFor(observations, 'PropData', 'state-intel:');
   const retainedHpiObservation = hpiObservationFor(observations);
   const retainedMortgageObservation = mortgageObservationFor(observations);
+  const retainedZoriObservation = zoriObservationFor(observations);
+  const retainedPermitsObservation = permitsObservationFor(observations);
   const censusObservation = observations.find((observation) => observation?.provider === 'PropTechUSA Census Intelligence') || null;
 
   const market = marketObservation?.data || {};
   const stateIntel = stateObservation?.data || {};
   const retainedHpi = retainedHpiObservation?.data || {};
   const retainedMortgage = retainedMortgageObservation?.data || {};
+  const retainedZori = retainedZoriObservation?.data || {};
+  const retainedPermits = retainedPermitsObservation?.data || {};
   const census = censusObservation?.data || {};
-  const effectiveCutoff = cutoffAt || marketObservation?.capturedAt || stateObservation?.capturedAt || retainedHpiObservation?.capturedAt || retainedMortgageObservation?.capturedAt || null;
+  const effectiveCutoff = cutoffAt || marketObservation?.capturedAt || stateObservation?.capturedAt || retainedHpiObservation?.capturedAt || retainedMortgageObservation?.capturedAt || retainedZoriObservation?.capturedAt || retainedPermitsObservation?.capturedAt || null;
   const stateSignal = stateSignalStatus(stateIntel, effectiveCutoff, stateSignalMaxAgeDays);
 
   const rawPropdataPriceYoY = numberOrNull(stateIntel?.market?.yoy_appreciation);
@@ -103,9 +119,7 @@ export function assembleHousingFeatures(observations = [], {
     ? numberOrNull(market?.market?.appreciation?.yoy_appreciation_pct)
     : null;
   const fhfaHpiYoY = retainedHpiYoY ?? marketFhfaYoY;
-  const fhfaSource = retainedHpiYoY !== null
-    ? 'retained_hpi_history'
-    : marketFhfaSource;
+  const fhfaSource = retainedHpiYoY !== null ? 'retained_hpi_history' : marketFhfaSource;
 
   const marketMortgageSource = market?.macro?.source || market?.data_sources?.fred || null;
   const rawMarketMortgage30 = numberOrNull(market?.macro?.mortgage_rate_30yr);
@@ -114,12 +128,18 @@ export function assembleHousingFeatures(observations = [], {
   const mortgage30 = retainedMortgage30 ?? (sourceUsable(marketMortgageSource) ? rawMarketMortgage30 : null);
   const priorMortgage30 = retainedPriorMortgage30;
   const mortgageSource = retainedMortgage30 !== null ? 'FRED:MORTGAGE30US' : marketMortgageSource;
-  const rentYoY = exactCalendarYoY(market?.rent?.history || []);
+
+  const directZoriYoY = numberOrNull(retainedZori?.yoyPct);
+  const marketRentYoY = exactCalendarYoY(market?.rent?.history || []);
+  const rentYoY = directZoriYoY ?? marketRentYoY;
+  const rentSource = directZoriYoY !== null ? 'Zillow Research ZORI' : (market?.rent?.source || null);
+
+  const permitsYoY = numberOrNull(retainedPermits?.yoyPct);
 
   const features = {
     propdataPriceYoY,
     fhfaHpiYoY,
-    permitsYoY: null,
+    permitsYoY,
     startsYoY: null,
     inventoryYoY: null,
     rentYoY,
@@ -158,6 +178,13 @@ export function assembleHousingFeatures(observations = [], {
     retainedMortgageObservedAt: retainedMortgageObservation?.observedAt || null,
     retainedMortgageLatestDate: retainedMortgage?.latest?.date || null,
     retainedMortgagePreviousDate: retainedMortgage?.previous?.date || null,
+    rentSource,
+    retainedZoriVintage: retainedZoriObservation?.vintage || null,
+    retainedZoriCapturedAt: retainedZoriObservation?.capturedAt || null,
+    permitsVintage: retainedPermitsObservation?.vintage || null,
+    permitsCapturedAt: retainedPermitsObservation?.capturedAt || null,
+    permitsCurrent: numberOrNull(retainedPermits?.value ?? retainedPermitsObservation?.value),
+    permitsYearAgo: numberOrNull(retainedPermits?.yearAgo),
     censusVacancyRate: numberOrNull(census?.housing?.vacancy_rate_pct ?? census?.housing?.vacancy_rate),
     censusOwnerOccupiedPct: numberOrNull(census?.housing?.owner_occupied_pct),
     censusMedianIncome: numberOrNull(census?.income?.median_household_income),
@@ -183,9 +210,15 @@ export function assembleHousingFeatures(observations = [], {
       mortgageSource,
       retainedMortgageAvailable: retainedMortgage30 !== null,
       mortgageFallbackRejected: retainedMortgage30 === null && rawMarketMortgage30 !== null && !sourceUsable(marketMortgageSource),
+      rentSignalAvailable: rentYoY !== null,
+      retainedZoriAvailable: directZoriYoY !== null,
+      rentSource,
+      permitsSignalAvailable: permitsYoY !== null,
+      retainedPermitsAvailable: permitsYoY !== null,
+      startsSignalAvailable: false,
       censusContextAvailable: Boolean(censusObservation),
       neutralImputations: Object.freeze(neutralImputations),
-      note: 'Retained HPI and official retained FRED mortgage observations are preferred over transient market fallbacks. Stale PropData state-intel price momentum and fallback mortgage reference rates are excluded from the model vector while their context remains inspectable. Null fast-moving features are explicitly recorded and may be neutral-imputed by the research baseline.'
+      note: 'Retained HPI, official FRED mortgage observations, direct Zillow ZORI, and official Census BPS permit observations are preferred over transient fallbacks. Building permits are not treated as housing starts. Missing fast-moving features remain explicit nulls/neutral imputations.'
     })
   });
 }
