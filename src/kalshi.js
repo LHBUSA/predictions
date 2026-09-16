@@ -37,6 +37,8 @@ export function normalizeKalshiMarket(market, observedAt = new Date().toISOStrin
     eventId: market.event_ticker ?? market.ticker,
     title: market.title ?? market.subtitle ?? market.ticker,
     subtitle: market.subtitle ?? null,
+    yesSubTitle: market.yes_sub_title ?? null,
+    noSubTitle: market.no_sub_title ?? null,
     marketType: market.market_type ?? 'binary',
     status: market.status ?? null,
     yesBid,
