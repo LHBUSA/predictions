@@ -42,7 +42,7 @@ test('feature builder preserves dates and computes 3-month unemployment change',
     unemployment: series('UNRATE', [4.4, 4.3, 4.2, 4.1]),
     capturedAt: '2026-09-16T15:00:00Z'
   });
-  assert.equal(snapshot.features.unemploymentChange3m, 0.3);
+  assert.ok(Math.abs(snapshot.features.unemploymentChange3m - 0.3) < 1e-12);
   assert.equal(snapshot.features.coreInflationYoY, 2.8);
   assert.equal(snapshot.provenance.length, 3);
 });
