@@ -25,6 +25,10 @@ function quarterEndIso(year, quarter) {
   return date.toISOString();
 }
 
+function quarterOrdinal(year, quarter) {
+  return Number(year) * 4 + Number(quarter);
+}
+
 function percentChange(current, prior) {
   if (!Number.isFinite(current) || !Number.isFinite(prior) || prior === 0) return null;
   return ((current / prior) - 1) * 100;
@@ -39,7 +43,7 @@ function summarizeQuarterly(rows, valueField) {
   if (!sorted.length) return null;
   const latest = sorted[0];
   const latestValue = numberOrNull(latest[valueField]);
-  const previous = sorted.find(r => Number(r.year) * 4 + Number(r.quarter) === Number(latest.year) * 4 + Number(latest.quarter) - 1) || null;
+  const previous = sorted.find(r => quarterOrdinal(r.year, r.quarter) === quarterOrdinal(latest.year, latest.quarter) - 1) || null;
   const yearAgo = sorted.find(r => Number(r.year) === Number(latest.year) - 1 && Number(r.quarter) === Number(latest.quarter)) || null;
   const previousValue = previous ? numberOrNull(previous[valueField]) : null;
   const yearAgoValue = yearAgo ? numberOrNull(yearAgo[valueField]) : null;
@@ -64,6 +68,25 @@ function summarizeQuarterly(rows, valueField) {
       warning: row.warning ?? null,
       standardError: numberOrNull(row.standard_error)
     })))
+  });
+}
+
+function metroPayload(rows) {
+  if (!rows.length) return null;
+  const summary = summarizeQuarterly(rows, 'index_value');
+  const latest = sortQuarterRows(rows)[0];
+  const code = String(latest.cbsa_code);
+  return Object.freeze({
+    provider: 'Federal Housing Finance Agency',
+    normalizationLayer: 'PropData',
+    sourceId: `fhfa-hpi:metro:${code}`,
+    geography: Object.freeze({ level: 'metro', cbsa: code, metro: latest.metro_name || null }),
+    dataset: latest.source_dataset || 'All-Transactions Metropolitan Area HPI',
+    frequency: latest.source_frequency || 'quarterly',
+    retrievedByPropDataAt: summary.latest.fetchedAt,
+    availabilitySemantics: 'current_retrieval_of_historical_series',
+    pointInTimeReplaySafeBeforeRetrievedAt: false,
+    ...summary
   });
 }
 
@@ -135,21 +158,53 @@ export class PropDataHousingHistoryAdapter {
       order: 'year.desc,quarter.desc',
       limit: clampLimit(limit)
     });
-    if (!rows.length) return null;
-    const summary = summarizeQuarterly(rows, 'index_value');
-    return Object.freeze({
-      provider: 'Federal Housing Finance Agency',
-      normalizationLayer: 'PropData',
-      sourceId: `fhfa-hpi:metro:${code}`,
-      geography: Object.freeze({ level: 'metro', cbsa: code, metro: rows[0].metro_name || null }),
-      dataset: rows[0].source_dataset || 'All-Transactions Metropolitan Area HPI',
-      frequency: rows[0].source_frequency || 'quarterly',
-      retrievedByPropDataAt: summary.latest.fetchedAt,
-      availabilitySemantics: 'current_retrieval_of_historical_series',
-      pointInTimeReplaySafeBeforeRetrievedAt: false,
-      ...summary
-    });
+    return metroPayload(rows);
+  }
+
+  async metroSnapshots({ quarters = 5, pageSize = 1000, maxPages = 6 } = {}) {
+    if (!Number.isInteger(quarters) || quarters < 2 || quarters > 12) throw new TypeError('quarters must be an integer from 2 to 12');
+    const rows = [];
+    let latestOrdinal = null;
+    let stop = false;
+    for (let page = 0; page < maxPages && !stop; page += 1) {
+      const batch = await this.query('propdata_hpi_metro_quarterly', {
+        select: 'metro_name,cbsa_code,year,quarter,index_value,standard_error,source_name,source_dataset,source_url,source_frequency,fetched_at',
+        order: 'year.desc,quarter.desc,cbsa_code.asc',
+        limit: pageSize,
+        offset: page * pageSize
+      });
+      if (!batch.length) break;
+      if (latestOrdinal === null) latestOrdinal = quarterOrdinal(batch[0].year, batch[0].quarter);
+      const minimumOrdinal = latestOrdinal - (quarters - 1);
+      for (const row of batch) {
+        if (quarterOrdinal(row.year, row.quarter) < minimumOrdinal) {
+          stop = true;
+          break;
+        }
+        rows.push(row);
+      }
+      if (batch.length < pageSize) break;
+    }
+    if (!rows.length || latestOrdinal === null) return Object.freeze([]);
+
+    const grouped = new Map();
+    for (const row of rows) {
+      const code = String(row.cbsa_code || '');
+      if (!/^\d{5}$/.test(code)) continue;
+      if (!grouped.has(code)) grouped.set(code, []);
+      grouped.get(code).push(row);
+    }
+
+    const payloads = [];
+    for (const [code, group] of grouped) {
+      const payload = metroPayload(group);
+      if (!payload) continue;
+      if (quarterOrdinal(payload.latest.year, payload.latest.quarter) !== latestOrdinal) continue;
+      payloads.push(payload);
+    }
+    payloads.sort((a, b) => a.geography.cbsa.localeCompare(b.geography.cbsa));
+    return Object.freeze(payloads);
   }
 }
 
-export { summarizeQuarterly as summarizeHousingHistory };
+export { summarizeQuarterly as summarizeHousingHistory, metroPayload as summarizeMetroHousingHistory };
