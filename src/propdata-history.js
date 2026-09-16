@@ -1,0 +1,155 @@
+function requireText(value, field) {
+  const text = String(value ?? '').trim();
+  if (!text) throw new TypeError(`${field} is required`);
+  return text;
+}
+
+function clampLimit(value, fallback = 24, max = 160) {
+  const n = Number(value ?? fallback);
+  if (!Number.isInteger(n) || n < 2) throw new TypeError('limit must be an integer >= 2');
+  return Math.min(n, max);
+}
+
+function numberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function quarterEndIso(year, quarter) {
+  const q = Number(quarter);
+  const y = Number(year);
+  if (!Number.isInteger(y) || ![1, 2, 3, 4].includes(q)) throw new TypeError('invalid year/quarter');
+  const month = q * 3;
+  const date = new Date(Date.UTC(y, month, 0, 23, 59, 59, 999));
+  return date.toISOString();
+}
+
+function percentChange(current, prior) {
+  if (!Number.isFinite(current) || !Number.isFinite(prior) || prior === 0) return null;
+  return ((current / prior) - 1) * 100;
+}
+
+function sortQuarterRows(rows) {
+  return [...rows].sort((a, b) => (Number(b.year) - Number(a.year)) || (Number(b.quarter) - Number(a.quarter)));
+}
+
+function summarizeQuarterly(rows, valueField) {
+  const sorted = sortQuarterRows(rows);
+  if (!sorted.length) return null;
+  const latest = sorted[0];
+  const latestValue = numberOrNull(latest[valueField]);
+  const previous = sorted.find(r => Number(r.year) * 4 + Number(r.quarter) === Number(latest.year) * 4 + Number(latest.quarter) - 1) || null;
+  const yearAgo = sorted.find(r => Number(r.year) === Number(latest.year) - 1 && Number(r.quarter) === Number(latest.quarter)) || null;
+  const previousValue = previous ? numberOrNull(previous[valueField]) : null;
+  const yearAgoValue = yearAgo ? numberOrNull(yearAgo[valueField]) : null;
+  return Object.freeze({
+    latest: Object.freeze({
+      year: Number(latest.year),
+      quarter: Number(latest.quarter),
+      periodEnd: quarterEndIso(latest.year, latest.quarter),
+      value: latestValue,
+      fetchedAt: latest.fetched_at ?? null
+    }),
+    previousQuarter: previous ? Object.freeze({ year: Number(previous.year), quarter: Number(previous.quarter), value: previousValue }) : null,
+    yearAgo: yearAgo ? Object.freeze({ year: Number(yearAgo.year), quarter: Number(yearAgo.quarter), value: yearAgoValue }) : null,
+    qoqPct: percentChange(latestValue, previousValue),
+    yoyPct: percentChange(latestValue, yearAgoValue),
+    history: Object.freeze(sorted.map(row => Object.freeze({
+      year: Number(row.year),
+      quarter: Number(row.quarter),
+      periodEnd: quarterEndIso(row.year, row.quarter),
+      value: numberOrNull(row[valueField]),
+      fetchedAt: row.fetched_at ?? null,
+      warning: row.warning ?? null,
+      standardError: numberOrNull(row.standard_error)
+    })))
+  });
+}
+
+export class PropDataHousingHistoryAdapter {
+  constructor({ url, serviceKey, fetchImpl = globalThis.fetch, timeoutMs = 10000 } = {}) {
+    if (!url) throw new TypeError('PropData Supabase url is required');
+    if (!serviceKey) throw new TypeError('PropData Supabase serviceKey is required');
+    if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function');
+    this.url = String(url).replace(/\/$/, '');
+    this.serviceKey = serviceKey;
+    this.fetchImpl = fetchImpl;
+    this.timeoutMs = timeoutMs;
+  }
+
+  async query(table, params) {
+    const url = new URL(`${this.url}/rest/v1/${table}`);
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetchImpl(url, {
+        headers: {
+          apikey: this.serviceKey,
+          authorization: `Bearer ${this.serviceKey}`,
+          accept: 'application/json'
+        },
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`PropData history query failed: ${response.status}`);
+      return await response.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async stateHpi(state, { limit = 24 } = {}) {
+    const code = requireText(state, 'state').toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) throw new TypeError('state must be a 2-letter code');
+    const rows = await this.query('propdata_hpi_state_quarterly', {
+      state_code: `eq.${code}`,
+      select: 'state_code,year,quarter,index_nsa,index_sa,warning,source_name,source_dataset,source_url,source_frequency,fetched_at',
+      order: 'year.desc,quarter.desc',
+      limit: clampLimit(limit)
+    });
+    if (!rows.length) return null;
+    const summary = summarizeQuarterly(rows, 'index_nsa');
+    return Object.freeze({
+      provider: 'Federal Housing Finance Agency',
+      normalizationLayer: 'PropData',
+      sourceId: `fhfa-hpi:state:${code}`,
+      geography: Object.freeze({ level: 'state', state: code }),
+      dataset: rows[0].source_dataset || 'Purchase-Only State HPI',
+      frequency: rows[0].source_frequency || 'quarterly',
+      retrievedByPropDataAt: summary.latest.fetchedAt,
+      availabilitySemantics: 'current_retrieval_of_historical_series',
+      pointInTimeReplaySafeBeforeRetrievedAt: false,
+      ...summary
+    });
+  }
+
+  async metroHpi(cbsa, { limit = 24 } = {}) {
+    const code = requireText(cbsa, 'cbsa');
+    if (!/^\d{5}$/.test(code)) throw new TypeError('cbsa must be a 5-digit code');
+    const rows = await this.query('propdata_hpi_metro_quarterly', {
+      cbsa_code: `eq.${code}`,
+      select: 'metro_name,cbsa_code,year,quarter,index_value,standard_error,source_name,source_dataset,source_url,source_frequency,fetched_at',
+      order: 'year.desc,quarter.desc',
+      limit: clampLimit(limit)
+    });
+    if (!rows.length) return null;
+    const summary = summarizeQuarterly(rows, 'index_value');
+    return Object.freeze({
+      provider: 'Federal Housing Finance Agency',
+      normalizationLayer: 'PropData',
+      sourceId: `fhfa-hpi:metro:${code}`,
+      geography: Object.freeze({ level: 'metro', cbsa: code, metro: rows[0].metro_name || null }),
+      dataset: rows[0].source_dataset || 'All-Transactions Metropolitan Area HPI',
+      frequency: rows[0].source_frequency || 'quarterly',
+      retrievedByPropDataAt: summary.latest.fetchedAt,
+      availabilitySemantics: 'current_retrieval_of_historical_series',
+      pointInTimeReplaySafeBeforeRetrievedAt: false,
+      ...summary
+    });
+  }
+}
+
+export { summarizeQuarterly as summarizeHousingHistory };
