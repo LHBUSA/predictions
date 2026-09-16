@@ -72,12 +72,25 @@ export default {
       const censusPromise = callBinding(env.SOURCE_CENSUS, '/', sourceRequest(body, {
         geography: body.location.zip ? { zip: body.location.zip } : { state }
       }), 'SOURCE_CENSUS').catch((error) => ({ optionalError: error.message }));
+      const hpiPromise = env.SOURCE_HOUSING_HISTORY
+        ? callBinding(env.SOURCE_HOUSING_HISTORY, '/', sourceRequest(body, {
+          geography: { state },
+          limit: 8
+        }), 'SOURCE_HOUSING_HISTORY').catch((error) => ({ optionalError: error.message }))
+        : Promise.resolve({ optionalError: 'SOURCE_HOUSING_HISTORY binding not configured' });
 
-      const [marketResult, stateResult, censusResult] = await Promise.all([marketPromise, statePromise, censusPromise]);
+      const [marketResult, stateResult, censusResult, hpiResult] = await Promise.all([
+        marketPromise,
+        statePromise,
+        censusPromise,
+        hpiPromise
+      ]);
       const observations = [marketResult.data, stateResult.data];
       const warnings = [];
       if (censusResult?.data) observations.push(censusResult.data);
       else if (censusResult?.optionalError) warnings.push(`Census context unavailable: ${censusResult.optionalError}`);
+      if (hpiResult?.data) observations.push(hpiResult.data);
+      else if (hpiResult?.optionalError) warnings.push(`Retained HPI unavailable: ${hpiResult.optionalError}`);
 
       await Promise.all(observations.map((observation) => callBinding(env.LEDGER, '/source', observation, 'LEDGER source')));
 
@@ -137,12 +150,14 @@ export default {
           provider: observation.provider,
           sourceId: observation.sourceId,
           sourceClass: observation.sourceClass,
-          capturedAt: observation.capturedAt
+          capturedAt: observation.capturedAt,
+          vintage: observation.vintage || null
         })),
         warnings
       }, {
         pipeline: 'housing',
         persisted: true,
+        retainedHpiUsed: Boolean(hpiResult?.data),
         modelStatus: forecast.metadata?.modelStatus || 'research'
       });
     } catch (error) {
