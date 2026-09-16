@@ -26,11 +26,11 @@ test('prediction snapshot keeps model and market probabilities separate', () => 
     modelProbability: 0.58,
     marketProbability: 0.44
   });
-  assert.equal(probabilityGap(snapshot), 0.14);
+  assert.ok(Math.abs(probabilityGap(snapshot) - 0.14) < 1e-12);
 });
 
 test('Brier score and comparative scoring work', () => {
-  assert.equal(brierScore(0.8, 1), 0.03999999999999998);
+  assert.ok(Math.abs(brierScore(0.8, 1) - 0.04) < 1e-12);
   const result = scoreSnapshot({
     id: 'snap-2',
     eventId: event.id,
