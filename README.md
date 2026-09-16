@@ -57,14 +57,21 @@ market adapters
 
 ## First vertical slice
 
-The first end-to-end slice should use macroeconomic event markets because they have well-defined resolution sources and structured public data.
+The first end-to-end slice uses Federal Reserve decision markets.
 
-Candidate event families:
+Current research foundation includes:
 
-- Federal Reserve target-rate decisions
-- CPI releases
-- unemployment rate / jobs releases
-- GDP releases
+- Kalshi public market normalization
+- FRED macro-source ingestion
+- Fed decision baseline-v0 probability model
+- explicit model-vs-market snapshots
+- append-only market/source/prediction history
+- official FOMC outcome registry
+- historical categorical backtesting
+- Brier and log-loss scoring
+- calibration bins and expected calibration error
+
+The official-decision registry currently covers September 2024 through July 2026 policy decisions. Historical model testing must use macro features that were actually available before each meeting; post-meeting or revised data must never leak into a backtest.
 
 A slice is complete only when it can:
 
