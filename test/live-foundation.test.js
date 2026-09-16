@@ -15,7 +15,7 @@ test('normalizes Kalshi dollar prices into market probability', () => {
     ticker: 'TEST-1', event_ticker: 'TEST', title: 'Test event', status: 'open',
     yes_bid_dollars: '0.42', yes_ask_dollars: '0.46', last_price_dollars: '0.45'
   }, '2026-09-16T10:00:00Z');
-  assert.equal(market.impliedProbability, 0.44);
+  assert.ok(Math.abs(market.impliedProbability - 0.44) < 1e-12);
   assert.equal(market.marketId, 'TEST-1');
 });
 
@@ -26,7 +26,7 @@ test('Kalshi adapter uses public markets endpoint and normalizes response', asyn
   });
   const adapter = new KalshiPublicAdapter({ fetchImpl });
   const page = await adapter.listMarkets({ status: 'open', limit: 1 });
-  assert.equal(page.markets[0].impliedProbability, 0.52);
+  assert.ok(Math.abs(page.markets[0].impliedProbability - 0.52) < 1e-12);
   assert.equal(page.cursor, 'next');
 });
 
@@ -73,7 +73,7 @@ test('Kalshi historical candlesticks select the last market probability availabl
   const cutoff = new Date(250 * 1000).toISOString();
   const selected = selectKalshiCandlestickAtOrBefore(normalized, cutoff);
   assert.equal(selected.endPeriodTs, 200);
-  assert.equal(selected.impliedProbability, 0.58);
+  assert.ok(Math.abs(selected.impliedProbability - 0.58) < 1e-12);
 });
 
 test('FRED adapter converts missing values to null', async () => {
