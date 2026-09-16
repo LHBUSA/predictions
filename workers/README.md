@@ -13,10 +13,12 @@ Cloudflare Workers are the execution and automation layer. Upstream PropTechUSA 
 - `source-capture` — records point-in-time external evidence and rejects post-cutoff data
 - `source-macro` — vintage-aware FRED macro capture
 - `source-propdata` — authenticated PropData `/v1/market` and `/v1/state-intel` capture
+- `source-housing-history` — reads PropData's retained FHFA state/metro HPI histories and emits normalized observations with explicit replay-safety metadata
+- `collector-housing-history` — scheduled state-HPI collector that persists upstream capture snapshots into the Predictions ledger
 - `source-census` — authenticated PropTechUSA Census Intelligence capture for ZIP/state/county structural context
 - `source-business` — authenticated PropTechUSA Business Intelligence capture for company identity/classification context
 - `feature-snapshot` — freezes model inputs and source classes at a forecast cutoff
-- `feature-housing` — assembles PropData/Census observations into a disclosed housing feature vector
+- `feature-housing` — assembles PropData/Census/FHFA observations into a disclosed housing feature vector; retained HPI is preferred over transient HPI fields
 - `pipeline-housing` — end-to-end Cloudflare orchestration: sources → ledger → features → housing model → immutable research forecast
 - `ledger` — persists events, observations, feature snapshots, venue snapshots, forecasts, resolutions and scores to the append-only Supabase Predictions ledger
 - `replay-macro` — retrospective point-in-time macro reconstruction; never treated as a live published forecast
@@ -41,6 +43,26 @@ Required secret:
 Optional fallback:
 
 - `PROPDATA_BASE_URL` — HTTPS origin when service binding is not configured
+
+### `source-housing-history`
+
+Required server-side bindings/secrets:
+
+- `PROPDATA_SUPABASE_URL` — PropData's upstream Supabase URL
+- `PROPDATA_SUPABASE_SERVICE_KEY` — server-side service credential used only by this source Worker
+
+This Worker currently exposes retained FHFA state and metro HPI history from PropData. Historical rows are labeled `current_retrieval_of_historical_series`: they are valid research history, but are not claimed as point-in-time forecast evidence before the date PropData actually retained/retrieved them. Forecast cutoffs earlier than the retained capture are rejected.
+
+### `collector-housing-history`
+
+Required service bindings:
+
+- `HOUSING_HISTORY` → Predictions `source-housing-history`
+- `LEDGER` → Predictions `ledger`
+
+The collector covers all 50 states plus DC, batches requests, and is idempotent because each observation key is pinned to the upstream PropData retrieval timestamp. A repeated cron run over an unchanged upstream HPI snapshot is therefore a safe no-op in the append-only ledger.
+
+A daily cron is acceptable for capture discipline even though FHFA HPI updates much less frequently; idempotency prevents duplicate historical records. Metro capture should use a lower-frequency or event-driven collector rather than polling all 410 CBSAs daily.
 
 ### `source-census`
 
@@ -79,6 +101,8 @@ Required:
 
 The ledger credential must never be exposed to browser code.
 
+The production Predictions ledger belongs in the PropBetEdge Supabase project. PropData remains an upstream data warehouse rather than the owner of probability records.
+
 ### `pipeline-housing`
 
 Required service bindings:
@@ -89,7 +113,15 @@ Required service bindings:
 - `MODEL_HOUSING` → Predictions `model-housing`
 - `LEDGER` → Predictions `ledger`
 
-The pipeline persists the canonical event first, captures and persists source observations, builds and persists the feature snapshot, runs the specialist model, then persists the forecast. Census is optional structural context; the PropData price-signal path is required. New forecasts default to `recordType=research` while the model remains research-stage.
+Recommended binding:
+
+- `SOURCE_HOUSING_HISTORY` → Predictions `source-housing-history`
+
+The pipeline persists the canonical event first, captures and persists source observations, builds and persists the feature snapshot, runs the specialist model, then persists the forecast. Census is optional structural context. Retained HPI is optional at the orchestration boundary so deployments can roll out safely, but when present it is preferred by the feature assembler over transient `/v1/market` HPI fields.
+
+PropData state-intel can remain useful context even when stale. Its price-momentum feature is excluded from the model vector when `market.as_of` is more than 180 days before the forecast cutoff. That freshness threshold is a research quality guard, not an upstream PropData guarantee.
+
+New forecasts default to `recordType=research` while the model remains research-stage.
 
 ## Source taxonomy
 
@@ -111,7 +143,7 @@ The normalization Worker is always retained in provenance. A normalized source i
 - `model-inflation`
 - `model-employment`
 - `model-gdp`
-- `model-housing` — v0.1.1 discloses neutral imputations and separates PropData state signal from FHFA
+- `model-housing` — v0.1.1 discloses neutral imputations, prefers retained HPI, and prevents stale state-intel price momentum from masquerading as current signal
 - `model-mortgage`
 - `model-weather` — temperature-threshold family only in v0.1; hurricane stays fail-closed
 - `model-crypto`
