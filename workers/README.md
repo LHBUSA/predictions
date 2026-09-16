@@ -28,6 +28,14 @@ The worker layer is intentionally decomposed by responsibility and domain. No un
 - `model-weather` — temperature-threshold family only in v0.1; hurricane stays fail-closed
 - `model-crypto`
 
+## Active retrospective replay families
+
+- `fomc_decision` — categorical Fed decision replay with five-outcome same-cutoff Kalshi comparison when a verified venue event is mapped
+- `cpi_yoy_thresholds` — independent headline-CPI threshold contracts scored against official BLS releases and same-cutoff Kalshi prices
+- `payroll_thresholds` — independent payroll threshold contracts using vintage payroll/unemployment data plus weekly initial and continuing claims
+
+Replay artifacts preserve source vintages, feature transformations, model version, cutoff time, official resolution source, venue settlement checks, and distinct model-vs-market sample counts.
+
 ## Specialist scaffolds still intentionally closed
 
 - `model-companies`
