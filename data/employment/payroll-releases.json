@@ -1,0 +1,38 @@
+[
+  {
+    "id": "2026-05",
+    "referenceMonth": "2026-05",
+    "releaseDate": "2026-06-05",
+    "payrollChangeK": 172,
+    "unemploymentRate": 4.3,
+    "source": "https://www.bls.gov/news.release/archives/empsit_06052026.htm",
+    "kalshiEventTicker": "KXPAYROLLS-26MAY"
+  },
+  {
+    "id": "2026-06",
+    "referenceMonth": "2026-06",
+    "releaseDate": "2026-07-02",
+    "payrollChangeK": 57,
+    "unemploymentRate": 4.2,
+    "source": "https://www.bls.gov/news.release/archives/empsit_07022026.htm",
+    "kalshiEventTicker": "KXPAYROLLS-26JUN"
+  },
+  {
+    "id": "2026-07",
+    "referenceMonth": "2026-07",
+    "releaseDate": "2026-08-07",
+    "payrollChangeK": -23,
+    "unemploymentRate": 4.1,
+    "source": "https://www.bls.gov/news.release/archives/empsit_08072026.htm",
+    "kalshiEventTicker": "KXPAYROLLS-26JUL"
+  },
+  {
+    "id": "2026-08",
+    "referenceMonth": "2026-08",
+    "releaseDate": "2026-09-04",
+    "payrollChangeK": 162,
+    "unemploymentRate": 4.1,
+    "source": "https://www.bls.gov/news.release/archives/empsit_09042026.htm",
+    "kalshiEventTicker": "KXPAYROLLS-26AUG"
+  }
+]

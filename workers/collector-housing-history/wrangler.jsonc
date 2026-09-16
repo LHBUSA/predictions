@@ -1,0 +1,15 @@
+{
+  "name": "pbe-predictions-collector-housing-history",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "services": [
+    { "binding": "HOUSING_HISTORY", "service": "pbe-predictions-source-housing-history" },
+    { "binding": "LEDGER", "service": "pbe-predictions-ledger" }
+  ],
+  "triggers": {
+    "crons": ["15 9 * * *"]
+  }
+}

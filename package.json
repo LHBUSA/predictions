@@ -1,0 +1,17 @@
+{
+  "name": "propbetedge-predictions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prediction-market intelligence foundation for PropBetEdge Predictions.",
+  "scripts": {
+    "test": "node --test",
+    "check": "find src workers scripts \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check",
+    "replay:fomc": "node scripts/replay-fomc.mjs",
+    "replay:cpi": "node scripts/replay-cpi.mjs",
+    "replay:payroll": "node scripts/replay-payroll.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
