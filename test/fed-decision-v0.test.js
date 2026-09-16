@@ -19,6 +19,14 @@ function series(seriesId, values) {
   };
 }
 
+function datedSeries(seriesId, rows) {
+  return {
+    provider: 'fred',
+    seriesId,
+    observations: rows.map(([date, value]) => ({ date, value }))
+  };
+}
+
 test('Fed probabilities sum to one', () => {
   const result = fedDecisionProbabilities({
     coreInflationYoY: 2.8,
@@ -50,8 +58,48 @@ test('feature builder converts vintage CPI index levels to YoY inflation and com
   assert.ok(Math.abs(snapshot.features.unemploymentChange3m - 0.3) < 1e-12);
   assert.ok(Math.abs(snapshot.features.headlineInflationYoY - ((310 / 302.7 - 1) * 100)) < 1e-12);
   assert.ok(Math.abs(snapshot.features.coreInflationYoY - ((315 / 306.4 - 1) * 100)) < 1e-12);
-  assert.equal(snapshot.provenance[0].transform, '12m-percent-change');
+  assert.equal(snapshot.provenance[0].transform, 'calendar-12m-percent-change');
   assert.equal(snapshot.provenance.length, 3);
+});
+
+test('YoY inflation matches the same calendar month even when an intermediate release month is missing', () => {
+  const headline = datedSeries('CPIAUCSL', [
+    ['2025-12-01', 330],
+    ['2025-11-01', 329],
+    ['2025-09-01', 327],
+    ['2025-08-01', 326],
+    ['2025-07-01', 325],
+    ['2025-06-01', 324],
+    ['2025-05-01', 323],
+    ['2025-04-01', 322],
+    ['2025-03-01', 321],
+    ['2025-02-01', 320],
+    ['2025-01-01', 319],
+    ['2024-12-01', 318]
+  ]);
+  const core = datedSeries('CPILFESL', [
+    ['2025-12-01', 340],
+    ['2025-11-01', 339],
+    ['2025-09-01', 337],
+    ['2025-08-01', 336],
+    ['2025-07-01', 335],
+    ['2025-06-01', 334],
+    ['2025-05-01', 333],
+    ['2025-04-01', 332],
+    ['2025-03-01', 331],
+    ['2025-02-01', 330],
+    ['2025-01-01', 329],
+    ['2024-12-01', 328]
+  ]);
+  const unemployment = datedSeries('UNRATE', [
+    ['2025-12-01', 4.4],
+    ['2025-11-01', 4.3],
+    ['2025-10-01', 4.2],
+    ['2025-09-01', 4.1]
+  ]);
+  const snapshot = buildFedFeatureSnapshot({ coreInflation: core, headlineInflation: headline, unemployment });
+  assert.ok(Math.abs(snapshot.features.headlineInflationYoY - ((330 / 318 - 1) * 100)) < 1e-12);
+  assert.ok(Math.abs(snapshot.features.coreInflationYoY - ((340 / 328 - 1) * 100)) < 1e-12);
 });
 
 test('builds prediction snapshots with explicit market/model separation', () => {
