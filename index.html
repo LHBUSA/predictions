@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PropBetEdge Predictions</title>
+  <meta name="description" content="Prediction market intelligence for real-world events." />
+  <link rel="stylesheet" href="/ui.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">P</div>
+      <div>
+        <strong>PropBetEdge</strong>
+        <span>Predictions</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-link active" data-view="markets">Markets</button>
+      <button class="nav-link" data-view="models">Models</button>
+      <button class="nav-link" data-view="track-record">Track Record</button>
+      <button class="nav-link" data-view="data">Data</button>
+    </nav>
+    <div class="top-actions">
+      <span class="research-pill">Research V1</span>
+      <button class="icon-btn" aria-label="Notifications">●</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">REAL-WORLD EVENT INTELLIGENCE</div>
+        <h1>See where the market price and the model <em>disagree.</em></h1>
+        <p>Independent probability models, source-level provenance and a permanent scored history across macro, housing, weather and more.</p>
+      </div>
+      <div class="hero-status">
+        <div class="pulse"></div>
+        <div><span>System status</span><strong>Research pipeline active</strong></div>
+      </div>
+    </section>
+
+    <section class="category-row" id="categories">
+      <button class="chip active" data-category="all">All markets</button>
+      <button class="chip" data-category="macro">Macro</button>
+      <button class="chip" data-category="housing">Housing</button>
+      <button class="chip" data-category="weather">Weather</button>
+      <button class="chip" data-category="companies">Companies</button>
+      <button class="chip" data-category="crypto">Crypto</button>
+    </section>
+
+    <section class="grid-main">
+      <div class="left-col">
+        <div class="section-head">
+          <div><span class="kicker">MODEL VS MARKET</span><h2>Priority markets</h2></div>
+          <span class="muted">Illustrative V1 data</span>
+        </div>
+        <div class="market-list" id="market-list"></div>
+      </div>
+
+      <aside class="right-col">
+        <div class="panel signal-panel">
+          <div class="panel-head"><span>Signal snapshot</span><span class="live-dot">LIVE</span></div>
+          <div class="signal-number">+11.8<span>pts</span></div>
+          <p>Largest current model/market divergence in the V1 shell.</p>
+          <div class="mini-bars">
+            <div><span>Model</span><b style="width:68%"></b><strong>68%</strong></div>
+            <div><span>Market</span><b style="width:56%"></b><strong>56%</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span>Macro drivers</span><span>Updated recently</span></div>
+          <div class="driver"><div><strong>Core inflation</strong><span>Above target</span></div><b class="warm">+0.82</b></div>
+          <div class="driver"><div><strong>Labor cooling</strong><span>Moderate</span></div><b>-0.36</b></div>
+          <div class="driver"><div><strong>Policy pressure</strong><span>Composite</span></div><b class="warm">+0.46</b></div>
+          <div class="driver"><div><strong>Market momentum</strong><span>24h change</span></div><b>+3.2</b></div>
+        </div>
+
+        <div class="panel track-card">
+          <div class="panel-head"><span>Track record</span><span>Baseline v0.1</span></div>
+          <div class="track-grid">
+            <div><span>Resolved</span><strong>—</strong></div>
+            <div><span>Brier</span><strong>—</strong></div>
+            <div><span>Log loss</span><strong>—</strong></div>
+            <div><span>Calibration</span><strong>Building</strong></div>
+          </div>
+          <p>No performance claims until point-in-time historical reconstruction is complete.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="panel wide-panel">
+        <div class="panel-head"><span>Probability timeline</span><span>Model vs market</span></div>
+        <div class="chart-wrap">
+          <svg viewBox="0 0 700 220" preserveAspectRatio="none" aria-label="Illustrative probability chart">
+            <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58a6ff" stop-opacity=".25"/><stop offset="1" stop-color="#58a6ff" stop-opacity="0"/></linearGradient></defs>
+            <path class="area" d="M0 176 C80 160,100 120,170 134 S270 88,340 105 S450 72,520 88 S620 50,700 62 L700 220 L0 220 Z"/>
+            <path class="model-line" d="M0 176 C80 160,100 120,170 134 S270 88,340 105 S450 72,520 88 S620 50,700 62"/>
+            <path class="market-line" d="M0 184 C80 175,120 155,180 160 S270 132,340 142 S460 118,520 126 S620 100,700 112"/>
+          </svg>
+          <div class="legend"><span><i class="model-key"></i>Model probability</span><span><i class="market-key"></i>Market probability</span></div>
+        </div>
+      </div>
+
+      <div class="panel provenance-card">
+        <div class="panel-head"><span>Why the model moved</span><span>Provenance</span></div>
+        <div class="provenance-item"><span>01</span><div><strong>Inflation pressure increased</strong><p>Core inflation remained above the model target assumption.</p></div></div>
+        <div class="provenance-item"><span>02</span><div><strong>Labor cooling offset part of the move</strong><p>Unemployment momentum reduced upward policy pressure.</p></div></div>
+        <div class="provenance-item"><span>03</span><div><strong>Market price lagged the model</strong><p>Divergence widened while the contract price moved more slowly.</p></div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>PropBetEdge Predictions</span><span>Target public launch · January 2027</span><span>Research interface · not production guidance</span></footer>
+  <script src="/ui.js"></script>
+</body>
+</html>
