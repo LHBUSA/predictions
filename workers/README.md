@@ -17,6 +17,7 @@ Cloudflare Workers are the execution and automation layer. Upstream PropTechUSA 
 - `source-business` — authenticated PropTechUSA Business Intelligence capture for company identity/classification context
 - `feature-snapshot` — freezes model inputs and source classes at a forecast cutoff
 - `feature-housing` — assembles PropData/Census observations into a disclosed housing feature vector
+- `pipeline-housing` — end-to-end Cloudflare orchestration: sources → ledger → features → housing model → immutable research forecast
 - `ledger` — persists events, observations, feature snapshots, venue snapshots, forecasts, resolutions and scores to the append-only Supabase Predictions ledger
 - `replay-macro` — retrospective point-in-time macro reconstruction; never treated as a live published forecast
 - `model-router` — dispatches canonical events to specialist model families
@@ -77,6 +78,18 @@ Required:
 - `SUPABASE_SERVICE_KEY` preferred; `SUPABASE_KEY` is accepted for compatibility when it is the server-side service credential
 
 The ledger credential must never be exposed to browser code.
+
+### `pipeline-housing`
+
+Required service bindings:
+
+- `SOURCE_PROPDATA` → Predictions `source-propdata`
+- `SOURCE_CENSUS` → Predictions `source-census`
+- `FEATURE_HOUSING` → Predictions `feature-housing`
+- `MODEL_HOUSING` → Predictions `model-housing`
+- `LEDGER` → Predictions `ledger`
+
+The pipeline persists the canonical event first, captures and persists source observations, builds and persists the feature snapshot, runs the specialist model, then persists the forecast. Census is optional structural context; the PropData price-signal path is required. New forecasts default to `recordType=research` while the model remains research-stage.
 
 ## Source taxonomy
 
