@@ -1,3 +1,5 @@
+import { CloudflareSourceTransport } from './cloudflare-source.js';
+
 const DEFAULT_BASE_URL = 'https://propdata-api-worker.sales-fd3.workers.dev';
 
 function locationParams(location = {}) {
@@ -11,38 +13,28 @@ function locationParams(location = {}) {
 }
 
 export class PropDataAdapter {
-  constructor({ apiKey, fetchImpl = globalThis.fetch, baseUrl = DEFAULT_BASE_URL, timeoutMs = 10000 } = {}) {
+  constructor({ serviceBinding = null, apiKey, fetchImpl = globalThis.fetch, baseUrl = DEFAULT_BASE_URL, timeoutMs = 10000 } = {}) {
     if (!apiKey) throw new TypeError('PropData apiKey is required');
-    if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function');
-    this.apiKey = apiKey;
-    this.fetchImpl = fetchImpl;
-    this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.timeoutMs = timeoutMs;
+    this.transport = new CloudflareSourceTransport({
+      serviceBinding,
+      baseUrl,
+      apiKey,
+      fetchImpl,
+      timeoutMs
+    });
   }
 
   async market(location) {
     const [key, value] = locationParams(location);
-    const url = new URL(`${this.baseUrl}/v1/market`);
-    url.searchParams.set(key, value);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const response = await this.fetchImpl(url, {
-        headers: { accept: 'application/json', 'x-api-key': this.apiKey },
-        signal: controller.signal
-      });
-      if (!response.ok) throw new Error(`PropData market request failed: ${response.status}`);
-      const payload = await response.json();
-      return Object.freeze({
-        provider: 'propdata',
-        route: '/v1/market',
-        location: Object.freeze({ [key]: value }),
-        fetchedAt: new Date().toISOString(),
-        data: payload
-      });
-    } finally {
-      clearTimeout(timer);
-    }
+    const response = await this.transport.request('/v1/market', { query: { [key]: value } });
+    return Object.freeze({
+      provider: 'propdata',
+      route: response.route,
+      location: Object.freeze({ [key]: value }),
+      fetchedAt: response.fetchedAt,
+      transport: response.transport,
+      data: response.data
+    });
   }
 }
 
