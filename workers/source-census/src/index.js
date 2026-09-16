@@ -7,6 +7,7 @@ function adapterFor(env) {
   const baseUrl = env.CENSUS_INTEL_BASE_URL || null;
   const apiKey = env.CENSUS_INTEL_KEY || null;
   if (!serviceBinding && !baseUrl) throw new TypeError('CENSUS_INTEL service binding or CENSUS_INTEL_BASE_URL is required');
+  if (!apiKey) throw new TypeError('CENSUS_INTEL_KEY is required so Predictions receives the authenticated full Census profile');
   return new CensusIntelligenceAdapter({ serviceBinding, baseUrl, apiKey });
 }
 
@@ -47,6 +48,7 @@ export default {
           normalizationLayer: 'PropTechUSA Census Intelligence API',
           underlyingAuthority: payload.underlyingAuthority,
           acsVintage: payload.vintage,
+          entitlement: 'authenticated_full_profile',
           note: 'ACS is slow-moving structural context; do not treat it as a real-time event trigger.'
         }
       });
