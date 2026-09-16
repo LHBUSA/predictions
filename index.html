@@ -3,119 +3,206 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PropBetEdge Predictions</title>
-  <meta name="description" content="Prediction market intelligence for real-world events." />
+  <meta name="theme-color" content="#f4f8ff" />
+  <title>PropBetEdge Predictions — Global Probability Intelligence</title>
+  <meta name="description" content="Independent, source-backed probability intelligence for real-world events. Compare market prices with versioned models, evidence and permanent forecast history." />
   <link rel="stylesheet" href="/ui.css" />
 </head>
 <body>
-  <div class="noise"></div>
   <header class="topbar">
-    <div class="brand">
-      <div class="mark">P</div>
-      <div>
-        <strong>PropBetEdge</strong>
-        <span>Predictions</span>
-      </div>
-    </div>
-    <nav class="nav">
-      <button class="nav-link active" data-view="markets">Markets</button>
+    <a class="brand" href="#" aria-label="PropBetEdge Predictions home">
+      <span class="brand-mark">P</span>
+      <span class="brand-copy"><strong>PropBetEdge</strong><small>Predictions</small></span>
+    </a>
+    <nav class="main-nav" aria-label="Primary navigation">
+      <button class="nav-link active" data-view="overview">Intelligence</button>
+      <button class="nav-link" data-view="markets">Markets</button>
       <button class="nav-link" data-view="models">Models</button>
-      <button class="nav-link" data-view="track-record">Track Record</button>
-      <button class="nav-link" data-view="data">Data</button>
+      <button class="nav-link" data-view="track">Track record</button>
+      <button class="nav-link" data-view="research">Research</button>
     </nav>
     <div class="top-actions">
-      <span class="research-pill">Research V1</span>
-      <button class="icon-btn" aria-label="Notifications">●</button>
+      <button class="citation-mode" id="citation-mode">Citation mode</button>
+      <span class="status-pill"><i></i>Research network live</span>
     </div>
   </header>
 
-  <main class="shell">
-    <section class="hero">
-      <div>
-        <div class="eyebrow">REAL-WORLD EVENT INTELLIGENCE</div>
-        <h1>See where the market price and the model <em>disagree.</em></h1>
-        <p>Independent probability models, source-level provenance and a permanent scored history across macro, housing, weather and more.</p>
-      </div>
-      <div class="hero-status">
-        <div class="pulse"></div>
-        <div><span>System status</span><strong>Research pipeline active</strong></div>
-      </div>
-    </section>
-
-    <section class="category-row" id="categories">
-      <button class="chip active" data-category="all">All markets</button>
-      <button class="chip" data-category="macro">Macro</button>
-      <button class="chip" data-category="housing">Housing</button>
-      <button class="chip" data-category="weather">Weather</button>
-      <button class="chip" data-category="companies">Companies</button>
-      <button class="chip" data-category="crypto">Crypto</button>
-    </section>
-
-    <section class="grid-main">
-      <div class="left-col">
-        <div class="section-head">
-          <div><span class="kicker">MODEL VS MARKET</span><h2>Priority markets</h2></div>
-          <span class="muted">Illustrative V1 data</span>
+  <main>
+    <section class="masthead wrap">
+      <div class="masthead-copy">
+        <span class="overline">GLOBAL PROBABILITY INTELLIGENCE</span>
+        <h1>The world has a price.<br><span>We measure the probability.</span></h1>
+        <p>Independent event models, live prediction-market pricing, source-level evidence and a permanent scored history — built to be inspected, cited and challenged.</p>
+        <div class="masthead-actions">
+          <a class="primary-btn" href="#intelligence">Open intelligence desk</a>
+          <button class="secondary-btn" data-scroll="#methodology">View methodology</button>
         </div>
-        <div class="market-list" id="market-list"></div>
+        <div class="trust-row">
+          <span><b>01</b> Versioned forecasts</span>
+          <span><b>02</b> Source provenance</span>
+          <span><b>03</b> Resolution rules</span>
+          <span><b>04</b> Scored history</span>
+        </div>
       </div>
+      <div class="world-panel" aria-label="Global intelligence network illustration">
+        <div class="globe">
+          <div class="globe-grid"></div>
+          <span class="node n1"></span><span class="node n2"></span><span class="node n3"></span><span class="node n4"></span><span class="node n5"></span>
+          <span class="arc a1"></span><span class="arc a2"></span><span class="arc a3"></span>
+        </div>
+        <div class="world-stat top-left"><span>Signals monitored</span><strong>Multi-source</strong></div>
+        <div class="world-stat bottom-right"><span>Forecast state</span><strong>Immutable snapshots</strong></div>
+        <div class="world-caption"><span class="live-pulse"></span> Markets + official data + independent models</div>
+      </div>
+    </section>
 
-      <aside class="right-col">
-        <div class="panel signal-panel">
-          <div class="panel-head"><span>Signal snapshot</span><span class="live-dot">LIVE</span></div>
-          <div class="signal-number">+11.8<span>pts</span></div>
-          <p>Largest current model/market divergence in the V1 shell.</p>
-          <div class="mini-bars">
-            <div><span>Model</span><b style="width:68%"></b><strong>68%</strong></div>
-            <div><span>Market</span><b style="width:56%"></b><strong>56%</strong></div>
+    <section class="ticker-strip" aria-label="Platform principles">
+      <div class="ticker-inner">
+        <span>MARKET PRICE ≠ MODEL PROBABILITY</span><i></i><span>EVERY FORECAST VERSIONED</span><i></i><span>EVERY MATERIAL INPUT SOURCED</span><i></i><span>EVERY RESOLUTION SCORED</span><i></i><span>NO RETROACTIVE REWRITES</span>
+      </div>
+    </section>
+
+    <section class="wrap desk" id="intelligence">
+      <div class="desk-head">
+        <div>
+          <span class="overline">INTELLIGENCE DESK</span>
+          <h2>Where our models diverge from live markets</h2>
+          <p>Research-stage examples clearly separated from validated performance.</p>
+        </div>
+        <div class="desk-controls">
+          <div class="category-tabs" id="categories">
+            <button class="category active" data-category="all">All</button>
+            <button class="category" data-category="macro">Macro</button>
+            <button class="category" data-category="housing">Housing</button>
+            <button class="category" data-category="weather">Weather</button>
+            <button class="category" data-category="companies">Companies</button>
+            <button class="category" data-category="crypto">Crypto</button>
           </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head"><span>Macro drivers</span><span>Updated recently</span></div>
-          <div class="driver"><div><strong>Core inflation</strong><span>Above target</span></div><b class="warm">+0.82</b></div>
-          <div class="driver"><div><strong>Labor cooling</strong><span>Moderate</span></div><b>-0.36</b></div>
-          <div class="driver"><div><strong>Policy pressure</strong><span>Composite</span></div><b class="warm">+0.46</b></div>
-          <div class="driver"><div><strong>Market momentum</strong><span>24h change</span></div><b>+3.2</b></div>
-        </div>
-
-        <div class="panel track-card">
-          <div class="panel-head"><span>Track record</span><span>Baseline v0.1</span></div>
-          <div class="track-grid">
-            <div><span>Resolved</span><strong>—</strong></div>
-            <div><span>Brier</span><strong>—</strong></div>
-            <div><span>Log loss</span><strong>—</strong></div>
-            <div><span>Calibration</span><strong>Building</strong></div>
-          </div>
-          <p>No performance claims until point-in-time historical reconstruction is complete.</p>
-        </div>
-      </aside>
-    </section>
-
-    <section class="bottom-grid">
-      <div class="panel wide-panel">
-        <div class="panel-head"><span>Probability timeline</span><span>Model vs market</span></div>
-        <div class="chart-wrap">
-          <svg viewBox="0 0 700 220" preserveAspectRatio="none" aria-label="Illustrative probability chart">
-            <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58a6ff" stop-opacity=".25"/><stop offset="1" stop-color="#58a6ff" stop-opacity="0"/></linearGradient></defs>
-            <path class="area" d="M0 176 C80 160,100 120,170 134 S270 88,340 105 S450 72,520 88 S620 50,700 62 L700 220 L0 220 Z"/>
-            <path class="model-line" d="M0 176 C80 160,100 120,170 134 S270 88,340 105 S450 72,520 88 S620 50,700 62"/>
-            <path class="market-line" d="M0 184 C80 175,120 155,180 160 S270 132,340 142 S460 118,520 126 S620 100,700 112"/>
-          </svg>
-          <div class="legend"><span><i class="model-key"></i>Model probability</span><span><i class="market-key"></i>Market probability</span></div>
+          <select id="sort" aria-label="Sort markets">
+            <option value="edge">Largest divergence</option>
+            <option value="updated">Recently updated</option>
+            <option value="liquidity">Market liquidity</option>
+          </select>
         </div>
       </div>
 
-      <div class="panel provenance-card">
-        <div class="panel-head"><span>Why the model moved</span><span>Provenance</span></div>
-        <div class="provenance-item"><span>01</span><div><strong>Inflation pressure increased</strong><p>Core inflation remained above the model target assumption.</p></div></div>
-        <div class="provenance-item"><span>02</span><div><strong>Labor cooling offset part of the move</strong><p>Unemployment momentum reduced upward policy pressure.</p></div></div>
-        <div class="provenance-item"><span>03</span><div><strong>Market price lagged the model</strong><p>Divergence widened while the contract price moved more slowly.</p></div></div>
+      <div class="desk-grid">
+        <div class="markets-column">
+          <div class="column-labels"><span>Event</span><span>Probability intelligence</span></div>
+          <div id="market-list" class="market-list"></div>
+        </div>
+
+        <aside class="insight-rail">
+          <article class="rail-card featured-signal">
+            <div class="rail-head"><span>Largest divergence</span><b>Research</b></div>
+            <div class="big-number" id="largest-edge">+12.0<span> pts</span></div>
+            <p id="largest-edge-title">Federal Reserve decision — next meeting</p>
+            <div class="comparison-bars">
+              <div><span>PropBetEdge model</span><div><b style="width:68%"></b></div><strong>68%</strong></div>
+              <div><span>Market price</span><div><b style="width:56%"></b></div><strong>56%</strong></div>
+            </div>
+          </article>
+
+          <article class="rail-card pulse-card">
+            <div class="rail-head"><span>Global event pulse</span><small>Illustrative V2</small></div>
+            <div class="pulse-row"><span class="pulse-icon macro">M</span><div><b>Macro</b><small>Policy + inflation signals</small></div><strong>Elevated</strong></div>
+            <div class="pulse-row"><span class="pulse-icon housing">H</span><div><b>Housing</b><small>Prices + rates + inventory</small></div><strong>Mixed</strong></div>
+            <div class="pulse-row"><span class="pulse-icon weather">W</span><div><b>Weather</b><small>Storm + climate signals</small></div><strong>Watching</strong></div>
+          </article>
+
+          <article class="rail-card integrity-card">
+            <div class="rail-head"><span>Forecast integrity</span><small>Core standard</small></div>
+            <div class="integrity-row"><span>Forecast snapshots</span><strong>Immutable</strong></div>
+            <div class="integrity-row"><span>Resolution source</span><strong>Pre-declared</strong></div>
+            <div class="integrity-row"><span>Unknown inputs</span><strong>Fail closed</strong></div>
+            <div class="integrity-row"><span>Model status</span><strong>Research v0.1</strong></div>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="reference-band">
+      <div class="wrap reference-grid">
+        <div class="reference-copy">
+          <span class="overline">BUILT TO BE REFERENCED</span>
+          <h2>Not a picks feed. A public record of probability.</h2>
+          <p>Every market page is designed to become a durable research object: one event, one canonical question, one forecast history, one evidence trail and one resolution record.</p>
+        </div>
+        <div class="reference-demo">
+          <div class="reference-top"><span>FORECAST RECORD</span><code>PBE-FED-2026-09-001</code></div>
+          <h3>Federal Reserve target-rate decision</h3>
+          <div class="reference-probs">
+            <div><span>Model</span><strong>68%</strong></div>
+            <div><span>Market</span><strong>56%</strong></div>
+            <div><span>Divergence</span><strong>+12.0 pts</strong></div>
+          </div>
+          <div class="reference-meta"><span>Model v0.1.0</span><span>Captured 15:04 UTC</span><span>Research status</span></div>
+          <div class="reference-source"><b>Resolution authority</b><span>Federal Reserve · official FOMC decision</span></div>
+          <div class="reference-footer"><span>Permanent snapshot</span><button id="copy-citation">Copy citation</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap evidence-section">
+      <div class="section-intro">
+        <span class="overline">EVIDENCE, NOT A BLACK BOX</span>
+        <h2>Every probability should have a reason.</h2>
+      </div>
+      <div class="evidence-grid">
+        <article class="evidence-card">
+          <span class="card-num">01</span>
+          <h3>Source ledger</h3>
+          <p>Material inputs identify provider, series, observation time and retrieval time so outside researchers can inspect what the model actually saw.</p>
+          <div class="ledger-lines"><span>FRED · CPIAUCSL</span><span>BLS · Employment</span><span>Federal Reserve · FOMC</span></div>
+        </article>
+        <article class="evidence-card">
+          <span class="card-num">02</span>
+          <h3>Model ledger</h3>
+          <p>Probabilities retain their model ID, version, assumptions, feature snapshot and timestamp instead of silently changing as the system learns.</p>
+          <div class="code-snippet">model: fed-decision-baseline<br>version: 0.1.0<br>status: research</div>
+        </article>
+        <article class="evidence-card">
+          <span class="card-num">03</span>
+          <h3>Resolution ledger</h3>
+          <p>The authority and resolution rule are stored before scoring. Once resolved, the forecast joins the permanent track record — good or bad.</p>
+          <div class="resolution-line"><i></i><span>Pre-declared</span><b>→</b><i></i><span>Resolved</span><b>→</b><i></i><span>Scored</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap methodology" id="methodology">
+      <div class="methodology-panel">
+        <div>
+          <span class="overline">RESEARCH STANDARD</span>
+          <h2>Performance claims wait for the evidence.</h2>
+          <p>Historical tests must use only data available before each event. Revised or post-event information is excluded from legitimate backtests.</p>
+        </div>
+        <div class="metric-grid">
+          <div><span>Resolved forecasts</span><strong>Building</strong></div>
+          <div><span>Brier score</span><strong>Pending</strong></div>
+          <div><span>Log loss</span><strong>Pending</strong></div>
+          <div><span>Calibration</span><strong>Pending</strong></div>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer><span>PropBetEdge Predictions</span><span>Target public launch · January 2027</span><span>Research interface · not production guidance</span></footer>
+  <div class="event-drawer" id="event-drawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-close-drawer></div>
+    <article class="drawer-panel">
+      <button class="drawer-close" data-close-drawer aria-label="Close">×</button>
+      <div id="drawer-content"></div>
+    </article>
+  </div>
+
+  <footer class="footer">
+    <div class="wrap footer-grid">
+      <div><strong>PropBetEdge Predictions</strong><p>Global probability intelligence.</p></div>
+      <div><span>Target public launch</span><strong>January 2027</strong></div>
+      <div><span>Current state</span><strong>Research V2</strong></div>
+      <div><span>Principle</span><strong>Evidence before opinion.</strong></div>
+    </div>
+  </footer>
   <script src="/ui.js"></script>
 </body>
 </html>
