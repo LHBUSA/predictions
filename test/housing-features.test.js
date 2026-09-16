@@ -63,7 +63,7 @@ test('housing assembler separates fresh PropData state signal from official FHFA
             { date: '2025-08-01', rent: 1710 }
           ]
         },
-        macro: { mortgage_rate_30yr: 6.22 }
+        macro: { mortgage_rate_30yr: 6.22, source: 'fred_live' }
       }
     }),
     observation({
@@ -116,7 +116,7 @@ test('retained HPI is preferred and stale state-intel price momentum is excluded
       sourceClass: 'propdata',
       data: {
         market: { appreciation: { yoy_appreciation_pct: 8.8, source: 'propdata_hpi_state_quarterly' } },
-        macro: { mortgage_rate_30yr: 6.1 },
+        macro: { mortgage_rate_30yr: 6.1, source: 'fred_reference_fallback' },
         rent: { history: [] }
       }
     }),
@@ -135,11 +135,14 @@ test('retained HPI is preferred and stale state-intel price momentum is excluded
   const assembled = assembleHousingFeatures(observations, { cutoffAt: '2026-09-16T19:00:00Z' });
   assert.equal(assembled.features.propdataPriceYoY, null);
   assert.equal(assembled.features.fhfaHpiYoY, 2.42389165412664);
+  assert.equal(assembled.features.mortgage30, null);
   assert.equal(assembled.quality.propdataStateSignalRawAvailable, true);
   assert.equal(assembled.quality.propdataStateSignalFresh, false);
   assert.equal(assembled.quality.fhfaSource, 'retained_hpi_history');
   assert.equal(assembled.quality.retainedHpiAvailable, true);
+  assert.equal(assembled.quality.mortgageFallbackRejected, true);
   assert.ok(assembled.quality.neutralImputations.includes('propdataPriceYoY_stale'));
+  assert.ok(assembled.quality.neutralImputations.includes('mortgage30_fallback'));
 });
 
 test('FHFA fallback value is not promoted to an observed official price signal', () => {
@@ -156,7 +159,7 @@ test('FHFA fallback value is not promoted to an observed official price signal',
       sourceClass: 'propdata',
       data: {
         market: { appreciation: { yoy_appreciation_pct: 2.5, source: 'fhfa_state_reference_fallback' } },
-        macro: { mortgage_rate_30yr: 6.1 },
+        macro: { mortgage_rate_30yr: 6.1, source: 'fred_reference_fallback' },
         rent: { history: [] }
       }
     })
@@ -165,5 +168,7 @@ test('FHFA fallback value is not promoted to an observed official price signal',
   const assembled = assembleHousingFeatures(observations);
   assert.equal(assembled.features.propdataPriceYoY, 3.1);
   assert.equal(assembled.features.fhfaHpiYoY, null);
+  assert.equal(assembled.features.mortgage30, null);
   assert.equal(assembled.quality.fhfaSignalAvailable, false);
+  assert.equal(assembled.quality.mortgageFallbackRejected, true);
 });
