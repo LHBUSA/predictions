@@ -1,0 +1,14 @@
+{
+  "name": "propbetedge-predictions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prediction-market intelligence foundation for PropBetEdge Predictions.",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/domain.js && node --check src/scoring.js && node --check src/adapters.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
