@@ -12,7 +12,10 @@ function series(seriesId, values) {
   return {
     provider: 'fred',
     seriesId,
-    observations: values.map((value, i) => ({ date: `2026-0${9 - i}-01`, value }))
+    observations: values.map((value, i) => ({
+      date: new Date(Date.UTC(2026, 8 - i, 1)).toISOString().slice(0, 10),
+      value
+    }))
   };
 }
 
@@ -35,15 +38,19 @@ test('classifies common Fed market titles', () => {
   assert.equal(classifyFedContract('Fed to hike rates by more than 25 bps?'), 'hike_gt_25');
 });
 
-test('feature builder preserves dates and computes 3-month unemployment change', () => {
+test('feature builder converts vintage CPI index levels to YoY inflation and computes labor momentum', () => {
+  const headline = [310.0,309.6,309.1,308.7,308.1,307.8,307.4,307.0,306.5,306.1,305.7,305.2,302.7];
+  const core = [315.0,314.5,314.0,313.6,313.1,312.7,312.3,311.8,311.4,311.0,310.6,310.1,306.4];
   const snapshot = buildFedFeatureSnapshot({
-    coreInflation: series('CORE', [2.8]),
-    headlineInflation: series('HEAD', [2.4]),
+    coreInflation: series('CPILFESL', core),
+    headlineInflation: series('CPIAUCSL', headline),
     unemployment: series('UNRATE', [4.4, 4.3, 4.2, 4.1]),
     capturedAt: '2026-09-16T15:00:00Z'
   });
   assert.ok(Math.abs(snapshot.features.unemploymentChange3m - 0.3) < 1e-12);
-  assert.equal(snapshot.features.coreInflationYoY, 2.8);
+  assert.ok(Math.abs(snapshot.features.headlineInflationYoY - ((310 / 302.7 - 1) * 100)) < 1e-12);
+  assert.ok(Math.abs(snapshot.features.coreInflationYoY - ((315 / 306.4 - 1) * 100)) < 1e-12);
+  assert.equal(snapshot.provenance[0].transform, '12m-percent-change');
   assert.equal(snapshot.provenance.length, 3);
 });
 
