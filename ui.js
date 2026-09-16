@@ -1,8 +1,8 @@
 const markets = [
-  {id:'fed-next',category:'macro',venue:'Kalshi',title:'Federal Reserve decision — next meeting',sub:'Policy decision · model v0.1 research',model:68,market:56,edge:12,updated:4,liquidity:92,resolution:'Federal Reserve · official FOMC decision',sources:['FRED CPI series','FRED unemployment series','Federal Reserve policy data'],status:'research'},
-  {id:'cpi-3',category:'macro',venue:'Kalshi',title:'Headline CPI above 3.0%',sub:'Inflation release · research pipeline',model:47,market:41,edge:6,updated:11,liquidity:74,resolution:'U.S. Bureau of Labor Statistics',sources:['BLS CPI','FRED mirror','Release calendar'],status:'research'},
-  {id:'home-yoy',category:'housing',venue:'Research',title:'U.S. home prices positive YoY',sub:'Housing intelligence · PropData research track',model:61,market:54,edge:7,updated:19,liquidity:41,resolution:'Declared housing index source',sources:['PropData','FHFA HPI','Market datasets'],status:'research'},
-  {id:'atlantic-landfall',category:'weather',venue:'Research',title:'Major Atlantic hurricane landfall',sub:'Weather intelligence · research track',model:32,market:38,edge:-6,updated:27,liquidity:38,resolution:'Declared official weather authority',sources:['NOAA/NHC research inputs','Historical storm archive'],status:'research'}
+  {id:'fed-next',category:'macro',venue:'Kalshi',title:'Federal Reserve decision — next meeting',sub:'Policy decision · model v0.1 research',model:68,market:56,edge:12,updated:4,liquidity:92,resolution:'Federal Reserve · official FOMC decision',sources:['FRED CPI series','FRED unemployment series','Federal Reserve policy data'],sourceClasses:[['official','Official macro'],['market','Venue pricing']],status:'research'},
+  {id:'cpi-3',category:'macro',venue:'Kalshi',title:'Headline CPI above 3.0%',sub:'Inflation release · research pipeline',model:47,market:41,edge:6,updated:11,liquidity:74,resolution:'U.S. Bureau of Labor Statistics',sources:['BLS CPI','FRED mirror','Release calendar'],sourceClasses:[['official','Official inflation data'],['market','Venue pricing']],status:'research'},
+  {id:'home-yoy',category:'housing',venue:'Research',title:'U.S. home prices positive YoY',sub:'Housing intelligence · PropData research track',model:61,market:54,edge:7,updated:19,liquidity:41,resolution:'Declared housing index source',sources:['PropData property and market intelligence','FHFA HPI','Market datasets'],sourceClasses:[['propdata','PropData'],['official','Official housing'],['market','Venue / market data']],status:'research'},
+  {id:'atlantic-landfall',category:'weather',venue:'Research',title:'Major Atlantic hurricane landfall',sub:'Weather intelligence · research track',model:32,market:38,edge:-6,updated:27,liquidity:38,resolution:'Declared official weather authority',sources:['NOAA/NHC research inputs','Historical storm archive','Property exposure data when relevant'],sourceClasses:[['official','NOAA / NHC'],['propdata','Property exposure when used'],['market','Venue / market data']],status:'research'}
 ];
 
 const list=document.querySelector('#market-list');
@@ -11,6 +11,7 @@ let activeCategory='all';
 
 const pct=n=>`${Math.round(n)}%`;
 const signed=n=>`${n>0?'+':''}${Number(n).toFixed(1)} pts`;
+const badges=m=>(m.sourceClasses||[]).map(([kind,label])=>`<span class="source-badge ${kind}">${label}</span>`).join('');
 
 function filtered(){
   let rows=activeCategory==='all'?[...markets]:markets.filter(m=>m.category===activeCategory);
@@ -29,6 +30,7 @@ function render(){
         <div class="market-meta"><span class="tag">${m.category}</span><span class="venue">${m.venue}</span><span class="venue">Updated ${m.updated}m ago</span></div>
         <div class="market-title">${m.title}</div>
         <div class="market-sub">${m.sub}</div>
+        <div class="source-badges">${badges(m)}</div>
       </div>
       <div class="prob-grid">
         <div class="prob-box"><span>Model</span><strong>${pct(m.model)}</strong></div>
@@ -64,12 +66,14 @@ function openDrawer(m){
       <span class="overline">FORECAST RECORD · ${m.category.toUpperCase()}</span>
       <h2>${m.title}</h2>
       <p>${m.sub}</p>
+      <div class="source-badges">${badges(m)}</div>
       <div class="drawer-kpis">
         <div><span>Model</span><strong>${pct(m.model)}</strong></div>
         <div><span>Market</span><strong>${pct(m.market)}</strong></div>
         <div><span>Divergence</span><strong>${signed(m.edge)}</strong></div>
       </div>
     </div>
+    <div class="drawer-section"><h3>Source classes used</h3><p>${(m.sourceClasses||[]).map(x=>x[1]).join(' · ')}</p></div>
     <div class="drawer-section"><h3>Resolution authority</h3><p>${m.resolution}</p></div>
     <div class="drawer-section"><h3>Evidence ledger</h3><ul>${m.sources.map(s=>`<li>${s}</li>`).join('')}</ul></div>
     <div class="drawer-section"><h3>Research state</h3><p>This is a ${m.status} forecast. It is not presented as validated edge until point-in-time backtesting and calibration are complete.</p></div>
