@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PropDataHousingHistoryAdapter, summarizeHousingHistory } from '../src/propdata-history.js';
 import { housingHistoryToObservation } from '../workers/source-housing-history/src/index.js';
-import { captureStates } from '../workers/collector-housing-history/src/index.js';
+import { captureBulk } from '../workers/collector-housing-history/src/index.js';
 
 test('housing history summary computes exact prior-quarter and year-ago changes', () => {
   const summary = summarizeHousingHistory([
@@ -63,30 +63,44 @@ test('housing history observation pins capturedAt to upstream retrieval for idem
   assert.equal(observation.provenance.predictionsIngestedAt, '2026-09-16T19:00:00Z');
 });
 
-test('collector persists every returned state observation through ledger binding', async () => {
-  const persisted = [];
+test('bulk collector persists source observations with one ledger batch call', async () => {
+  const stateObservations = ['MN', 'FL'].map((state) => ({
+    provider: 'Federal Housing Finance Agency',
+    sourceId: `fhfa-hpi:state:${state}`,
+    sourceClass: 'official',
+    observedAt: '2026-06-30T23:59:59.999Z',
+    availableAt: '2026-09-16T08:17:00.000Z',
+    capturedAt: '2026-09-16T08:17:00.000Z',
+    value: 100,
+    data: {},
+    units: 'hpi_index',
+    geography: { level: 'state', state },
+    vintage: '2026-Q2',
+    revision: null,
+    provenance: {}
+  }));
+  const ledgerCalls = [];
   const env = {
     HOUSING_HISTORY: {
-      async fetch(url, options) {
+      async fetch(_url, options) {
         const body = JSON.parse(options.body);
-        const state = body.geography.state;
-        return Response.json({ ok: true, data: {
-          provider: 'Federal Housing Finance Agency', sourceId: `fhfa-hpi:state:${state}`, sourceClass: 'official',
-          observedAt: '2026-06-30T23:59:59.999Z', availableAt: '2026-09-16T08:17:00.000Z', capturedAt: '2026-09-16T08:17:00.000Z',
-          value: 100, data: {}, units: 'hpi_index', geography: { level: 'state', state }, vintage: '2026-Q2', revision: null, provenance: {}
-        } });
+        assert.equal(body.bulk, 'states');
+        return Response.json({ ok: true, data: stateObservations });
       }
     },
     LEDGER: {
       async fetch(url, options) {
         const body = JSON.parse(options.body);
-        persisted.push(body.sourceId);
-        return Response.json({ ok: true, data: { observationKey: `${body.provider}:${body.sourceId}:${body.capturedAt}` } });
+        ledgerCalls.push({ path: new URL(url).pathname, body });
+        const keys = body.observations.map((item) => `${item.provider}:${item.sourceId}:${item.capturedAt}`);
+        return Response.json({ ok: true, data: { observationKeys: keys, count: keys.length } });
       }
     }
   };
-  const result = await captureStates(env, ['MN', 'FL']);
+  const result = await captureBulk(env, 'states');
   assert.equal(result.captured, 2);
-  assert.equal(result.failed, 0);
-  assert.deepEqual(persisted.sort(), ['fhfa-hpi:state:FL', 'fhfa-hpi:state:MN']);
+  assert.equal(result.attempted, 2);
+  assert.equal(ledgerCalls.length, 1);
+  assert.equal(ledgerCalls[0].path, '/sources');
+  assert.deepEqual(ledgerCalls[0].body.observations.map((x) => x.sourceId).sort(), ['fhfa-hpi:state:FL', 'fhfa-hpi:state:MN']);
 });
