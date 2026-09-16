@@ -1,0 +1,1 @@
+import { fail, ok } from '../../_shared/contract.js'; export default {async fetch(request){if(request.method!=='POST')return fail('METHOD_NOT_ALLOWED','POST required',405);return ok({status:'scaffold',modelFamily:'companies',next:'earnings/regulatory/corporate-event specialist submodels'});}};

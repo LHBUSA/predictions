@@ -1,0 +1,1 @@
+import { fail, ok } from '../../_shared/contract.js'; export default {async fetch(request){const url=new URL(request.url);if(url.pathname==='/health')return ok({service:'predictions-api',status:'ok',version:'0.1.0'});return fail('NOT_FOUND','Unknown route',404);}};
