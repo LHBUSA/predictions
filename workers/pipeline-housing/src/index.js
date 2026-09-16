@@ -78,12 +78,20 @@ export default {
           limit: 8
         }), 'SOURCE_HOUSING_HISTORY').catch((error) => ({ optionalError: error.message }))
         : Promise.resolve({ optionalError: 'SOURCE_HOUSING_HISTORY binding not configured' });
+      const mortgagePromise = env.SOURCE_MACRO
+        ? callBinding(env.SOURCE_MACRO, '/', sourceRequest(body, {
+          seriesKey: 'mortgage30',
+          limit: 2,
+          outputUnits: 'percent'
+        }), 'SOURCE_MACRO mortgage30').catch((error) => ({ optionalError: error.message }))
+        : Promise.resolve({ optionalError: 'SOURCE_MACRO binding not configured' });
 
-      const [marketResult, stateResult, censusResult, hpiResult] = await Promise.all([
+      const [marketResult, stateResult, censusResult, hpiResult, mortgageResult] = await Promise.all([
         marketPromise,
         statePromise,
         censusPromise,
-        hpiPromise
+        hpiPromise,
+        mortgagePromise
       ]);
       const observations = [marketResult.data, stateResult.data];
       const warnings = [];
@@ -91,6 +99,8 @@ export default {
       else if (censusResult?.optionalError) warnings.push(`Census context unavailable: ${censusResult.optionalError}`);
       if (hpiResult?.data) observations.push(hpiResult.data);
       else if (hpiResult?.optionalError) warnings.push(`Retained HPI unavailable: ${hpiResult.optionalError}`);
+      if (mortgageResult?.data) observations.push(mortgageResult.data);
+      else if (mortgageResult?.optionalError) warnings.push(`Official mortgage history unavailable: ${mortgageResult.optionalError}`);
 
       await Promise.all(observations.map((observation) => callBinding(env.LEDGER, '/source', observation, 'LEDGER source')));
 
@@ -158,6 +168,7 @@ export default {
         pipeline: 'housing',
         persisted: true,
         retainedHpiUsed: Boolean(hpiResult?.data),
+        retainedMortgageUsed: Boolean(mortgageResult?.data),
         modelStatus: forecast.metadata?.modelStatus || 'research'
       });
     } catch (error) {
