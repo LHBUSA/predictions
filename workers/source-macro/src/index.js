@@ -6,6 +6,16 @@ function endOfVintageDay(date) {
   return `${date}T23:59:59.999Z`;
 }
 
+function compactRow(row) {
+  if (!row) return null;
+  return Object.freeze({
+    date: row.date,
+    value: row.value,
+    realtimeStart: row.realtimeStart || null,
+    realtimeEnd: row.realtimeEnd || null
+  });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
@@ -26,19 +36,26 @@ export default {
         units: body.units || undefined,
         outputType: 1
       });
-      const row = payload.observations.find(x => x.value !== null);
+      const rows = payload.observations.filter((item) => item.value !== null);
+      const row = rows[0] || null;
       if (!row) return fail('NO_SOURCE_VALUE', `No non-null observation found for ${seriesId}`, 404);
 
       const availabilityDate = row.realtimeStart || payload.realtimeStart || vintageDate;
       if (!availabilityDate) return fail('UNKNOWN_AVAILABILITY', 'FRED response did not expose a real-time availability date', 422);
+      const capturedAt = new Date().toISOString();
       const observation = createSourceObservation({
         provider: 'FRED',
         sourceId: seriesId,
         sourceClass: 'official',
         observedAt: `${row.date}T00:00:00.000Z`,
         availableAt: endOfVintageDay(availabilityDate),
-        capturedAt: new Date().toISOString(),
+        capturedAt,
         value: row.value,
+        data: {
+          latest: compactRow(rows[0]),
+          previous: compactRow(rows[1]),
+          history: rows.map(compactRow)
+        },
         units: body.outputUnits || body.units || null,
         vintage: availabilityDate,
         provenance: {
@@ -46,11 +63,18 @@ export default {
           realtimeStart: row.realtimeStart,
           realtimeEnd: row.realtimeEnd,
           availabilityPrecision: 'date-conservative',
-          note: 'FRED real-time dates do not encode release time; availability is conservatively treated as end-of-day.'
+          retainedHistoryCount: rows.length,
+          note: 'FRED real-time dates do not encode release time; availability is conservatively treated as end-of-day. Retained history includes only values returned by the same point-in-time query.'
         }
       });
       if (body.forecastCutoff) assertAvailableBefore(observation, body.forecastCutoff);
-      return ok(observation, { seriesKey: body.seriesKey, seriesId, vintageDate });
+      return ok(observation, {
+        seriesKey: body.seriesKey,
+        seriesId,
+        vintageDate,
+        historyCount: rows.length,
+        previousAvailable: rows.length > 1
+      });
     } catch (error) {
       const code = /forecast cutoff/.test(error.message) ? 'POST_CUTOFF_SOURCE' : 'SOURCE_FETCH_FAILED';
       return fail(code, error.message, 422);
