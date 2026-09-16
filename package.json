@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --test",
     "check": "find src workers scripts \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check",
-    "replay:fomc": "node scripts/replay-fomc.mjs"
+    "replay:fomc": "node scripts/replay-fomc.mjs",
+    "replay:cpi": "node scripts/replay-cpi.mjs"
   },
   "engines": {
     "node": ">=20"
