@@ -12,6 +12,12 @@ function locationParams(location = {}) {
   return entries[0];
 }
 
+function stateCode(value) {
+  const state = String(value ?? '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(state)) throw new TypeError('state must be a 2-letter code');
+  return state;
+}
+
 export class PropDataAdapter {
   constructor({ serviceBinding = null, apiKey, fetchImpl = globalThis.fetch, baseUrl = DEFAULT_BASE_URL, timeoutMs = 10000 } = {}) {
     if (!apiKey) throw new TypeError('PropData apiKey is required');
@@ -29,6 +35,7 @@ export class PropDataAdapter {
     const response = await this.transport.request('/v1/market', { query: { [key]: value } });
     return Object.freeze({
       provider: 'propdata',
+      sourceId: `market:${key}:${value}`,
       route: response.route,
       location: Object.freeze({ [key]: value }),
       fetchedAt: response.fetchedAt,
@@ -36,6 +43,20 @@ export class PropDataAdapter {
       data: response.data
     });
   }
+
+  async stateIntel(state) {
+    const value = stateCode(state);
+    const response = await this.transport.request('/v1/state-intel', { query: { state: value } });
+    return Object.freeze({
+      provider: 'propdata',
+      sourceId: `state-intel:${value}`,
+      route: response.route,
+      location: Object.freeze({ state: value }),
+      fetchedAt: response.fetchedAt,
+      transport: response.transport,
+      data: response.data
+    });
+  }
 }
 
-export { locationParams as normalizePropDataLocation };
+export { locationParams as normalizePropDataLocation, stateCode as normalizePropDataState };
