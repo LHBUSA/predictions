@@ -43,8 +43,25 @@ export default {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
     try {
       const body = await request.json();
-      requireFields(body, ['geography']);
       const adapter = adapterFor(env);
+
+      if (body.bulk === 'metros') {
+        const payloads = await adapter.metroSnapshots({
+          quarters: body.quarters || 5,
+          pageSize: body.pageSize || 1000,
+          maxPages: body.maxPages || 6
+        });
+        const ingestedAt = new Date().toISOString();
+        const observations = payloads.map((payload) => toObservation(payload, ingestedAt));
+        return ok(observations, {
+          source: 'PropData housing history',
+          scope: 'metro_hpi_bulk',
+          count: observations.length,
+          idempotentByUpstreamCapture: true
+        });
+      }
+
+      requireFields(body, ['geography']);
       const geography = body.geography || {};
       let payload = null;
       if (geography.state) payload = await adapter.stateHpi(geography.state, { limit: body.limit });
