@@ -71,6 +71,25 @@ function summarizeQuarterly(rows, valueField) {
   });
 }
 
+function statePayload(rows) {
+  if (!rows.length) return null;
+  const summary = summarizeQuarterly(rows, 'index_nsa');
+  const latest = sortQuarterRows(rows)[0];
+  const code = String(latest.state_code || '').toUpperCase();
+  return Object.freeze({
+    provider: 'Federal Housing Finance Agency',
+    normalizationLayer: 'PropData',
+    sourceId: `fhfa-hpi:state:${code}`,
+    geography: Object.freeze({ level: 'state', state: code }),
+    dataset: latest.source_dataset || 'Purchase-Only State HPI',
+    frequency: latest.source_frequency || 'quarterly',
+    retrievedByPropDataAt: summary.latest.fetchedAt,
+    availabilitySemantics: 'current_retrieval_of_historical_series',
+    pointInTimeReplaySafeBeforeRetrievedAt: false,
+    ...summary
+  });
+}
+
 function metroPayload(rows) {
   if (!rows.length) return null;
   const summary = summarizeQuarterly(rows, 'index_value');
@@ -88,6 +107,27 @@ function metroPayload(rows) {
     pointInTimeReplaySafeBeforeRetrievedAt: false,
     ...summary
   });
+}
+
+function groupedLatestPayloads(rows, keyField, makePayload) {
+  if (!rows.length) return Object.freeze([]);
+  const latestOrdinal = quarterOrdinal(rows[0].year, rows[0].quarter);
+  const grouped = new Map();
+  for (const row of rows) {
+    const key = String(row[keyField] || '');
+    if (!key) continue;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+  const payloads = [];
+  for (const group of grouped.values()) {
+    const payload = makePayload(group);
+    if (!payload) continue;
+    if (quarterOrdinal(payload.latest.year, payload.latest.quarter) !== latestOrdinal) continue;
+    payloads.push(payload);
+  }
+  payloads.sort((a, b) => a.sourceId.localeCompare(b.sourceId));
+  return Object.freeze(payloads);
 }
 
 export class PropDataHousingHistoryAdapter {
@@ -133,20 +173,7 @@ export class PropDataHousingHistoryAdapter {
       order: 'year.desc,quarter.desc',
       limit: clampLimit(limit)
     });
-    if (!rows.length) return null;
-    const summary = summarizeQuarterly(rows, 'index_nsa');
-    return Object.freeze({
-      provider: 'Federal Housing Finance Agency',
-      normalizationLayer: 'PropData',
-      sourceId: `fhfa-hpi:state:${code}`,
-      geography: Object.freeze({ level: 'state', state: code }),
-      dataset: rows[0].source_dataset || 'Purchase-Only State HPI',
-      frequency: rows[0].source_frequency || 'quarterly',
-      retrievedByPropDataAt: summary.latest.fetchedAt,
-      availabilitySemantics: 'current_retrieval_of_historical_series',
-      pointInTimeReplaySafeBeforeRetrievedAt: false,
-      ...summary
-    });
+    return statePayload(rows);
   }
 
   async metroHpi(cbsa, { limit = 24 } = {}) {
@@ -159,6 +186,24 @@ export class PropDataHousingHistoryAdapter {
       limit: clampLimit(limit)
     });
     return metroPayload(rows);
+  }
+
+  async stateSnapshots({ quarters = 5 } = {}) {
+    if (!Number.isInteger(quarters) || quarters < 2 || quarters > 12) throw new TypeError('quarters must be an integer from 2 to 12');
+    const rowLimit = Math.min(1000, 60 * quarters);
+    const rows = await this.query('propdata_hpi_state_quarterly', {
+      select: 'state_code,year,quarter,index_nsa,index_sa,warning,source_name,source_dataset,source_url,source_frequency,fetched_at',
+      order: 'year.desc,quarter.desc,state_code.asc',
+      limit: rowLimit
+    });
+    if (!rows.length) return Object.freeze([]);
+    const latestOrdinal = quarterOrdinal(rows[0].year, rows[0].quarter);
+    const minimumOrdinal = latestOrdinal - (quarters - 1);
+    return groupedLatestPayloads(
+      rows.filter((row) => quarterOrdinal(row.year, row.quarter) >= minimumOrdinal),
+      'state_code',
+      statePayload
+    );
   }
 
   async metroSnapshots({ quarters = 5, pageSize = 1000, maxPages = 6 } = {}) {
@@ -185,26 +230,12 @@ export class PropDataHousingHistoryAdapter {
       }
       if (batch.length < pageSize) break;
     }
-    if (!rows.length || latestOrdinal === null) return Object.freeze([]);
-
-    const grouped = new Map();
-    for (const row of rows) {
-      const code = String(row.cbsa_code || '');
-      if (!/^\d{5}$/.test(code)) continue;
-      if (!grouped.has(code)) grouped.set(code, []);
-      grouped.get(code).push(row);
-    }
-
-    const payloads = [];
-    for (const [code, group] of grouped) {
-      const payload = metroPayload(group);
-      if (!payload) continue;
-      if (quarterOrdinal(payload.latest.year, payload.latest.quarter) !== latestOrdinal) continue;
-      payloads.push(payload);
-    }
-    payloads.sort((a, b) => a.geography.cbsa.localeCompare(b.geography.cbsa));
-    return Object.freeze(payloads);
+    return groupedLatestPayloads(rows, 'cbsa_code', metroPayload);
   }
 }
 
-export { summarizeQuarterly as summarizeHousingHistory, metroPayload as summarizeMetroHousingHistory };
+export {
+  summarizeQuarterly as summarizeHousingHistory,
+  statePayload as summarizeStateHousingHistory,
+  metroPayload as summarizeMetroHousingHistory
+};
