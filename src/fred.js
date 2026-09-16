@@ -3,6 +3,8 @@ const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 const SERIES = Object.freeze({
   cpi: 'CPIAUCSL',
   coreCpi: 'CPILFESL',
+  cpiNsa: 'CPIAUCNS',
+  coreCpiNsa: 'CPILFENS',
   unemployment: 'UNRATE',
   payrolls: 'PAYEMS',
   industrialProduction: 'INDPRO',
