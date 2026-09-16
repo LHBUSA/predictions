@@ -12,6 +12,7 @@ on:
           - all
           - fomc
           - cpi
+          - payroll
       fomc_limit:
         description: 'Number of FOMC decisions to replay (oldest first)'
         required: false
@@ -21,6 +22,11 @@ on:
         description: 'Number of verified CPI releases to replay (oldest first)'
         required: false
         default: '3'
+        type: string
+      payroll_limit:
+        description: 'Number of verified payroll releases to replay (oldest first)'
+        required: false
+        default: '4'
         type: string
       include_kalshi:
         description: 'Compare against mapped Kalshi historical markets'
@@ -100,5 +106,31 @@ jobs:
         with:
           name: cpi-historical-replay
           path: .replay/cpi-history.json
+          if-no-files-found: error
+          retention-days: 30
+
+  payroll-replay:
+    if: ${{ inputs.family == 'all' || inputs.family == 'payroll' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      REPLAY_LIMIT: ${{ inputs.payroll_limit }}
+      REPLAY_OUTPUT: .replay/payroll-history.json
+      DISABLE_KALSHI_HISTORY: ${{ inputs.include_kalshi && '0' || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run payroll replay
+        run: npm run replay:payroll
+      - name: Upload payroll replay artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: payroll-historical-replay
+          path: .replay/payroll-history.json
           if-no-files-found: error
           retention-days: 30
