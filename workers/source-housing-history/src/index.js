@@ -9,17 +9,20 @@ function adapterFor(env) {
   return new PropDataHousingHistoryAdapter({ url, serviceKey });
 }
 
-function toObservation(payload, capturedAt) {
-  const availableAt = payload.retrievedByPropDataAt || capturedAt;
+function toObservation(payload, ingestedAt = new Date().toISOString()) {
+  const upstreamCapturedAt = payload.retrievedByPropDataAt || ingestedAt;
   return createSourceObservation({
     provider: payload.provider,
     sourceId: payload.sourceId,
     sourceClass: 'official',
     observedAt: payload.latest.periodEnd,
-    availableAt,
-    capturedAt,
+    availableAt: upstreamCapturedAt,
+    capturedAt: upstreamCapturedAt,
     value: payload.latest.value,
-    data: payload,
+    data: {
+      ...payload,
+      predictionsIngestedAt: ingestedAt
+    },
     units: 'hpi_index',
     geography: payload.geography,
     vintage: `${payload.latest.year}-Q${payload.latest.quarter}`,
@@ -29,7 +32,8 @@ function toObservation(payload, capturedAt) {
       frequency: payload.frequency,
       availabilitySemantics: payload.availabilitySemantics,
       pointInTimeReplaySafeBeforeRetrievedAt: payload.pointInTimeReplaySafeBeforeRetrievedAt,
-      note: 'Historical observations are useful for model research, but are not point-in-time replay-safe before PropData retrieval time unless a release vintage was independently retained.'
+      predictionsIngestedAt: ingestedAt,
+      note: 'Historical observations are useful for model research, but are not point-in-time replay-safe before PropData retrieval time unless a release vintage was independently retained. capturedAt is pinned to the upstream PropData retrieval time so repeated collectors are idempotent; ledger inserted_at records Predictions ingestion time.'
     }
   });
 }
@@ -47,11 +51,12 @@ export default {
       else if (geography.cbsa) payload = await adapter.metroHpi(geography.cbsa, { limit: body.limit });
       else return fail('INVALID_GEOGRAPHY', 'geography must include state or cbsa', 422);
       if (!payload) return fail('SOURCE_NOT_FOUND', 'No HPI history found for requested geography', 404);
-      const capturedAt = new Date().toISOString();
-      return ok(toObservation(payload, capturedAt), {
+      const ingestedAt = new Date().toISOString();
+      return ok(toObservation(payload, ingestedAt), {
         source: 'PropData housing history',
         historicalResearchSafe: true,
-        pointInTimeReplaySafeBeforeRetrievedAt: false
+        pointInTimeReplaySafeBeforeRetrievedAt: false,
+        idempotentByUpstreamCapture: true
       });
     } catch (error) {
       return fail('SOURCE_FETCH_FAILED', error.message, 422);
