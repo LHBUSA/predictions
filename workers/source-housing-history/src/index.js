@@ -45,17 +45,19 @@ export default {
       const body = await request.json();
       const adapter = adapterFor(env);
 
-      if (body.bulk === 'metros') {
-        const payloads = await adapter.metroSnapshots({
-          quarters: body.quarters || 5,
-          pageSize: body.pageSize || 1000,
-          maxPages: body.maxPages || 6
-        });
+      if (body.bulk === 'states' || body.bulk === 'metros') {
+        const payloads = body.bulk === 'states'
+          ? await adapter.stateSnapshots({ quarters: body.quarters || 5 })
+          : await adapter.metroSnapshots({
+            quarters: body.quarters || 5,
+            pageSize: body.pageSize || 1000,
+            maxPages: body.maxPages || 6
+          });
         const ingestedAt = new Date().toISOString();
         const observations = payloads.map((payload) => toObservation(payload, ingestedAt));
         return ok(observations, {
           source: 'PropData housing history',
-          scope: 'metro_hpi_bulk',
+          scope: `${body.bulk === 'states' ? 'state' : 'metro'}_hpi_bulk`,
           count: observations.length,
           idempotentByUpstreamCapture: true
         });
