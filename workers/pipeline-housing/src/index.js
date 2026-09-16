@@ -33,6 +33,12 @@ function sourceRequest(body, extra = {}) {
   };
 }
 
+function optionalBinding(binding, label, body, path = '/') {
+  return binding
+    ? callBinding(binding, path, body, label).catch((error) => ({ optionalError: error.message }))
+    : Promise.resolve({ optionalError: `${label} binding not configured` });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
@@ -69,38 +75,51 @@ export default {
         mode: 'state_intel',
         state
       }), 'SOURCE_PROPDATA state_intel');
-      const censusPromise = callBinding(env.SOURCE_CENSUS, '/', sourceRequest(body, {
+      const censusPromise = optionalBinding(env.SOURCE_CENSUS, 'SOURCE_CENSUS', sourceRequest(body, {
         geography: body.location.zip ? { zip: body.location.zip } : { state }
-      }), 'SOURCE_CENSUS').catch((error) => ({ optionalError: error.message }));
-      const hpiPromise = env.SOURCE_HOUSING_HISTORY
-        ? callBinding(env.SOURCE_HOUSING_HISTORY, '/', sourceRequest(body, {
-          geography: { state },
-          limit: 8
-        }), 'SOURCE_HOUSING_HISTORY').catch((error) => ({ optionalError: error.message }))
-        : Promise.resolve({ optionalError: 'SOURCE_HOUSING_HISTORY binding not configured' });
-      const mortgagePromise = env.SOURCE_MACRO
-        ? callBinding(env.SOURCE_MACRO, '/', sourceRequest(body, {
-          seriesKey: 'mortgage30',
-          limit: 2,
-          outputUnits: 'percent'
-        }), 'SOURCE_MACRO mortgage30').catch((error) => ({ optionalError: error.message }))
-        : Promise.resolve({ optionalError: 'SOURCE_MACRO binding not configured' });
+      }));
+      const hpiPromise = optionalBinding(env.SOURCE_HOUSING_HISTORY, 'SOURCE_HOUSING_HISTORY', sourceRequest(body, {
+        geography: { state },
+        limit: 8
+      }));
+      const mortgagePromise = optionalBinding(env.SOURCE_MACRO, 'SOURCE_MACRO mortgage30', sourceRequest(body, {
+        seriesKey: 'mortgage30',
+        limit: 2,
+        outputUnits: 'percent'
+      }));
+      const zoriPromise = optionalBinding(env.SOURCE_ZORI, 'SOURCE_ZORI', sourceRequest(body, {
+        geography: body.location.metro
+          ? { metro: body.location.metro, regionId: body.location.zillowRegionId || null }
+          : { state }
+      }));
+      const permitsPromise = optionalBinding(env.SOURCE_PERMITS, 'SOURCE_PERMITS', sourceRequest(body, {
+        geography: body.location.cbsa ? { cbsa: body.location.cbsa } : { state },
+        maxProbeMonths: 5
+      }));
 
-      const [marketResult, stateResult, censusResult, hpiResult, mortgageResult] = await Promise.all([
+      const [marketResult, stateResult, censusResult, hpiResult, mortgageResult, zoriResult, permitsResult] = await Promise.all([
         marketPromise,
         statePromise,
         censusPromise,
         hpiPromise,
-        mortgagePromise
+        mortgagePromise,
+        zoriPromise,
+        permitsPromise
       ]);
+
       const observations = [marketResult.data, stateResult.data];
       const warnings = [];
-      if (censusResult?.data) observations.push(censusResult.data);
-      else if (censusResult?.optionalError) warnings.push(`Census context unavailable: ${censusResult.optionalError}`);
-      if (hpiResult?.data) observations.push(hpiResult.data);
-      else if (hpiResult?.optionalError) warnings.push(`Retained HPI unavailable: ${hpiResult.optionalError}`);
-      if (mortgageResult?.data) observations.push(mortgageResult.data);
-      else if (mortgageResult?.optionalError) warnings.push(`Official mortgage history unavailable: ${mortgageResult.optionalError}`);
+      const optionalResults = [
+        ['Census context', censusResult],
+        ['Retained HPI', hpiResult],
+        ['Official mortgage history', mortgageResult],
+        ['Zillow ZORI', zoriResult],
+        ['Census BPS permits', permitsResult]
+      ];
+      for (const [label, result] of optionalResults) {
+        if (result?.data) observations.push(result.data);
+        else if (result?.optionalError) warnings.push(`${label} unavailable: ${result.optionalError}`);
+      }
 
       await Promise.all(observations.map((observation) => callBinding(env.LEDGER, '/source', observation, 'LEDGER source')));
 
@@ -169,6 +188,8 @@ export default {
         persisted: true,
         retainedHpiUsed: Boolean(hpiResult?.data),
         retainedMortgageUsed: Boolean(mortgageResult?.data),
+        retainedZoriUsed: Boolean(zoriResult?.data),
+        retainedPermitsUsed: Boolean(permitsResult?.data),
         modelStatus: forecast.metadata?.modelStatus || 'research'
       });
     } catch (error) {
