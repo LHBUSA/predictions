@@ -3,6 +3,7 @@ import { FredAdapter } from '../../../src/fred.js';
 import { KalshiPublicAdapter } from '../../../src/kalshi.js';
 import { replayFomcDecision } from '../../../src/replay/fomc-history.js';
 import { replayCpiRelease } from '../../../src/replay/cpi-history.js';
+import { replayPayrollRelease } from '../../../src/replay/payroll-history.js';
 
 export default {
   async fetch(request, env) {
@@ -28,6 +29,15 @@ export default {
       } else if (family === 'cpi_yoy_thresholds') {
         requireFields(body, ['release']);
         result = await replayCpiRelease({
+          fredAdapter,
+          kalshiAdapter,
+          release: body.release,
+          cutoffAt: body.cutoffAt || null,
+          config: body.config || {}
+        });
+      } else if (family === 'payroll_thresholds') {
+        requireFields(body, ['release']);
+        result = await replayPayrollRelease({
           fredAdapter,
           kalshiAdapter,
           release: body.release,
