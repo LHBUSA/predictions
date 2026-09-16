@@ -6,7 +6,7 @@
   "description": "Prediction-market intelligence foundation for PropBetEdge Predictions.",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/domain.js && node --check src/scoring.js && node --check src/adapters.js && node --check src/kalshi.js && node --check src/fred.js && node --check src/storage.js && node --check src/pipeline.js && node --check src/features/fed-features.js && node --check src/models/fed-decision-v0.js"
+    "check": "node --check src/domain.js && node --check src/scoring.js && node --check src/adapters.js && node --check src/kalshi.js && node --check src/fred.js && node --check src/storage.js && node --check src/pipeline.js && node --check src/models/fed-decision-v0.js && node --check workers/_shared/contract.js && find workers -path '*/src/index.js' -print0 | xargs -0 -n1 node --check"
   },
   "engines": {
     "node": ">=20"
