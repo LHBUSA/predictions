@@ -2,9 +2,10 @@ import { FRED_SERIES } from '../fred.js';
 import { buildFedFeatureSnapshot } from '../features/fed-features.js';
 import { FED_DECISION_MODEL, fedDecisionProbabilities } from '../models/fed-decision-v0.js';
 import { classifyRateChangeBps, scoreCategoricalForecast } from '../backtest/fomc.js';
+import { buildFomcKalshiMarketComparison } from './kalshi-fomc.js';
 
 export const REPLAY_RECORD_TYPE = 'retrospective_replay';
-export const FOMC_REPLAY_VERSION = '0.1.0';
+export const FOMC_REPLAY_VERSION = '0.2.0';
 
 function iso(value, field) {
   const d = new Date(value);
@@ -59,8 +60,30 @@ export async function reconstructFedFeatures({ fredAdapter, cutoffAt }) {
   });
 }
 
+async function optionalKalshiComparison({ kalshiAdapter, decision, forecastCutoff, realizedOutcome, modelScore }) {
+  if (!kalshiAdapter) return null;
+  try {
+    return await buildFomcKalshiMarketComparison({
+      kalshiAdapter,
+      eventTicker: decision.kalshiEventTicker ?? null,
+      cutoffAt: forecastCutoff,
+      realizedOutcome,
+      modelScore
+    });
+  } catch (error) {
+    return Object.freeze({
+      status: 'unavailable',
+      venue: 'kalshi',
+      eventTicker: decision.kalshiEventTicker ?? null,
+      reason: 'venue_history_fetch_failed',
+      error: error.message
+    });
+  }
+}
+
 export async function replayFomcDecision({
   fredAdapter,
+  kalshiAdapter = null,
   decision,
   cutoffAt = null,
   config = {},
@@ -75,6 +98,13 @@ export async function replayFomcDecision({
   const model = fedDecisionProbabilities(featureSnapshot.features, config);
   const realizedOutcome = classifyRateChangeBps(decision.changeBps);
   const score = scoreCategoricalForecast(model.probabilities, realizedOutcome);
+  const marketComparison = await optionalKalshiComparison({
+    kalshiAdapter,
+    decision,
+    forecastCutoff,
+    realizedOutcome,
+    modelScore: score
+  });
 
   return Object.freeze({
     id: `replay:fomc:${decision.id}:${FED_DECISION_MODEL.version}:${forecastCutoff}`,
@@ -95,15 +125,16 @@ export async function replayFomcDecision({
     changeBps: Number(decision.changeBps),
     resolutionSource: decision.source ?? null,
     score,
+    marketComparison,
     disclosure: 'Retrospective simulation using point-in-time source vintages. This was not a forecast published live at the historical cutoff.'
   });
 }
 
-export async function replayFomcHistory({ fredAdapter, decisions, config = {} }) {
+export async function replayFomcHistory({ fredAdapter, kalshiAdapter = null, decisions, config = {} }) {
   if (!Array.isArray(decisions)) throw new TypeError('decisions must be an array');
   const results = [];
   for (const decision of decisions) {
-    results.push(await replayFomcDecision({ fredAdapter, decision, config }));
+    results.push(await replayFomcDecision({ fredAdapter, kalshiAdapter, decision, config }));
   }
 
   const meanBrier = results.length
@@ -111,6 +142,20 @@ export async function replayFomcHistory({ fredAdapter, decisions, config = {} })
     : null;
   const meanLogLoss = results.length
     ? results.reduce((sum, row) => sum + row.score.logLoss, 0) / results.length
+    : null;
+
+  const comparable = results.filter((row) => row.marketComparison?.status === 'available');
+  const meanMarketBrier = comparable.length
+    ? comparable.reduce((sum, row) => sum + row.marketComparison.score.brierMultiClass, 0) / comparable.length
+    : null;
+  const meanMarketLogLoss = comparable.length
+    ? comparable.reduce((sum, row) => sum + row.marketComparison.score.logLoss, 0) / comparable.length
+    : null;
+  const meanBrierImprovementVsMarket = comparable.length
+    ? comparable.reduce((sum, row) => sum + row.marketComparison.comparison.brierImprovementVsMarket, 0) / comparable.length
+    : null;
+  const meanLogLossImprovementVsMarket = comparable.length
+    ? comparable.reduce((sum, row) => sum + row.marketComparison.comparison.logLossImprovementVsMarket, 0) / comparable.length
     : null;
 
   return Object.freeze({
@@ -121,6 +166,15 @@ export async function replayFomcHistory({ fredAdapter, decisions, config = {} })
     sampleSize: results.length,
     meanBrier,
     meanLogLoss,
+    marketComparison: Object.freeze({
+      venue: 'kalshi',
+      sampleSize: comparable.length,
+      meanMarketBrier,
+      meanMarketLogLoss,
+      meanBrierImprovementVsMarket,
+      meanLogLossImprovementVsMarket,
+      positiveImprovementMeansModelBetter: true
+    }),
     results: Object.freeze(results)
   });
 }
