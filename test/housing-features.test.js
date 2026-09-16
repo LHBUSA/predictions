@@ -4,7 +4,7 @@ import { createSourceObservation } from '../src/source-observation.js';
 import { assembleHousingFeatures, createHousingFeatureSnapshot, exactCalendarYoY } from '../src/features/housing.js';
 import { probabilityHomePricesAbove } from '../src/models/housing-v0.js';
 
-function observation({ provider, sourceId, sourceClass, data, capturedAt = '2026-09-16T18:00:00Z', geography = null }) {
+function observation({ provider, sourceId, sourceClass, data, capturedAt = '2026-09-16T18:00:00Z', geography = null, vintage = null, provenance = {} }) {
   return createSourceObservation({
     provider,
     sourceId,
@@ -13,7 +13,9 @@ function observation({ provider, sourceId, sourceClass, data, capturedAt = '2026
     availableAt: capturedAt,
     capturedAt,
     data,
-    geography
+    geography,
+    vintage,
+    provenance
   });
 }
 
@@ -27,7 +29,7 @@ test('calendar YoY requires the exact prior-year month', () => {
   assert.equal(exactCalendarYoY(history.slice(0, 2)), null);
 });
 
-test('housing assembler separates PropData state signal from official FHFA signal', () => {
+test('housing assembler separates fresh PropData state signal from official FHFA signal', () => {
   const observations = [
     observation({
       provider: 'PropData',
@@ -42,7 +44,8 @@ test('housing assembler separates PropData state signal from official FHFA signa
           days_on_market: 41,
           price_cuts_pct: 17,
           months_supply: 2.7,
-          sale_to_list_ratio: 99.2
+          sale_to_list_ratio: 99.2,
+          as_of: '2026-08-31'
         }
       }
     }),
@@ -82,6 +85,7 @@ test('housing assembler separates PropData state signal from official FHFA signa
   assert.equal(assembled.features.mortgage30, 6.22);
   assert.ok(assembled.features.rentYoY > 5.2 && assembled.features.rentYoY < 5.3);
   assert.equal(assembled.context.censusVacancyRate, 7.1);
+  assert.equal(assembled.quality.propdataStateSignalFresh, true);
   assert.deepEqual(assembled.quality.neutralImputations, ['permitsYoY', 'startsYoY', 'inventoryYoY', 'priorMortgage30']);
 
   const result = createHousingFeatureSnapshot({
@@ -98,13 +102,53 @@ test('housing assembler separates PropData state signal from official FHFA signa
   assert.deepEqual(forecast.explanation.neutralImputations, ['permitsYoY', 'startsYoY', 'inventoryYoY', 'priorMortgage30']);
 });
 
+test('retained HPI is preferred and stale state-intel price momentum is excluded', () => {
+  const observations = [
+    observation({
+      provider: 'PropData',
+      sourceId: 'state-intel:MN',
+      sourceClass: 'propdata',
+      data: { market: { yoy_appreciation: 9.9, as_of: '2025-11-30' } }
+    }),
+    observation({
+      provider: 'PropData',
+      sourceId: 'market:state:MN',
+      sourceClass: 'propdata',
+      data: {
+        market: { appreciation: { yoy_appreciation_pct: 8.8, source: 'propdata_hpi_state_quarterly' } },
+        macro: { mortgage_rate_30yr: 6.1 },
+        rent: { history: [] }
+      }
+    }),
+    observation({
+      provider: 'Federal Housing Finance Agency',
+      sourceId: 'fhfa-hpi:state:MN',
+      sourceClass: 'official',
+      capturedAt: '2026-09-16T08:17:01.978Z',
+      geography: { level: 'state', state: 'MN' },
+      vintage: '2026-Q2',
+      provenance: { pointInTimeReplaySafeBeforeRetrievedAt: false },
+      data: { yoyPct: 2.42389165412664, qoqPct: 2.56636142343804 }
+    })
+  ];
+
+  const assembled = assembleHousingFeatures(observations, { cutoffAt: '2026-09-16T19:00:00Z' });
+  assert.equal(assembled.features.propdataPriceYoY, null);
+  assert.equal(assembled.features.fhfaHpiYoY, 2.42389165412664);
+  assert.equal(assembled.quality.propdataStateSignalRawAvailable, true);
+  assert.equal(assembled.quality.propdataStateSignalFresh, false);
+  assert.equal(assembled.quality.fhfaSource, 'retained_hpi_history');
+  assert.equal(assembled.quality.retainedHpiAvailable, true);
+  assert.ok(assembled.quality.neutralImputations.includes('propdataPriceYoY_stale'));
+});
+
 test('FHFA fallback value is not promoted to an observed official price signal', () => {
   const observations = [
     observation({
       provider: 'PropData',
       sourceId: 'state-intel:MN',
       sourceClass: 'propdata',
-      data: { market: { yoy_appreciation: 3.1 } }
+      data: { market: { yoy_appreciation: 3.1, as_of: '2026-08-31' } }
     }),
     observation({
       provider: 'PropData',
