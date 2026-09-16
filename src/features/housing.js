@@ -99,7 +99,9 @@ export function assembleHousingFeatures(observations = [], {
     ? 'retained_hpi_history'
     : marketFhfaSource;
 
-  const mortgage30 = numberOrNull(market?.macro?.mortgage_rate_30yr);
+  const mortgageSource = market?.macro?.source || market?.data_sources?.fred || null;
+  const rawMortgage30 = numberOrNull(market?.macro?.mortgage_rate_30yr);
+  const mortgage30 = sourceUsable(mortgageSource) ? rawMortgage30 : null;
   const rentYoY = exactCalendarYoY(market?.rent?.history || []);
 
   const features = {
@@ -121,6 +123,7 @@ export function assembleHousingFeatures(observations = [], {
   if (features.mortgage30 === null) neutralImputations.push('mortgage30');
   if (features.priorMortgage30 === null) neutralImputations.push('priorMortgage30');
   if (rawPropdataPriceYoY !== null && !stateSignal.fresh) neutralImputations.push('propdataPriceYoY_stale');
+  if (rawMortgage30 !== null && !sourceUsable(mortgageSource)) neutralImputations.push('mortgage30_fallback');
 
   const context = {
     propdataStateSignal: stateIntel?.signal || null,
@@ -137,6 +140,8 @@ export function assembleHousingFeatures(observations = [], {
     retainedHpiVintage: retainedHpiObservation?.vintage || null,
     retainedHpiCapturedAt: retainedHpiObservation?.capturedAt || null,
     retainedHpiReplaySafeBeforeCapture: retainedHpiObservation?.provenance?.pointInTimeReplaySafeBeforeRetrievedAt !== false,
+    mortgageSource,
+    mortgageRateContext: rawMortgage30,
     censusVacancyRate: numberOrNull(census?.housing?.vacancy_rate_pct ?? census?.housing?.vacancy_rate),
     censusOwnerOccupiedPct: numberOrNull(census?.housing?.owner_occupied_pct),
     censusMedianIncome: numberOrNull(census?.income?.median_household_income),
@@ -157,9 +162,12 @@ export function assembleHousingFeatures(observations = [], {
       fhfaSource,
       retainedHpiAvailable: retainedHpiYoY !== null,
       retainedHpiPointInTimeReplaySafeBeforeCapture: retainedHpiObservation?.provenance?.pointInTimeReplaySafeBeforeRetrievedAt !== false,
+      mortgageSignalAvailable: mortgage30 !== null,
+      mortgageSource,
+      mortgageFallbackRejected: rawMortgage30 !== null && !sourceUsable(mortgageSource),
       censusContextAvailable: Boolean(censusObservation),
       neutralImputations: Object.freeze(neutralImputations),
-      note: 'Retained HPI is preferred over transient market HPI. Stale PropData state-intel price momentum is excluded from the model vector while its context remains inspectable. Null fast-moving features are explicitly recorded and may be neutral-imputed by the research baseline.'
+      note: 'Retained HPI is preferred over transient market HPI. Stale PropData state-intel price momentum and fallback mortgage reference rates are excluded from the model vector while their context remains inspectable. Null fast-moving features are explicitly recorded and may be neutral-imputed by the research baseline.'
     })
   });
 }
