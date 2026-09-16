@@ -3,10 +3,24 @@ name: historical-replay
 on:
   workflow_dispatch:
     inputs:
-      limit:
+      family:
+        description: 'Historical replay family'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - fomc
+          - cpi
+      fomc_limit:
         description: 'Number of FOMC decisions to replay (oldest first)'
         required: false
         default: '16'
+        type: string
+      cpi_limit:
+        description: 'Number of verified CPI releases to replay (oldest first)'
+        required: false
+        default: '3'
         type: string
       include_kalshi:
         description: 'Compare against mapped Kalshi historical markets'
@@ -15,14 +29,12 @@ on:
         type: boolean
 
 jobs:
-  fomc-replay:
+  verify:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-      REPLAY_LIMIT: ${{ inputs.limit }}
-      REPLAY_OUTPUT: .replay/fomc-history.json
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,14 +50,55 @@ jobs:
         run: |
           npm run check
           npm test
+
+  fomc-replay:
+    if: ${{ inputs.family == 'all' || inputs.family == 'fomc' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      REPLAY_LIMIT: ${{ inputs.fomc_limit }}
+      REPLAY_OUTPUT: .replay/fomc-history.json
+      DISABLE_KALSHI_HISTORY: ${{ inputs.include_kalshi && '0' || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Run FOMC replay
-        env:
-          DISABLE_KALSHI_HISTORY: ${{ inputs.include_kalshi && '0' || '1' }}
         run: npm run replay:fomc
-      - name: Upload replay artifact
+      - name: Upload FOMC replay artifact
         uses: actions/upload-artifact@v4
         with:
           name: fomc-historical-replay
           path: .replay/fomc-history.json
+          if-no-files-found: error
+          retention-days: 30
+
+  cpi-replay:
+    if: ${{ inputs.family == 'all' || inputs.family == 'cpi' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      REPLAY_LIMIT: ${{ inputs.cpi_limit }}
+      REPLAY_OUTPUT: .replay/cpi-history.json
+      DISABLE_KALSHI_HISTORY: ${{ inputs.include_kalshi && '0' || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run CPI replay
+        run: npm run replay:cpi
+      - name: Upload CPI replay artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpi-historical-replay
+          path: .replay/cpi-history.json
           if-no-files-found: error
           retention-days: 30
