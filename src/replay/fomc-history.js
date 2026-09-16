@@ -3,7 +3,9 @@ import { buildFedFeatureSnapshot } from '../features/fed-features.js';
 import { FED_DECISION_MODEL, fedDecisionProbabilities } from '../models/fed-decision-v0.js';
 import { classifyRateChangeBps, scoreCategoricalForecast } from '../backtest/fomc.js';
 import { buildFomcKalshiMarketComparison } from './kalshi-fomc.js';
+import { priorDayCutoff } from './cutoff.js';
 
+export { priorDayCutoff } from './cutoff.js';
 export const REPLAY_RECORD_TYPE = 'retrospective_replay';
 export const FOMC_REPLAY_VERSION = '0.2.0';
 
@@ -11,16 +13,6 @@ function iso(value, field) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) throw new TypeError(`${field} must be a valid timestamp`);
   return d.toISOString();
-}
-
-export function priorDayCutoff(meetingDate) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(meetingDate))) {
-    throw new TypeError('meetingDate must be YYYY-MM-DD');
-  }
-  const day = new Date(`${meetingDate}T00:00:00.000Z`);
-  day.setUTCDate(day.getUTCDate() - 1);
-  day.setUTCHours(23, 59, 59, 999);
-  return day.toISOString();
 }
 
 async function vintageSeries(fredAdapter, seriesId, vintageDate, limit = 24) {
