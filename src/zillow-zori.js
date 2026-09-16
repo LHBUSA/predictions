@@ -139,7 +139,7 @@ export class ZillowZoriAdapter {
     this.timeoutMs = timeoutMs;
   }
 
-  async fetchScope(scope, geography) {
+  async fetchTable(scope) {
     const url = ZORI_URLS[scope];
     if (!url) throw new TypeError(`unsupported ZORI scope ${scope}`);
     const controller = new AbortController();
@@ -154,8 +154,7 @@ export class ZillowZoriAdapter {
       clearTimeout(timer);
     }
     if (!response.ok) throw new Error(`Zillow ZORI request failed: ${response.status}`);
-    const text = await response.text();
-    const rows = parseCsv(text);
+    const rows = parseCsv(await response.text());
     if (rows.length < 2) throw new Error('Zillow ZORI CSV returned no data rows');
     const headers = rows[0];
     for (const required of ['RegionID', 'RegionName']) {
@@ -163,22 +162,21 @@ export class ZillowZoriAdapter {
     }
     const dates = dateColumns(headers);
     if (!dates.length) throw new Error('Zillow ZORI schema has no monthly date columns');
-    let found = null;
-    for (let i = 1; i < rows.length; i += 1) {
-      const row = rowObject(headers, rows[i]);
-      if (matchesGeography(scope, row, geography)) {
-        found = row;
-        break;
-      }
-    }
-    if (!found) return null;
-    const summary = summarizeRow(found, dates);
+    return Object.freeze({
+      url,
+      dates: Object.freeze(dates),
+      rows: Object.freeze(rows.slice(1).map((values) => Object.freeze(rowObject(headers, values)))),
+      fetchedAt: new Date().toISOString()
+    });
+  }
+
+  payloadFor(scope, geography, found, table) {
+    const summary = summarizeRow(found, table.dates);
     if (!summary) return null;
-    const fetchedAt = new Date().toISOString();
     return Object.freeze({
       provider: 'Zillow Research',
       sourceId: `zori:${scope}:${found.RegionID || found.RegionName}`,
-      sourceUrl: url,
+      sourceUrl: table.url,
       scope,
       geography: Object.freeze({
         level: scope,
@@ -188,9 +186,43 @@ export class ZillowZoriAdapter {
       }),
       dataset: 'Zillow Observed Rent Index (ZORI), all homes plus multifamily, smoothed, not seasonally adjusted',
       frequency: 'monthly',
-      fetchedAt,
+      fetchedAt: table.fetchedAt,
       ...summary
     });
+  }
+
+  async fetchScope(scope, geography) {
+    const table = await this.fetchTable(scope);
+    const found = table.rows.find((row) => matchesGeography(scope, row, geography)) || null;
+    return found ? this.payloadFor(scope, geography, found, table) : null;
+  }
+
+  async states(states = Object.keys(STATE_NAMES)) {
+    const requested = [...new Set(states.map((state) => String(state).trim().toUpperCase()).filter(Boolean))];
+    for (const state of requested) {
+      if (!STATE_NAMES[state]) throw new TypeError(`unsupported state ${state}`);
+    }
+    const table = await this.fetchTable('state');
+    const byName = new Map();
+    for (const row of table.rows) {
+      if (row.RegionName) byName.set(normalize(row.RegionName), row);
+      if (row.StateName) byName.set(normalize(row.StateName), row);
+    }
+    return Object.freeze(requested.map((state) => {
+      const row = byName.get(normalize(STATE_NAMES[state]));
+      return row ? this.payloadFor('state', { state }, row, table) : null;
+    }).filter(Boolean));
+  }
+
+  async metros() {
+    const table = await this.fetchTable('metro');
+    return Object.freeze(table.rows.map((row) => {
+      if (!row.RegionName && !row.RegionID) return null;
+      return this.payloadFor('metro', {
+        metro: row.RegionName || null,
+        regionId: row.RegionID || null
+      }, row, table);
+    }).filter(Boolean));
   }
 
   state(state) {

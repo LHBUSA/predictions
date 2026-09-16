@@ -1,0 +1,11 @@
+{
+  "name": "pbe-predictions-source-housing-history",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "vars": {
+    "PROPDATA_SUPABASE_URL": "https://rlfyavnhbngwbldebrid.supabase.co"
+  }
+}

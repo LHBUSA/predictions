@@ -1,4 +1,4 @@
-import { assertAvailableBefore } from './source-observation.js';
+import { assertAvailableBefore, sourceObservationKey } from './source-observation.js';
 
 function iso(value, field) {
   const d = new Date(value);
@@ -22,7 +22,7 @@ export function createFeatureSnapshot({ id, eventId, modelId, cutoffAt, createdA
     cutoffAt: cutoff,
     createdAt: created,
     features: Object.freeze({ ...features }),
-    sourceObservationIds: Object.freeze(checked.map(x => `${x.provider}:${x.sourceId}:${x.capturedAt}`)),
+    sourceObservationIds: Object.freeze(checked.map(sourceObservationKey)),
     sourceClasses: Object.freeze(sourceClasses),
     observations: Object.freeze([...checked])
   });

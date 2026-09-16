@@ -1,0 +1,19 @@
+{
+  "name": "pbe-predictions-pipeline-housing",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "services": [
+    { "binding": "SOURCE_PROPDATA", "service": "pbe-predictions-source-propdata" },
+    { "binding": "SOURCE_CENSUS", "service": "pbe-predictions-source-census" },
+    { "binding": "SOURCE_HOUSING_HISTORY", "service": "pbe-predictions-source-housing-history" },
+    { "binding": "SOURCE_MACRO", "service": "pbe-predictions-source-macro" },
+    { "binding": "SOURCE_ZORI", "service": "pbe-predictions-source-zori" },
+    { "binding": "SOURCE_PERMITS", "service": "pbe-predictions-source-permits" },
+    { "binding": "FEATURE_HOUSING", "service": "pbe-predictions-feature-housing" },
+    { "binding": "MODEL_HOUSING", "service": "pbe-predictions-model-housing" },
+    { "binding": "LEDGER", "service": "pbe-predictions-ledger" }
+  ]
+}

@@ -2,6 +2,15 @@ import { fail, ok, requireFields } from '../../_shared/contract.js';
 import { ZillowZoriAdapter } from '../../../src/zillow-zori.js';
 import { assertAvailableBefore, createSourceObservation } from '../../../src/source-observation.js';
 
+function revisionFor(payload) {
+  return [
+    payload.period,
+    payload.value,
+    payload.priorMonth ?? 'na',
+    payload.yearAgo ?? 'na'
+  ].join('|');
+}
+
 function toObservation(payload) {
   return createSourceObservation({
     provider: payload.provider,
@@ -15,12 +24,14 @@ function toObservation(payload) {
     units: 'usd_monthly_rent_index',
     geography: payload.geography,
     vintage: payload.period,
+    revision: revisionFor(payload),
     provenance: {
       sourceUrl: payload.sourceUrl,
       dataset: payload.dataset,
       frequency: payload.frequency,
       availabilityPrecision: 'capture-time',
-      note: 'Zillow Research does not provide a release timestamp in the CSV. Predictions treats the data as available only from its actual capture time forward; older CSV history is not backdated into point-in-time forecasts.'
+      revisionIdentity: 'period|value|priorMonth|yearAgo',
+      note: 'Zillow Research does not provide a release timestamp in the CSV. Predictions treats the data as available only from its actual first successful capture forward; deterministic revision identity prevents repeated unchanged captures from creating duplicate ledger rows.'
     }
   });
 }
@@ -30,9 +41,23 @@ export default {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
     try {
       const body = await request.json();
+      const adapter = new ZillowZoriAdapter();
+
+      if (body.bulk === 'states' || body.bulk === 'metros') {
+        const payloads = body.bulk === 'states'
+          ? await adapter.states(Array.isArray(body.states) ? body.states : undefined)
+          : await adapter.metros();
+        const observations = payloads.map(toObservation);
+        return ok(observations, {
+          source: 'Zillow Research ZORI',
+          scope: `${body.bulk === 'states' ? 'state' : 'metro'}_bulk`,
+          count: observations.length,
+          deterministicRevisionIdentity: true
+        });
+      }
+
       requireFields(body, ['geography']);
       const geography = body.geography || {};
-      const adapter = new ZillowZoriAdapter();
       let payload = null;
       if (geography.state) payload = await adapter.state(geography.state);
       else if (geography.metro || geography.regionId) payload = await adapter.metro(geography.metro, geography.regionId || null);
@@ -44,7 +69,8 @@ export default {
         source: 'Zillow Research ZORI',
         scope: payload.scope,
         vintage: payload.period,
-        pointInTimeFromCaptureForward: true
+        pointInTimeFromCaptureForward: true,
+        deterministicRevisionIdentity: true
       });
     } catch (error) {
       const code = /forecast cutoff/.test(error.message)
@@ -57,4 +83,4 @@ export default {
   }
 };
 
-export { toObservation as zoriToObservation };
+export { toObservation as zoriToObservation, revisionFor as zoriRevisionFor };

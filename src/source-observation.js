@@ -6,6 +6,22 @@ function iso(value, field) {
   return d.toISOString();
 }
 
+function requiredText(value, field) {
+  const text = String(value ?? '').trim();
+  if (!text) throw new TypeError(`${field} is required`);
+  return text;
+}
+
+export function sourceObservationKey(observation) {
+  const provider = requiredText(observation?.provider, 'provider');
+  const sourceId = requiredText(observation?.sourceId, 'sourceId');
+  const revision = observation?.revision === null || observation?.revision === undefined
+    ? ''
+    : String(observation.revision).trim();
+  if (revision) return `${provider}:${sourceId}:rev:${encodeURIComponent(revision)}`;
+  return `${provider}:${sourceId}:${requiredText(observation?.capturedAt, 'capturedAt')}`;
+}
+
 export function createSourceObservation({
   provider,
   sourceId,

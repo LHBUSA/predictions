@@ -2,6 +2,15 @@ import { fail, ok, requireFields } from '../../_shared/contract.js';
 import { CensusBpsAdapter } from '../../../src/census-bps.js';
 import { assertAvailableBefore, createSourceObservation } from '../../../src/source-observation.js';
 
+function revisionFor(payload) {
+  return [
+    payload.period,
+    payload.value,
+    payload.yearAgo ?? 'na',
+    payload.geoId ?? 'na'
+  ].join('|');
+}
+
 function toObservation(payload) {
   return createSourceObservation({
     provider: payload.provider,
@@ -15,6 +24,7 @@ function toObservation(payload) {
     units: 'authorized_housing_units',
     geography: payload.geography,
     vintage: payload.period,
+    revision: revisionFor(payload),
     provenance: {
       sourceUrl: payload.sourceUrl,
       dataset: payload.dataset,
@@ -22,7 +32,8 @@ function toObservation(payload) {
       frequency: payload.frequency,
       availabilitySemantics: payload.availabilitySemantics,
       availabilityPrecision: 'capture-time',
-      note: 'The worker probes for the newest Census BPS month that is actually published. Predictions does not backdate the current API response to the historical release date; point-in-time safety begins at this capture.'
+      revisionIdentity: 'period|value|yearAgo|geoId',
+      note: 'The worker probes for the newest Census BPS month that is actually published. Predictions does not backdate the current API response to the historical release date; point-in-time safety begins at the first successful capture. Deterministic revision identity suppresses unchanged repeat captures while preserving changed/revised values as new rows.'
     }
   });
 }
@@ -44,7 +55,8 @@ export default {
         source: 'U.S. Census Bureau Building Permits Survey',
         vintage: payload.period,
         pointInTimeFromCaptureForward: true,
-        yoyAvailable: payload.yoyPct !== null
+        yoyAvailable: payload.yoyPct !== null,
+        deterministicRevisionIdentity: true
       });
     } catch (error) {
       const code = /forecast cutoff/.test(error.message)
@@ -57,4 +69,4 @@ export default {
   }
 };
 
-export { toObservation as permitsToObservation };
+export { toObservation as permitsToObservation, revisionFor as permitsRevisionFor };

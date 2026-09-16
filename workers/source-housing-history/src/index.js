@@ -4,9 +4,11 @@ import { assertAvailableBefore, createSourceObservation } from '../../../src/sou
 
 function adapterFor(env) {
   const url = env.PROPDATA_SUPABASE_URL;
-  const serviceKey = env.PROPDATA_SUPABASE_SERVICE_KEY;
-  if (!url || !serviceKey) throw new TypeError('PROPDATA_SUPABASE_URL and PROPDATA_SUPABASE_SERVICE_KEY are required');
-  return new PropDataHousingHistoryAdapter({ url, serviceKey });
+  const apiKey = env.PROPDATA_SUPABASE_PUBLISHABLE_KEY || env.PROPDATA_SUPABASE_SERVICE_KEY;
+  if (!url || !apiKey) {
+    throw new TypeError('PROPDATA_SUPABASE_URL and PROPDATA_SUPABASE_PUBLISHABLE_KEY (or service-key fallback) are required');
+  }
+  return new PropDataHousingHistoryAdapter({ url, serviceKey: apiKey });
 }
 
 function toObservation(payload, ingestedAt = new Date().toISOString()) {

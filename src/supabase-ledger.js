@@ -1,15 +1,13 @@
+import { sourceObservationKey } from './source-observation.js';
+
 function requireString(value, field) {
   const text = String(value ?? '').trim();
   if (!text) throw new TypeError(`${field} is required`);
   return text;
 }
 
-function observationKey(observation) {
-  return `${requireString(observation.provider, 'provider')}:${requireString(observation.sourceId, 'sourceId')}:${requireString(observation.capturedAt, 'capturedAt')}`;
-}
-
 function sourceRow(observation) {
-  const key = observationKey(observation);
+  const key = sourceObservationKey(observation);
   return {
     observation_key: key,
     provider: observation.provider,
@@ -184,4 +182,4 @@ export class SupabasePredictionsLedger {
   }
 }
 
-export { observationKey as sourceObservationKey, sourceRow as sourceObservationRow };
+export { sourceObservationKey, sourceRow as sourceObservationRow };

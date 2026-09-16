@@ -32,6 +32,21 @@ function availabilityFor(seriesKey, row, payload, vintageDate) {
   });
 }
 
+function revisionFor(seriesId, availability, rows) {
+  const current = rows[0] || {};
+  const previous = rows[1] || {};
+  return [
+    seriesId,
+    availability.date,
+    current.date ?? 'na',
+    current.value ?? 'na',
+    current.realtimeStart ?? 'na',
+    current.realtimeEnd ?? 'na',
+    previous.date ?? 'na',
+    previous.value ?? 'na'
+  ].join('|');
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
@@ -74,6 +89,7 @@ export default {
         },
         units: body.outputUnits || body.units || null,
         vintage: availability.date,
+        revision: revisionFor(seriesId, availability, rows),
         provenance: {
           seriesKey: body.seriesKey,
           realtimeStart: row.realtimeStart,
@@ -81,7 +97,8 @@ export default {
           availabilityPrecision: 'date-conservative',
           availabilityBasis: availability.basis,
           retainedHistoryCount: rows.length,
-          note: `${availability.note} Retained history includes only values returned by the same point-in-time query.`
+          revisionIdentity: 'series|availability|current-value-vintage|previous-value',
+          note: `${availability.note} Retained history includes only values returned by the same point-in-time query. Deterministic revision identity suppresses unchanged repeat captures while allowing revisions to append.`
         }
       });
       if (body.forecastCutoff) assertAvailableBefore(observation, body.forecastCutoff);
@@ -91,7 +108,8 @@ export default {
         vintageDate,
         historyCount: rows.length,
         previousAvailable: rows.length > 1,
-        availabilityBasis: availability.basis
+        availabilityBasis: availability.basis,
+        deterministicRevisionIdentity: true
       });
     } catch (error) {
       const code = /forecast cutoff/.test(error.message) ? 'POST_CUTOFF_SOURCE' : 'SOURCE_FETCH_FAILED';
@@ -99,3 +117,5 @@ export default {
     }
   }
 };
+
+export { revisionFor as macroRevisionFor };
