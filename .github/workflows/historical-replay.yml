@@ -1,0 +1,51 @@
+name: historical-replay
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Number of FOMC decisions to replay (oldest first)'
+        required: false
+        default: '16'
+        type: string
+      include_kalshi:
+        description: 'Compare against mapped Kalshi historical markets'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  fomc-replay:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      REPLAY_LIMIT: ${{ inputs.limit }}
+      REPLAY_OUTPUT: .replay/fomc-history.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate replay secret
+        run: |
+          if [ -z "$FRED_API_KEY" ]; then
+            echo "::error::FRED_API_KEY repository secret is required for vintage-aware historical replay."
+            exit 1
+          fi
+      - name: Verify replay code
+        run: |
+          npm run check
+          npm test
+      - name: Run FOMC replay
+        env:
+          DISABLE_KALSHI_HISTORY: ${{ inputs.include_kalshi && '0' || '1' }}
+        run: npm run replay:fomc
+      - name: Upload replay artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fomc-historical-replay
+          path: .replay/fomc-history.json
+          if-no-files-found: error
+          retention-days: 30
