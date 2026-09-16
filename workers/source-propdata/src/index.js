@@ -8,18 +8,29 @@ export default {
     if (!env.PROPDATA_API_KEY) return fail('SOURCE_NOT_CONFIGURED', 'PROPDATA_API_KEY is not configured', 503);
     try {
       const body = await request.json();
-      requireFields(body, ['location']);
+      const mode = body.mode || 'market';
       const adapter = new PropDataAdapter({
         serviceBinding: env.PROPDATA || null,
         apiKey: env.PROPDATA_API_KEY,
         baseUrl: env.PROPDATA_BASE_URL || undefined
       });
-      const payload = await adapter.market(body.location);
+
+      let payload;
+      if (mode === 'market') {
+        requireFields(body, ['location']);
+        payload = await adapter.market(body.location);
+      } else if (mode === 'state_intel') {
+        const state = body.state || body.location?.state;
+        requireFields({ state }, ['state']);
+        payload = await adapter.stateIntel(state);
+      } else {
+        return fail('UNSUPPORTED_MODE', 'mode must be market or state_intel', 422);
+      }
+
       const capturedAt = payload.fetchedAt;
-      const locationEntry = Object.entries(payload.location)[0];
       const observation = createSourceObservation({
         provider: 'PropData',
-        sourceId: `market:${locationEntry[0]}:${locationEntry[1]}`,
+        sourceId: payload.sourceId,
         sourceClass: 'propdata',
         observedAt: body.observedAt || capturedAt,
         availableAt: capturedAt,
@@ -31,14 +42,19 @@ export default {
           route: payload.route,
           location: payload.location,
           transport: payload.transport,
+          mode,
           availabilityPrecision: 'capture-time',
           note: 'For historical replay, use a previously retained PropData snapshot rather than a current API response.'
         }
       });
       if (body.forecastCutoff) assertAvailableBefore(observation, body.forecastCutoff);
-      return ok(observation, { source: 'PropData', route: payload.route, transport: payload.transport });
+      return ok(observation, { source: 'PropData', route: payload.route, transport: payload.transport, mode });
     } catch (error) {
-      const code = /forecast cutoff/.test(error.message) ? 'POST_CUTOFF_SOURCE' : 'SOURCE_FETCH_FAILED';
+      const code = /forecast cutoff/.test(error.message)
+        ? 'POST_CUTOFF_SOURCE'
+        : /required|must/.test(error.message)
+          ? 'INVALID_SOURCE_REQUEST'
+          : 'SOURCE_FETCH_FAILED';
       return fail(code, error.message, 422);
     }
   }
