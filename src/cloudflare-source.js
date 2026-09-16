@@ -13,6 +13,20 @@ function addQuery(url, query = {}) {
   return url;
 }
 
+async function parseJsonResponse(response) {
+  if (typeof response.text === 'function') {
+    const text = await response.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`upstream returned non-JSON response (${response.status})`);
+    }
+  }
+  if (typeof response.json === 'function') return response.json();
+  throw new TypeError('upstream response must expose text() or json()');
+}
+
 export class CloudflareSourceTransport {
   constructor({ serviceBinding = null, baseUrl = null, apiKey = null, fetchImpl = globalThis.fetch, timeoutMs = 10000 } = {}) {
     if (!serviceBinding && !baseUrl) throw new TypeError('serviceBinding or baseUrl is required');
@@ -46,15 +60,7 @@ export class CloudflareSourceTransport {
       const response = this.serviceBinding
         ? await requireFetchTarget(this.serviceBinding, 'serviceBinding').fetch(url.toString(), init)
         : await this.fetchImpl(url, init);
-      const text = await response.text();
-      let data = null;
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error(`upstream returned non-JSON response (${response.status})`);
-        }
-      }
+      const data = await parseJsonResponse(response);
       if (!response.ok) {
         const message = data?.error || data?.message || `upstream request failed: ${response.status}`;
         const error = new Error(message);
