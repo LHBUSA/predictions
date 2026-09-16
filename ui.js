@@ -1,5 +1,5 @@
 const markets = [
-  {id:'fed-next',category:'macro',venue:'Kalshi',title:'Federal Reserve decision — next meeting',sub:'Policy decision · model v0.1 research',model:68,market:56,edge:12,updated:4,liquidity:92,resolution:'Federal Reserve · official FOMC decision',sources:['FRED CPI series','FRED unemployment series','Federal Reserve policy data'],sourceClasses:[['official','Official macro'],['market','Venue pricing']],status:'research'},
+  {id:'fed-next',path:'/events/fed-september-2026/',category:'macro',venue:'Kalshi',title:'Federal Reserve decision — next meeting',sub:'Policy decision · model v0.1 research',model:68,market:56,edge:12,updated:4,liquidity:92,resolution:'Federal Reserve · official FOMC decision',sources:['FRED CPI series','FRED unemployment series','Federal Reserve policy data'],sourceClasses:[['official','Official macro'],['market','Venue pricing']],status:'research'},
   {id:'cpi-3',category:'macro',venue:'Kalshi',title:'Headline CPI above 3.0%',sub:'Inflation release · research pipeline',model:47,market:41,edge:6,updated:11,liquidity:74,resolution:'U.S. Bureau of Labor Statistics',sources:['BLS CPI','FRED mirror','Release calendar'],sourceClasses:[['official','Official inflation data'],['market','Venue pricing']],status:'research'},
   {id:'home-yoy',category:'housing',venue:'Research',title:'U.S. home prices positive YoY',sub:'Housing intelligence · PropData research track',model:61,market:54,edge:7,updated:19,liquidity:41,resolution:'Declared housing index source',sources:['PropData property and market intelligence','FHFA HPI','Market datasets'],sourceClasses:[['propdata','PropData'],['official','Official housing'],['market','Venue / market data']],status:'research'},
   {id:'atlantic-landfall',category:'weather',venue:'Research',title:'Major Atlantic hurricane landfall',sub:'Weather intelligence · research track',model:32,market:38,edge:-6,updated:27,liquidity:38,resolution:'Declared official weather authority',sources:['NOAA/NHC research inputs','Historical storm archive','Property exposure data when relevant'],sourceClasses:[['official','NOAA / NHC'],['propdata','Property exposure when used'],['market','Venue / market data']],status:'research'}
@@ -77,7 +77,8 @@ function openDrawer(m){
     <div class="drawer-section"><h3>Resolution authority</h3><p>${m.resolution}</p></div>
     <div class="drawer-section"><h3>Evidence ledger</h3><ul>${m.sources.map(s=>`<li>${s}</li>`).join('')}</ul></div>
     <div class="drawer-section"><h3>Research state</h3><p>This is a ${m.status} forecast. It is not presented as validated edge until point-in-time backtesting and calibration are complete.</p></div>
-    <div class="drawer-section"><h3>Permanent record concept</h3><p>Production records will preserve model version, market snapshot, feature snapshot, source provenance, capture time, resolution rule and final score.</p></div>`;
+    <div class="drawer-section"><h3>Permanent record concept</h3><p>Production records will preserve model version, market snapshot, feature snapshot, source provenance, capture time, resolution rule and final score.</p></div>
+    ${m.path?`<div class="drawer-section"><a class="primary-btn" href="${m.path}">Open full Event Record →</a></div>`:''}`;
   drawer.classList.add('open');
   drawer.setAttribute('aria-hidden','false');
 }
