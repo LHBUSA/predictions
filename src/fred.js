@@ -7,6 +7,8 @@ const SERIES = Object.freeze({
   coreCpiNsa: 'CPILFENS',
   unemployment: 'UNRATE',
   payrolls: 'PAYEMS',
+  initialClaims: 'ICSA',
+  continuingClaims: 'CCSA',
   industrialProduction: 'INDPRO',
   federalFundsTargetUpper: 'DFEDTARU',
   federalFundsTargetLower: 'DFEDTARL',
