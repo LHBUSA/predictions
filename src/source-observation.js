@@ -1,4 +1,4 @@
-const SOURCE_CLASSES = new Set(['propdata','sports','official','venue','licensed','research']);
+const SOURCE_CLASSES = new Set(['propdata','sports','official','venue','licensed','research','proprietary']);
 
 function iso(value, field) {
   const d = new Date(value);
