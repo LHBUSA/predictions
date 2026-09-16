@@ -1,8 +1,4 @@
-import { fail, ok } from '../../_shared/contract.js';
-
-const STATE_CODES = Object.freeze([
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'
-]);
+import { fail } from '../../_shared/contract.js';
 
 async function post(binding, path, body) {
   if (!binding || typeof binding.fetch !== 'function') throw new TypeError(`${path} binding is required`);
@@ -20,31 +16,36 @@ async function post(binding, path, body) {
   return payload.data;
 }
 
-async function captureState(state, env) {
-  const observation = await post(env.HOUSING_HISTORY, '/', { geography: { state }, limit: 8 });
-  const persisted = await post(env.LEDGER, '/source', observation);
-  return Object.freeze({ state, observationKey: persisted.observationKey, vintage: observation.vintage, capturedAt: observation.capturedAt });
+async function captureBulk(env, scope) {
+  if (!['states', 'metros'].includes(scope)) throw new TypeError('scope must be states or metros');
+  const observations = await post(env.HOUSING_HISTORY, '/', {
+    bulk: scope,
+    quarters: 5,
+    ...(scope === 'metros' ? { pageSize: 1000, maxPages: 6 } : {})
+  });
+  if (!Array.isArray(observations) || !observations.length) throw new Error(`No ${scope} HPI observations returned`);
+  const persisted = await post(env.LEDGER, '/sources', { observations });
+  return Object.freeze({
+    scope: `${scope === 'states' ? 'state' : 'metro'}_hpi`,
+    attempted: observations.length,
+    captured: persisted.count,
+    observationKeys: Object.freeze([...(persisted.observationKeys || [])]),
+    vintages: Object.freeze([...new Set(observations.map((observation) => observation.vintage).filter(Boolean))]),
+    capturedAtMin: observations.map((observation) => observation.capturedAt).sort()[0] || null,
+    capturedAtMax: observations.map((observation) => observation.capturedAt).sort().at(-1) || null,
+    completedAt: new Date().toISOString()
+  });
 }
 
-async function captureStates(env, states = STATE_CODES) {
-  const results = [];
-  const failures = [];
-  for (let i = 0; i < states.length; i += 8) {
-    const batch = states.slice(i, i + 8);
-    const settled = await Promise.allSettled(batch.map(state => captureState(state, env)));
-    settled.forEach((entry, index) => {
-      const state = batch[index];
-      if (entry.status === 'fulfilled') results.push(entry.value);
-      else failures.push({ state, error: entry.reason?.message || String(entry.reason) });
-    });
-  }
+async function captureAll(env) {
+  const [states, metros] = await Promise.all([
+    captureBulk(env, 'states'),
+    captureBulk(env, 'metros')
+  ]);
   return Object.freeze({
-    scope: 'state_hpi',
-    attempted: states.length,
-    captured: results.length,
-    failed: failures.length,
-    results: Object.freeze(results),
-    failures: Object.freeze(failures),
+    states,
+    metros,
+    totalCaptured: states.captured + metros.captured,
     completedAt: new Date().toISOString()
   });
 }
@@ -54,12 +55,16 @@ export default {
     if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'POST required', 405);
     try {
       const body = await request.json().catch(() => ({}));
-      const requested = Array.isArray(body.states) && body.states.length
-        ? body.states.map(x => String(x).toUpperCase()).filter(x => STATE_CODES.includes(x))
-        : STATE_CODES;
-      const result = await captureStates(env, requested);
-      const status = result.failed ? 207 : 200;
-      return Response.json({ ok: result.failed === 0, data: result, meta: { collector: 'housing-history-state-v1' } }, { status });
+      const scope = body.scope || 'all';
+      const result = scope === 'states'
+        ? await captureBulk(env, 'states')
+        : scope === 'metros'
+          ? await captureBulk(env, 'metros')
+          : scope === 'all'
+            ? await captureAll(env)
+            : null;
+      if (!result) return fail('INVALID_SCOPE', 'scope must be states, metros, or all', 422);
+      return Response.json({ ok: true, data: result, meta: { collector: 'housing-history-bulk-v2' } });
     } catch (error) {
       return fail('COLLECTOR_FAILED', error.message, 500);
     }
@@ -67,12 +72,11 @@ export default {
 
   async scheduled(_event, env, ctx) {
     ctx.waitUntil(
-      captureStates(env).then(result => {
-        if (result.failed) console.error('housing history collector partial failure', JSON.stringify(result.failures));
-        else console.log(`housing history collector captured ${result.captured} state snapshots`);
-      }).catch(error => console.error('housing history collector failed', error))
+      captureAll(env)
+        .then((result) => console.log(`housing history collector captured ${result.totalCaptured} national HPI snapshots`))
+        .catch((error) => console.error('housing history collector failed', error))
     );
   }
 };
 
-export { STATE_CODES, captureState, captureStates };
+export { captureBulk, captureAll };
