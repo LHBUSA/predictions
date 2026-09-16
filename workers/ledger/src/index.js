@@ -29,6 +29,11 @@ export default {
         const key = await ledger.insertSourceObservation(body);
         return ok({ observationKey: key }, { persisted: true, appendOnly: true, kind: 'source_observation' });
       }
+      if (path === '/sources') {
+        const observations = Array.isArray(body) ? body : body.observations;
+        const keys = await ledger.insertSourceObservations(observations);
+        return ok({ observationKeys: keys, count: keys.length }, { persisted: true, appendOnly: true, kind: 'source_observation_batch' });
+      }
       if (path === '/feature') {
         const id = await ledger.insertFeatureSnapshot(body.snapshot || body, {
           context: body.context || {},
@@ -55,7 +60,7 @@ export default {
         const row = await ledger.insertScore(body);
         return ok(row, { persisted: true, appendOnly: true, kind: 'score' });
       }
-      return fail('NOT_FOUND', 'POST /event, /source, /feature, /forecast, /venue, /resolution, or /score', 404);
+      return fail('NOT_FOUND', 'POST /event, /source, /sources, /feature, /forecast, /venue, /resolution, or /score', 404);
     } catch (error) {
       const status = Number.isInteger(error.status) && error.status >= 400 && error.status <= 599 ? error.status : 422;
       return fail('LEDGER_WRITE_FAILED', error.message, status, error.detail || null);
