@@ -9,7 +9,11 @@ export default {
     try {
       const body = await request.json();
       requireFields(body, ['location']);
-      const adapter = new PropDataAdapter({ apiKey: env.PROPDATA_API_KEY });
+      const adapter = new PropDataAdapter({
+        serviceBinding: env.PROPDATA || null,
+        apiKey: env.PROPDATA_API_KEY,
+        baseUrl: env.PROPDATA_BASE_URL || undefined
+      });
       const payload = await adapter.market(body.location);
       const capturedAt = payload.fetchedAt;
       const locationEntry = Object.entries(payload.location)[0];
@@ -26,12 +30,13 @@ export default {
         provenance: {
           route: payload.route,
           location: payload.location,
+          transport: payload.transport,
           availabilityPrecision: 'capture-time',
           note: 'For historical replay, use a previously retained PropData snapshot rather than a current API response.'
         }
       });
       if (body.forecastCutoff) assertAvailableBefore(observation, body.forecastCutoff);
-      return ok(observation, { source: 'PropData', route: payload.route });
+      return ok(observation, { source: 'PropData', route: payload.route, transport: payload.transport });
     } catch (error) {
       const code = /forecast cutoff/.test(error.message) ? 'POST_CUTOFF_SOURCE' : 'SOURCE_FETCH_FAILED';
       return fail(code, error.message, 422);
