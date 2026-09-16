@@ -1,6 +1,6 @@
 import { fail, ok, requireFields } from '../../_shared/contract.js';
 import { PropDataHousingHistoryAdapter } from '../../../src/propdata-history.js';
-import { createSourceObservation } from '../../../src/source-observation.js';
+import { assertAvailableBefore, createSourceObservation } from '../../../src/source-observation.js';
 
 function adapterFor(env) {
   const url = env.PROPDATA_SUPABASE_URL;
@@ -51,15 +51,17 @@ export default {
       else if (geography.cbsa) payload = await adapter.metroHpi(geography.cbsa, { limit: body.limit });
       else return fail('INVALID_GEOGRAPHY', 'geography must include state or cbsa', 422);
       if (!payload) return fail('SOURCE_NOT_FOUND', 'No HPI history found for requested geography', 404);
-      const ingestedAt = new Date().toISOString();
-      return ok(toObservation(payload, ingestedAt), {
+      const observation = toObservation(payload, new Date().toISOString());
+      if (body.forecastCutoff) assertAvailableBefore(observation, body.forecastCutoff);
+      return ok(observation, {
         source: 'PropData housing history',
         historicalResearchSafe: true,
         pointInTimeReplaySafeBeforeRetrievedAt: false,
         idempotentByUpstreamCapture: true
       });
     } catch (error) {
-      return fail('SOURCE_FETCH_FAILED', error.message, 422);
+      const code = /forecast cutoff/.test(error.message) ? 'POST_CUTOFF_SOURCE' : 'SOURCE_FETCH_FAILED';
+      return fail(code, error.message, 422);
     }
   }
 };
