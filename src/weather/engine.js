@@ -3,9 +3,10 @@
 import precipArtifact from './artifacts/precip-v1.json' with { type: 'json' };
 import precipNbmArtifact from './artifacts/precip-nbm-v1.1.json' with { type: 'json' };
 import tempArtifact from './artifacts/temp-v1.json' with { type: 'json' };
+import tempNbmArtifact from './artifacts/temp-nbm-v1.1.json' with { type: 'json' };
 import climatology from './artifacts/climatology-v1.json' with { type: 'json' };
 import { cliStation } from './stations.js';
-import { windowPrecipFeatures, maxTempGuidance, runAvailableAt } from './mos.js';
+import { windowPrecipFeatures, maxTempGuidance, nbmMaxTempGuidance, runAvailableAt } from './mos.js';
 import { gridWindowEvidence } from './nws.js';
 import { predictPrecip } from './precip-model.js';
 import { residualTable, bucketProbability } from './temp-model.js';
@@ -124,25 +125,39 @@ export function forecastWeather(contract, sources, { now }) {
   }
 
   // MAX_TEMP_BUCKET
-  const g = maxTempGuidance(mos.rows, date);
-  if (g === null) return { status: 'INCOMPLETE_GUIDANCE' };
-  const table = residualTable(tempArtifact, contract.station_id, runLeadH);
+  const gfsMax = maxTempGuidance(mos.rows, date);
+  if (gfsMax === null) return { status: 'INCOMPLETE_GUIDANCE' };
+  // v1.1: National Blend day max when a current NBM run for this exact station exists; else v1 (GFS MOS)
+  const nbmRun = sources.nbm;
+  const nbmOk = Boolean(nbmRun?.runtime) && nbmRun.icao === st.icao && Date.parse(runAvailableAt(nbmRun.runtime)) <= Date.parse(now) && Date.parse(now) - Date.parse(nbmRun.runtime) <= 24 * 3600000;
+  const nbmMax = nbmOk ? nbmMaxTempGuidance(nbmRun.rows, date) : null;
+  const art = nbmMax ? tempNbmArtifact : tempArtifact;
+  const g = nbmMax ? nbmMax.max : gfsMax;
+  const table = residualTable(art, contract.station_id, runLeadH);
+  const srcNbm = nbmMax ? { sourceClass: 'official', provider: 'NWS National Blend of Models (NBS) via IEM', sourceId: `mos:NBS:${st.icao}:${nbmRun.runtime}`, observationKey: nbmRun.observationKey } : null;
   const { features, featureSources } = buildFeatureVector([
-    { name: 'mos_max_temp_guidance_f', value: g, source: src.mos },
+    { name: 'mos_max_temp_guidance_f', value: gfsMax, source: src.mos },
+    ...(nbmMax ? [{ name: 'nbm_max_temp_guidance_f', value: nbmMax.max, source: srcNbm }, { name: 'nbm_max_temp_spread_f', value: nbmMax.spread, source: srcNbm }] : []),
     { name: 'run_lead_hours', value: +runLeadH.toFixed(2), source: src.mos },
-    { name: 'guidance_error_table', value: `${contract.station_id}:${table.bucket}:${table.source}:n=${table.n}`, source: { ...src.mos, provider: 'PBE calibration temp-v1 (GFS MOS vs CLI, 2023-01..2025-06)', sourceClass: 'research' } },
+    { name: 'guidance_error_table', value: `${art.version}:${contract.station_id}:${table.bucket}:${table.source}:n=${table.n}`, source: { ...src.mos, provider: `PBE calibration temp ${art.version} (guidance vs CLI, 2023-01..2025-06)`, sourceClass: 'research' } },
   ]);
-  const p = bucketProbability(tempArtifact, table, g, { comparator: contract.comparator, low: contract.threshold_low === null ? null : Number(contract.threshold_low), high: contract.threshold_high === null ? null : Number(contract.threshold_high) });
-  const confidence = table.source === 'station' && table.n >= 300 && runAgeH <= 12 && runLeadH <= 30 ? 'HIGH' : runAgeH <= 24 ? 'MEDIUM' : 'LOW';
+  const p = bucketProbability(art, table, g, { comparator: contract.comparator, low: contract.threshold_low === null ? null : Number(contract.threshold_low), high: contract.threshold_high === null ? null : Number(contract.threshold_high) });
+  const disagree = Boolean(nbmMax) && Math.abs(nbmMax.max - gfsMax) >= 4;
+  const base = table.source === 'station' && table.n >= 300 && runAgeH <= 12 && runLeadH <= 30 ? 'HIGH' : runAgeH <= 24 ? 'MEDIUM' : 'LOW';
+  const confidence = disagree && base === 'HIGH' ? 'MEDIUM' : base;
+  const tempModel = { id: art.model_id, version: art.version, state: 'RESEARCH' };
   const evidence = [
     ...(clim?.maxt_mean_1991_2020 != null ? [{ label: 'Normal high for the date (1991-2020)', value: Math.round(clim.maxt_mean_1991_2020), unit: '°F', detail: `typical spread ±${clim.maxt_sd_1991_2020.toFixed(1)}°F` }] : []),
-    { label: 'NWS guidance high', value: g, unit: '°F', detail: `GFS MOS ${mos.runtime.slice(0, 13)}Z run` },
+    ...(nbmMax ? [{ label: 'National Blend of Models high', value: nbmMax.max, unit: '°F', detail: `NBM ${nbmRun.runtime.slice(0, 13)}Z run; blend spread ±${nbmMax.spread ?? '—'}°F` }] : []),
+    { label: 'GFS MOS guidance high', value: gfsMax, unit: '°F', detail: `GFS MOS ${mos.runtime.slice(0, 13)}Z run${disagree ? ' — guidance sets disagree by ' + Math.abs(nbmMax.max - gfsMax) + '°F' : ''}` },
     { label: 'Station guidance error (past)', value: Math.round(table.sd * 10) / 10, unit: '°F', detail: `1 sd of reported-minus-guidance at ${contract.station_id}, ${table.bucket} lead, mean ${table.mean >= 0 ? '+' : ''}${table.mean.toFixed(1)}°F, n=${table.n} (${table.source})` },
     ...(grid?.max_temp_f != null ? [{ label: 'Official NWS forecast high', value: grid.max_temp_f, unit: '°F', detail: `issued ${grid.update_time}` }] : []),
   ];
   return {
-    status: 'OK', model, features, featureSources, probability: publishable(p), rawProbability: p,
-    confidence, evidence, provenance, explanation: { error_table: { bucket: table.bucket, source: table.source, n: table.n, mean: +table.mean.toFixed(2), sd: +table.sd.toFixed(2) }, quality: 'wx-quality/1 temp: HIGH = station table n>=300, run age <=12 h, lead <=30 h', artifact_version: tempArtifact.version, quality_rules: QUALITY_RULES_VERSION, run_age_h: +runAgeH.toFixed(1) },
+    status: 'OK', model: tempModel, features, featureSources, probability: publishable(p), rawProbability: p,
+    confidence, evidence,
+    provenance: nbmMax ? [provenance[0], { source: 'NWS National Blend of Models (NBS) station guidance', provider: 'NOAA/NWS via Iowa Environmental Mesonet archive', station: st.icao, run: nbmRun.runtime, available_at: runAvailableAt(nbmRun.runtime), url: nbmRun.url, role: 'model input' }, ...provenance.slice(1)] : provenance,
+    explanation: { model_tier: nbmMax ? 'v1.1 National Blend day max' : 'v1 GFS MOS day max (no current NBM run)', guidance_disagreement: disagree, error_table: { bucket: table.bucket, source: table.source, n: table.n, mean: +table.mean.toFixed(2), sd: +table.sd.toFixed(2) }, quality: 'wx-quality/1 temp: HIGH = station table n>=300, run age <=12 h, lead <=30 h', artifact_version: art.version, quality_rules: QUALITY_RULES_VERSION, run_age_h: +runAgeH.toFixed(1) },
     dataCutoffAt: runAvailableAt(mos.runtime), inputs: { mos_runtime: mos.runtime, grid_update: grid?.update_time ?? null },
   };
 }

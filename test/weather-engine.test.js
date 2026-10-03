@@ -130,3 +130,19 @@ test('rain v1.1 uses the National Blend only for the exact station; falls back t
   assert.equal(wrong.model.version, '1.0.0');
   assert.ok(!('nbm_pop_union' in wrong.features));
 });
+
+test('max-temp v1.1 uses the National Blend day max for the exact station; GFS fallback otherwise', async () => {
+  const nbm = (icao) => { const j = read(`./fixtures/weather/nbs-${icao}.json`); const rows = j.data.map(normalizeMosRow); return { icao, model: 'NBS', runtime: rows[0].runtime, url: `iem:nbs:${icao}`, observationKey: `n:${icao}`, rows }; };
+  const c = await normalizeContract({ series: nyHigh.series, event: nyHigh.event, market: nyHigh.markets.find((m) => m.ticker.endsWith('-T63')) }, { now: NOW });
+  const v11 = forecastWeather(c, { mos: mos('KNYC'), nbm: nbm('KNYC'), grid: null }, { now: NOW });
+  assert.equal(v11.model.version, '1.1.0');
+  assert.ok(Number.isFinite(v11.features.nbm_max_temp_guidance_f));
+  const v1 = forecastWeather(c, { mos: mos('KNYC'), nbm: nbm('KMIA'), grid: null }, { now: NOW });
+  assert.equal(v1.model.version, '1.0.0');
+  let total = 0;
+  for (const m of nyHigh.markets) {
+    const cc = await normalizeContract({ series: nyHigh.series, event: nyHigh.event, market: m }, { now: NOW });
+    total += forecastWeather(cc, { mos: mos('KNYC'), nbm: nbm('KNYC'), grid: null }, { now: NOW }).rawProbability;
+  }
+  assert.ok(total > 0.95 && total < 1.08, `bucket sum ${total}`);
+});

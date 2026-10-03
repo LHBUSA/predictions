@@ -16,14 +16,14 @@ const toIso = (s) => {
 const num = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v));
 
 export function normalizeMosRow(r) {
-  return Object.freeze({ runtime: toIso(r.runtime_utc || r.runtime), ftime: toIso(r.ftime_utc || r.ftime), n_x: num(r.n_x), p06: num(r.p06), p12: num(r.p12), q06: num(r.q06), tmp: num(r.tmp), dpt: num(r.dpt) });
+  return Object.freeze({ runtime: toIso(r.runtime_utc || r.runtime), ftime: toIso(r.ftime_utc || r.ftime), n_x: num(r.n_x), txn: num(r.txn), xnd: num(r.xnd), p06: num(r.p06), p12: num(r.p12), q06: num(r.q06), tmp: num(r.tmp), dpt: num(r.dpt) });
 }
 
 export function parseMosCsv(text) {
   const lines = String(text).trim().split(/\r?\n/);
   const head = lines.shift().split(',');
   const at = (name) => head.indexOf(name);
-  const cols = { runtime: at('runtime'), ftime: at('ftime'), n_x: at('n_x'), p06: at('p06'), p12: at('p12'), q06: at('q06'), tmp: at('tmp'), dpt: at('dpt') };
+  const cols = { runtime: at('runtime'), ftime: at('ftime'), n_x: at('n_x'), txn: at('txn'), xnd: at('xnd'), p06: at('p06'), p12: at('p12'), q06: at('q06'), tmp: at('tmp'), dpt: at('dpt') };
   return lines.map((line) => {
     const c = line.split(',');
     return normalizeMosRow(Object.fromEntries(Object.entries(cols).map(([k, i]) => [k, i >= 0 ? c[i] : null])));
@@ -80,6 +80,13 @@ export function maxTempGuidance(rows, date) {
   const target = new Date(Date.parse(`${date}T00:00:00Z`) + 86400000).toISOString();
   const row = rows.find((r) => r.ftime === target && r.n_x !== null);
   return row ? row.n_x : null;
+}
+
+// National Blend (NBS) day max: TXN valid at 00Z the following day, with the blend's own spread XND.
+export function nbmMaxTempGuidance(rows, date) {
+  const target = new Date(Date.parse(`${date}T00:00:00Z`) + 86400000).toISOString();
+  const row = rows.find((r) => r.ftime === target && r.txn !== null && r.txn !== undefined);
+  return row ? { max: row.txn, spread: row.xnd } : null;
 }
 
 export async function fetchMosRun({ icao, runtime = null, model = MOS_MODEL }, { fetchImpl = globalThis.fetch, userAgent } = {}) {

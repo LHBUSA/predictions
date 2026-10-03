@@ -35,6 +35,7 @@ export async function board(store, { domain = null, now = new Date().toISOString
     generated_at: now,
     events: events.map((e) => ({
       ...e,
+      ...(e.model_state === 'SHADOW' ? { model_state: 'MARKET_MONITORING', model_family: null } : {}),
       kalshi_url: [...lastV.values()].find((v) => v.raw && [...current.values()].some((c) => c.event_id === e.event_id && c.contract_id === v.contract_id))?.raw?.kalshi_url ?? null,
       contracts: [...current.values()].filter((c) => c.event_id === e.event_id).map((c) => {
         const f = lastF.get(c.contract_id) || null;
@@ -63,7 +64,8 @@ export function divergences(boardDoc, { limit = 25 } = {}) {
 export async function contractRecord(store, contractId, { includeShadow = false } = {}) {
   const [c] = await store.select('pred_contracts', { select: '*', contract_id: `eq.${contractId}` });
   if (!c) return null;
-  const [event] = await store.select('pred_events', { select: '*', event_id: `eq.${c.event_id}` });
+  const [rawEvent] = await store.select('pred_events', { select: '*', event_id: `eq.${c.event_id}` });
+  const event = rawEvent && rawEvent.model_state === 'SHADOW' && !includeShadow ? { ...rawEvent, model_state: 'MARKET_MONITORING', model_family: null } : rawEvent;
   const forecasts = (await store.select('pred_forecasts', { select: 'forecast_id,record_id,model_id,model_version,model_state,probability,market_probability,divergence_points,confidence,captured_at,data_cutoff_at,feature_snapshot_id,features_sha256,provenance,explanation,metadata,revision_of,revision_reason', contract_id: `eq.${contractId}` }, { order: 'captured_at.asc', limit: 1000 })).filter((f) => includeShadow || f.model_state !== 'SHADOW');
   const visible = new Set(forecasts.map((f) => f.forecast_id));
   const features = forecasts.length ? await chunked(store, 'pred_feature_snapshots', 'snapshot_id,cutoff_at,features,source_observation_keys,quality', 'snapshot_id', forecasts.map((f) => f.feature_snapshot_id)) : [];
