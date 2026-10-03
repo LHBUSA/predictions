@@ -106,3 +106,14 @@ test('event metadata is the only ledger surface that intentionally merges on con
   assert.match(calls[0].url, /pred_events\?on_conflict=event_id$/);
   assert.equal(calls[0].init.headers.prefer, 'resolution=merge-duplicates,return=minimal');
 });
+
+test('ledger never invokes fetch as a method (Workers "Illegal invocation" regression)', async () => {
+  const { EngineStore } = await import('../src/engine/store.js');
+  function workersLikeFetch() {
+    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+    return Promise.resolve(new Response('[]', { status: 200 }));
+  }
+  const store = new EngineStore({ url: 'https://x.supabase.co', serviceKey: 'k', fetchImpl: workersLikeFetch });
+  await store.upsertEventRow({ event_id: 'e', canonical_question: 'q', category: 'weather' });
+  assert.deepEqual(await store.select('pred_events', { select: 'event_id' }), []);
+});

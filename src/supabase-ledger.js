@@ -44,7 +44,8 @@ export class SupabasePredictionsLedger {
     if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function');
     this.url = String(url).replace(/\/$/, '');
     this.serviceKey = serviceKey;
-    this.fetchImpl = fetchImpl;
+    // Never call fetch as a method of this object: Cloudflare Workers throws 'Illegal invocation'.
+    this.fetchImpl = (input, init) => fetchImpl(input, init);
     this.timeoutMs = timeoutMs;
   }
 
