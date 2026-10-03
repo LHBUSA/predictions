@@ -391,3 +391,48 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
   .ix-hero-art{inset:0 0 0 auto;width:min(1600px,74%)}
   .ix-hero-shade{background:linear-gradient(90deg,#020a16 0%,#020a16 26%,rgba(2,10,22,.72) 40%,rgba(2,10,22,.32) 62%,rgba(2,10,22,.18) 84%,rgba(2,10,22,.4) 100%),linear-gradient(180deg,rgba(2,10,22,.3) 0%,rgba(2,10,22,0) 30%,rgba(2,10,22,0) 70%,rgba(2,10,22,.85) 100%)}
 }
+
+/* ---------- PropBetEdge network shell ---------- */
+.net-link{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:750;color:var(--ink-2);padding:6px 8px;border-radius:8px;text-decoration:none!important;white-space:nowrap}
+.net-link:hover{background:var(--blue-bg);color:var(--navy)}
+.net-short{display:none}
+.aa-pill{display:inline-flex;align-items:center;white-space:nowrap;font-size:13px;font-weight:800;color:#3b2a05;padding:7px 12px;border-radius:999px;text-decoration:none!important;
+  background:linear-gradient(135deg,#f6d77a,#d4af37 55%,#c99a1e);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 4px 14px rgba(212,175,55,.28);border:1px solid #c99a1e}
+.aa-pill:hover{filter:brightness(1.05)}
+.subnav{display:none}
+@media (max-width:1280px){.top-right .live-dot{display:none}}
+@media (max-width:1100px){.nav a{padding:7px 8px;font-size:13.5px}.topbar .wrap{gap:14px}}
+@media (max-width:900px){
+  .net-long{display:none}.net-short{display:inline}
+  .subnav{display:block;border-top:1px solid var(--line-2);background:rgba(255,255,255,.96)}
+  .subnav-track{display:flex;gap:2px;overflow-x:auto;padding:6px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .subnav-track::-webkit-scrollbar{display:none}
+  .subnav a{flex:0 0 auto;padding:6px 10px;border-radius:8px;color:var(--ink-2);font-weight:700;font-size:13px;text-decoration:none!important}
+  .subnav a[aria-current=page]{background:var(--blue-bg);color:var(--navy)}
+}
+@media (max-width:420px){.brand{gap:8px}.brand>span{font-size:14px}.aa-pill{padding:6px 9px;font-size:11.5px}.net-link{padding:6px 2px;font-size:12px}.topbar .wrap{gap:6px}}
+.model-fam{scroll-margin-top:80px}.card.panel[id]{scroll-margin-top:80px}
+.net-footer .wrap{display:block;padding:28px 0 22px}
+.nf-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.nf-col{display:flex;flex-direction:column;gap:6px;font-size:13.5px;min-width:0}
+.nf-col strong{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);margin-bottom:4px}
+.nf-col a{color:var(--ink-2);text-decoration:none!important}.nf-col a:hover{color:var(--navy);text-decoration:underline!important}
+.nf-sports-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px}
+.nf-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:4px}
+.nf-line{margin:22px 0 6px;padding-top:16px;border-top:1px solid var(--line);font-size:15px;color:var(--ink)}
+.nf-line a{color:#8a6a10}
+.nf-fine{margin:0;font-size:12px;color:var(--muted)}
+@media (max-width:900px){.nf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.nf-grid{grid-template-columns:1fr 1fr;gap:18px}}
+.ix-continue{margin-top:30px}
+.ix-continue h2{font-size:20px;margin:0 0 10px}
+.ix-continue ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ix-continue a{display:block;height:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--ink);text-decoration:none!important}
+.ix-continue a:hover{border-color:var(--blue-2)}
+.ix-continue b{display:block;font-size:14.5px;margin-bottom:3px;color:var(--navy)}
+.ix-continue span{display:block;font-size:13px;color:var(--muted);line-height:1.45}
+@media (max-width:640px){.ix-continue ul{grid-template-columns:1fr}}
+.net-module{margin-top:26px;padding:18px 20px;border-radius:14px;background:linear-gradient(150deg,#0b2547,#030c1a 75%);color:#c9d6e6;display:grid;gap:8px;justify-items:start}
+.net-module-kicker{font-size:11px;letter-spacing:.16em;font-weight:850;color:#79b4ff;text-transform:uppercase}
+.net-module p{margin:0;font-size:14.5px;line-height:1.55}
+.net-module p a{color:#fff;text-decoration:underline}

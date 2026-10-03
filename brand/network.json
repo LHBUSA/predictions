@@ -1,0 +1,32 @@
+{
+  "_comment": "Single source for the PropBetEdge network shell on predictions.propbetedge.ai (Worker pages, index.html, static pages). Commercial truth: 10 live sports + PropBetEdge Predictions = All Access, $29/month. Predictions is NOT a sport.",
+  "brand": { "name": "PropBetEdge", "url": "https://propbetedge.ai/", "org_id": "https://propbetedge.ai/#organization", "website_id": "https://propbetedge.ai/#website", "logo": "https://propbetedge.ai/logo/pbe-full-400.png" },
+  "all_access": { "label": "All Access", "price": "$29/mo", "url": "https://propbetedge.ai/pro", "line": "PropBetEdge All Access — 10 sports + PropBetEdge Predictions for $29/month." },
+  "product": [
+    ["Intelligence desk", "/#desk", "desk"],
+    ["Insights", "/insights/", "insights"],
+    ["Calendar", "/#calendar", "calendar"],
+    ["Models", "/models/", "models"],
+    ["Track record", "/#track-record", "record"],
+    ["Methodology", "/methodology/", "methodology"]
+  ],
+  "footer_product": [
+    ["Intelligence Desk", "/#desk"], ["Insights", "/insights/"], ["Calendar", "/#calendar"], ["Models", "/models/"],
+    ["Track Record", "/#track-record"], ["Methodology", "/methodology/"], ["RSS", "/insights/rss.xml"]
+  ],
+  "sports": [
+    ["MLB", "https://mlb.propbetedge.ai/"], ["NFL", "https://nfl.propbetedge.ai/"], ["NBA", "https://nba.propbetedge.ai/"],
+    ["NHL", "https://nhl.propbetedge.ai/"], ["WNBA", "https://wnba.propbetedge.ai/"], ["UFC", "https://ufc.propbetedge.ai/"],
+    ["Tennis", "https://tennis.propbetedge.ai/"], ["Soccer", "https://soccer.propbetedge.ai/"], ["Golf", "https://golf.propbetedge.ai/"],
+    ["F1", "https://f1.propbetedge.ai/"]
+  ],
+  "network": [
+    ["PropBetEdge", "https://propbetedge.ai/"], ["All Access — $29/mo", "https://propbetedge.ai/pro"],
+    ["PropBetEdge News", "https://propbetedge.ai/news"], ["Learn PropBetEdge", "https://learn.propbetedge.ai/"]
+  ],
+  "trust": [
+    ["Immutable forecasts", "/methodology/#immutable"], ["Evidence & sources", "/methodology/#evidence"],
+    ["Scoring methodology", "/methodology/#scoring"], ["Model states & limitations", "/models/"]
+  ],
+  "disclaimer": "Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model."
+}

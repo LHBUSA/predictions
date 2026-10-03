@@ -1,6 +1,7 @@
 // Prediction Intelligence pages: /insights/ desk, vertical desks, articles, RSS and the news sitemap.
 // Article = immutable story (evidence packet bounded by as_of) + a clearly labeled LIVE module read at render time.
-import { esc, layout, SITE, badge, headlineOutcome, shareBar, ORG_ID, WEBSITE_ID } from '../pages.js';
+import { esc, layout, SITE, badge, headlineOutcome, shareBar, ORG_ID, WEBSITE_ID, ORG_NODE, WEBSITE_NODE } from '../pages.js';
+import { networkModule } from '../network.js';
 import { fmtUtc } from './charts.js';
 import { VERTICALS } from './stories.js';
 import { storyImage } from './images.js';
@@ -53,7 +54,7 @@ ${items.length > 3 ? `<div class="tbl-wrap"><table class="tbl ix-ledger-tbl"><th
 ${it.market !== null && it.market !== undefined ? `<dt>Market observation</dt><dd>${it.market}%${it.market_t ? ` · ${esc(fmtUtc(it.market_t))}` : ' · captured with the snapshot'}</dd>` : ''}
 ${it.sources.length ? `<dt>Source families</dt><dd>${it.sources.map(esc).join(' · ')}</dd>` : ''}</dl></div>`).join('')}</div>`}
 <div class="ix-rule"><span class="ix-kicker">RESOLUTION RULE</span><dl class="kv"><dt>Resolves on</dt><dd>${esc(rule.authority || '—')}${rule.dataset ? ` — ${esc(rule.dataset)}` : ''}</dd>${rule.check ? `<dt>Independent check</dt><dd>${esc(rule.check)}</dd>` : ''}<dt>Measurement</dt><dd>${esc(rule.measurement || '—')}</dd>${rule.rounding ? `<dt>Rounding</dt><dd>${esc(rule.rounding)}</dd>` : ''}${rule.exceptions.length ? `<dt>Exceptions</dt><dd>${rule.exceptions.map(esc).join(' · ')}</dd>` : ''}</dl>${rule.rule ? `<div class="rules">${esc(rule.rule)}</div>` : ''}</div>
-${model ? `<div class="ix-limits"><span class="ix-kicker">MODEL LIMITATIONS</span><ul>${model.limitations.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><p class="note">${esc(model.name)} — inputs: ${esc(model.inputs)}. <a href="/models/">Research board →</a></p></div>` : ''}
+${model ? `<div class="ix-limits"><span class="ix-kicker">MODEL LIMITATIONS</span><ul>${model.limitations.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><p class="note">${esc(model.name)} — inputs: ${esc(model.inputs)}. <a href="/models/#${esc(model.id)}">This model on the research board →</a></p></div>` : ''}
 <p class="note">Market prices are a benchmark only and never enter a PropBetEdge model. Research-stage probabilities; not advice.</p></section>`;
 }
 
@@ -68,6 +69,24 @@ function heroArt(img, eager) {
 }
 const cardArt = (img, eager = false) => `<picture class="ix-card-art"><source type="image/avif" srcset="${img.base}/hero-800.avif"><img src="${img.base}/hero-800.webp" width="800" height="450" alt="" style="object-position:${esc(img.hero_focal_point)}"${eager ? '' : ' loading="lazy"'} decoding="async"></picture>`;
 
+// One breadcrumb trail for the visible nav AND the BreadcrumbList (they must agree).
+export function articleCrumbs(story, built) {
+  return [{ name: 'PropBetEdge', url: 'https://propbetedge.ai/' }, { name: 'Predictions', url: `${SITE}/` }, { name: 'Insights', url: `${SITE}/insights/` }, { name: VERTICALS[story.vertical], url: `${SITE}/insights/${story.vertical}/` }, { name: built.title }];
+}
+
+// Contextual internal links every story carries: live forecast, model, methodology, record, vertical, home.
+function continueResearch(story, built) {
+  const fam = built.model_family;
+  return `<nav class="ix-continue" aria-labelledby="continue-h"><h2 id="continue-h">Continue the research</h2><ul>
+<li><a href="/events/${esc(story.primary)}"><b>Open the live forecast</b><span>The canonical event record: current PBE probability, market, evidence and every snapshot.</span></a></li>
+${fam ? `<li><a href="/models/#${esc(fam)}"><b>The model on the research board</b><span>${esc(fam)}: state, versions, live forecasts, calibration status and limitations.</span></a></li>` : ''}
+<li><a href="/methodology/#scoring"><b>How forecasts are made and scored</b><span>Contract normalization, point-in-time data, immutable snapshots and fixed scoring roles.</span></a></li>
+<li><a href="/#track-record"><b>Track record</b><span>Resolved forecasts scored against the market on the same snapshots.</span></a></li>
+<li><a href="/insights/${esc(story.vertical)}/"><b>More ${esc(VERTICALS[story.vertical])} analysis</b><span>Every ${esc(VERTICALS[story.vertical].toLowerCase())} story from the Predictions desk.</span></a></li>
+<li><a href="/"><b>PropBetEdge Predictions</b><span>The intelligence desk: every live real-world contract we track.</span></a></li>
+</ul></nav>`;
+}
+
 export function articleJsonLd(story, built, modified) {
   const url = storyUrl(story);
   const img = storyImage(story);
@@ -80,15 +99,17 @@ export function articleJsonLd(story, built, modified) {
     datePublished: story.published_at,
     about: story.events.slice(0, 7).map((slug) => ({ '@type': 'Dataset', '@id': `${SITE}/events/${slug}#dataset`, url: `${SITE}/events/${slug}` })),
     isBasedOn: story.events.map((slug) => `${SITE}/events/${slug}`),
+    ...(built.model_family ? { mentions: [{ '@type': 'CreativeWork', name: `PropBetEdge model ${built.model_family}`, url: `${SITE}/models/#${built.model_family}` }] } : {}),
   };
   if (modified) node.dateModified = modified;
   return {
     '@context': 'https://schema.org',
-    '@graph': [node, { '@type': 'BreadcrumbList', '@id': `${url}#breadcrumbs`, itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Predictions', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: 'Insights', item: `${SITE}/insights/` }, { '@type': 'ListItem', position: 3, name: VERTICALS[story.vertical], item: `${SITE}/insights/${story.vertical}/` }, { '@type': 'ListItem', position: 4, name: built.title }] }],
+    '@graph': [ORG_NODE, WEBSITE_NODE, { '@type': 'WebPage', '@id': url, url, name: built.title, isPartOf: { '@id': WEBSITE_ID }, breadcrumb: { '@id': `${url}#breadcrumbs` } }, node, { '@type': 'BreadcrumbList', '@id': `${url}#breadcrumbs`, itemListElement: articleCrumbs(story, built).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, ...(c.url ? { item: c.url } : {}) })) }],
   };
 }
 
-export function renderArticle(story, built, { live, related = [], model, words }) {
+export function renderArticle(story, inputBuilt, { live, related = [], model, words }) {
+  const built = { ...inputBuilt, model_family: inputBuilt.model_family || model?.id || null };
   const url = storyUrl(story);
   const modified = built.resolution && (built.resolution.resolved_at || built.resolution.venue_settled_at) > story.published_at ? (built.resolution.resolved_at || built.resolution.venue_settled_at) : null;
   const rel = related.filter(Boolean).slice(0, 4);
@@ -96,7 +117,7 @@ export function renderArticle(story, built, { live, related = [], model, words }
   const body = `<article class="ix-article fam-${esc(story.family.toLowerCase())}">
 <header class="ix-hero has-art v-${esc(story.vertical)}${story.family === 'RESOLUTION_REPORT' ? ' resolved' : ''}" data-image-version="${esc(img.image_version)}">${heroArt(img, true)}<div class="ix-hero-shade" aria-hidden="true"></div>
 <div class="wrap ix-hero-inner"><div class="ix-hero-copy">
-<nav class="ix-crumbs" aria-label="Breadcrumb"><a href="/insights/">Insights</a> › <a href="/insights/${esc(story.vertical)}/">${esc(VERTICALS[story.vertical])}</a></nav>
+<nav class="ix-crumbs" aria-label="Breadcrumb">${articleCrumbs(story, built).slice(0, -1).map((c) => `<a href="${c.url.startsWith(SITE) ? c.url.slice(SITE.length) : c.url}">${esc(c.name)}</a>`).join(' › ')}</nav>
 <span class="ix-eyebrow">${esc(VERTICALS[story.vertical].toUpperCase())} · ${esc(story.family_label.toUpperCase())}</span>
 <h1>${esc(built.title)}</h1><p class="ix-dek">${esc(built.dek)}</p>
 <p class="ix-meta"><span>Published <time datetime="${esc(story.published_at)}">${esc(longDate(story.published_at))}</time></span>${modified ? `<span>Updated <time datetime="${esc(modified)}">${esc(longDate(modified))}</time></span>` : ''}<span>Model data as of ${esc(fmtUtc(built.model_as_of))}</span><span>By the PropBetEdge Predictions Desk</span>${words ? `<span>${Math.max(1, Math.round(words / 230))} min read</span>` : ''}</p>
@@ -107,6 +128,8 @@ ${resolutionModule(built.resolution, story)}
 <section class="ix-quick" aria-labelledby="quick-h"><h2 id="quick-h">Quick read</h2><ul>${built.quick.map((q) => `<li>${q}</li>`).join('')}</ul></section>
 <div class="ix-body">${built.sections}</div>
 ${ledger(built.ledger, built.rule, model)}
+${continueResearch(story, built)}
+${networkModule()}
 </div><aside class="ix-side">
 ${liveModule(live, built.outcome_market_id)}
 ${rel.length ? `<section class="ix-related"><h3>Related predictions</h3>${rel.map((e) => `<a class="ix-rel" href="${esc(e.url)}"><span class="cat">${esc(e.category_label)}</span><b>${esc(e.title)}</b><small>${e.headline?.pbe_pct !== null && e.headline?.pbe_pct !== undefined ? `PBE ${e.headline.pbe_pct}% · ` : ''}${e.headline?.market_pct !== null && e.headline?.market_pct !== undefined ? `market ${e.headline.market_pct}%` : 'market monitoring'}</small></a>`).join('')}</section>` : ''}
