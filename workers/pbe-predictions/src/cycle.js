@@ -90,7 +90,10 @@ async function weatherSources(st, { fetchImpl, now }) {
       out.observations.push(nbmObs);
     }
   } catch (e) {
-    out.nbm = null; // NBM unavailable: the engine falls back to the GFS-only tier
+    // A transient NBM fetch error must not publish a downgraded GFS-only snapshot over a current v1.1 one
+    // (seen 2026-10-03 19:15Z: v1.1 -> v1.0 -> v1.1 flip on the same data cutoff). Hold the station this cycle.
+    // The GFS-only tier still applies when IEM genuinely has no usable NBM run (no exception, runtime null).
+    throw new Error(`NBM fetch failed for ${st.icao}; holding station (no tier downgrade): ${e.message}`);
   }
   if (grid?.body) {
     const updated = grid.body.properties?.updateTime || now;
