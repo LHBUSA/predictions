@@ -5,6 +5,7 @@ import { PUBLIC_STATES, FAMILIES, CATEGORY_LABEL } from '../../../../src/engine/
 import { loadEventPacket } from '../insights/packet.js';
 import { buildMover, buildResolution } from './templates.js';
 import { MOVER, RESOLUTION, ANOMALY, NEWSROOM_RULES } from './config.js';
+import { storyState } from './publish.js';
 
 const ms = (iso) => Date.parse(iso);
 const ago = (now, h) => new Date(ms(now) - h * 3600000).toISOString();
@@ -173,6 +174,18 @@ export async function runNewsroom(store, { now = new Date().toISOString(), famil
     s.built = built; s.packet = packet;
   }
 
+  // persisted state wins over the dry-run computation; published movers count toward the per-event cooldown
+  if (report.db.pred_newsroom_transitions === 'present' && stories.length) {
+    const st = await storyState(store, stories.map((s) => s.story_id));
+    for (const s of stories) { const d = st.get(s.story_id); if (d) { s.persisted = d.states; s.state = d.latest; s.published_at = d.published_at ?? null; } }
+    const pubMovers = await store.select('pred_newsroom_stories', { select: 'story_id,evidence,story_cutoff', story_class: 'eq.FORECAST_MOVER' });
+    const published = new Set([...(await storyState(store, pubMovers.map((x) => x.story_id))).entries()].filter(([, v]) => v.published_at).map(([k]) => k));
+    for (const s of stories) {
+      if (s.class !== 'FORECAST_MOVER' || s.state !== 'VALIDATED') continue;
+      const clash = pubMovers.find((x) => published.has(x.story_id) && x.story_id !== s.story_id && x.evidence?.trigger?.event_slug === s.trigger.event_slug && Math.abs(ms(x.story_cutoff) - ms(s.trigger.t1)) < MOVER.cooldown_hours * 3600000);
+      if (clash) { s.state = 'HELD'; s.reason = `COOLDOWN: published mover ${clash.story_id} on this event within ${MOVER.cooldown_hours} h`; }
+    }
+  }
   for (const s of stories) {
     const k = `${s.class}:${s.state}`;
     report.counts[k] = (report.counts[k] || 0) + 1;

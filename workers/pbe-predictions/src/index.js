@@ -13,6 +13,7 @@ import { renderArticle, renderDesk, rssXml, newsSitemapXml } from './insights/re
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
+import { publishStory, publishedNewsroomStories } from './newsroom/publish.js';
 
 // no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
 const json = (data, status = 200, cache = 'public, max-age=30') => new Response(JSON.stringify(data), {
@@ -79,6 +80,20 @@ export default {
         return rec ? json(rec, 200, 'no-store') : json({ error: 'not_found' }, 404, 'no-store');
       }
       // Automated Newsroom V1 — DRY RUN ONLY (no writes, nothing published): candidates, holds, evidence packets, previews
+      // Manual, admin-only publication of ONE validated story (automatic publication does not exist in V1).
+      if (req.method === 'POST' && p.startsWith('/admin/newsroom/publish/')) {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (env.NEWSROOM_MANUAL_PUBLISH !== 'true') return json({ error: 'manual publication disabled (NEWSROOM_MANUAL_PUBLISH)' }, 403, 'no-store');
+        const store = storeFor(env);
+        const sid = decodeURIComponent(p.slice('/admin/newsroom/publish/'.length));
+        const fams = (await models(store)).families;
+        const r = await runNewsroom(store, { familyResolved: Object.fromEntries(fams.map((f) => [f.id, f.resolved])) });
+        const s = r.stories.find((x) => x.story_id === sid);
+        if (!s) return json({ error: 'not_found_in_current_run' }, 404, 'no-store');
+        const out = await publishStory(store, s, { note: url.searchParams.get('note') });
+        if (out.ok) await publishedNewsroomStories(store, { fresh: true });
+        return json(out, out.ok ? 200 : 409, 'no-store');
+      }
       if (req.method === 'GET' && (p === '/admin/newsroom' || p.startsWith('/admin/newsroom/'))) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const store = storeFor(env);
@@ -134,7 +149,7 @@ export default {
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return html(renderNotFound(`/events/${slug}`), 404);
         const rec = await eventRecord(store, slug);
         // ?mv=1 = hidden multi-venue chart (flag OFF by default: without it the page is byte-identical)
-        return rec ? html(renderEvent(rec, { stories: storiesForEvent(slug).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: url.searchParams.get('mv') === '1' })) : html(renderNotFound(`/events/${slug}`), 404);
+        return rec ? html(renderEvent(rec, { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: url.searchParams.get('mv') === '1' })) : html(renderNotFound(`/events/${slug}`), 404);
       }
       // Social cards (Vercel rewrites /og/events/* and /og/insights/* here)
       if (p.startsWith('/og/events/') && p.endsWith('.png')) {

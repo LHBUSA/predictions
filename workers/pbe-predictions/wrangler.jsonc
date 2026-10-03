@@ -21,7 +21,11 @@
     // market monitoring only (no PBE model yet; Amazon settles on a commercial dataset)
     "MONITOR_SERIES": "KXTESLADELIVERYBY,KXAMZN,KXSPACEXCOUNT,KXSPACEXSTARSHIP,KXREACTOR,KXMEASLES,KXFLDENGUE,KXIPOANTHROPIC,KXIPOBREX",
     // cron writes only when "true" (requires sql/002 applied on tkmln)
-    "ENGINE_ENABLED": "true"
+    "ENGINE_ENABLED": "true",
+    // Newsroom V1: manual admin publication of one VALIDATED story at a time; there is NO automatic publication path
+    "NEWSROOM_MANUAL_PUBLISH": "true",
+    // persist cycle skip diagnostics to pred_cycle_diagnostics (sql/003 applied 2026-10-03 23:30Z)
+    "NEWSROOM_DB": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
 }
