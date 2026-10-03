@@ -15,7 +15,7 @@
     // macro: Fed decision (SHADOW model; stored, not served publicly)
     "MACRO_SERIES": "KXFEDDECISION",
     // cron writes only when "true" (requires sql/002 applied on tkmln)
-    "ENGINE_ENABLED": "false"
+    "ENGINE_ENABLED": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
 }
