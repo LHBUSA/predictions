@@ -26,7 +26,7 @@ export function layout({ title, description, canonical, ogImage = OG_DEFAULT, js
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/site.css?v=20261003f">
+<link rel="stylesheet" href="/site.css?v=20261003g">
 ${jsonld.map((j) => `<script type="application/ld+json">${jsonLd(j)}</script>`).join('\n')}
 ${extraHead}
 </head><body>
