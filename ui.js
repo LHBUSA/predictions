@@ -48,7 +48,7 @@ function card(c) {
       <div>
         <div class="market-meta"><span class="tag">${esc(c.domain.toLowerCase())}</span>${kalshi}${c.pbe ? `<span class="venue">PBE ${esc(c.pbe.model_state.toLowerCase())} · ${esc(c.pbe.confidence.toLowerCase())} data quality · ${ago(c.pbe.published_at)}</span>` : ''}</div>
         <div class="market-title">${esc(c.question)}</div>
-        <div class="market-sub"><b>${esc(c.label)}</b> · ${esc(c.station || '')} ${esc(c.station_name || '')}${c.window ? ` · climate day ${esc(c.window.start.slice(0, 10))}` : ''}</div>
+        <div class="market-sub"><b>${esc(c.label)}</b>${c.station ? ` · ${esc(c.station)} ${esc(c.station_name || '')}` : ''}${c.window ? (c.event_type === 'FOMC_DECISION_BUCKET' ? ` · FOMC decision ${esc(c.window.start.slice(0, 10))}` : ` · climate day ${esc(c.window.start.slice(0, 10))}`) : ''}</div>
       </div>
       <div class="prob-grid">${probs}</div>
     </article>`;
