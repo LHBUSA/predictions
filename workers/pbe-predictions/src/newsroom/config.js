@@ -28,7 +28,7 @@ export const PRIMARY_INPUTS = Object.freeze({
 });
 export const INPUT_LABELS = Object.freeze({
   nbm_max_temp_guidance_f: ['National Blend of Models forecast high', '°F'], mos_max_temp_guidance_f: ['GFS MOS forecast high', '°F'], nbm_max_temp_spread_f: ['National Blend spread', '°F'],
-  nbm_pop_union: ['National Blend chance of rain in the window', 'prob'], mos_pop_union: ['GFS MOS chance of rain in the window', 'prob'], nbm_pop_max: ['National Blend max 6-h chance of rain', '%'], mos_pop_max: ['GFS MOS max 6-h chance of rain', '%'],
+  nbm_pop_union: ['National Blend chance of rain in the window', 'prob'], mos_pop_union: ['GFS MOS chance of rain in the window', 'prob'], nbm_pop_max: ['National Blend max 6-h chance of rain', 'prob'], mos_pop_max: ['GFS MOS max 6-h chance of rain', 'prob'],
   last_published_yield: ['Latest official par yield', '%'], period_running_extreme: ['Period high/low so far', '%'], remaining_business_days: ['Business days left', ''], ewma_daily_sigma: ['Daily volatility (EWMA)', 'pp'],
   run_lead_hours: ['Guidance lead time', 'h'],
 });

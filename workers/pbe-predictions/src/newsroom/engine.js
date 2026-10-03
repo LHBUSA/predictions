@@ -98,6 +98,12 @@ export async function detectResolutions(store, { now }) {
 // ---------------------------------------------------------------- run (dry-run report)
 export async function runNewsroom(store, { now = new Date().toISOString(), familyResolved = {} } = {}) {
   const report = { rules: NEWSROOM_RULES, now, mode: 'DRY_RUN', thresholds: { mover: MOVER, resolution: RESOLUTION }, counts: {}, stories: [], anomalies: [], skipped_cycles: { status: 'not persisted yet — requires sql/003 pred_cycle_diagnostics; current cycle skips are logged by the Worker' } };
+  // read-only probe: are the sql/003 newsroom tables present? (publication stays OFF regardless)
+  report.db = {};
+  for (const t of ['pred_newsroom_stories', 'pred_newsroom_transitions', 'pred_cycle_diagnostics']) {
+    try { await store.select(t, { select: '*' }, { limit: 1 }); report.db[t] = 'present'; } catch (e) { report.db[t] = /does not exist|PGRST205|42P01|schema cache/i.test(e.message) ? 'absent' : `error: ${e.message.slice(0, 120)}`; }
+  }
+  report.publication = 'OFF';
   const stories = [];
   const hold = (s, reason) => { s.state = 'HELD'; s.reason = reason; };
 

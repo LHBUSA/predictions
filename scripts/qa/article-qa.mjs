@@ -4,7 +4,7 @@
 //
 //   node scripts/qa/article-qa.mjs [paths...] [--widths 390,430,768,1024,1440,1920] [--out D:/Workers/scratch/qa]
 //   paths default to the homepage, /insights/ and every flagship story; "preview:<slug>" renders an unpublished
-//   story through the Worker admin route (needs PBE_ADMIN_TOKEN or PBE_ADMIN_TOKEN_FILE).
+//   story through the Worker admin route; "admin:<route>" any admin page (both need PBE_ADMIN_TOKEN or PBE_ADMIN_TOKEN_FILE).
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import puppeteer from 'puppeteer-core';
@@ -35,7 +35,10 @@ try {
   console.log(`local server ${globalThis.ORIGIN} · screenshots → ${out}`);
   browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--hide-scrollbars'] });
   for (const raw of paths) {
-    const path = raw.startsWith('preview:') ? `/__preview/insights/${raw.slice(8)}` : raw;
+    // "preview:<slug>" = unpublished flagship story; "admin:<route>" = any Worker admin page (e.g. admin:newsroom/preview/<id>).
+    // Bare paths must start with "/" (Git Bash rewrites "/..." args into Windows paths unless MSYS_NO_PATHCONV=1).
+    const path = raw.startsWith('preview:') ? `/__preview/insights/${raw.slice(8)}` : raw.startsWith('admin:') ? `/__preview/${raw.slice(6)}` : raw;
+    if (!path.startsWith('/')) { fail(`${raw}: not a site path (use "/...", "preview:<slug>" or "admin:<route>")`); continue; }
     const name = raw.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') || 'home';
     for (const w of widths) {
       const page = await browser.newPage();
