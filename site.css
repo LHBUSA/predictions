@@ -196,8 +196,8 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .hero-art p{color:#b9c8d9;font-size:16px;max-width:560px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
 .cta-primary,.cta-secondary{display:inline-flex;align-items:center;padding:11px 16px;border-radius:11px;font-weight:750;font-size:14px;text-decoration:none!important}
-.cta-primary{background:#3f8cff;color:#fff;box-shadow:0 8px 28px rgba(63,140,255,.35)}
-.cta-primary:hover{background:#5a9cff}
+.cta-primary{background:#2a6ddb;color:#fff;box-shadow:0 8px 28px rgba(42,109,219,.38)}
+.cta-primary:hover{background:#2563d0}
 .cta-secondary{border:1px solid rgba(255,255,255,.22);color:#e8f0fa;background:rgba(255,255,255,.04)}
 .cta-secondary:hover{background:rgba(255,255,255,.1)}
 .hero-stats{max-width:600px;grid-template-columns:repeat(3,minmax(0,1fr))}
