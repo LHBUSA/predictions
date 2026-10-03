@@ -13,14 +13,14 @@
 <meta property="og:title" content="Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions">
 <meta property="og:description" content="Independent, source-backed forecasts compared with live prediction-market prices — with evidence, exact resolution rules, immutable history and a scored record.">
 <meta property="og:url" content="https://predictions.propbetedge.ai/">
-<meta property="og:image" content="https://predictions.propbetedge.ai/og/default.png">
+<meta property="og:image" content="https://predictions.propbetedge.ai/og/home.jpg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions">
 <meta name="twitter:description" content="Independent model probabilities vs live prediction-market prices, with evidence and a scored record.">
-<meta name="twitter:image" content="https://predictions.propbetedge.ai/og/default.png">
+<meta name="twitter:image" content="https://predictions.propbetedge.ai/og/home.jpg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/site.css?v=20261003g">
+<link rel="stylesheet" href="/site.css?v=20261003j">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"Organization","@id":"https://predictions.propbetedge.ai/#org","name":"PropBetEdge","url":"https://propbetedge.ai","logo":"https://predictions.propbetedge.ai/favicon.svg"},
@@ -37,21 +37,32 @@
 </div></header>
 
 <main>
-  <section class="hero"><div class="wrap hero-grid">
-    <div>
-      <span class="overline">REAL-WORLD EVENT INTELLIGENCE</span>
-      <h1>The world has a price.<br><span>We measure the probability.</span></h1>
-      <p>Independent PropBetEdge models built from official data — compared, never blended, with live prediction-market prices. Every forecast is an immutable snapshot with its evidence, exact resolution rule and, once settled, its score.</p>
+  <section class="hero hero-art" aria-labelledby="hero-title">
+    <picture class="hero-media">
+      <source media="(max-width: 760px)" type="image/avif" width="1152" height="941" srcset="/images/predictions/hero-mobile-480.avif 480w, /images/predictions/hero-mobile-800.avif 800w, /images/predictions/hero-mobile-1152.avif 1152w" sizes="100vw">
+      <source media="(max-width: 760px)" type="image/webp" width="1152" height="941" srcset="/images/predictions/hero-mobile-480.webp 480w, /images/predictions/hero-mobile-800.webp 800w, /images/predictions/hero-mobile-1152.webp 1152w" sizes="100vw">
+      <source type="image/avif" srcset="/images/predictions/hero-960.avif 960w, /images/predictions/hero-1280.avif 1280w, /images/predictions/hero-1672.avif 1672w" sizes="(max-width: 1100px) 100vw, min(80vw, 1400px)">
+      <source type="image/webp" srcset="/images/predictions/hero-960.webp 960w, /images/predictions/hero-1280.webp 1280w, /images/predictions/hero-1672.webp 1672w" sizes="(max-width: 1100px) 100vw, min(80vw, 1400px)">
+      <img src="/images/predictions/hero-1280.webp" width="1672" height="941" decoding="async" alt="PropBetEdge Predictions global probability intelligence across weather, rates, science, space, business, public health and energy.">
+    </picture>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <span class="overline">REAL-WORLD EVENT INTELLIGENCE</span>
+        <h1 id="hero-title">The world has a price.<br><span>We measure the probability.</span></h1>
+        <p>Independent PropBetEdge models built from official data — compared, never blended, with live prediction-market prices. Every forecast is an immutable snapshot with its evidence, exact resolution rule and, once settled, its score.</p>
+        <div class="hero-cta"><a class="cta-primary" href="#desk">Open the intelligence desk</a><a class="cta-secondary" href="/methodology/">How forecasts are made</a></div>
+      </div>
+      <div class="stats hero-stats" aria-live="polite">
+        <div class="stat"><span>Live contracts tracked</span><strong class="num" id="s-live"><span class="skel" style="display:block;height:28px;width:70px"></span></strong><small id="s-live-sub">&nbsp;</small></div>
+        <div class="stat"><span>With a PBE model</span><strong class="num" id="s-modeled"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>research-stage forecasts</small></div>
+        <div class="stat"><span>Market monitoring</span><strong class="num" id="s-monitor"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>market shown, no PBE number</small></div>
+        <div class="stat"><span>Resolved &amp; scored</span><strong class="num" id="s-scored"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-scored-sub">&nbsp;</small></div>
+        <div class="stat"><span>Last engine cycle</span><strong class="num" id="s-cycle"><span class="skel" style="display:block;height:28px;width:80px"></span></strong><small id="s-cycle-sub">every 15 minutes</small></div>
+        <div class="stat"><span>Model families</span><strong class="num" id="s-models"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-models-sub">&nbsp;</small></div>
+      </div>
     </div>
-    <div class="stats" aria-live="polite">
-      <div class="stat"><span>Live contracts tracked</span><strong class="num" id="s-live"><span class="skel" style="display:block;height:28px;width:70px"></span></strong><small id="s-live-sub">&nbsp;</small></div>
-      <div class="stat"><span>With a PBE model</span><strong class="num" id="s-modeled"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>research-stage forecasts</small></div>
-      <div class="stat"><span>Market monitoring</span><strong class="num" id="s-monitor"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>market shown, no PBE number</small></div>
-      <div class="stat"><span>Resolved &amp; scored</span><strong class="num" id="s-scored"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-scored-sub">&nbsp;</small></div>
-      <div class="stat"><span>Last engine cycle</span><strong class="num" id="s-cycle"><span class="skel" style="display:block;height:28px;width:80px"></span></strong><small id="s-cycle-sub">every 15 minutes</small></div>
-      <div class="stat"><span>Model families</span><strong class="num" id="s-models"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-models-sub">&nbsp;</small></div>
-    </div>
-  </div></section>
+  </section>
 
   <div class="tape" aria-label="Live probability tape"><div class="tape-track" id="tape"></div></div>
 
@@ -102,6 +113,6 @@
   <div><strong>Data</strong><br>NOAA/NWS, NOAA ACIS, U.S. Treasury, Federal Reserve (H.15) and the official sources named on each record.</div>
   <div><strong>Not advice</strong><br>Research-stage probabilities. A divergence is not a guarantee.</div>
 </div></footer>
-<script src="/home.js?v=20261003g" defer></script>
+<script src="/home.js?v=20261003j" defer></script>
 </body>
 </html>
