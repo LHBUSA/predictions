@@ -10,7 +10,7 @@ def head(title, desc, path):
 <meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions"><meta property="og:title" content="{title}"><meta property="og:description" content="{desc}">
 <meta property="og:url" content="https://predictions.propbetedge.ai{path}"><meta property="og:image" content="https://predictions.propbetedge.ai/og/default.png">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{title}"><meta name="twitter:description" content="{desc}"><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/default.png">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css?v=20261003e">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css?v=20261003f">
 <script type="application/ld+json">{{"@context":"https://schema.org","@type":"WebPage","name":"{title}","url":"https://predictions.propbetedge.ai{path}","description":"{desc}","isPartOf":{{"@type":"WebSite","name":"PropBetEdge Predictions","url":"https://predictions.propbetedge.ai/"}}}}</script>
 </head><body>
 <header class="topbar"><div class="wrap"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">P</span><span>PropBetEdge<small>PREDICTIONS</small></span></a>
