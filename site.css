@@ -172,3 +172,6 @@ details.snap summary{cursor:pointer;font-weight:650;font-size:13px}
   .footer .wrap{grid-template-columns:1fr 1fr}
   .search{flex:1 1 100%}
 }
+/* grid/flex children may shrink below their content: tables scroll inside .tbl-wrap instead of widening the page */
+.ev-grid>*,.hero-grid>*,.row>*,.kpis>*,.cells>*,.trio>*,.stats>*,.featured>*,.dist-row>*,.controls>*{min-width:0}
+.kpi small,.row h3,.feat h3,.ev-head h1{overflow-wrap:anywhere}
