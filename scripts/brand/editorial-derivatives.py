@@ -11,6 +11,8 @@ FOCAL = {  # (x, y) as fractions of the master; crops keep this point in frame
     'category-space': (0.5, 0.55), 'category-public-health': (0.55, 0.5), 'category-energy': (0.5, 0.5), 'category-business': (0.5, 0.6),
 }
 
+OG_SHIFT = {'two-guidance': 0.24}
+
 def grain(im, amount=5, seed=7):
     random.seed(seed)
     noise = Image.effect_noise(im.size, 18).convert('L')
@@ -55,6 +57,8 @@ for key, focal in FOCAL.items():
     mob = crop(m, 4 / 5, focal)
     for w in (640, 960): rep[f'mobile-{w}'] = save(mob, f'{d}/mobile', w)
     og = crop(m, 1200 / 630, focal).resize((1200, 630), Image.LANCZOS)
+    if key in OG_SHIFT:  # move the subject right of the card's text column (left side becomes navy)
+        dx = round(OG_SHIFT[key] * 1200); shifted = Image.new('RGB', og.size, (2, 10, 22)); shifted.paste(og.crop((0, 0, 1200 - dx, 630)), (dx, 0)); og = shifted
     og.save(f'{d}/og.jpg', 'JPEG', quality=86, optimize=True, progressive=True)
     # social-card background: same crop, darkened on the left where the card's frozen overlay text sits
     shade = Image.new('L', og.size, 0); dr = ImageDraw.Draw(shade)

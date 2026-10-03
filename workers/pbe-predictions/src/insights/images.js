@@ -3,6 +3,8 @@
 // under /images/insights/<key>/<version>/ (masters kept in images/insights/_masters, not deployed).
 import { SITE } from '../pages.js';
 
+// Bump ART_REV when derivatives change without a new image_version (busts edge and social caches).
+export const ART_REV = '2';
 export const IMAGE_CREDIT = 'Original illustration © PropBetEdge Predictions (code-generated editorial art)';
 
 const CATEGORY_ART = {
@@ -25,8 +27,8 @@ export function storyImage(story) {
     hero_image: `${base}/hero-1600.jpg`,
     hero_alt: img.alt,
     hero_focal_point: img.focal,
-    og_image: `${SITE}/og/insights/${story.slug}.png`,
-    og_background: `${SITE}${base}/og-bg.jpg`,
+    og_image: `${SITE}/og/insights/${story.slug}.png?v=${img.version}.${ART_REV}`,
+    og_background: `${SITE}${base}/og-bg.jpg?r=${ART_REV}`,
     image_credit: IMAGE_CREDIT,
     image_version: img.version,
     schema: [[`${base}/hero-1600.jpg`, 1600, 900], [`${base}/card-1200.jpg`, 1200, 900], [`${base}/square-1080.jpg`, 1080, 1080]],

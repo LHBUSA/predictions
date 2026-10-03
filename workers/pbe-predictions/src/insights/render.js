@@ -9,7 +9,7 @@ const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const longDate = (iso) => new Date(iso).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + ' UTC';
 const shortDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 export const storyUrl = (st) => `${SITE}/insights/${st.slug}`;
-export const storyImageUrl = (st) => `${SITE}/og/insights/${st.slug}.png`;
+export const storyImageUrl = (st) => storyImage(st).og_image;
 const AUTHOR = { '@type': 'Organization', '@id': `${SITE}/insights/#desk`, name: 'PropBetEdge Predictions Desk', url: `${SITE}/insights/` };
 
 // Abstract editorial textures per vertical (decorative only — never shaped like data).
