@@ -3,11 +3,15 @@
 // (src/engine/classify.js), weather model (src/weather/*), publication/resolution/scoring (cycle.js), API (api.js).
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
-import { board, divergences, contractRecord, queue, trackRecord } from './api.js';
+import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
+import { renderEvent, renderNotFound, sitemapXml, SITE } from './pages.js';
 
 // no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
 const json = (data, status = 200, cache = 'public, max-age=30') => new Response(JSON.stringify(data), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': `${cache}, no-transform`, vary: 'Accept-Encoding' },
+});
+const html = (body, status = 200, cache = 'public, max-age=60') => new Response(body, {
+  status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': `${cache}, no-transform`, vary: 'Accept-Encoding', 'x-content-type-options': 'nosniff' },
 });
 
 async function tokenMatches(req, expected) {
@@ -47,16 +51,35 @@ export default {
       }
       if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405, 'no-store');
       const store = storeFor(env);
-      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', weather_series: String(env.WEATHER_SERIES || '').split(','), macro_series: String(env.MACRO_SERIES || '').split(',') }, 200, 'no-store');
-      if (p === '/v1/board') return json(await board(store, { domain: url.searchParams.get('domain') }));
-      if (p === '/v1/divergences') return json({ rows: divergences(await board(store, { domain: url.searchParams.get('domain') })) });
+      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
+      if (p === '/v1/summary') return json(await summary(store));
+      if (p === '/v1/desk') return json(await desk(store));
+      if (p === '/v1/calendar') return json(await calendar(store));
+      if (p === '/v1/models') return json(await models(store), 200, 'public, max-age=120');
       if (p === '/v1/queue') return json(await queue(store));
       if (p === '/v1/track-record') return json(await trackRecord(store));
+      if (p.startsWith('/v1/event/')) {
+        const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
+        return rec ? json(rec) : json({ error: 'not_found' }, 404);
+      }
       if (p.startsWith('/v1/contract/')) {
         const rec = await contractRecord(store, decodeURIComponent(p.slice('/v1/contract/'.length)));
         return rec ? json(rec) : json({ error: 'not_found' }, 404);
       }
-      return json({ error: 'not_found', routes: ['/v1/health', '/v1/board?domain=WEATHER', '/v1/divergences', '/v1/queue', '/v1/track-record', '/v1/contract/:contract_id'] }, 404);
+      // server-rendered pages (Vercel rewrites predictions.propbetedge.ai/events/:slug, /record, /sitemap.xml here)
+      if (p.startsWith('/pages/events/')) {
+        const slug = decodeURIComponent(p.slice('/pages/events/'.length));
+        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return html(renderNotFound(`/events/${slug}`), 404);
+        const rec = await eventRecord(store, slug);
+        return rec ? html(renderEvent(rec)) : html(renderNotFound(`/events/${slug}`), 404);
+      }
+      if (p === '/pages/record') {
+        const id = url.searchParams.get('id') || '';
+        const ref = id ? await contractToSlug(store, id) : null;
+        return ref ? new Response(null, { status: 301, headers: { location: `${SITE}/events/${ref.slug}#${encodeURIComponent(ref.market_id)}`, 'cache-control': 'public, max-age=3600' } }) : html(renderNotFound('/record/'), 404);
+      }
+      if (p === '/sitemap.xml') return new Response(sitemapXml(await sitemapEntries(store)), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=900, no-transform', vary: 'Accept-Encoding' } });
+      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/desk', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/event/:slug', '/v1/contract/:contract_id'] }, 404);
     } catch (e) {
       console.error(e.stack || e.message);
       return json({ error: 'internal_error', message: e.message }, 500, 'no-store');

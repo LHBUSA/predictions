@@ -4,7 +4,7 @@ import { normalizeContract } from '../../../src/engine/contracts.js';
 import { normalizeMarket } from '../../../src/vendor/propsports-markets/core.js';
 import { lifecycleOf } from '../../../src/vendor/propsports-markets/history.js';
 import { forecastWeather, WEATHER_MODELS } from '../../../src/weather/engine.js';
-import { fetchMosRun, runAvailableAt } from '../../../src/weather/mos.js';
+import { fetchUsableRun, runAvailableAt } from '../../../src/weather/mos.js';
 import { fetchGridpoint } from '../../../src/weather/nws.js';
 import { cliStation } from '../../../src/weather/stations.js';
 import { cliDay, fetchCliYear, officialOutcome } from '../../../src/weather/cli.js';
@@ -66,7 +66,8 @@ async function cachedJson(fetchImpl, url, init, ttl) {
 // Domain-source capture for one station, cached at the edge (MOS 30 min, NWS grid 60 min).
 async function weatherSources(st, { fetchImpl, now }) {
   const cachingFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 1800, cacheEverything: true } });
-  const mos = await fetchMosRun({ icao: st.icao }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+  const mos = await fetchUsableRun({ icao: st.icao, now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+  if (!mos.runtime) throw new Error(`no usable GFS MOS run for ${st.icao}`);
   let grid = null;
   try { grid = await fetchGridpoint({ lat: st.lat, lon: st.lon }, { fetchImpl: (u, i) => fetchImpl(u, { ...i, cf: { cacheTtl: 3600, cacheEverything: true } }), userAgent: USER_AGENT }); } catch (e) { grid = { error: e.message }; }
   const mosObs = {
@@ -77,7 +78,7 @@ async function weatherSources(st, { fetchImpl, now }) {
   };
   const out = { mos: { ...mos, observationKey: sourceObservationKey(mosObs) }, observations: [mosObs], grid: null, nbm: null };
   try {
-    const nbm = await fetchMosRun({ icao: st.icao, model: 'NBS' }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+    const nbm = await fetchUsableRun({ icao: st.icao, model: 'NBS', now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
     if (nbm.runtime) {
       const nbmObs = {
         provider: 'NWS National Blend of Models (NBS) via IEM', sourceId: `mos:NBS:${st.icao}:${nbm.runtime}`, sourceClass: 'official',
@@ -182,7 +183,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
         writes.events.push({
           event_id: eventId, slug: eventSlug(ev), canonical_question: ev.title, category, status: 'open', domain, event_family: seriesTicker, venue: 'kalshi',
           venue_event_id: ev.event_ticker, venue_series_id: seriesTicker, model_family: modelFamily, model_state: modelFamily ? (domain === 'MACRO' ? 'SHADOW' : 'RESEARCH') : 'MARKET_MONITORING', lifecycle,
-          close_time: ev.markets?.[0]?.close_time ?? null, resolution_authority: normalized[0]?.resolution_authority ?? null,
+          close_time: (ev.markets || []).map((m) => m.close_time).filter(Boolean).sort().at(-1) ?? null, resolution_authority: normalized[0]?.resolution_authority ?? null,
           resolution_rule: normalized[0]?.rules_primary ?? null, resolution_time: ev.markets?.[0]?.expected_expiration_time ?? null,
           metadata: { series_title: series?.title ?? null, series_category: series?.category ?? null, settlement_sources: series?.settlement_sources ?? [], strike_date: ev.strike_date ?? null, sub_title: ev.sub_title ?? null, mutually_exclusive: ev.mutually_exclusive ?? null, category, fail_closed: contracts.filter((c) => c.normalization_status !== 'NORMALIZED').map((c) => c.status_reason).filter((v, i, a) => a.indexOf(v) === i) },
         });

@@ -100,3 +100,20 @@ export async function fetchMosRun({ icao, runtime = null, model = MOS_MODEL }, {
   const rows = (body.data || []).map(normalizeMosRow).filter((r) => r.runtime && r.ftime);
   return Object.freeze({ icao, model, url: url.toString(), runtime: rows[0]?.runtime ?? null, rows: Object.freeze(rows) });
 }
+
+// Latest run that is already usable under the availability rule (cycle + MOS_AVAILABLE_LAG_H <= now), stepping back
+// one 6-hour cycle at a time. Asking IEM for "latest" can return a run that is not yet usable, which would flip the
+// engine between model tiers from one cycle to the next.
+export function usableCycles(nowIso, count = 4) {
+  const t = Date.parse(nowIso) - MOS_AVAILABLE_LAG_H * 3600000;
+  const base = Math.floor(t / (6 * 3600000)) * 6 * 3600000;
+  return Array.from({ length: count }, (_, k) => new Date(base - k * 6 * 3600000).toISOString());
+}
+
+export async function fetchUsableRun({ icao, model = MOS_MODEL, now }, opts) {
+  for (const runtime of usableCycles(now)) {
+    const run = await fetchMosRun({ icao, model, runtime }, opts);
+    if (run.rows.length && run.runtime === runtime) return run;
+  }
+  return Object.freeze({ icao, model, url: null, runtime: null, rows: Object.freeze([]) });
+}

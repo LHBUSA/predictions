@@ -1,13 +1,19 @@
 {
   "cleanUrls": false,
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*" }
-  ],
   "redirects": [
-    { "source": "/events/fed-september-2026", "destination": "/", "permanent": false },
-    { "source": "/events/fed-september-2026/", "destination": "/", "permanent": false }
+    { "source": "/events/fed-september-2026", "destination": "/", "permanent": true },
+    { "source": "/events/fed-september-2026/", "destination": "/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*" },
+    { "source": "/events/:slug", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/events/:slug" },
+    { "source": "/record", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record" },
+    { "source": "/record/", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record" },
+    { "source": "/sitemap.xml", "destination": "https://pbe-predictions.sales-fd3.workers.dev/sitemap.xml" }
   ],
   "headers": [
-    { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }] }
+    { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }, { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }] },
+    { "source": "/(site.css|home.js|favicon.svg)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }] },
+    { "source": "/og/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
   ]
 }

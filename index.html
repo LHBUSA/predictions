@@ -1,230 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f4f8ff" />
-  <title>PropBetEdge Predictions — Global Probability Intelligence</title>
-  <meta name="description" content="Independent, source-backed probability intelligence for real-world events, informed by proprietary real-estate and sports data infrastructure where relevant." />
-  <link rel="stylesheet" href="/ui.css" />
-  <link rel="stylesheet" href="/data-infra.css" />
-  <link rel="stylesheet" href="/live.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions</title>
+<meta name="description" content="Independent, source-backed forecasts for weather, rates, science, business, public health and other real-world events. Compare PropBetEdge model probabilities with live prediction-market prices and inspect the evidence, model version and scored record.">
+<link rel="canonical" href="https://predictions.propbetedge.ai/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#0e2a4a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PropBetEdge Predictions">
+<meta property="og:title" content="Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions">
+<meta property="og:description" content="Independent, source-backed forecasts compared with live prediction-market prices — with evidence, exact resolution rules, immutable history and a scored record.">
+<meta property="og:url" content="https://predictions.propbetedge.ai/">
+<meta property="og:image" content="https://predictions.propbetedge.ai/og/default.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions">
+<meta name="twitter:description" content="Independent model probabilities vs live prediction-market prices, with evidence and a scored record.">
+<meta name="twitter:image" content="https://predictions.propbetedge.ai/og/default.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Organization","@id":"https://predictions.propbetedge.ai/#org","name":"PropBetEdge","url":"https://propbetedge.ai","logo":"https://predictions.propbetedge.ai/favicon.svg"},
+ {"@type":"WebSite","@id":"https://predictions.propbetedge.ai/#website","name":"PropBetEdge Predictions","url":"https://predictions.propbetedge.ai/","publisher":{"@id":"https://predictions.propbetedge.ai/#org"},"inLanguage":"en"},
+ {"@type":"CollectionPage","@id":"https://predictions.propbetedge.ai/#home","url":"https://predictions.propbetedge.ai/","name":"Prediction Markets, Forecasts & Probability Intelligence","description":"Live real-world event contracts with independent PropBetEdge model probabilities, market prices, evidence, exact resolution rules and scored history.","isPartOf":{"@id":"https://predictions.propbetedge.ai/#website"},"about":["weather forecasts","Treasury yields","prediction markets","probability"]}
+]}
+</script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="PropBetEdge Predictions home">
-      <span class="brand-mark">P</span>
-      <span class="brand-copy"><strong>PropBetEdge</strong><small>Predictions</small></span>
-    </a>
-    <nav class="main-nav" aria-label="Primary navigation">
-      <button class="nav-link active" data-view="overview">Intelligence</button>
-      <button class="nav-link" data-view="markets">Markets</button>
-      <button class="nav-link" data-view="models">Models</button>
-      <button class="nav-link" data-view="track">Track record</button>
-      <button class="nav-link" data-view="research">Research</button>
-    </nav>
-    <div class="top-actions">
-      <button class="citation-mode" id="citation-mode">Citation mode</button>
-      <span class="status-pill"><i></i>Research network live</span>
+<header class="topbar"><div class="wrap">
+  <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">P</span><span>PropBetEdge<small>PREDICTIONS</small></span></a>
+  <nav class="nav" aria-label="Primary"><a href="#desk" aria-current="page">Intelligence desk</a><a href="#calendar">Calendar</a><a href="/models/">Models</a><a href="#track-record">Track record</a><a href="/methodology/">Methodology</a></nav>
+  <div class="top-right"><span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span></div>
+</div></header>
+
+<main>
+  <section class="hero"><div class="wrap hero-grid">
+    <div>
+      <span class="overline">REAL-WORLD EVENT INTELLIGENCE</span>
+      <h1>The world has a price.<br><span>We measure the probability.</span></h1>
+      <p>Independent PropBetEdge models built from official data — compared, never blended, with live prediction-market prices. Every forecast is an immutable snapshot with its evidence, exact resolution rule and, once settled, its score.</p>
     </div>
-  </header>
-
-  <main>
-    <section class="masthead wrap">
-      <div class="masthead-copy">
-        <span class="overline">GLOBAL PROBABILITY INTELLIGENCE</span>
-        <h1>The world has a price.<br><span>We measure the probability.</span></h1>
-        <p>Independent event models, live prediction-market pricing, source-level evidence and a permanent scored history — informed by proprietary real-estate and sports data infrastructure where those datasets genuinely matter.</p>
-        <div class="masthead-actions">
-          <a class="primary-btn" href="#intelligence">Open intelligence desk</a>
-          <button class="secondary-btn" data-scroll="#data-infrastructure">Explore the data layer</button>
-        </div>
-        <div class="trust-row">
-          <span><b>01</b> Versioned forecasts</span>
-          <span><b>02</b> Source provenance</span>
-          <span><b>03</b> Proprietary domain data</span>
-          <span><b>04</b> Scored history</span>
-        </div>
-      </div>
-      <div class="world-panel" aria-label="Global intelligence network illustration">
-        <div class="globe">
-          <div class="globe-grid"></div>
-          <span class="node n1"></span><span class="node n2"></span><span class="node n3"></span><span class="node n4"></span><span class="node n5"></span>
-          <span class="arc a1"></span><span class="arc a2"></span><span class="arc a3"></span>
-        </div>
-        <div class="world-stat top-left"><span>Domain infrastructure</span><strong>Property + Sports + Public Data</strong></div>
-        <div class="world-stat bottom-right"><span>Forecast state</span><strong>Immutable snapshots</strong></div>
-        <div class="world-caption"><span class="live-pulse"></span> Proprietary data + official sources + market pricing + specialist models</div>
-      </div>
-    </section>
-
-    <section class="ticker-strip" aria-label="Platform principles">
-      <div class="ticker-inner">
-        <span>MARKET PRICE ≠ MODEL PROBABILITY</span><i></i><span>REAL DATA INFRASTRUCTURE</span><i></i><span>EVERY MATERIAL INPUT SOURCED</span><i></i><span>DOMAIN-SPECIFIC MODELS</span><i></i><span>NO RETROACTIVE REWRITES</span>
-      </div>
-    </section>
-
-    <section class="data-infrastructure wrap" id="data-infrastructure">
-      <div class="data-infra-head">
-        <div>
-          <span class="overline">BUILT ON REAL DATA INFRASTRUCTURE</span>
-          <h2>We do not begin with a prompt. We begin with data.</h2>
-          <p>PropBetEdge Predictions can draw from the broader PropTechUSA and PropBetEdge data ecosystem when a market overlaps a domain we already understand deeply. Every forecast still discloses which source classes actually contributed.</p>
-        </div>
-        <div class="data-infra-note"><strong>Forecast-level disclosure</strong><span>Proprietary data is identified when materially used. No blanket claims.</span></div>
-      </div>
-      <div class="infra-grid">
-        <article class="infra-card property-infra">
-          <div class="infra-kicker">PROPERTY INTELLIGENCE</div>
-          <h3>Global real-estate data infrastructure</h3>
-          <p>Property, parcel, market, rent, mortgage, distress, hazard and geographic intelligence can support housing, affordability, disaster-exposure and local economic prediction models.</p>
-          <div class="infra-tags"><span>Property</span><span>Housing</span><span>Mortgage</span><span>Risk</span><span>Geospatial</span></div>
-          <footer><span>PropTechUSA / PropData</span><strong>Specialist input layer</strong></footer>
-        </article>
-        <article class="infra-card sports-infra">
-          <div class="infra-kicker">SPORTS INTELLIGENCE</div>
-          <h3>Existing multi-sport model infrastructure</h3>
-          <p>League, player, market, historical and model outputs from the PropBetEdge sports stack can inform sports-linked prediction contracts without rebuilding the underlying sports intelligence twice.</p>
-          <div class="infra-tags"><span>NFL</span><span>NBA</span><span>MLB</span><span>NHL</span><span>WNBA</span><span>UFC</span></div>
-          <footer><span>PropBetEdge Sports</span><strong>Linked intelligence layer</strong></footer>
-        </article>
-        <article class="infra-card public-infra">
-          <div class="infra-kicker">AUTHORITATIVE SOURCES</div>
-          <h3>Official public and market data</h3>
-          <p>Federal agencies, weather authorities, official releases, market venues and other declared sources complete the evidence layer for domains where proprietary data is not the right input.</p>
-          <div class="infra-tags"><span>FRED</span><span>BLS</span><span>Federal Reserve</span><span>NOAA</span><span>Market venues</span></div>
-          <footer><span>Declared provenance</span><strong>Auditable inputs</strong></footer>
-        </article>
-      </div>
-      <div class="data-flow-line"><span>Domain data</span><b>→</b><span>Feature snapshot</span><b>→</b><span>Specialist model</span><b>→</b><span>Probability</span><b>→</b><span>Resolution + score</span></div>
-    </section>
-
-    <section class="wrap desk" id="intelligence">
-      <div class="desk-head">
-        <div>
-          <span class="overline">INTELLIGENCE DESK</span>
-          <h2>Where our models diverge from live markets</h2>
-          <p>Live Kalshi contracts. A PBE probability appears only where a specialist model is enabled; everything else is market monitoring. Research-stage models are labelled as such.</p>
-          <p class="desk-count" id="desk-count"></p>
-        </div>
-        <div class="desk-controls">
-          <div class="category-tabs" id="categories">
-            <button class="category active" data-category="all">All</button>
-            <button class="category" data-category="WEATHER">Weather</button>
-            <button class="category" data-category="MACRO">Macro</button>
-          </div>
-          <select id="sort" aria-label="Sort markets">
-            <option value="edge">Largest divergence</option>
-            <option value="closing">Closing soonest</option>
-            <option value="updated">Newest forecast</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="desk-grid">
-        <div class="markets-column">
-          <div class="column-labels"><span>Event</span><span>Probability intelligence</span></div>
-          <div id="market-list" class="market-list"></div>
-        </div>
-
-        <aside class="insight-rail">
-          <article class="rail-card featured-signal" id="largest-card" hidden>
-            <div class="rail-head"><span>Largest divergence</span><b>Research</b></div>
-            <div class="big-number" id="largest-edge"></div>
-            <p id="largest-edge-title"></p>
-            <div class="comparison-bars" id="largest-bars"></div>
-            <p><a id="largest-link" href="#">Open the forecast record →</a> PBE probability vs. current market price. A divergence is not a guarantee of anything.</p>
-          </article>
-
-          <article class="rail-card pulse-card">
-            <div class="rail-head"><span>Data network</span><small>Active layers</small></div>
-            <div class="pulse-row"><span class="pulse-icon macro">P</span><div><b>Property</b><small>Global real-estate intelligence</small></div><strong>Connected</strong></div>
-            <div class="pulse-row"><span class="pulse-icon housing">S</span><div><b>Sports</b><small>Multi-sport intelligence stack</small></div><strong>Connected</strong></div>
-            <div class="pulse-row"><span class="pulse-icon weather">O</span><div><b>Official data</b><small>Declared public sources</small></div><strong>Connected</strong></div>
-          </article>
-
-          <article class="rail-card integrity-card">
-            <div class="rail-head"><span>Forecast integrity</span><small>Core standard</small></div>
-            <div class="integrity-row"><span>Forecast snapshots</span><strong>Immutable</strong></div>
-            <div class="integrity-row"><span>Source classes</span><strong>Disclosed</strong></div>
-            <div class="integrity-row"><span>Unknown inputs</span><strong>Fail closed</strong></div>
-            <div class="integrity-row"><span>Market inputs to models</span><strong>None</strong></div>
-            <div class="integrity-row"><span>Model status</span><strong>Research (weather v1)</strong></div>
-          </article>
-        </aside>
-      </div>
-    </section>
-
-    <section class="reference-band">
-      <div class="wrap reference-grid">
-        <div class="reference-copy">
-          <span class="overline">BUILT TO BE REFERENCED</span>
-          <h2>Not a picks feed. A public record of probability.</h2>
-          <p>Every market page is designed to become a durable research object: one event, one canonical question, one forecast history, one evidence trail and one resolution record.</p>
-        </div>
-        <div class="reference-demo" id="reference-live" hidden>
-          <div class="reference-top"><span>FORECAST RECORD</span><code id="ref-code"></code></div>
-          <h3 id="ref-title"></h3>
-          <div class="reference-probs" id="ref-probs"></div>
-          <div class="reference-meta" id="ref-meta"></div>
-          <div class="reference-source"><b>Source classes</b><span>Official weather data (NWS guidance, NOAA climatology) · market price stored separately as the benchmark · no proprietary domain input</span></div>
-          <div class="reference-footer"><span>Immutable snapshot</span><a class="ref-open" id="ref-open" href="#">Open record →</a></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="wrap evidence-section">
-      <div class="section-intro">
-        <span class="overline">EVIDENCE, NOT A BLACK BOX</span>
-        <h2>Every probability should have a reason.</h2>
-      </div>
-      <div class="evidence-grid">
-        <article class="evidence-card">
-          <span class="card-num">01</span>
-          <h3>Source ledger</h3>
-          <p>Material inputs identify provider, source class, observation time and retrieval time so outside researchers can inspect what the model actually saw.</p>
-          <div class="ledger-lines"><span>Proprietary domain data · when used</span><span>Official/public sources</span><span>Venue market snapshots</span></div>
-        </article>
-        <article class="evidence-card">
-          <span class="card-num">02</span>
-          <h3>Model ledger</h3>
-          <p>Probabilities retain their model ID, version, assumptions, feature snapshot and timestamp instead of silently changing as the system learns.</p>
-          <div class="code-snippet">model: specialist-family<br>version: 0.1.0<br>source_classes: disclosed</div>
-        </article>
-        <article class="evidence-card">
-          <span class="card-num">03</span>
-          <h3>Resolution ledger</h3>
-          <p>The authority and resolution rule are stored before scoring. Once resolved, the forecast joins the permanent track record — good or bad.</p>
-          <div class="resolution-line"><i></i><span>Pre-declared</span><b>→</b><i></i><span>Resolved</span><b>→</b><i></i><span>Scored</span></div>
-        </article>
-      </div>
-    </section>
-
-    <section class="wrap methodology" id="methodology">
-      <div class="methodology-panel">
-        <div>
-          <span class="overline">RESEARCH STANDARD</span>
-          <h2>Performance claims wait for the evidence.</h2>
-          <p>Historical tests must use only data available before each event. Revised or post-event information is excluded from legitimate backtests.</p>
-        </div>
-        <div class="metric-grid">
-          <div><span>Resolved forecasts</span><strong id="tr-resolved">Building</strong></div>
-          <div><span>Brier score</span><strong id="tr-brier">Pending</strong></div>
-          <div><span>Log loss</span><strong id="tr-logloss">Pending</strong></div>
-          <div><span>Calibration</span><strong>Pending</strong></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="wrap footer-grid">
-      <div><strong>PropBetEdge Predictions</strong><p>Global probability intelligence.</p></div>
-      <div><span>Data foundation</span><strong>Property + Sports + Public</strong></div>
-      <div><span>Current state</span><strong>Research V2</strong></div>
-      <div><span>Principle</span><strong>Evidence before opinion.</strong></div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><span>Live contracts tracked</span><strong class="num" id="s-live"><span class="skel" style="display:block;height:28px;width:70px"></span></strong><small id="s-live-sub">&nbsp;</small></div>
+      <div class="stat"><span>With a PBE model</span><strong class="num" id="s-modeled"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>research-stage forecasts</small></div>
+      <div class="stat"><span>Market monitoring</span><strong class="num" id="s-monitor"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>market shown, no PBE number</small></div>
+      <div class="stat"><span>Resolved &amp; scored</span><strong class="num" id="s-scored"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-scored-sub">&nbsp;</small></div>
+      <div class="stat"><span>Last engine cycle</span><strong class="num" id="s-cycle"><span class="skel" style="display:block;height:28px;width:80px"></span></strong><small id="s-cycle-sub">every 15 minutes</small></div>
+      <div class="stat"><span>Model families</span><strong class="num" id="s-models"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-models-sub">&nbsp;</small></div>
     </div>
-  </footer>
-  <script src="/ui.js"></script>
+  </div></section>
+
+  <div class="tape" aria-label="Live probability tape"><div class="tape-track" id="tape"></div></div>
+
+  <section class="section"><div class="wrap">
+    <div class="section-head"><div><span class="overline">FEATURED</span><h2>Largest model-vs-market divergences</h2><p>Research-stage models. A divergence is a disagreement to inspect, not a guarantee.</p></div></div>
+    <div class="featured" id="featured"></div>
+  </div></section>
+
+  <section class="section" id="desk"><div class="wrap">
+    <div class="section-head"><div><span class="overline">INTELLIGENCE DESK</span><h2>Every live contract we track</h2><p id="desk-sub">PBE probabilities appear only where a specialist model is enabled; everything else is market monitoring.</p></div></div>
+    <div class="controls" role="search">
+      <div class="cats" id="cats" aria-label="Categories"></div>
+      <label class="sr-only" for="q">Search events</label><input class="search" id="q" type="search" placeholder="Search events, cities, tenors…" autocomplete="off">
+      <label class="sr-only" for="sort">Sort</label>
+      <select class="sort" id="sort"><option value="div">Largest divergence</option><option value="close">Closing soonest</option><option value="fresh">Latest forecast</option></select>
+    </div>
+    <div class="desk" id="desk-list"></div>
+  </div></section>
+
+  <section class="section" id="calendar"><div class="wrap">
+    <div class="section-head"><div><span class="overline">PREDICTION CALENDAR</span><h2>Upcoming resolutions</h2><p>When the tracked contracts close, from stored venue close times.</p></div></div>
+    <div class="card" style="padding:6px 16px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Closes</th><th>Event</th><th>Category</th><th>State</th><th>Outcomes</th></tr></thead><tbody id="cal"></tbody></table></div></div>
+  </div></section>
+
+  <section class="section" id="track-record"><div class="wrap">
+    <div class="section-head"><div><span class="overline">TRACK RECORD</span><h2>Performance claims wait for resolved evidence</h2><p>Scores use snapshots fixed by rule before the outcome (first published, T-24h, final pre-resolution). Skill is not claimed below the minimum resolved sample.</p></div></div>
+    <div class="stats" style="grid-template-columns:repeat(4,minmax(0,1fr))" id="tr"></div>
+  </div></section>
+
+  <section class="section" id="models"><div class="wrap">
+    <div class="section-head"><div><span class="overline">MODEL REGISTRY · 60-DAY RESEARCH BOARD</span><h2>Model families and their state</h2><p>MONITORING → BACKTESTING → SHADOW → RESEARCH → VALIDATED → OFFICIAL. <a href="/models/">Full research board →</a></p></div></div>
+    <div class="card" style="padding:6px 16px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Family</th><th>Category</th><th>State</th><th>Contracts</th><th>Live forecasts</th><th>Resolved</th><th>Calibration</th></tr></thead><tbody id="reg"></tbody></table></div></div>
+  </div></section>
+
+  <section class="section"><div class="wrap">
+    <div class="section-head"><div><span class="overline">METHOD</span><h2>Evidence, not a black box</h2></div></div>
+    <div class="featured" style="min-height:0">
+      <div class="card feat"><h3>The market never enters the model</h3><p class="note">Kalshi prices, order books and volume are stored as a benchmark only. A code guard and a database constraint reject any market-derived feature; a test proves PBE probabilities are unchanged when every market price moves.</p></div>
+      <div class="card feat"><h3>Model the contract, not the headline</h3><p class="note">Each market is normalized to its exact station, window, threshold and resolution authority — or held with a machine-readable reason. Chicago rain resolves at O'Hare; the Chicago high at Midway.</p></div>
+      <div class="card feat"><h3>No retroactive rewrites</h3><p class="note">Forecasts, contracts and resolutions are append-only. Venue settlement and the independent official value are stored separately. <a href="/methodology/">Methodology →</a></p></div>
+    </div>
+  </div></section>
+</main>
+
+<footer class="footer"><div class="wrap">
+  <div><strong>PropBetEdge Predictions</strong><br>Independent model probabilities, stored separately from market prices.</div>
+  <div><strong>Market data</strong><br>Kalshi prices are a benchmark, never a model input. Every Kalshi value links to Kalshi.</div>
+  <div><strong>Data</strong><br>NOAA/NWS, NOAA ACIS, U.S. Treasury, Federal Reserve (H.15) and the official sources named on each record.</div>
+  <div><strong>Not advice</strong><br>Research-stage probabilities. A divergence is not a guarantee.</div>
+</div></footer>
+<script src="/home.js" defer></script>
 </body>
 </html>
