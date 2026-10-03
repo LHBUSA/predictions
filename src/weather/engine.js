@@ -10,7 +10,7 @@ import { windowPrecipFeatures, maxTempGuidance, nbmMaxTempGuidance, runAvailable
 import { gridWindowEvidence } from './nws.js';
 import { predictPrecip } from './precip-model.js';
 import { residualTable, bucketProbability } from './temp-model.js';
-import { buildFeatureVector } from '../engine/leakage.js';
+import { buildFeatureVector, assertModelInput, assertContractTermsOnly } from '../engine/leakage.js';
 
 export const WEATHER_MODELS = Object.freeze({
   PRECIP_ANY: Object.freeze({ id: precipArtifact.model_id, version: precipArtifact.version, state: 'RESEARCH' }),
@@ -54,6 +54,7 @@ function precipStationSkill(cli) {
 
 // sources: { mos: {runtime, url, observationKey, rows}, grid: {url, observationKey, body}|null }
 export function forecastWeather(contract, sources, { now }) {
+  assertContractTermsOnly(contract); // leakage guard: a contract reaches the model as terms only, never with a venue price
   const model = WEATHER_MODELS[contract.event_type];
   if (!model) return { status: 'UNSUPPORTED_EVENT_TYPE' };
   if (Date.parse(now) >= Date.parse(contract.observation_start)) return { status: 'WINDOW_STARTED' }; // v1 forecasts pre-window only
@@ -101,7 +102,7 @@ export function forecastWeather(contract, sources, { now }) {
       { name: 'climatology_rate_1991_2020', value: clim.precip_rate_1991_2020, source: src.clim },
       { name: 'run_lead_hours', value: +runLeadH.toFixed(2), source: src.mos },
     ]);
-    const pred = predictPrecip(art, { pop_union: f.pop_union, pop_max: f.pop_max, nbm_pop_union: n?.pop_union, nbm_pop_max: n?.pop_max, clim: clim.precip_rate_1991_2020, runLeadH });
+    const pred = predictPrecip(art, assertModelInput({ pop_union: f.pop_union, pop_max: f.pop_max, nbm_pop_union: n?.pop_union, nbm_pop_max: n?.pop_max, clim: clim.precip_rate_1991_2020, runLeadH }));
     const precipModel = { id: art.model_id, version: art.version, state: 'RESEARCH' };
     const disagree = Boolean(n) && Math.abs(n.pop_union - f.pop_union) >= 0.25;
     const analog = comparableRate(contract.station_id, f.pop_union);
@@ -141,7 +142,7 @@ export function forecastWeather(contract, sources, { now }) {
     { name: 'run_lead_hours', value: +runLeadH.toFixed(2), source: src.mos },
     { name: 'guidance_error_table', value: `${art.version}:${contract.station_id}:${table.bucket}:${table.source}:n=${table.n}`, source: { ...src.mos, provider: `PBE calibration temp ${art.version} (guidance vs CLI, 2023-01..2025-06)`, sourceClass: 'research' } },
   ]);
-  const p = bucketProbability(art, table, g, { comparator: contract.comparator, low: contract.threshold_low === null ? null : Number(contract.threshold_low), high: contract.threshold_high === null ? null : Number(contract.threshold_high) });
+  const p = bucketProbability(art, assertModelInput(table), g, assertModelInput({ comparator: contract.comparator, low: contract.threshold_low === null ? null : Number(contract.threshold_low), high: contract.threshold_high === null ? null : Number(contract.threshold_high) }));
   const disagree = Boolean(nbmMax) && Math.abs(nbmMax.max - gfsMax) >= 4;
   const base = table.source === 'station' && table.n >= 300 && runAgeH <= 12 && runLeadH <= 30 ? 'HIGH' : runAgeH <= 24 ? 'MEDIUM' : 'LOW';
   const confidence = disagree && base === 'HIGH' ? 'MEDIUM' : base;

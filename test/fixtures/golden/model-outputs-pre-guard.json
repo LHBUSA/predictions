@@ -1,0 +1,1486 @@
+{
+ "generated_from": "main cc427d8 (before leakage-guard v2)",
+ "now": "2026-10-03T18:30:00.000Z",
+ "lanes": {
+  "with_nbm": [
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-NYC:contract-norm/1:7e474063cd47|pbe-weather-precip@1.1.0|e841bd38b163011d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.1.0",
+    "probability": 0.73,
+    "raw_probability": 0.733005628490026,
+    "features_sha256": "e841bd38b163011d5f9d85394984891e4005ab15f3ca883fe2251466ed0f7e98",
+    "pbe_row_sha256": "d2ff4573efd37cb831aaa6cb73171a8617a1a19ab46bf3a2a6dd11024835d4d8",
+    "feature_row_sha256": "cb10d8544b7075151f30a62a2eff74ca4aa38abd9de30fff0b01b620b5e827f9"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-CHI:contract-norm/1:3ba68878562b|pbe-weather-precip@1.1.0|60fb46f1c7d9a2e6|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.1.0",
+    "probability": 0.04,
+    "raw_probability": 0.04026536645309473,
+    "features_sha256": "60fb46f1c7d9a2e682cfdfb3d68eec5d9acb0f899690257469d8fa97492e40fe",
+    "pbe_row_sha256": "a2037ad0d2188f2b0727655d2624fcd0ff363d4343b52a318b67a56073fa3e50",
+    "feature_row_sha256": "a23d5b74ccc55651c80456a634de0c8040f220a6a5179d7ad7b3a896911a6361"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-MIA:contract-norm/1:53aa049684f4|pbe-weather-precip@1.1.0|1542a2b71a117e7c|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.1.0",
+    "probability": 0.21,
+    "raw_probability": 0.20611163582158976,
+    "features_sha256": "1542a2b71a117e7ce21df7469413af8c9e8648cdbf8a6bc8ae412c6b16fbf8b9",
+    "pbe_row_sha256": "b3d36168cd9851f7d9fccbb5ad37533fe26246de3beabf718d955aec3d21d7d9",
+    "feature_row_sha256": "276c68847a331a771356e71147bc0614fd3b59ad04b1539ab9b0ea9103251230"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-DC:contract-norm/1:f765575236a3|pbe-weather-precip@1.1.0|37381ff38d15fdb9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.1.0",
+    "probability": 0.86,
+    "raw_probability": 0.8598306855630802,
+    "features_sha256": "37381ff38d15fdb9cc2ee732fc75182d7c11a66f6fbb739fc6cdf1f6901182e1",
+    "pbe_row_sha256": "e0b1eb1cd6888bbc9287e01369e90701f34faf7de795aae9f2dfaf495648ac4a",
+    "feature_row_sha256": "d08a25fe7292785af8dafdd181ea610c2a1363349a2014b8b1e079c4965f964e"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-T63:contract-norm/1:a5e2a169de9b|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.23,
+    "raw_probability": 0.23146622734761121,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "11d7902dba1fc6ee37860a97adcd6358ae15d37896dddb6e2be8c15264b8719d",
+    "feature_row_sha256": "c52a3bf9f45da1abdb6ea1f92ad62ade5994c25508a775f6eadd1d6aade3f73a"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B63.5:contract-norm/1:52025a991f45|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.3,
+    "raw_probability": 0.29516749038989565,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "6c3e7650cc9c5f6bf42ec4d77768187dc301cfbe7aa2dc0bc414c02a6b4bf2e5",
+    "feature_row_sha256": "21cee47ea7683592596b2610e93fb14f64abb227f6f7e2c6e75fb7d986d16063"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B65.5:contract-norm/1:ea988c11abf7|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.28,
+    "raw_probability": 0.2797913234486546,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "352df8a6b3731052b2a68878a943949b026d539ac22211c8ace75ff42a57c1e2",
+    "feature_row_sha256": "1a8b45b4af8f7f3aaaeba01935d8942a38d5cd73244de79131ed5592566542ab"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B67.5:contract-norm/1:3be3c3dbb39e|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.12,
+    "raw_probability": 0.12108731466227347,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "6eefb065b5848511e83fbd199443354aab4bee051322e77754850f878f36d168",
+    "feature_row_sha256": "3d5075c27cfc2bc92e296e3fc0a8b2dcc9296ec746709552e49f387ebd35a04e"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B69.5:contract-norm/1:d9a72a57a64e|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.05,
+    "raw_probability": 0.04805052169137836,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "35be3837aaed8a7d4c147841ea9e13a6614f33875fb443e3ea70666533c9e0ae",
+    "feature_row_sha256": "d1e93c1391d226f4a6e4a7de2b01caa8956a715db48d4d3b049582bdeeac3eed"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-T70:contract-norm/1:1509ec1c1cc8|pbe-weather-maxtemp@1.1.0|313f51c88a359580|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.03,
+    "raw_probability": 0.025535420098846788,
+    "features_sha256": "313f51c88a3595809d3720d8b28e88fe1fa903093fa345d6349521b47d9058a6",
+    "pbe_row_sha256": "cb7c8c1fac28407b2ef066e5403a0b552472c23c93aff52e2f3ada7b9a8f3b98",
+    "feature_row_sha256": "83f932c7d5de1ee4f6f6520e6b7c3cf68a6f37489647bf579b1d3e5c5cc85d79"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-T70:contract-norm/1:5a143ed957b1|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.21,
+    "raw_probability": 0.21499176276771004,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "80210f08c3604983824222ceb17789ea0bc2448cd2310a202ac3b22b8f0c08f3",
+    "feature_row_sha256": "515aa131f7fa58f8cdce057006e4235057b100a47e7659297d0e3de7a59f8b7b"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B70.5:contract-norm/1:960cd96c31c1|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.29,
+    "raw_probability": 0.28912685337726524,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "3aed63bd0165dea9e6a98b43c0d60ea4e4c481f6ff072b9d31cd3520fe0e49dd",
+    "feature_row_sha256": "33b4f368ae645d82e698e24d15b2415cfe5f4bcbb4bfa2fedbcbf37bf541a5bc"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B72.5:contract-norm/1:be5ae9c341fd|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.27,
+    "raw_probability": 0.26825919824272376,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "952057a9096abec3eb42a367f89b7134fd446809a7e9b7ca1446f2a40f2f634e",
+    "feature_row_sha256": "eedb52d15b72464f754693e147938333d0323ebfa9fa7fe9db9a5ee438630567"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B74.5:contract-norm/1:87b786c3059c|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.14,
+    "raw_probability": 0.143053267435475,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "0f8c6859422129791d2a47d95493949b42d671a9a22fad8a95b38ba34619268c",
+    "feature_row_sha256": "c055a6fffe2a9c1e51a7dab8b4369ac3630a61a82b7ee36fbaa353e86cb06d34"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B76.5:contract-norm/1:132ff74405b4|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.06,
+    "raw_probability": 0.05683690280065898,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "6b5d0652deee591f9c280de5b32be1e8afaee4ea5d5fd06d0f751ba30f0704c3",
+    "feature_row_sha256": "092048ba0408ddf547e5b6e23e90576ef8d739ff2a74d1a8267c82e331fc9aa1"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-T77:contract-norm/1:18b69c3e93d2|pbe-weather-maxtemp@1.1.0|b1dc52f95a42ee1e|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.03,
+    "raw_probability": 0.028830313014827018,
+    "features_sha256": "b1dc52f95a42ee1e412d7727569ecca3c423119dff379cec2307c5ccd27daed4",
+    "pbe_row_sha256": "dc0919d9d23931059e772c3fefcf50e0fbca0f14e97966861f8cb2e1ff8287d6",
+    "feature_row_sha256": "9eec75bbb23a34faa868ea688279716214005cd8518e2bd3ea6f3170f2760eac"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-T85:contract-norm/1:6861dd42b5b7|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.01,
+    "raw_probability": 0.01,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "e8205696aed96b1a187b682f3c243fa7e22e0ebc83823e7ce8f7c03fb805e558",
+    "feature_row_sha256": "b9681d8cf3d19f5ebac3e388f7533b0080c208f353c3af125dc0bfe142cda762"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B85.5:contract-norm/1:f2937c3ab24d|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.02,
+    "raw_probability": 0.023338824821526633,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "f8faa3ffe05b57ba6a02cbdf6465326540e92d2ce62a00bceaf4572b375874af",
+    "feature_row_sha256": "11283e5b820fd5a2ce8ef982910069d501d6d39ec0c974b97346fc8061389ab7"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B87.5:contract-norm/1:cb80ed39a77e|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.1,
+    "raw_probability": 0.10406370126304229,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "f1c77f8c08b841197ac04eb27d29466aab9d5eb739572b2f94239897bc299c2c",
+    "feature_row_sha256": "c3ba3f0e4681a6fad77fa8221aa8b24f22a09646ecf6c600595bea7c62e58cae"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B89.5:contract-norm/1:0f2d8f4cab19|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.5,
+    "raw_probability": 0.5,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "dbef042406305bf52a9300ce1ae6149b1bebb87de6cdad2fecb7584864185cb7",
+    "feature_row_sha256": "23ad5cf35b8dcf072fbe080d83ef04c49a0b09df7416964d76a5536bd91b8689"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B91.5:contract-norm/1:7e93ae56590a|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.32,
+    "raw_probability": 0.32207578253706753,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "9099a08609f38abd5680d946c4d3ead261959c64425dbca52e456b90fad175f4",
+    "feature_row_sha256": "298936f39b5bbe269bbe023300d25174e356c1a03bf3d265871e2e8e1ab0852d"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-T92:contract-norm/1:5bd94ed9dccc|pbe-weather-maxtemp@1.1.0|0223bcefb020edbb|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.1.0",
+    "probability": 0.05,
+    "raw_probability": 0.04695222405271829,
+    "features_sha256": "0223bcefb020edbb100220c7438f1b3508890a05b02f064ebdcb9e3c784e6403",
+    "pbe_row_sha256": "9047cf0a281edb3258becac67f870af77b5b4ff72e0314de6085d79ce48d4d93",
+    "feature_row_sha256": "44bad9c5dd5567ec92d910f0c80a3dd742c4637faf8486fa8c1da364fe9342c8"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-C26:contract-norm/1:2d8322121380|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.009824613144374184,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "ba0db9a2b7ec5da16fb5e59b1c44f08465c0e74cce75cfdca14f37a23e72ae86",
+    "feature_row_sha256": "3a63792d8e46b7d98a85e97908d730f007d0c294109cae9f7b18a016a9fe4cac"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-C25:contract-norm/1:4891e8beff4d|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.009824613144374184,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "b439465b4e29abf9a3cbd1a1c879295c5b9813ca62294a53e5a6a32f1a610461",
+    "feature_row_sha256": "db8de9b74c6c0a964ac0f4edd300fc11f0f8fe50474d81ff0c6c7cff5fda0507"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H0:contract-norm/1:8a7073eb5b5a|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.3,
+    "raw_probability": 0.2972208889461138,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "c0b276cea728035c4379bdab4f2bfad615ccc0b61476cefe7348f0c8128dceed",
+    "feature_row_sha256": "b6416193b050b93a73eae472173f70c67ac3623a8e2e61aa6712d7930dc1669f"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H25:contract-norm/1:e766d0dca6a4|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.53,
+    "raw_probability": 0.5309340325068075,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "b7283288cbb8cdaaaca1185f982f4df61fded8077df70a901e12648ed624235c",
+    "feature_row_sha256": "16962fef5b4fd5283a1c38e107304e258f3cd713998605cdd63804f9a950bf5f"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H26:contract-norm/1:741324947baa|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.15,
+    "raw_probability": 0.1521958522583302,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "fedf11d2c80fe01aee2967d7c8679d2b431a170c6f4152624e5463cf1ab7316f",
+    "feature_row_sha256": "c10782d2ad52895829a3bc7c806d49d52ef731236ed1e34a088e4f478c39757e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.29:contract-norm/1:8ae4cef6c972|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.81,
+    "raw_probability": 0.8124218945263684,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a90a05dcb710349f0f550ea06ea66e10784fd08b4efb72290bdad9fedad1bf8c",
+    "feature_row_sha256": "b9b8c37d73236cb30991900162689e2ef6464d06b64a2537ec7c5c4441aaf42a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.30:contract-norm/1:59ec2986759a|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.78,
+    "raw_probability": 0.7776805798550362,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "2cda23610c6f61c8c13054f295b030532dea8100169181c0d9d46742c5163e91",
+    "feature_row_sha256": "39e9c00c51760095115258bd0d10d6559ebc21e67e634868ab07a8826820cdeb"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.31:contract-norm/1:b90c9b4294af|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.75,
+    "raw_probability": 0.7464383904023995,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "3f3ecdc73f2036f5ddd39738519a1861aa5e5d03bfc5ae4808c1521c876b0cd6",
+    "feature_row_sha256": "88e1b341fe6954c6865cb59bef977b5f49decc667dbdd2a465ef67c1380180a5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.32:contract-norm/1:8a6a010475a5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.71,
+    "raw_probability": 0.7101974506373406,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "8faf31abd3667d4518f098f21b9b882c62d7ddba6cb32c9b26b45cf6144584dc",
+    "feature_row_sha256": "bd3fa3e1c6e0e987632ed676a5ed2ecb7f36abdcb913b8cd51cde207badf9867"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.33:contract-norm/1:d0a38a58300e|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.68,
+    "raw_probability": 0.6759560109972507,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "978b9b679a9f70f6e14f01dda5cf18f714d4f40483fb5d814af62d2d6c1d8e2a",
+    "feature_row_sha256": "c5f7867ecf7caf1009634940497940c247cc626c6590356e337e34fff2b6adee"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.34:contract-norm/1:9e49b10fb081|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.65,
+    "raw_probability": 0.6459635091227193,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "3ec734d62c94565048c9ea78d177dc632d97eed6bf34857af78ffe399e07a581",
+    "feature_row_sha256": "fb354ae84e1e38e91767781e6a558200a46400efe95206e7ab30771baaa020fd"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.35:contract-norm/1:b243d6f8e83d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.62,
+    "raw_probability": 0.6184703824043989,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "ea3e78d5f6cf91fc549fbd9c63e817a7305c4188a72fa0a630b82248074c0f0f",
+    "feature_row_sha256": "30a0450e100c19ad96c65fd9dd72b0753f316d8fa181e107b7e9d6808fb11880"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.36:contract-norm/1:b23c5d44976d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.58,
+    "raw_probability": 0.5847288177955511,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "52d005dc7b8525e5836215fee834a40c70c461f3a05b88080dd1810edab2586f",
+    "feature_row_sha256": "cd639285b2637e5f59902e06482b5d3f79893502fdb31d3568261b8a85fe2436"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.37:contract-norm/1:4d2baa3205d5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.56,
+    "raw_probability": 0.5559860034991252,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "d699216daef81e45feeb8d2676e02c824255f3e456385b1ad2b76a7f1419f2f0",
+    "feature_row_sha256": "2803bf4a0c249b60cdb5e375de464e3265816116772d8a6cbb5d02a54f6a5310"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.38:contract-norm/1:bd52941e400e|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.53,
+    "raw_probability": 0.526243439140215,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "e8a4ab20ee6a22f9c3fa9e2156aea84505b91d30c5cfb8245df01e0c97f764e2",
+    "feature_row_sha256": "8dcf6520ac3c0710bbc134f2aa21c4bb653e5ef1a8640935622a88a34735f899"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.39:contract-norm/1:db013e8a1bba|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.5,
+    "raw_probability": 0.4985003749062734,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "5db0b8797156f64156a45f3bfaf9182f48cdd142c29e325cea61a81dce5c6187",
+    "feature_row_sha256": "875c7808c725c255adb8429d7ff340ac112ce71b2c2d80846b48cc57812c6471"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.40:contract-norm/1:f841e1b65fdb|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.47,
+    "raw_probability": 0.47025743564108974,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "b04dd8b5f9c85b4069aa42a9eb047d35dba86221140940f408f485420de096e5",
+    "feature_row_sha256": "6dc73ec51ee99a2356f031d25c5cbd25d9f6635e4da9f0eaaa771392243ac93d"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.41:contract-norm/1:235373e7a0f5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.45,
+    "raw_probability": 0.4475131217195701,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "f55f77d94ee893e50946926e2f3e07de6ef9fdd80c77ecd9d921fcca41782b1a",
+    "feature_row_sha256": "5f3e5aabec55e23327441ad5c05a58f86cbc187c1d40723a9efac75ade8d8c2a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.42:contract-norm/1:946381d6ce28|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.42,
+    "raw_probability": 0.41977005748562857,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "4f4e4fca52a75d200d0287604a8b5856f5a8ea1430e295987d8245356ac24748",
+    "feature_row_sha256": "4ef588d5208096ba4c854b81276f7d862a850aab8d5fef437b38653452046e29"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.43:contract-norm/1:16d33bb5f8f7|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.39,
+    "raw_probability": 0.39477630592351914,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "59289d822ab9636aa8a95dc74cf146d94fb064b370326217d454c8af662c7b95",
+    "feature_row_sha256": "efd3f0611b860cef67c79b33b68adb8832c079b64e6be156176103a3e4eca3af"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.44:contract-norm/1:f55807b382f2|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.37,
+    "raw_probability": 0.37153211697075733,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a0ae3220273b7de22dc3352f2e33188aabecf4b5816a7d89aecee331908f26a9",
+    "feature_row_sha256": "5a2cce3fff1f2cb6cfb52c205716f22500be1ac033a37a42a7b025644d4028d3"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.45:contract-norm/1:8fbb4e85aa85|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.35,
+    "raw_probability": 0.3500374906273432,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "d653db046f2dc93bd16f161c34c9252171d911241ab89b7a69a29e674a6b93fe",
+    "feature_row_sha256": "38a135dc806cc86748179eed40ea88dc947947afb45c95d6c51afcc69bd2bf27"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.46:contract-norm/1:d0244ef649ab|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.33,
+    "raw_probability": 0.3297925518620345,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "f967c8d881639269a067bb94b6b88f4d0a5e53bba417422e6cc4e8238d40e3d9",
+    "feature_row_sha256": "18b81b6e9ef9d6cd3391f53f39d7e41f246c8bca8e2802ecbe3b56b87a9df530"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.47:contract-norm/1:f45e94767a8a|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.31,
+    "raw_probability": 0.3057985503624094,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "4f0784db4570f1728442cd8be34fc6ac8a163e090d57cc8b6afbf34525632070",
+    "feature_row_sha256": "e185b170ea661e37db7ca062bdb798ffd767723d1d9d3d58e8cb1722b1a33e34"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.48:contract-norm/1:55d9e8125bb0|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.28,
+    "raw_probability": 0.28005498625343667,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "bdbf4bbd668d0fa2e49d858b4b6d7ed4b7cab937b0abeebe355a1b2131501d12",
+    "feature_row_sha256": "5adc421bdcb30e16ea4afca00fc3fc22e4ff6c50fab273e1f25219b5cd8dce70"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.49:contract-norm/1:c80d1274668d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.26,
+    "raw_probability": 0.2610597350662334,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "62bcfc64c7198687999f23bd6c69838acd40848a6903791444f148c2121a0ec4",
+    "feature_row_sha256": "a141f2a6c6536b540479f7674cd929b9ce4a5cb08d7349a82cc6a58498f4aef5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.50:contract-norm/1:fb51467abbf5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.25,
+    "raw_probability": 0.24581354661334667,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "44da32ed4b06d079abc75c36b32581fdfbfcd90c39cb7702548afe6a1c142281",
+    "feature_row_sha256": "a9df4a273759209fb442a5f35aea1239e6d22439fa0ac7db6d10c781e6b46dfe"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.51:contract-norm/1:68325a875578|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.23,
+    "raw_probability": 0.2290677330667333,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "5deccd3e9d195ac73bfcb17902e3ae13697969dd4d2c126fb09f0eebbf212a00",
+    "feature_row_sha256": "62c94767ba961a9d34048cbe8a73f02dec12b8d9d5cca6214e61e7a1128bd821"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.52:contract-norm/1:f58c036eb8e6|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.21,
+    "raw_probability": 0.21332166958260435,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "b56741438df9681d57f7cb8c197ed706e49e07b9b33a74863fb3b5076a254064",
+    "feature_row_sha256": "60eeb30bbe09d49e94923ff3418816ee8b1ac3c663c4f12ccce8ea47a0e9eeb6"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.53:contract-norm/1:a3efaf741610|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.2,
+    "raw_probability": 0.196575856035991,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a32cb35b2eb95dfee82f745bab2090be3131423ab73ad71a4dce1a7c5bd56c62",
+    "feature_row_sha256": "ad53e37333b14940d5ebcea7e53f1edd34c7bf1024d3db56017a72601c79de3e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.54:contract-norm/1:329824ff385d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.18,
+    "raw_probability": 0.1820794801299675,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "2a790592b0741d00cd98c24832d56cac39cf92b13a20de8097bd9c2e59973db1",
+    "feature_row_sha256": "f892a2e2382f13ced9639934bb8018efd9d4268343e2af5685cdcb729bb1f15a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.55:contract-norm/1:dd8c615a4ff4|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.17,
+    "raw_probability": 0.16908272931767057,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a748752190dafa6e4c0488aae809d317ec608242e57cb1fc50eecede20479c29",
+    "feature_row_sha256": "15459fb77862a8c8d491202ddaf7de2f23287ff61179483ecf14496251df2510"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.56:contract-norm/1:a9d46a7f34bc|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.15,
+    "raw_probability": 0.1540864783804049,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "1e7c35d24688967612f29987e9617a8cc88459f795b11443c1ed2313e2970946",
+    "feature_row_sha256": "911d61d4a15a989e10e633025aca4b2b660c6528bd640a7ceee0aed13f39b608"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.57:contract-norm/1:ed8ec3c171a0|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.14,
+    "raw_probability": 0.14208947763059235,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "47aa6f405a879f7e69f66781601b4627e4e0ea7b61e66ccd1cf4b0265ff43cdc",
+    "feature_row_sha256": "74e7391797a26201a56f5d15b3b8ccc1989cbbf40ab8e86d3428c320f88ca020"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.58:contract-norm/1:b60b517dec98|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.13,
+    "raw_probability": 0.1300924768807798,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "6f065a8cdc55d1f0a5703e531d3885efbfd608579f36d1bd76ac42e94554f4d4",
+    "feature_row_sha256": "b0a3d89be737193964bbe6dfb6ac81c3197050d20db177e77bf6726ea5a476c3"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.24:contract-norm/1:41f761a12a82|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.73,
+    "raw_probability": 0.7341914521369658,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "4ed7983b29019a1f0c680cd0431def9c530cc43107819561ef6f829b751d172f",
+    "feature_row_sha256": "07427bcef2777afa907dd9c7d8894524fe8d2b795a5c0e44c83e0429022855d2"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.23:contract-norm/1:a14532cce67a|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.7,
+    "raw_probability": 0.6997000749812546,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "e084fb9ae971fbfcf0fbb1f16bab00d7a1db8bf169fbb89e82ea43e9f1ccc30d",
+    "feature_row_sha256": "44a8cc8f23c6ad28d4102efff80cd5b8c891a02b4a630e464431cc38882af5f6"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.22:contract-norm/1:f06c7a615ee3|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.67,
+    "raw_probability": 0.6684578855286178,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "3bd6da8bc25794865ed26a8c0adc3977691681bf54e01c8003e5ea3fc8358f01",
+    "feature_row_sha256": "2f6ea018dcdce4f8a1d07109659e4514b32d2effa421fdee10c716ceead59db7"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.21:contract-norm/1:7f1543e456a1|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.64,
+    "raw_probability": 0.6404648837790552,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "22aea3a9db5c6404b283fdbd3a4267fa667b618de77289ec909aa18e5105f385",
+    "feature_row_sha256": "bb7e228428f54de866a67d26a0d8ca95e5ba3255c76086aab0dc9987125225e4"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.20:contract-norm/1:d87937f55b34|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.61,
+    "raw_probability": 0.6094726318420395,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "4496d60b19b18859a48c1b8a97efb84428962fb2919d5a92119d86549ffdfee8",
+    "feature_row_sha256": "f2f6359ef901b5d263b271aea0e9897e801cd4105f0c90ac951b399ed43adc1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.19:contract-norm/1:e14f27820ca7|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.58,
+    "raw_probability": 0.5754811297175706,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "ba0bfc9ee58ab69a8037e5a16a4bf4435ceeddf3a846b063b512b9f4e0e830cb",
+    "feature_row_sha256": "f4a0ed5490ed7d7a6f9c1a090f945e77deabc6b2fd4dd1a899a933d256c0116e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.18:contract-norm/1:5365f1822ec6|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.55,
+    "raw_probability": 0.5472381904523869,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "c1cec86e65add0aa26a970420ae4446ad872b73f467cb5e06a1f0b516f6bc87c",
+    "feature_row_sha256": "ba05da896a38da32ccb11d7b174110233619efc93958acdde9975f60182de877"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.17:contract-norm/1:57da06133763|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.52,
+    "raw_probability": 0.5224943764058986,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "304afb9b26f3370fa61237ad011822708d6cac48c8fa1d5d373f8710812487ac",
+    "feature_row_sha256": "909c9c7ee119b0e87ccad5c9e9b32f93738f16e3380c4e7a5db4edea54eead1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.16:contract-norm/1:5cad7b3aad53|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.49,
+    "raw_probability": 0.49275181204698826,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "94736ec53aebdad0300c9c8d8e28fcecafb95d6dd6c0cd125dc217a886351e4f",
+    "feature_row_sha256": "794f3c1af31da5ea00049cd665bc607b85241e29e309e11110d462284a2202d5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.15:contract-norm/1:99f20c96bc3f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.46,
+    "raw_probability": 0.46400899775056237,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "bd30dfc8f8642845b7569f5c90e1d45929b159d7738239e5cec9ab3c8cbb0fa0",
+    "feature_row_sha256": "f57206742e7ae5323b47aff58e7b1130fe386520d1537aac289a20f83d04d8be"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.14:contract-norm/1:6ac6ae1805f3|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.44,
+    "raw_probability": 0.4397650587353162,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "b285170f8c1d387a88730e5bcb33e384da54bfbce48725b2c426ada03f913564",
+    "feature_row_sha256": "8d8f0f30e528d432d8924d2723063b281061e9c89b10d86824e23ce246694450"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.13:contract-norm/1:b5497765ceaa|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.41,
+    "raw_probability": 0.4125218695326168,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "15c2d3652fcfe9ebb75fd289a7a3af7f02d87f077ce7dea32fec89a254cc9960",
+    "feature_row_sha256": "95d604f54be7af19545159e9588a0a5d4bb65df384fc97654c772e9fdc52d480"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.12:contract-norm/1:d7bac4be1965|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.39,
+    "raw_probability": 0.3877780554861285,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "ed6197a753921f843a203dbf5acb7905275478c6dc0c8dd983742d7bf5a4341e",
+    "feature_row_sha256": "05fc58fb0efaf5cb99e07de540764d40c6914b714b5f1d198bbec304fb170964"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.11:contract-norm/1:c699ee75ae38|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.37,
+    "raw_probability": 0.3650337415646088,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "74cd0a75f8b9e747ace4340095c8028642bdeb10dff4ef971fd52807bf06a259",
+    "feature_row_sha256": "63f8d49b1b6415de7491a1db437d43ccbb8e5e402a3f65421ff4bd3c3aaae715"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.10:contract-norm/1:dc942783a09f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.34,
+    "raw_probability": 0.34278930267433144,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "75b4a6f7f89538fd83ae008c366b841c519e0f6b8e6cabbb631af095f4fc330f",
+    "feature_row_sha256": "db9fa83fd4b7027459b838b679b4a6015e81360b9039a4dae85961812429355c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.09:contract-norm/1:449c6bd34cf7|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.32,
+    "raw_probability": 0.32179455136215945,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "592bb01b85e9bc877398f20ff46741d3e1395d570ee538a2fe3a075b423dbbe5",
+    "feature_row_sha256": "cc1410784a3011d4c052fc7a12bf2bc8a4ccb1de8d1d1a0e5843bcedad8de12c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.08:contract-norm/1:ed28d7139f8d|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.3,
+    "raw_probability": 0.2973006748312922,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "0bb1a3d6d2e35370e820c72fadade9af986bbdbdfde11519aec0c861f9d5a97d",
+    "feature_row_sha256": "ca9dabc0f1506d2a89eafccb91ea756a1a33671352afd154e20f284c7634c545"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.07:contract-norm/1:6f6e46fb98a0|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.28,
+    "raw_probability": 0.2785553611597101,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "eaa8851cb9288bdcaf8afb3831b6e10b7cb49cdb0eeff19ea875a60e2625e9a3",
+    "feature_row_sha256": "366da4fe537dbf5bcbed45876bb493d704be1133f268a3bf0fb49115a6de7b1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.06:contract-norm/1:e185cfdadd59|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.26,
+    "raw_probability": 0.26230942264433893,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "1a666146962d235f25cf2015f83886c6d73ed4c6f4c1e58a8261fdceb064a77e",
+    "feature_row_sha256": "8c3d36c92273fc4cf888a8e4b13f285eb638883d92cdc127f4bd2d4d4766ac39"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.05:contract-norm/1:aa39b48d0ad2|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.25,
+    "raw_probability": 0.24506373406648338,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "6d1dc5bbd266f0c3c69aa6aee93f4f0199334b6323c11f68c9810b0d2c64d80e",
+    "feature_row_sha256": "53c8aa439c4dbe6c54ebbde7120b72b408ca02d06ae4612338bac52afcba833d"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.04:contract-norm/1:d1d8e1eec1b6|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.23,
+    "raw_probability": 0.22856785803549112,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "8a6c15d86d47bd7281d7cad0ac0bc382c36f00182937b4d1f314d853b0388c19",
+    "feature_row_sha256": "c6c2bf99179bb349e0daf0a067e6fe5bb3a895c6b85f5c77a1ff0b7f73ffea83"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.03:contract-norm/1:daeb77366dc8|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.22,
+    "raw_probability": 0.21607098225443638,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "b9203323a7196a6c23da3a19d222f0222d126419ed1fcd2a869907202b9add4c",
+    "feature_row_sha256": "7cce2de2acf94e71ec3fdf042c7bdc38c750517d4787d77021200075d1ccfafd"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.02:contract-norm/1:184fce7d7733|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.2,
+    "raw_probability": 0.19582604348912772,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "e1cc3c8a15075a735cab515164d2f6dcc1e20f75be0ac0684cce220dcfb4e546",
+    "feature_row_sha256": "a2d6c9d78fa8be1c179d0dc3ef3c670de6cd26672889c7e9c562f82de5b211d5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.01:contract-norm/1:cf0f70f11f25|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.18,
+    "raw_probability": 0.18107973006748312,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "7e8afff2df33a4e82ba6fee12314cadfb7b87ad945fd043eff0c31d66c13a2c7",
+    "feature_row_sha256": "c363e9b3424100cef270bfb951b20d723007134c513a6e9656471c39cc199e5a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.00:contract-norm/1:e8f81cd0e50f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.17,
+    "raw_probability": 0.16608347913021745,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "7e17412f80753a1db539e163ba4381454dedd83676be93271f7d556d3aba3cdb",
+    "feature_row_sha256": "3b0581a0a029289c65ca69dfae25553b42c19876686421fc6d8740b44414e725"
+   }
+  ],
+  "without_nbm": [
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-NYC:contract-norm/1:7e474063cd47|pbe-weather-precip@1.0.0|7c717cd3311dfe37|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.0.0",
+    "probability": 0.61,
+    "raw_probability": 0.6093499098368484,
+    "features_sha256": "7c717cd3311dfe37fa65905aed0bea27b0965bf9a3e9f031993ff61fbdd5c5c7",
+    "pbe_row_sha256": "f96643aed0e079b65f926eb0b7472ebb1c5fbab1fd16342780a4467c320e0f93",
+    "feature_row_sha256": "5ad714b99e4df3185ecd2cf6ee5dce5e1269d3a59d409ff75c8089eed3530eed"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-CHI:contract-norm/1:3ba68878562b|pbe-weather-precip@1.0.0|9df0c446031714d9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.0.0",
+    "probability": 0.07,
+    "raw_probability": 0.06667376953205968,
+    "features_sha256": "9df0c446031714d933055bb4bab2e6f02d30142e259a2faf07c3b8a58bf574c1",
+    "pbe_row_sha256": "1352ba70ecf1821696396b0a70ff3d46e54265b4c79f55ee1c082cb3b431a3f6",
+    "feature_row_sha256": "7a9c5e93c8d8020fcee3e0c59b798d46e12c2cd1781edabce13c9491fc0b08da"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-MIA:contract-norm/1:53aa049684f4|pbe-weather-precip@1.0.0|8ce492e804a354ed|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.0.0",
+    "probability": 0.32,
+    "raw_probability": 0.31668116245902744,
+    "features_sha256": "8ce492e804a354edb413f3ed4d60ea656e481d65bc91879b12e7bad3b3b0d878",
+    "pbe_row_sha256": "14cf64e8d1ec01695868922dc9cb5faf39c55da80e4f0eef5c72331f193752c3",
+    "feature_row_sha256": "3dc7deebbb6ad812e6ab9cbbded90f23d2741c427410090169457d21c3853319"
+   },
+   {
+    "record_id": "kalshi:KXRAIN-26OCT04-DC:contract-norm/1:f765575236a3|pbe-weather-precip@1.0.0|5915fea58a90c378|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-precip@1.0.0",
+    "probability": 0.76,
+    "raw_probability": 0.7598975631140872,
+    "features_sha256": "5915fea58a90c3788c5e620568a952cd26f7caad1832b89568154c24b963241d",
+    "pbe_row_sha256": "92710c03340e89f5e91815852b8d3d455bdb94f1e404f0376a8caceeb137c346",
+    "feature_row_sha256": "5e17ee8598c22056142b883c8c4bc66b7ef65d05d0ace9d02415304c379a5f38"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-T63:contract-norm/1:a5e2a169de9b|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.64,
+    "raw_probability": 0.6361889071938496,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "376bedaa52021f836dc55653a8e857e212f8b86b1ad1e6f94d491842933529d3",
+    "feature_row_sha256": "cb8db15b4d15a1bc095e2f58f2912298f87ba5f822c585e07200b611dd11391e"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B63.5:contract-norm/1:52025a991f45|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.2,
+    "raw_probability": 0.20455793520043933,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "69a7d14f09015beff1fbb4897d507cdc662a169bcf0758684d17328b7a41e1ca",
+    "feature_row_sha256": "9f9f5910c4da75bae0087fd2c03394e091f1519719b5ac332fe73899d413eba4"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B65.5:contract-norm/1:ea988c11abf7|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.09,
+    "raw_probability": 0.09308072487644152,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "a1586facd22f27c18c0e9174d4f9e40d2308c082d9d4164e5f389305310d57a4",
+    "feature_row_sha256": "dc9874f55c7194cb2c15290ee2e6d8b383698593a89f4c5d01ee13e284d174cb"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B67.5:contract-norm/1:3be3c3dbb39e|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.04,
+    "raw_probability": 0.04365733113673806,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "e2646aee8d17eeaa2fb28ae5878553dc882d63cf1a1d73e19744db72e18126a8",
+    "feature_row_sha256": "d2d06e68a7fc4397100180b16b9605e61a7efb467eefd0b315d225c5c4c235cb"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-B69.5:contract-norm/1:d9a72a57a64e|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.02,
+    "raw_probability": 0.01784733662822625,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "549f7bb5a04ab0e4ec937b09843074d488fc6afc080cfd216c270bf08713d023",
+    "feature_row_sha256": "8cd4423d79f8f3e065edbd7d8eb061a2358a6e74580ce993351065b8d347f145"
+   },
+   {
+    "record_id": "kalshi:KXHIGHNY-26OCT04-T70:contract-norm/1:1509ec1c1cc8|pbe-weather-maxtemp@1.0.0|e706cdd62cf94b72|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.01,
+    "features_sha256": "e706cdd62cf94b723643fd9e3ecedf4c51ba82722578ad0ca47017f176a72bf1",
+    "pbe_row_sha256": "51ea7163b652dcec6761526fbd0e92c591d7f54ebda48e9bbbcaf642cd5a96aa",
+    "feature_row_sha256": "fe60c0a0927d79f559ab5179306972148ecb149c7efd58bbec029c9bd805a93a"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-T70:contract-norm/1:5a143ed957b1|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.24,
+    "raw_probability": 0.23805601317957167,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "0f3b627ee9a656d205110a7d9a93f9b538874a0be3278da98630025692e55abd",
+    "feature_row_sha256": "6a90b290ff8305c93ff4f4a003547c30e35002c4eef0d36ce9d9d33c0c19dc0c"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B70.5:contract-norm/1:960cd96c31c1|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.22,
+    "raw_probability": 0.22377814387699066,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "bb7e8e544d898aa1a44bce353dd177076f631585a1b4d2a427feae1d0f7cc04b",
+    "feature_row_sha256": "ac0d52ee789c55e5bd5c5c57680f0af0507d889bb980ec8737456ebdc23372c4"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B72.5:contract-norm/1:be5ae9c341fd|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.23,
+    "raw_probability": 0.23091707852828117,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "d339d6b456f18b53f4b04f5fad1c535b0560553dafc824fedc2c3ac35a6b850f",
+    "feature_row_sha256": "3cb824bb439ac6a83bcc60e76ea5cddeee156a9904ee8ddeec6beeb07507bde1"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B74.5:contract-norm/1:87b786c3059c|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.15,
+    "raw_probability": 0.15238879736408567,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "cf3a0900755c745ce6a46e1fbb674f64e052f2688d6d5cd95236927c9b770749",
+    "feature_row_sha256": "cc55dba90f44068c9613a76774554fc9301d2d051337143bf0a8c82ebd72d2cd"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-B76.5:contract-norm/1:132ff74405b4|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.08,
+    "raw_probability": 0.0815485996705107,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "4a12016ffd4bdcd0622904d8bbc5d4e4bd215fbdabe4b95074f450b66a2356b1",
+    "feature_row_sha256": "7465de7eae77628c269ede2e4bb59101d59d4d2ac10fa5ab19ad774f1eceb27c"
+   },
+   {
+    "record_id": "kalshi:KXHIGHCHI-26OCT04-T77:contract-norm/1:18b69c3e93d2|pbe-weather-maxtemp@1.0.0|4bce5c1a0616c199|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.07,
+    "raw_probability": 0.07440966501922021,
+    "features_sha256": "4bce5c1a0616c199494f1b5317c8727dd6ed90b3c9e97241fcd250e5c47f6876",
+    "pbe_row_sha256": "c45168b2b7da7cce58912cc1965e690e593799c83401742cdbee00889068af5d",
+    "feature_row_sha256": "e0e92104be28a2a5d690804eb2457ae8cc5e5adeab3178b272fe4d1cee40dd3d"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-T85:contract-norm/1:6861dd42b5b7|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.01,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "e0ea4064a17a9324a7e29e4a2243c61707be263ea83a71bd53b97e9f56c681eb",
+    "feature_row_sha256": "84e7aa7cb624c1b3f5a794841e28b9c5c3e00c1b000d32f4634abbe7db560eb1"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B85.5:contract-norm/1:f2937c3ab24d|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.012355848434925865,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "0c925546432746a528259c705fee32a8ea5d007ab327eec1949e201c6d497b69",
+    "feature_row_sha256": "96298b28a30aa49fbc34120ba472c699e4c30fc1b80d2cfef61b6342797bb79b"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B87.5:contract-norm/1:cb80ed39a77e|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.05,
+    "raw_probability": 0.05464030752333882,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "1d83c1cdf0e743996838e17a2d46139e5621855a2347835419c4b5e2f39998e6",
+    "feature_row_sha256": "a3e103563a256209bcae5897dcaef341817eb098b37ce628e5d3405e339453e4"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B89.5:contract-norm/1:0f2d8f4cab19|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.3,
+    "raw_probability": 0.29516749038989565,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "6438eb9f4ac8b72916551b0c13a463fdeafc33daf3d824f45621e4e4c72a8987",
+    "feature_row_sha256": "5eaa7bebed65fda788d40f0a0172fb0d7da7fa7f2090cfb25f4037272a539d23"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-B91.5:contract-norm/1:7e93ae56590a|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.44,
+    "raw_probability": 0.442888522789676,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "51134b2f6318776912f4203107a22f41f545f896de5895c3e4b4a66624befea0",
+    "feature_row_sha256": "9bc685398e9f191ceb8796e927fef98b2e1001cb129f10e1adac3c4f9c2d0483"
+   },
+   {
+    "record_id": "kalshi:KXHIGHMIA-26OCT04-T92:contract-norm/1:5bd94ed9dccc|pbe-weather-maxtemp@1.0.0|a4ddd30266184f06|2026-10-03T18:30:00.000Z",
+    "model": "pbe-weather-maxtemp@1.0.0",
+    "probability": 0.19,
+    "raw_probability": 0.1913783635365184,
+    "features_sha256": "a4ddd30266184f060cc0b1677481028f8b14f84c568732253c217ffb6299f399",
+    "pbe_row_sha256": "db9383d80f072447e4ea858e287d50f8d74ec7269a2f32ac3f13ad8ba7fa9663",
+    "feature_row_sha256": "9da9bef0b2678c89eecc0a3279ebeb538f8f352b61e5d24073dcbe93a8fde3a4"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-C26:contract-norm/1:2d8322121380|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.009824613144374184,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "ba0db9a2b7ec5da16fb5e59b1c44f08465c0e74cce75cfdca14f37a23e72ae86",
+    "feature_row_sha256": "3a63792d8e46b7d98a85e97908d730f007d0c294109cae9f7b18a016a9fe4cac"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-C25:contract-norm/1:4891e8beff4d|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.01,
+    "raw_probability": 0.009824613144374184,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "b439465b4e29abf9a3cbd1a1c879295c5b9813ca62294a53e5a6a32f1a610461",
+    "feature_row_sha256": "db8de9b74c6c0a964ac0f4edd300fc11f0f8fe50474d81ff0c6c7cff5fda0507"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H0:contract-norm/1:8a7073eb5b5a|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.3,
+    "raw_probability": 0.2972208889461138,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "c0b276cea728035c4379bdab4f2bfad615ccc0b61476cefe7348f0c8128dceed",
+    "feature_row_sha256": "b6416193b050b93a73eae472173f70c67ac3623a8e2e61aa6712d7930dc1669f"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H25:contract-norm/1:e766d0dca6a4|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.53,
+    "raw_probability": 0.5309340325068075,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "b7283288cbb8cdaaaca1185f982f4df61fded8077df70a901e12648ed624235c",
+    "feature_row_sha256": "16962fef5b4fd5283a1c38e107304e258f3cd713998605cdd63804f9a950bf5f"
+   },
+   {
+    "record_id": "kalshi:KXFEDDECISION-26OCT-H26:contract-norm/1:741324947baa|pbe-fed-decision@1.0.0|cfdb73d44ceb35f9|2026-10-03T18:30:00.000Z",
+    "model": "pbe-fed-decision@1.0.0",
+    "probability": 0.15,
+    "raw_probability": 0.1521958522583302,
+    "features_sha256": "cfdb73d44ceb35f9ecf1a805f624a5484b01c923da9c52d252cfeab263d0a458",
+    "pbe_row_sha256": "fedf11d2c80fe01aee2967d7c8679d2b431a170c6f4152624e5463cf1ab7316f",
+    "feature_row_sha256": "c10782d2ad52895829a3bc7c806d49d52ef731236ed1e34a088e4f478c39757e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.29:contract-norm/1:8ae4cef6c972|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.81,
+    "raw_probability": 0.8124218945263684,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a90a05dcb710349f0f550ea06ea66e10784fd08b4efb72290bdad9fedad1bf8c",
+    "feature_row_sha256": "b9b8c37d73236cb30991900162689e2ef6464d06b64a2537ec7c5c4441aaf42a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.30:contract-norm/1:59ec2986759a|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.78,
+    "raw_probability": 0.7776805798550362,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "2cda23610c6f61c8c13054f295b030532dea8100169181c0d9d46742c5163e91",
+    "feature_row_sha256": "39e9c00c51760095115258bd0d10d6559ebc21e67e634868ab07a8826820cdeb"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.31:contract-norm/1:b90c9b4294af|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.75,
+    "raw_probability": 0.7464383904023995,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "3f3ecdc73f2036f5ddd39738519a1861aa5e5d03bfc5ae4808c1521c876b0cd6",
+    "feature_row_sha256": "88e1b341fe6954c6865cb59bef977b5f49decc667dbdd2a465ef67c1380180a5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.32:contract-norm/1:8a6a010475a5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.71,
+    "raw_probability": 0.7101974506373406,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "8faf31abd3667d4518f098f21b9b882c62d7ddba6cb32c9b26b45cf6144584dc",
+    "feature_row_sha256": "bd3fa3e1c6e0e987632ed676a5ed2ecb7f36abdcb913b8cd51cde207badf9867"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.33:contract-norm/1:d0a38a58300e|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.68,
+    "raw_probability": 0.6759560109972507,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "978b9b679a9f70f6e14f01dda5cf18f714d4f40483fb5d814af62d2d6c1d8e2a",
+    "feature_row_sha256": "c5f7867ecf7caf1009634940497940c247cc626c6590356e337e34fff2b6adee"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.34:contract-norm/1:9e49b10fb081|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.65,
+    "raw_probability": 0.6459635091227193,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "3ec734d62c94565048c9ea78d177dc632d97eed6bf34857af78ffe399e07a581",
+    "feature_row_sha256": "fb354ae84e1e38e91767781e6a558200a46400efe95206e7ab30771baaa020fd"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.35:contract-norm/1:b243d6f8e83d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.62,
+    "raw_probability": 0.6184703824043989,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "ea3e78d5f6cf91fc549fbd9c63e817a7305c4188a72fa0a630b82248074c0f0f",
+    "feature_row_sha256": "30a0450e100c19ad96c65fd9dd72b0753f316d8fa181e107b7e9d6808fb11880"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.36:contract-norm/1:b23c5d44976d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.58,
+    "raw_probability": 0.5847288177955511,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "52d005dc7b8525e5836215fee834a40c70c461f3a05b88080dd1810edab2586f",
+    "feature_row_sha256": "cd639285b2637e5f59902e06482b5d3f79893502fdb31d3568261b8a85fe2436"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.37:contract-norm/1:4d2baa3205d5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.56,
+    "raw_probability": 0.5559860034991252,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "d699216daef81e45feeb8d2676e02c824255f3e456385b1ad2b76a7f1419f2f0",
+    "feature_row_sha256": "2803bf4a0c249b60cdb5e375de464e3265816116772d8a6cbb5d02a54f6a5310"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.38:contract-norm/1:bd52941e400e|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.53,
+    "raw_probability": 0.526243439140215,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "e8a4ab20ee6a22f9c3fa9e2156aea84505b91d30c5cfb8245df01e0c97f764e2",
+    "feature_row_sha256": "8dcf6520ac3c0710bbc134f2aa21c4bb653e5ef1a8640935622a88a34735f899"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.39:contract-norm/1:db013e8a1bba|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.5,
+    "raw_probability": 0.4985003749062734,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "5db0b8797156f64156a45f3bfaf9182f48cdd142c29e325cea61a81dce5c6187",
+    "feature_row_sha256": "875c7808c725c255adb8429d7ff340ac112ce71b2c2d80846b48cc57812c6471"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.40:contract-norm/1:f841e1b65fdb|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.47,
+    "raw_probability": 0.47025743564108974,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "b04dd8b5f9c85b4069aa42a9eb047d35dba86221140940f408f485420de096e5",
+    "feature_row_sha256": "6dc73ec51ee99a2356f031d25c5cbd25d9f6635e4da9f0eaaa771392243ac93d"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.41:contract-norm/1:235373e7a0f5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.45,
+    "raw_probability": 0.4475131217195701,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "f55f77d94ee893e50946926e2f3e07de6ef9fdd80c77ecd9d921fcca41782b1a",
+    "feature_row_sha256": "5f3e5aabec55e23327441ad5c05a58f86cbc187c1d40723a9efac75ade8d8c2a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.42:contract-norm/1:946381d6ce28|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.42,
+    "raw_probability": 0.41977005748562857,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "4f4e4fca52a75d200d0287604a8b5856f5a8ea1430e295987d8245356ac24748",
+    "feature_row_sha256": "4ef588d5208096ba4c854b81276f7d862a850aab8d5fef437b38653452046e29"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.43:contract-norm/1:16d33bb5f8f7|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.39,
+    "raw_probability": 0.39477630592351914,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "59289d822ab9636aa8a95dc74cf146d94fb064b370326217d454c8af662c7b95",
+    "feature_row_sha256": "efd3f0611b860cef67c79b33b68adb8832c079b64e6be156176103a3e4eca3af"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.44:contract-norm/1:f55807b382f2|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.37,
+    "raw_probability": 0.37153211697075733,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a0ae3220273b7de22dc3352f2e33188aabecf4b5816a7d89aecee331908f26a9",
+    "feature_row_sha256": "5a2cce3fff1f2cb6cfb52c205716f22500be1ac033a37a42a7b025644d4028d3"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.45:contract-norm/1:8fbb4e85aa85|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.35,
+    "raw_probability": 0.3500374906273432,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "d653db046f2dc93bd16f161c34c9252171d911241ab89b7a69a29e674a6b93fe",
+    "feature_row_sha256": "38a135dc806cc86748179eed40ea88dc947947afb45c95d6c51afcc69bd2bf27"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.46:contract-norm/1:d0244ef649ab|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.33,
+    "raw_probability": 0.3297925518620345,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "f967c8d881639269a067bb94b6b88f4d0a5e53bba417422e6cc4e8238d40e3d9",
+    "feature_row_sha256": "18b81b6e9ef9d6cd3391f53f39d7e41f246c8bca8e2802ecbe3b56b87a9df530"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.47:contract-norm/1:f45e94767a8a|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.31,
+    "raw_probability": 0.3057985503624094,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "4f0784db4570f1728442cd8be34fc6ac8a163e090d57cc8b6afbf34525632070",
+    "feature_row_sha256": "e185b170ea661e37db7ca062bdb798ffd767723d1d9d3d58e8cb1722b1a33e34"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.48:contract-norm/1:55d9e8125bb0|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.28,
+    "raw_probability": 0.28005498625343667,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "bdbf4bbd668d0fa2e49d858b4b6d7ed4b7cab937b0abeebe355a1b2131501d12",
+    "feature_row_sha256": "5adc421bdcb30e16ea4afca00fc3fc22e4ff6c50fab273e1f25219b5cd8dce70"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.49:contract-norm/1:c80d1274668d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.26,
+    "raw_probability": 0.2610597350662334,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "62bcfc64c7198687999f23bd6c69838acd40848a6903791444f148c2121a0ec4",
+    "feature_row_sha256": "a141f2a6c6536b540479f7674cd929b9ce4a5cb08d7349a82cc6a58498f4aef5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.50:contract-norm/1:fb51467abbf5|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.25,
+    "raw_probability": 0.24581354661334667,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "44da32ed4b06d079abc75c36b32581fdfbfcd90c39cb7702548afe6a1c142281",
+    "feature_row_sha256": "a9df4a273759209fb442a5f35aea1239e6d22439fa0ac7db6d10c781e6b46dfe"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.51:contract-norm/1:68325a875578|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.23,
+    "raw_probability": 0.2290677330667333,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "5deccd3e9d195ac73bfcb17902e3ae13697969dd4d2c126fb09f0eebbf212a00",
+    "feature_row_sha256": "62c94767ba961a9d34048cbe8a73f02dec12b8d9d5cca6214e61e7a1128bd821"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.52:contract-norm/1:f58c036eb8e6|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.21,
+    "raw_probability": 0.21332166958260435,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "b56741438df9681d57f7cb8c197ed706e49e07b9b33a74863fb3b5076a254064",
+    "feature_row_sha256": "60eeb30bbe09d49e94923ff3418816ee8b1ac3c663c4f12ccce8ea47a0e9eeb6"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.53:contract-norm/1:a3efaf741610|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.2,
+    "raw_probability": 0.196575856035991,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a32cb35b2eb95dfee82f745bab2090be3131423ab73ad71a4dce1a7c5bd56c62",
+    "feature_row_sha256": "ad53e37333b14940d5ebcea7e53f1edd34c7bf1024d3db56017a72601c79de3e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.54:contract-norm/1:329824ff385d|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.18,
+    "raw_probability": 0.1820794801299675,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "2a790592b0741d00cd98c24832d56cac39cf92b13a20de8097bd9c2e59973db1",
+    "feature_row_sha256": "f892a2e2382f13ced9639934bb8018efd9d4268343e2af5685cdcb729bb1f15a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.55:contract-norm/1:dd8c615a4ff4|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.17,
+    "raw_probability": 0.16908272931767057,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "a748752190dafa6e4c0488aae809d317ec608242e57cb1fc50eecede20479c29",
+    "feature_row_sha256": "15459fb77862a8c8d491202ddaf7de2f23287ff61179483ecf14496251df2510"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.56:contract-norm/1:a9d46a7f34bc|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.15,
+    "raw_probability": 0.1540864783804049,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "1e7c35d24688967612f29987e9617a8cc88459f795b11443c1ed2313e2970946",
+    "feature_row_sha256": "911d61d4a15a989e10e633025aca4b2b660c6528bd640a7ceee0aed13f39b608"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.57:contract-norm/1:ed8ec3c171a0|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.14,
+    "raw_probability": 0.14208947763059235,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "47aa6f405a879f7e69f66781601b4627e4e0ea7b61e66ccd1cf4b0265ff43cdc",
+    "feature_row_sha256": "74e7391797a26201a56f5d15b3b8ccc1989cbbf40ab8e86d3428c320f88ca020"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRHM-26OCT30H-T5.58:contract-norm/1:b60b517dec98|pbe-rates-path@1.0.0|854e2af13acf738d|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.13,
+    "raw_probability": 0.1300924768807798,
+    "features_sha256": "854e2af13acf738ddc3fa6a2d166c93d7760eeb149c1e94c4e73556569caa87d",
+    "pbe_row_sha256": "6f065a8cdc55d1f0a5703e531d3885efbfd608579f36d1bd76ac42e94554f4d4",
+    "feature_row_sha256": "b0a3d89be737193964bbe6dfb6ac81c3197050d20db177e77bf6726ea5a476c3"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.24:contract-norm/1:41f761a12a82|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.73,
+    "raw_probability": 0.7341914521369658,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "4ed7983b29019a1f0c680cd0431def9c530cc43107819561ef6f829b751d172f",
+    "feature_row_sha256": "07427bcef2777afa907dd9c7d8894524fe8d2b795a5c0e44c83e0429022855d2"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.23:contract-norm/1:a14532cce67a|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.7,
+    "raw_probability": 0.6997000749812546,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "e084fb9ae971fbfcf0fbb1f16bab00d7a1db8bf169fbb89e82ea43e9f1ccc30d",
+    "feature_row_sha256": "44a8cc8f23c6ad28d4102efff80cd5b8c891a02b4a630e464431cc38882af5f6"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.22:contract-norm/1:f06c7a615ee3|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.67,
+    "raw_probability": 0.6684578855286178,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "3bd6da8bc25794865ed26a8c0adc3977691681bf54e01c8003e5ea3fc8358f01",
+    "feature_row_sha256": "2f6ea018dcdce4f8a1d07109659e4514b32d2effa421fdee10c716ceead59db7"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.21:contract-norm/1:7f1543e456a1|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.64,
+    "raw_probability": 0.6404648837790552,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "22aea3a9db5c6404b283fdbd3a4267fa667b618de77289ec909aa18e5105f385",
+    "feature_row_sha256": "bb7e228428f54de866a67d26a0d8ca95e5ba3255c76086aab0dc9987125225e4"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.20:contract-norm/1:d87937f55b34|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.61,
+    "raw_probability": 0.6094726318420395,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "4496d60b19b18859a48c1b8a97efb84428962fb2919d5a92119d86549ffdfee8",
+    "feature_row_sha256": "f2f6359ef901b5d263b271aea0e9897e801cd4105f0c90ac951b399ed43adc1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.19:contract-norm/1:e14f27820ca7|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.58,
+    "raw_probability": 0.5754811297175706,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "ba0bfc9ee58ab69a8037e5a16a4bf4435ceeddf3a846b063b512b9f4e0e830cb",
+    "feature_row_sha256": "f4a0ed5490ed7d7a6f9c1a090f945e77deabc6b2fd4dd1a899a933d256c0116e"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.18:contract-norm/1:5365f1822ec6|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.55,
+    "raw_probability": 0.5472381904523869,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "c1cec86e65add0aa26a970420ae4446ad872b73f467cb5e06a1f0b516f6bc87c",
+    "feature_row_sha256": "ba05da896a38da32ccb11d7b174110233619efc93958acdde9975f60182de877"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.17:contract-norm/1:57da06133763|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.52,
+    "raw_probability": 0.5224943764058986,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "304afb9b26f3370fa61237ad011822708d6cac48c8fa1d5d373f8710812487ac",
+    "feature_row_sha256": "909c9c7ee119b0e87ccad5c9e9b32f93738f16e3380c4e7a5db4edea54eead1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.16:contract-norm/1:5cad7b3aad53|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.49,
+    "raw_probability": 0.49275181204698826,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "94736ec53aebdad0300c9c8d8e28fcecafb95d6dd6c0cd125dc217a886351e4f",
+    "feature_row_sha256": "794f3c1af31da5ea00049cd665bc607b85241e29e309e11110d462284a2202d5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.15:contract-norm/1:99f20c96bc3f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.46,
+    "raw_probability": 0.46400899775056237,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "bd30dfc8f8642845b7569f5c90e1d45929b159d7738239e5cec9ab3c8cbb0fa0",
+    "feature_row_sha256": "f57206742e7ae5323b47aff58e7b1130fe386520d1537aac289a20f83d04d8be"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.14:contract-norm/1:6ac6ae1805f3|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.44,
+    "raw_probability": 0.4397650587353162,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "b285170f8c1d387a88730e5bcb33e384da54bfbce48725b2c426ada03f913564",
+    "feature_row_sha256": "8d8f0f30e528d432d8924d2723063b281061e9c89b10d86824e23ce246694450"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.13:contract-norm/1:b5497765ceaa|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.41,
+    "raw_probability": 0.4125218695326168,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "15c2d3652fcfe9ebb75fd289a7a3af7f02d87f077ce7dea32fec89a254cc9960",
+    "feature_row_sha256": "95d604f54be7af19545159e9588a0a5d4bb65df384fc97654c772e9fdc52d480"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.12:contract-norm/1:d7bac4be1965|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.39,
+    "raw_probability": 0.3877780554861285,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "ed6197a753921f843a203dbf5acb7905275478c6dc0c8dd983742d7bf5a4341e",
+    "feature_row_sha256": "05fc58fb0efaf5cb99e07de540764d40c6914b714b5f1d198bbec304fb170964"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.11:contract-norm/1:c699ee75ae38|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.37,
+    "raw_probability": 0.3650337415646088,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "74cd0a75f8b9e747ace4340095c8028642bdeb10dff4ef971fd52807bf06a259",
+    "feature_row_sha256": "63f8d49b1b6415de7491a1db437d43ccbb8e5e402a3f65421ff4bd3c3aaae715"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.10:contract-norm/1:dc942783a09f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.34,
+    "raw_probability": 0.34278930267433144,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "75b4a6f7f89538fd83ae008c366b841c519e0f6b8e6cabbb631af095f4fc330f",
+    "feature_row_sha256": "db9fa83fd4b7027459b838b679b4a6015e81360b9039a4dae85961812429355c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.09:contract-norm/1:449c6bd34cf7|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.32,
+    "raw_probability": 0.32179455136215945,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "592bb01b85e9bc877398f20ff46741d3e1395d570ee538a2fe3a075b423dbbe5",
+    "feature_row_sha256": "cc1410784a3011d4c052fc7a12bf2bc8a4ccb1de8d1d1a0e5843bcedad8de12c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.08:contract-norm/1:ed28d7139f8d|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.3,
+    "raw_probability": 0.2973006748312922,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "0bb1a3d6d2e35370e820c72fadade9af986bbdbdfde11519aec0c861f9d5a97d",
+    "feature_row_sha256": "ca9dabc0f1506d2a89eafccb91ea756a1a33671352afd154e20f284c7634c545"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.07:contract-norm/1:6f6e46fb98a0|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.28,
+    "raw_probability": 0.2785553611597101,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "eaa8851cb9288bdcaf8afb3831b6e10b7cb49cdb0eeff19ea875a60e2625e9a3",
+    "feature_row_sha256": "366da4fe537dbf5bcbed45876bb493d704be1133f268a3bf0fb49115a6de7b1c"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.06:contract-norm/1:e185cfdadd59|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.26,
+    "raw_probability": 0.26230942264433893,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "1a666146962d235f25cf2015f83886c6d73ed4c6f4c1e58a8261fdceb064a77e",
+    "feature_row_sha256": "8c3d36c92273fc4cf888a8e4b13f285eb638883d92cdc127f4bd2d4d4766ac39"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.05:contract-norm/1:aa39b48d0ad2|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.25,
+    "raw_probability": 0.24506373406648338,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "6d1dc5bbd266f0c3c69aa6aee93f4f0199334b6323c11f68c9810b0d2c64d80e",
+    "feature_row_sha256": "53c8aa439c4dbe6c54ebbde7120b72b408ca02d06ae4612338bac52afcba833d"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.04:contract-norm/1:d1d8e1eec1b6|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.23,
+    "raw_probability": 0.22856785803549112,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "8a6c15d86d47bd7281d7cad0ac0bc382c36f00182937b4d1f314d853b0388c19",
+    "feature_row_sha256": "c6c2bf99179bb349e0daf0a067e6fe5bb3a895c6b85f5c77a1ff0b7f73ffea83"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.03:contract-norm/1:daeb77366dc8|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.22,
+    "raw_probability": 0.21607098225443638,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "b9203323a7196a6c23da3a19d222f0222d126419ed1fcd2a869907202b9add4c",
+    "feature_row_sha256": "7cce2de2acf94e71ec3fdf042c7bdc38c750517d4787d77021200075d1ccfafd"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.02:contract-norm/1:184fce7d7733|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.2,
+    "raw_probability": 0.19582604348912772,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "e1cc3c8a15075a735cab515164d2f6dcc1e20f75be0ac0684cce220dcfb4e546",
+    "feature_row_sha256": "a2d6c9d78fa8be1c179d0dc3ef3c670de6cd26672889c7e9c562f82de5b211d5"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.01:contract-norm/1:cf0f70f11f25|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.18,
+    "raw_probability": 0.18107973006748312,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "7e8afff2df33a4e82ba6fee12314cadfb7b87ad945fd043eff0c31d66c13a2c7",
+    "feature_row_sha256": "c363e9b3424100cef270bfb951b20d723007134c513a6e9656471c39cc199e5a"
+   },
+   {
+    "record_id": "kalshi:KX10YRDIRLM-26OCT30L-T5.00:contract-norm/1:e8f81cd0e50f|pbe-rates-path@1.0.0|2e94ad5f35c45132|2026-10-03T18:30:00.000Z",
+    "model": "pbe-rates-path@1.0.0",
+    "probability": 0.17,
+    "raw_probability": 0.16608347913021745,
+    "features_sha256": "2e94ad5f35c45132e0053b4ea99eccfa0363c279fad79793c82ad58b458c0012",
+    "pbe_row_sha256": "7e17412f80753a1db539e163ba4381454dedd83676be93271f7d556d3aba3cdb",
+    "feature_row_sha256": "3b0581a0a029289c65ca69dfae25553b42c19876686421fc6d8740b44414e725"
+   }
+  ]
+ }
+}

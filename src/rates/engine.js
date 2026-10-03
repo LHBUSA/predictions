@@ -1,7 +1,7 @@
 // Rates path engine (RESEARCH). Live input: U.S. Treasury Daily Par Yield Curve CSV (the settlement source).
 import ratesArtifact from './artifacts/rates-path-v1.json' with { type: 'json' };
 import { ewmaSigma, simulateExtremes, crossProbability, seedFrom } from './rates-model.js';
-import { buildFeatureVector } from '../engine/leakage.js';
+import { buildFeatureVector, assertModelInput, assertContractTermsOnly } from '../engine/leakage.js';
 
 export const RATES_MODEL = Object.freeze({ id: ratesArtifact.model_id, version: ratesArtifact.version, state: 'RESEARCH' });
 export const TREASURY_CSV = (year) => `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv`;
@@ -34,6 +34,7 @@ export function businessDaysAfter(lastDate, endDate) {
 
 // sources: { treasury: { rows, urls, observationKey } }
 export function forecastRates(contract, sources, { now }) {
+  assertContractTermsOnly(contract); // leakage guard: a contract reaches the model as terms only, never with a venue price
   if (!/^YIELD_PATH_(MAX|MIN)$/.test(contract.event_type)) return { status: 'UNSUPPORTED_EVENT_TYPE' };
   if (Date.parse(now) >= Date.parse(contract.observation_end)) return { status: 'WINDOW_CLOSED' };
   const { tenor, level, direction, period_start: start, period_end: end } = contract.detail;
@@ -58,9 +59,9 @@ export function forecastRates(contract, sources, { now }) {
     { name: 'remaining_business_days', value: steps, source: src },
     { name: 'ewma_daily_sigma', value: +sigma.toFixed(5), source: src },
   ]);
-  const sim = simulateExtremes({ y0: last[tenor], sigma, steps, paths: ratesArtifact.paths, residuals: ratesArtifact.residuals[String(tenor)], seed: seedFrom(`${tenor}|${start}|${end}|${last.date}`) });
+  const sim = simulateExtremes(assertModelInput({ y0: last[tenor], sigma, steps, paths: ratesArtifact.paths, residuals: ratesArtifact.residuals[String(tenor)], seed: seedFrom(`${tenor}|${start}|${end}|${last.date}`) }));
   const [lo, hi] = ratesArtifact.probability_bounds;
-  const raw = crossProbability(sim, { direction, level });
+  const raw = crossProbability(sim, assertModelInput({ direction, level }));
   const p = Math.min(hi, Math.max(lo, raw));
   const distBp = Math.round((level - last[tenor]) * 100);
   const staleDays = businessDaysAfter(last.date, now.slice(0, 10));

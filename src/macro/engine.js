@@ -3,7 +3,7 @@
 import fedArtifact from './artifacts/fed-v1.json' with { type: 'json' };
 import registry from '../../data/fomc/scheduled-decisions.json' with { type: 'json' };
 import { predictFed, parseFredCsv, valueAsOf, targetMidAsOf } from './fed-model.js';
-import { buildFeatureVector } from '../engine/leakage.js';
+import { buildFeatureVector, assertModelInput, assertContractTermsOnly } from '../engine/leakage.js';
 
 export const FED_MODEL = Object.freeze({ id: fedArtifact.model_id, version: fedArtifact.version, state: 'SHADOW' });
 export const FRED_CSV = (id, cosd) => `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${id}${cosd ? `&cosd=${cosd}` : ''}`;
@@ -44,6 +44,7 @@ function yoy(rows) {
 
 // sources: { fred: {DGS6MO, DFEDTARU, DFEDTARL, ...context}, capturedAt }
 export function forecastFed(contract, sources, { now }) {
+  assertContractTermsOnly(contract); // leakage guard: a contract reaches the model as terms only, never with a venue price
   if (contract.event_type !== 'FOMC_DECISION_BUCKET') return { status: 'UNSUPPORTED_EVENT_TYPE' };
   if (Date.parse(now) >= Date.parse(contract.observation_start)) return { status: 'WINDOW_STARTED' };
   const today = now.slice(0, 10);
@@ -67,7 +68,7 @@ export function forecastFed(contract, sources, { now }) {
     { name: 'previous_decision_direction', value: Math.sign(prev.changeBps), source: src('DFEDTARU') },
     { name: 'horizon_days', value: horizonDays, source: { sourceClass: 'official', provider: 'Federal Reserve FOMC calendar', sourceId: `fomc-calendar:${meetingDate}` } },
   ]);
-  const dist = predictFed(fedArtifact, { d6: features.cmt6m_change_since_last_decision, c6: features.cmt6m_minus_target_mid, prev: features.previous_decision_direction, horizonDays });
+  const dist = predictFed(fedArtifact, assertModelInput({ d6: features.cmt6m_change_since_last_decision, c6: features.cmt6m_minus_target_mid, prev: features.previous_decision_direction, horizonDays }));
   const outcome = contract.detail.outcome;
   const cpi = f.CPIAUCSL ? yoy(f.CPIAUCSL.rows) : null;
   const core = f.CPILFESL ? yoy(f.CPILFESL.rows) : null;
