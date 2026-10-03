@@ -1,4 +1,4 @@
-# Predictions — rollback topology (as of 2026-10-03 23:20 UTC)
+# Predictions — rollback topology (as of 2026-10-03 23:40 UTC)
 
 Two independently deployed layers:
 
@@ -10,7 +10,8 @@ Two independently deployed layers:
 
 | Role | Version | Commit | Contents |
 |---|---|---|---|
-| **Current production** | `594d27f2-5a41-4a8d-8c16-93033153e294` (100%) | main at the commit adding this file | guard v2 + newsroom dry-run (+ sql/003 probe, mover copy fixes) + editorial art |
+| **Current production** | `c5cae12f-52e1-4459-81e8-9b862ca5ae93` (100%) | `ae3ce1c` | guard v2 + newsroom manual-publish path (no auto) + editorial art + d21b457 hidden `?mv=1` UI |
+| Previous | `594d27f2-5a41-4a8d-8c16-93033153e294` | `f34932d` | newsroom dry-run only (cannot serve published newsroom stories) |
 | Previous art release | `d83c2426-4be5-42ef-92b5-26745d5bb263` | `92207d9` | guard v2 + newsroom dry-run + editorial art |
 | **Guard-v2-only recovery** (preferred for any art/editorial problem) | `46cdcbfe-cb1e-47ca-a59d-af0de5acf7f6` (uploaded, 0% traffic) | `c3decef` | guard v2 + newsroom dry-run, **no** art Worker code. Built from a clean worktree at `c3decef`; 148/148 tests incl. leakage 7/7 (golden outputs byte-identical; Kalshi+Polymarket price invariance) |
 | Guard-v2 original deploy (same commit, other session) | `57c12f03-d3be-4dce-9115-87ef056fcac3` | `c3decef` | equivalent to the recovery version |
@@ -42,3 +43,11 @@ npx wrangler versions deploy b98f1aed-8417-4c06-880b-21ded196f92d@100% --config 
 - Guard v2 lives only in the Worker. Any Worker version **older than `57c12f03`** removes it.
 - Pages also reference a CSS cache key (`ASSET_V` in `workers/pbe-predictions/src/pages.js`); Vercel serves the current
   `site.css` for any key, so mixed versions degrade to the newest stylesheet, never to a missing one.
+
+## Newsroom data (sql/003, applied 2026-10-03 23:30 UTC as version 20261003233000)
+
+- Rolling the Worker back to any version before `c5cae12f` stops *serving* published newsroom stories (the Boston
+  canary would 404); the rows stay in `pred_newsroom_*` (append-only) and reappear when the Worker is rolled forward.
+- Unpublishing is not possible by design (append-only). To stop serving a story without a rollback, remove it in
+  code from the read path and redeploy; the ledger keeps the record.
+- `sql/003_newsroom_v1_ROLLBACK.sql` drops the tables and their records — export first; owner decision only.
