@@ -10,7 +10,8 @@ Two independently deployed layers:
 
 | Role | Version | Commit | Contents |
 |---|---|---|---|
-| **Current production** | `c5cae12f-52e1-4459-81e8-9b862ca5ae93` (100%) | `ae3ce1c` | guard v2 + newsroom manual-publish path (no auto) + editorial art + d21b457 hidden `?mv=1` UI |
+| **Current production** | `da480b34-c6c2-49b7-97c6-6f2bb7ebb5a2` (100%) | `2d099a9` | network shell + canonical publisher + article link graph; newsroom manual-publish (no auto); art; guard v2 incl. 3c4e734 DB-parity |
+| Previous | `c5cae12f-52e1-4459-81e8-9b862ca5ae93` | `ae3ce1c` | guard v2 + newsroom manual-publish path (no auto) + editorial art + d21b457 hidden `?mv=1` UI |
 | Previous | `594d27f2-5a41-4a8d-8c16-93033153e294` | `f34932d` | newsroom dry-run only (cannot serve published newsroom stories) |
 | Previous art release | `d83c2426-4be5-42ef-92b5-26745d5bb263` | `92207d9` | guard v2 + newsroom dry-run + editorial art |
 | **Guard-v2-only recovery** (preferred for any art/editorial problem) | `46cdcbfe-cb1e-47ca-a59d-af0de5acf7f6` (uploaded, 0% traffic) | `c3decef` | guard v2 + newsroom dry-run, **no** art Worker code. Built from a clean worktree at `c3decef`; 148/148 tests incl. leakage 7/7 (golden outputs byte-identical; Kalshi+Polymarket price invariance) |
@@ -51,3 +52,11 @@ npx wrangler versions deploy b98f1aed-8417-4c06-880b-21ded196f92d@100% --config 
 - Unpublishing is not possible by design (append-only). To stop serving a story without a rollback, remove it in
   code from the read path and redeploy; the ledger keeps the record.
 - `sql/003_newsroom_v1_ROLLBACK.sql` drops the tables and their records — export first; owner decision only.
+
+## Network integration (2026-10-03 23:45 UTC)
+
+- Predictions static shell: Vercel `index.html`/`models`/`methodology` regenerate from `brand/network.json`
+  (`node scripts/brand/shell.mjs --index` + `python scripts/brand/static-pages.py`). Worker pages use the same module.
+- Main site `propbetedge.ai` (LHBUSA/propbetedge-news-site, push = production): `a6c962b` + `246678a` add Predictions
+  to hasPart, /pro, footer, header, About, search. Revert those two commits to roll back; Stripe identity untouched.
+- sql/005 applied (20261003235900). Rollback file: sql/005_newsroom_transition_graph_ROLLBACK.sql (restores the 003 guard).
