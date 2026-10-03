@@ -357,3 +357,5 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 
 .ix-body .ix-fignote{font-family:var(--font);font-size:13px;line-height:1.5;color:var(--muted);margin:8px 0 0}
 .ix-ledger-tbl td{font-size:12.5px;vertical-align:top}.ix-ledger-tbl .mono{white-space:nowrap}
+.footer a{text-decoration:underline;text-underline-offset:2px}
+.share-btn{text-decoration:none!important}

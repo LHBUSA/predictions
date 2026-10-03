@@ -46,6 +46,10 @@
       "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights/rss.xml"
     },
     {
+      "source": "/insights/:slug/",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights/:slug"
+    },
+    {
       "source": "/insights/:path*",
       "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights/:path*"
     },
