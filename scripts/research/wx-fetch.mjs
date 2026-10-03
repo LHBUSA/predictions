@@ -1,5 +1,5 @@
 // Research data pull for the weather engine calibration (not a product runtime).
-//   node scripts/research/wx-fetch.mjs [outDir]
+//   node scripts/research/wx-fetch.mjs [outDir] [GFS,NBS]
 // Writes, per CLI station:
 //   acis/<ICAO>.json        official daily pcpn/maxt/mint (NOAA RCC-ACIS, GHCN-D station id) 1991-01-01..yesterday
 //   mos/<ICAO>-<YEAR>.csv   archived NWS GFS MOS (MAV) guidance via the IEM archive, every run
@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { CLI_STATIONS } from '../../src/weather/stations.js';
 
 const OUT = process.argv[2] || 'D:/Workers/scratch/predictions-wx';
+const MODELS = (process.argv[3] || 'GFS').split(','); // GFS = GFS MOS (MAV); NBS = National Blend of Models (NBM) station text
 const UA = 'PropBetEdgePredictions/0.1 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const MOS_YEARS = [2023, 2024, 2025, 2026];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -16,8 +17,9 @@ const exists = (p) => access(p).then(() => true, () => false);
 
 async function get(url, init = {}) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const res = await fetch(url, { ...init, headers: { 'user-agent': UA, ...(init.headers || {}) } });
-    if (res.ok) return res.text();
+    let res;
+    try { res = await fetch(url, { ...init, headers: { 'user-agent': UA, ...(init.headers || {}) } }); if (res.ok) return await res.text(); }
+    catch (e) { console.error(`  ${e.code || e.message} ${url} (attempt ${attempt})`); await sleep(5000 * attempt); continue; }
     console.error(`  ${res.status} ${url} (attempt ${attempt})`);
     await sleep(5000 * attempt);
   }
@@ -37,15 +39,15 @@ for (const st of Object.values(CLI_STATIONS)) {
     console.log(`acis ${st.icao} ${text.length}B`);
     await sleep(1500);
   }
-  for (const year of MOS_YEARS) {
-    const mosPath = join(OUT, 'mos', `${st.icao}-${year}.csv`);
+  for (const model of MODELS) for (const year of MOS_YEARS) {
+    const mosPath = join(OUT, 'mos', model === 'GFS' ? `${st.icao}-${year}.csv` : `${model}-${st.icao}-${year}.csv`);
     if (await exists(mosPath)) continue;
     const sts = `${year}-01-01T00:00Z`;
     const ets = year === 2026 ? new Date().toISOString().slice(0, 13) + ':00Z' : `${year + 1}-01-01T00:00Z`;
-    const url = `https://mesonet.agron.iastate.edu/cgi-bin/request/mos.py?station=${st.icao}&model=GFS&sts=${sts}&ets=${ets}&format=csv`;
+    const url = `https://mesonet.agron.iastate.edu/cgi-bin/request/mos.py?station=${st.icao}&model=${model}&sts=${sts}&ets=${ets}&format=csv`;
     const text = await get(url);
     await writeFile(mosPath, text);
-    console.log(`mos ${st.icao} ${year} ${text.length}B`);
+    console.log(`mos ${model} ${st.icao} ${year} ${text.length}B`);
     await sleep(2000);
   }
 }

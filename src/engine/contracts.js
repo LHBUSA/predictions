@@ -5,6 +5,7 @@
 import { classifyContract } from './classify.js';
 import { cliStation } from '../weather/stations.js';
 import { cliWindow } from '../weather/time.js';
+import { normalizeFed } from '../macro/fed-contract.js';
 
 export const NORMALIZER_VERSION = 'contract-norm/1';
 
@@ -165,8 +166,15 @@ function normalizeHigh(ctx) {
 
 const WEATHER_NORMALIZERS = [normalizeRain, normalizeHigh];
 
-// Additional domain normalizers register here (e.g. macro). Each returns null when the template does not match.
-const DOMAIN_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [] };
+function macroFed(ctx) {
+  const r = normalizeFed(ctx);
+  if (!r) return null;
+  if (r.__fail) return fail(r.status, r.reason, ctx, r.extra);
+  return { ...base(ctx), ...r };
+}
+
+// Additional domain normalizers register here. Each returns null when the template does not match.
+const DOMAIN_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [macroFed] };
 
 export function registerNormalizer(domain, fn) {
   if (!DOMAIN_NORMALIZERS[domain]) DOMAIN_NORMALIZERS[domain] = [];

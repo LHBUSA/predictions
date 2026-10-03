@@ -118,3 +118,15 @@ test('artifacts carry holdout evidence that the model beats raw guidance and cli
   assert.equal(tempArtifact.holdout.selected, 'empirical');
   assert.ok(tempArtifact.holdout.methods.empirical.log_loss_exact_integer < tempArtifact.holdout.methods.normal_bias.log_loss_exact_integer);
 });
+
+test('rain v1.1 uses the National Blend only for the exact station; falls back to v1 otherwise', async () => {
+  const nbm = (icao) => { const j = read(`./fixtures/weather/nbs-${icao}.json`); const rows = j.data.map(normalizeMosRow); return { icao, model: 'NBS', runtime: rows[0].runtime, url: `iem:nbs:${icao}`, observationKey: `n:${icao}`, rows }; };
+  const c = await contract(rain, '-MIA');
+  const withNbm = forecastWeather(c, { mos: mos('KMIA'), nbm: nbm('KMIA'), grid }, { now: NOW });
+  assert.equal(withNbm.model.version, '1.1.0');
+  assert.ok('nbm_pop_union' in withNbm.features);
+  assert.ok(withNbm.evidence.some((e) => /National Blend/.test(e.label)));
+  const wrong = forecastWeather(c, { mos: mos('KMIA'), nbm: nbm('KORD'), grid }, { now: NOW });
+  assert.equal(wrong.model.version, '1.0.0');
+  assert.ok(!('nbm_pop_union' in wrong.features));
+});

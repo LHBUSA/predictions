@@ -1,6 +1,6 @@
 // Public read API. Every number served is either a stored venue observation or a stored, versioned PBE
 // forecast; nothing is computed for display that is not in the ledger. Contracts without a model are
-// returned as MARKET MONITORING with no PBE probability.
+// returned as MARKET MONITORING with no PBE probability. SHADOW forecasts are stored but never served publicly.
 
 const pct = (p) => (p === null || p === undefined ? null : Math.round(Number(p) * 100));
 
@@ -27,7 +27,7 @@ export async function board(store, { domain = null, now = new Date().toISOString
   const contracts = await chunked(store, 'pred_contracts', 'contract_id,event_id,market_id,normalization_status,status_reason,event_type,station_id,location,comparator,threshold_low,threshold_high,units,outcome_label,observation_start,observation_end,timezone,resolution_authority,verification_dataset,yes_condition,normalized_at', 'event_id', events.map((e) => e.event_id));
   const current = latestBy(contracts, 'market_id', 'normalized_at');
   const ids = [...current.values()].map((c) => c.contract_id);
-  const forecasts = ids.length ? await chunked(store, 'pred_forecasts', 'forecast_id,contract_id,model_id,model_version,model_state,probability,market_probability,divergence_points,confidence,captured_at,data_cutoff_at', 'contract_id', ids) : [];
+  const forecasts = (ids.length ? await chunked(store, 'pred_forecasts', 'forecast_id,contract_id,model_id,model_version,model_state,probability,market_probability,divergence_points,confidence,captured_at,data_cutoff_at', 'contract_id', ids) : []).filter((f) => f.model_state !== 'SHADOW');
   const venue = ids.length ? await chunked(store, 'pred_venue_snapshots', 'contract_id,market_id,probability,bid,ask,last_price,volume,open_interest,market_status,lifecycle,captured_at,raw', 'contract_id', ids, { captured_at: `gte.${since}` }) : [];
   const lastF = latestBy(forecasts, 'contract_id', 'captured_at');
   const lastV = latestBy(venue, 'contract_id', 'captured_at');
@@ -60,16 +60,17 @@ export function divergences(boardDoc, { limit = 25 } = {}) {
   return rows.slice(0, limit);
 }
 
-export async function contractRecord(store, contractId) {
+export async function contractRecord(store, contractId, { includeShadow = false } = {}) {
   const [c] = await store.select('pred_contracts', { select: '*', contract_id: `eq.${contractId}` });
   if (!c) return null;
   const [event] = await store.select('pred_events', { select: '*', event_id: `eq.${c.event_id}` });
-  const forecasts = await store.select('pred_forecasts', { select: 'forecast_id,record_id,model_id,model_version,model_state,probability,market_probability,divergence_points,confidence,captured_at,data_cutoff_at,feature_snapshot_id,features_sha256,provenance,explanation,revision_of,revision_reason', contract_id: `eq.${contractId}` }, { order: 'captured_at.asc', limit: 1000 });
+  const forecasts = (await store.select('pred_forecasts', { select: 'forecast_id,record_id,model_id,model_version,model_state,probability,market_probability,divergence_points,confidence,captured_at,data_cutoff_at,feature_snapshot_id,features_sha256,provenance,explanation,metadata,revision_of,revision_reason', contract_id: `eq.${contractId}` }, { order: 'captured_at.asc', limit: 1000 })).filter((f) => includeShadow || f.model_state !== 'SHADOW');
+  const visible = new Set(forecasts.map((f) => f.forecast_id));
   const features = forecasts.length ? await chunked(store, 'pred_feature_snapshots', 'snapshot_id,cutoff_at,features,source_observation_keys,quality', 'snapshot_id', forecasts.map((f) => f.feature_snapshot_id)) : [];
   const market = await store.select('pred_venue_snapshots', { select: 'captured_at,probability,bid,ask,last_price,volume,open_interest,market_status,lifecycle,raw', market_id: `eq.${c.market_id}` }, { order: 'captured_at.asc', limit: 2000 });
-  const designations = await store.select('pred_forecast_designations', { select: 'designation,forecast_id,rule_version,reference_time,designated_at', contract_id: `eq.${contractId}` });
+  const designations = (await store.select('pred_forecast_designations', { select: 'designation,forecast_id,model_id,rule_version,reference_time,designated_at', contract_id: `eq.${contractId}` })).filter((d) => visible.has(d.forecast_id));
   const resolutions = await store.select('pred_resolutions', { select: '*', contract_id: `eq.${contractId}` });
-  const scores = await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,improvement,outcome,market_probability,forecast_id', contract_id: `eq.${contractId}` });
+  const scores = (await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,improvement,outcome,market_probability,forecast_id', contract_id: `eq.${contractId}` })).filter((x) => visible.has(x.forecast_id));
   const featureById = new Map(features.map((f) => [f.snapshot_id, f]));
   const first = market[0] || null;
   const lastOpen = [...market].reverse().find((m) => m.market_status === 'active') || null;
@@ -100,7 +101,10 @@ export async function queue(store, { now = new Date().toISOString() } = {}) {
 }
 
 export async function trackRecord(store) {
-  const scores = await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,outcome,contract_id', designation: 'not.is.null' }, { limit: 10000 });
+  // public track record = RESEARCH/VALIDATED/OFFICIAL forecasts only (shadow models are scored privately)
+  const all = await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,outcome,contract_id,forecast_id', designation: 'not.is.null' }, { limit: 10000 });
+  const shadowIds = new Set((all.length ? await chunked(store, 'pred_forecasts', 'forecast_id,model_state', 'forecast_id', [...new Set(all.map((x) => x.forecast_id))]) : []).filter((f) => f.model_state === 'SHADOW').map((f) => f.forecast_id));
+  const scores = all.filter((x) => !shadowIds.has(x.forecast_id));
   const groups = {};
   for (const s of scores) {
     const k = `${s.designation}|${s.scoring_method}`;

@@ -82,14 +82,14 @@ export function maxTempGuidance(rows, date) {
   return row ? row.n_x : null;
 }
 
-export async function fetchMosRun({ icao, runtime = null }, { fetchImpl = globalThis.fetch, userAgent } = {}) {
+export async function fetchMosRun({ icao, runtime = null, model = MOS_MODEL }, { fetchImpl = globalThis.fetch, userAgent } = {}) {
   const url = new URL(IEM_MOS_JSON);
   url.searchParams.set('station', icao);
-  url.searchParams.set('model', MOS_MODEL);
+  url.searchParams.set('model', model);
   if (runtime) url.searchParams.set('runtime', runtime.replace(/:00\.000Z$/, 'Z'));
   const res = await fetchImpl(url, { headers: { accept: 'application/json', ...(userAgent ? { 'user-agent': userAgent } : {}) } });
   if (!res.ok) throw new Error(`IEM MOS ${icao} ${res.status}`);
   const body = await res.json();
   const rows = (body.data || []).map(normalizeMosRow).filter((r) => r.runtime && r.ftime);
-  return Object.freeze({ icao, url: url.toString(), runtime: rows[0]?.runtime ?? null, rows: Object.freeze(rows) });
+  return Object.freeze({ icao, model, url: url.toString(), runtime: rows[0]?.runtime ?? null, rows: Object.freeze(rows) });
 }

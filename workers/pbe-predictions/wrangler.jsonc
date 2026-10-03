@@ -1,0 +1,21 @@
+{
+  // PropBetEdge Predictions engine (owner-approved Worker name, 2026-10-03). One Worker, modular source.
+  "name": "pbe-predictions",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["*/15 * * * *"] },
+  // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
+  "services": [{ "binding": "MARKETS", "service": "propsports-markets" }],
+  "vars": {
+    "SUPABASE_URL": "https://tkmlnhmylqnttmnsnief.supabase.co",
+    "WEATHER_SERIES": "KXRAIN,KXHIGHNY,KXHIGHMIA,KXHIGHCHI,KXHIGHLAX,KXHIGHAUS,KXHIGHDEN,KXHIGHPHIL",
+    // macro: Fed decision (SHADOW model; stored, not served publicly)
+    "MACRO_SERIES": "KXFEDDECISION",
+    // cron writes only when "true" (requires sql/002 applied on tkmln)
+    "ENGINE_ENABLED": "false"
+  }
+  // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
+}

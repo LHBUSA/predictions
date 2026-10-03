@@ -1,0 +1,62 @@
+{
+  "model_id": "pbe-weather-precip",
+  "version": "1.1.0",
+  "status": "RESEARCH",
+  "features": [
+    "intercept",
+    "logit_pop_union",
+    "logit_pop_max",
+    "logit_nbm_pop_union",
+    "logit_nbm_pop_max",
+    "logit_climatology",
+    "run_lead_days_minus_1"
+  ],
+  "coefficients": [
+    0.425728,
+    0.338625,
+    0.342676,
+    0.231596,
+    0.394145,
+    0.033509,
+    0.028299
+  ],
+  "probability_bounds": [
+    0.02,
+    0.98
+  ],
+  "target": "P(NWS CLI daily precipitation > 0.00 in) at the contract CLI site over the local-standard-time climate day; trace = NO",
+  "inputs": [
+    "NWS GFS MOS (MAV) 6-h PoP",
+    "NWS National Blend of Models (NBM, NBS text) 6-h PoP",
+    "NOAA RCC-ACIS 1991-2020 station climatology"
+  ],
+  "use_rule": "Used when an NBM run published by the cutoff (runtime + 5 h) is <= 24 h old and covers the window; otherwise the engine falls back to precip-v1 (GFS MOS only).",
+  "training": {
+    "cases": 101835,
+    "from": "2023-01-03",
+    "to_exclusive": "2025-07-01",
+    "note": "IEM NBM archive has month-long gaps (e.g. 2024-01, 2025-01, 2026-06); only days with both guidance sets are used"
+  },
+  "holdout": {
+    "cases": 52896,
+    "same_cases_comparison": {
+      "v1_1_gfs_nbm": {
+        "brier": 0.0864,
+        "log_loss": 0.2765
+      },
+      "v1_gfs_only": {
+        "brier": 0.092,
+        "log_loss": 0.2948
+      },
+      "nbm_raw_union": {
+        "brier": 0.0925,
+        "log_loss": 0.2964
+      },
+      "climatology": {
+        "brier": 0.1787,
+        "log_loss": 0.5348
+      }
+    }
+  },
+  "generated_at": "2026-10-03T18:15:15.751Z"
+}

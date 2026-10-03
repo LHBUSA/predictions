@@ -6,6 +6,15 @@ const EPS = 0.01;
 const clamp = (p) => Math.min(1 - EPS, Math.max(EPS, p));
 export const logit = (p) => Math.log(clamp(p) / (1 - clamp(p)));
 
+// v1.1 (GFS MOS + National Blend of Models + climatology): used only when an NBM run was published by the cutoff.
+export const PRECIP_FEATURES_NBM = Object.freeze(['intercept', 'logit_pop_union', 'logit_pop_max', 'logit_nbm_pop_union', 'logit_nbm_pop_max', 'logit_climatology', 'run_lead_days_minus_1']);
+export function precipFeatureVectorNbm(f) {
+  for (const k of ['pop_union', 'pop_max', 'nbm_pop_union', 'nbm_pop_max', 'clim', 'runLeadH']) {
+    if (!Number.isFinite(f?.[k])) throw new TypeError(`precip feature ${k} is required`);
+  }
+  return [1, logit(f.pop_union), logit(f.pop_max), logit(f.nbm_pop_union), logit(f.nbm_pop_max), logit(f.clim), (f.runLeadH - 24) / 24];
+}
+
 export function precipFeatureVector(f) {
   for (const k of ['pop_union', 'pop_max', 'clim', 'runLeadH']) {
     if (!Number.isFinite(f?.[k])) throw new TypeError(`precip feature ${k} is required`);
@@ -56,7 +65,7 @@ function solve(A, b) {
 }
 
 export function predictPrecip(artifact, f) {
-  const x = precipFeatureVector(f);
+  const x = artifact.features.length === PRECIP_FEATURES_NBM.length ? precipFeatureVectorNbm(f) : precipFeatureVector(f);
   const terms = artifact.coefficients.map((c, i) => c * x[i]);
   const z = terms.reduce((a, b) => a + b, 0);
   const [lo, hi] = artifact.probability_bounds;

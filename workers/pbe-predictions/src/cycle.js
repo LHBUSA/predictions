@@ -13,6 +13,8 @@ import { assertMarketFree } from '../../../src/engine/leakage.js';
 import { dueDesignations, scoreRows, DESIGNATION_RULES } from '../../../src/engine/designations.js';
 import { sha256Hex } from '../../../src/engine/contracts.js';
 import { MarketsService, MarketsBackoffError } from './markets.js';
+import { forecastFed, fetchFredSeries, FED_INPUT_SERIES, FED_CONTEXT_SERIES, FED_MODEL } from '../../../src/macro/engine.js';
+import { valueAsOf } from '../../../src/macro/fed-model.js';
 
 export const USER_AGENT = 'PropBetEdgePredictions/1.0 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const bpToProb = (bp) => (bp === null || bp === undefined ? null : bp / 10000);
@@ -69,7 +71,22 @@ async function weatherSources(st, { fetchImpl, now }) {
     data: { runtime: mos.runtime, rows: mos.rows.map((r) => ({ ftime: r.ftime, n_x: r.n_x, p06: r.p06, p12: r.p12, q06: r.q06, tmp: r.tmp, dpt: r.dpt })) },
     units: 'percent / degF', geography: { icao: st.icao, cli: st.cli }, provenance: { url: mos.url, archive: 'Iowa Environmental Mesonet MOS archive', product: 'GFS MOS MAV' },
   };
-  const out = { mos: { ...mos, observationKey: sourceObservationKey(mosObs) }, observations: [mosObs], grid: null };
+  const out = { mos: { ...mos, observationKey: sourceObservationKey(mosObs) }, observations: [mosObs], grid: null, nbm: null };
+  try {
+    const nbm = await fetchMosRun({ icao: st.icao, model: 'NBS' }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+    if (nbm.runtime) {
+      const nbmObs = {
+        provider: 'NWS National Blend of Models (NBS) via IEM', sourceId: `mos:NBS:${st.icao}:${nbm.runtime}`, sourceClass: 'official',
+        observedAt: nbm.runtime, availableAt: runAvailableAt(nbm.runtime) < now ? runAvailableAt(nbm.runtime) : now, capturedAt: now, revision: nbm.runtime,
+        data: { runtime: nbm.runtime, rows: nbm.rows.map((r) => ({ ftime: r.ftime, n_x: r.n_x, p06: r.p06, p12: r.p12, q06: r.q06, tmp: r.tmp })) },
+        units: 'percent / degF', geography: { icao: st.icao, cli: st.cli }, provenance: { url: nbm.url, archive: 'Iowa Environmental Mesonet MOS archive', product: 'NBM NBS' },
+      };
+      out.nbm = { ...nbm, observationKey: sourceObservationKey(nbmObs) };
+      out.observations.push(nbmObs);
+    }
+  } catch (e) {
+    out.nbm = null; // NBM unavailable: the engine falls back to the GFS-only tier
+  }
   if (grid?.body) {
     const updated = grid.body.properties?.updateTime || now;
     const gridObs = {
@@ -92,13 +109,29 @@ function observationRow(o) {
   };
 }
 
+// Official macro inputs (FRED public CSV; daily H.15 never revised; context series = latest vintage at capture).
+async function fredInputs({ fetchImpl, now }) {
+  const since = new Date(Date.parse(now) - 500 * 86400000).toISOString().slice(0, 10);
+  const cached = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 3600, cacheEverything: true } });
+  const fred = await fetchFredSeries([...FED_INPUT_SERIES, ...FED_CONTEXT_SERIES], { fetchImpl: cached, userAgent: USER_AGENT, since });
+  const observations = []; const observationKeys = {};
+  for (const [id, s] of Object.entries(fred)) {
+    const last = s.rows.at(-1);
+    const o = { provider: 'FRED', sourceId: `fred:${id}`, sourceClass: 'official', observedAt: `${last[0]}T00:00:00.000Z`, availableAt: now, capturedAt: now, revision: `${last[0]}:${last[1]}`,
+      value: last[1], data: { rows: s.rows.slice(-90) }, units: null, geography: { country: 'US' }, provenance: { url: s.url, note: 'public fredgraph.csv; no API key' } };
+    observations.push(o); observationKeys[id] = sourceObservationKey(o);
+  }
+  return { fred, observations, observationKeys };
+}
+
 export async function runCycle(env, { store, markets = null, fetchImpl = globalThis.fetch, now = new Date().toISOString(), dryRun = false } = {}) {
   const mkt = markets || new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN });
   const nowMs = Date.parse(now);
   const summary = { now, dry_run: dryRun, series: {}, events: 0, contracts: { NORMALIZED: 0, UNMODELABLE: 0, HOLD_RESOLUTION_AMBIGUOUS: 0, UNSUPPORTED_DOMAIN: 0 }, venue_snapshots: 0, forecasts: 0, forecast_skips: {}, designations: 0, resolutions: 0, scores: 0, errors: [] };
   const writes = { events: [], contracts: [], venue: [], observations: [], features: [], forecasts: [] };
-  const seriesList = String(env.WEATHER_SERIES || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const seriesList = [env.WEATHER_SERIES, env.MACRO_SERIES].join(',').split(',').map((s) => s.trim()).filter(Boolean);
   const stationSources = new Map();
+  let fredSources = null;
 
   for (const seriesTicker of seriesList) {
     try {
@@ -114,10 +147,10 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
         const domain = contracts[0]?.domain || 'OTHER';
         const states = (ev.markets || []).map((m) => normalizeMarket(m, { series, event: ev, capturedAt: now }).state);
         const lifecycle = lifecycleFor(states, normalized[0]?.observation_start || null, nowMs) || 'DISCOVERED';
-        const modelFamily = normalized[0] ? (WEATHER_MODELS[normalized[0].event_type]?.id ?? null) : null;
+        const modelFamily = normalized[0] ? (WEATHER_MODELS[normalized[0].event_type]?.id ?? (normalized[0].event_type === 'FOMC_DECISION_BUCKET' ? FED_MODEL.id : null)) : null;
         writes.events.push({
           event_id: eventId, canonical_question: ev.title, category: domain.toLowerCase(), status: 'open', domain, event_family: seriesTicker, venue: 'kalshi',
-          venue_event_id: ev.event_ticker, venue_series_id: seriesTicker, model_family: modelFamily, model_state: modelFamily ? 'RESEARCH' : 'MARKET_MONITORING', lifecycle,
+          venue_event_id: ev.event_ticker, venue_series_id: seriesTicker, model_family: modelFamily, model_state: modelFamily ? (domain === 'MACRO' ? 'SHADOW' : 'RESEARCH') : 'MARKET_MONITORING', lifecycle,
           close_time: ev.markets?.[0]?.close_time ?? null, resolution_authority: normalized[0]?.resolution_authority ?? null,
           resolution_rule: normalized[0]?.rules_primary ?? null, resolution_time: ev.markets?.[0]?.expected_expiration_time ?? null,
           metadata: { series_title: series?.title ?? null, settlement_sources: series?.settlement_sources ?? [], strike_date: ev.strike_date ?? null, sub_title: ev.sub_title ?? null },
@@ -132,13 +165,22 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
 
         // forecasts: domain data only; the market row captured above is attached as the benchmark afterwards
         for (const c of normalized) {
-          const st = cliStation(c.station_id);
-          if (!stationSources.has(st.cli)) {
-            try { stationSources.set(st.cli, await weatherSources(st, { fetchImpl, now })); } catch (e) { stationSources.set(st.cli, { error: e.message }); }
+          let f;
+          if (c.domain === 'MACRO') {
+            if (!fredSources) {
+              try { fredSources = await fredInputs({ fetchImpl, now }); } catch (e) { fredSources = { error: e.message }; }
+            }
+            if (fredSources.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; summary.errors.push({ source: 'fred', error: fredSources.error }); continue; }
+            f = forecastFed(c, fredSources, { now });
+          } else {
+            const st = cliStation(c.station_id);
+            if (!stationSources.has(st.cli)) {
+              try { stationSources.set(st.cli, await weatherSources(st, { fetchImpl, now })); } catch (e) { stationSources.set(st.cli, { error: e.message }); }
+            }
+            const src = stationSources.get(st.cli);
+            if (src.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; continue; }
+            f = forecastWeather(c, src, { now });
           }
-          const src = stationSources.get(st.cli);
-          if (src.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; continue; }
-          const f = forecastWeather(c, src, { now });
           if (f.status !== 'OK') { summary.forecast_skips[f.status] = (summary.forecast_skips[f.status] || 0) + 1; continue; }
           assertMarketFree(f.features);
           const featuresSha = await sha256Hex(JSON.stringify({ model: f.model, features: f.features }));
@@ -152,7 +194,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
             market_probability: v?.probability ?? null, market_snapshot_key: v?.snapshot_key ?? null, market_observed_at: v?.captured_at ?? null,
             data_cutoff_at: f.dataCutoffAt, model_state: f.model.state, confidence: f.confidence, features_sha256: featuresSha,
             provenance: f.provenance, explanation: { ...f.explanation, evidence: f.evidence, raw_probability: f.rawProbability },
-            metadata: { domain: 'WEATHER', event_type: c.event_type, station_id: c.station_id, observation_start: c.observation_start },
+            metadata: { domain: c.domain, event_type: c.event_type, station_id: c.station_id, observation_start: c.observation_start, ...(f.distribution ? { distribution: f.distribution } : {}) },
           });
         }
       }
@@ -162,6 +204,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
     }
   }
   for (const s of stationSources.values()) if (s.observations) writes.observations.push(...s.observations.map(observationRow));
+  if (fredSources?.observations) writes.observations.push(...fredSources.observations.map(observationRow));
 
   // A forecast is only new when its feature hash is new for the contract (same inputs -> no duplicate record).
   if (writes.forecasts.length) {
@@ -190,7 +233,20 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   return { summary };
 }
 
-// Designations, resolution (official CLI + venue settlement, independently) and scoring.
+// Official FOMC outcome: change in the target upper bound across the meeting (FRED DFEDTARU), bucketed.
+export function fedOfficialOutcome(c, upperRows) {
+  const d = c.detail.meeting_date;
+  const shiftD = (n) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+  const before = valueAsOf(upperRows, shiftD(-1));
+  const after = valueAsOf(upperRows, shiftD(2));
+  if (!before || !after || after.date <= d) return null;
+  const bps = Math.round((after.value - before.value) * 100);
+  const o = c.detail.outcome;
+  const yes = o === 'hold' ? bps === 0 : o === 'cut_25' ? bps === -25 : o === 'hike_25' ? bps === 25 : o === 'cut_gt_25' ? bps < -25 : bps > 25;
+  return { outcome: yes ? 'YES' : 'NO', value: bps, units: 'bps', basis: 'target upper bound change', before_date: before.date, after_date: after.date };
+}
+
+// Designations, resolution (official source + venue settlement, independently) and scoring.
 export async function designateResolveScore(env, { store, mkt, fetchImpl, now }) {
   const out = { designations: 0, resolutions: 0, scores: 0 };
   const since = new Date(Date.parse(now) - 10 * 86400000).toISOString();
@@ -228,17 +284,24 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
     for (const c of due) {
       const m = venue.get(c.market_id);
       if (!m || !['yes', 'no'].includes(m.result)) continue; // venue not settled yet
-      const st = cliStation(c.station_id);
-      const year = c.detail.climate_date.slice(0, 4);
-      const key = `${st.icao}:${year}`;
-      if (!cliCache.has(key)) { try { cliCache.set(key, await fetchCliYear({ icao: st.icao, year }, { fetchImpl, userAgent: USER_AGENT })); } catch (e) { cliCache.set(key, { error: e.message, rows: [] }); } }
-      const day = cliDay(cliCache.get(key).rows, c.detail.climate_date);
-      const official = officialOutcome(c, day);
+      let day = null; let official = null;
+      if (c.event_type === 'FOMC_DECISION_BUCKET') {
+        if (!cliCache.has('fred')) { try { cliCache.set('fred', await fetchFredSeries(['DFEDTARU'], { fetchImpl, userAgent: USER_AGENT, since: '2026-01-01' })); } catch (e) { cliCache.set('fred', { error: e.message }); } }
+        official = fedOfficialOutcome(c, cliCache.get('fred')?.DFEDTARU?.rows || []);
+        if (official) day = { product_id: `FRED DFEDTARU ${official.before_date}->${official.after_date}`, product_url: 'https://fred.stlouisfed.org/series/DFEDTARU' };
+      } else {
+        const st = cliStation(c.station_id);
+        const year = c.detail.climate_date.slice(0, 4);
+        const key = `${st.icao}:${year}`;
+        if (!cliCache.has(key)) { try { cliCache.set(key, await fetchCliYear({ icao: st.icao, year }, { fetchImpl, userAgent: USER_AGENT })); } catch (e) { cliCache.set(key, { error: e.message, rows: [] }); } }
+        day = cliDay(cliCache.get(key).rows, c.detail.climate_date);
+        official = officialOutcome(c, day);
+      }
       newRes.push({
         event_id: c.event_id, resolved_at: m.settlement_ts || now, authority: c.resolution_authority, source_url: day?.product_url ?? null,
         outcome: { venue_result: m.result, official: official ?? null, scored_outcome: m.result === 'yes' ? 1 : 0, scored_on: 'venue settlement (the contract authority value as settled)' },
         contract_id: c.contract_id, market_id: c.market_id, official_outcome: official?.outcome ?? null, official_value: official?.value ?? null, official_units: official?.units ?? null,
-        official_source: day ? `NWS CLI ${c.station_id} product ${day.product_id}` : null, official_observation_key: day?.product_id ?? null,
+        official_source: day ? (c.event_type === 'FOMC_DECISION_BUCKET' ? `Federal funds target ${day.product_id}` : `NWS CLI ${c.station_id} product ${day.product_id}`) : null, official_observation_key: day?.product_id ?? null,
         venue_result: m.result, venue_settlement_value: m.settlement_value_dollars != null ? Number(m.settlement_value_dollars) : null, venue_expiration_value: m.expiration_value ?? null,
         venue_settled_at: m.settlement_ts ?? null, sources_agree: official ? official.outcome === m.result.toUpperCase() : null,
         metadata: { resolution_rule: c.rules_primary, verification: c.verification_dataset },

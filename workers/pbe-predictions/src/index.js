@@ -5,8 +5,9 @@ import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { board, divergences, contractRecord, queue, trackRecord } from './api.js';
 
+// no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
 const json = (data, status = 200, cache = 'public, max-age=30') => new Response(JSON.stringify(data), {
-  status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': cache },
+  status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': `${cache}, no-transform`, vary: 'Accept-Encoding' },
 });
 
 async function tokenMatches(req, expected) {
@@ -35,9 +36,14 @@ export default {
         const r = await runCycle(env, { store: storeFor(env), dryRun: dry });
         return json(dry ? { summary: r.summary, sample: { contracts: r.writes.contracts.slice(0, 3), forecasts: r.writes.forecasts.slice(0, 3), venue: r.writes.venue.slice(0, 3) } } : { summary: r.summary }, 200, 'no-store');
       }
+      if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
+        return rec ? json(rec, 200, 'no-store') : json({ error: 'not_found' }, 404, 'no-store');
+      }
       if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405, 'no-store');
       const store = storeFor(env);
-      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: String(env.WEATHER_SERIES || '').split(',') }, 200, 'no-store');
+      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', weather_series: String(env.WEATHER_SERIES || '').split(','), macro_series: String(env.MACRO_SERIES || '').split(',') }, 200, 'no-store');
       if (p === '/v1/board') return json(await board(store, { domain: url.searchParams.get('domain') }));
       if (p === '/v1/divergences') return json({ rows: divergences(await board(store, { domain: url.searchParams.get('domain') })) });
       if (p === '/v1/queue') return json(await queue(store));

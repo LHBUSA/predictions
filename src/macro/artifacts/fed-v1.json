@@ -1,0 +1,122 @@
+{
+  "model_id": "pbe-fed-decision",
+  "version": "1.0.0",
+  "status": "SHADOW",
+  "target": "Change in the federal funds target (upper bound) announced at a scheduled FOMC meeting, bucketed as Kalshi KXFEDDECISION: cut >25 / cut 25 / hold / hike 25 / hike >25 bps",
+  "method": "Ordered logit on the official daily 6-month constant-maturity Treasury yield (H.15) minus the target midpoint and its change since the previous decision, previous decision direction and horizon; features chosen on 1994-2007/2008-2015 validation; trained on scheduled meetings 1994-2015",
+  "outcomes": [
+    "cut_gt_25",
+    "cut_25",
+    "hold",
+    "hike_25",
+    "hike_gt_25"
+  ],
+  "features": [
+    "cmt6m_change_since_last_decision",
+    "cmt6m_minus_target_mid",
+    "previous_decision_direction",
+    "horizon_days_over_30"
+  ],
+  "params": {
+    "beta": [
+      -0.6077085344779636,
+      0.9871169052088233,
+      2.810812011897225,
+      0.14477132932228212
+    ],
+    "cut0": -4.02049760552475,
+    "gaps": [
+      0.16777125975498738,
+      1.670689663196164,
+      0.9249375918130109
+    ]
+  },
+  "probability_bounds": [
+    0.01,
+    0.97
+  ],
+  "point_in_time_rule": "features use daily values dated <= cutoff - 2 days; target from DFEDTAR (<=2008-12-15) / DFEDTARU+DFEDTARL",
+  "training": {
+    "meetings_from": "1994",
+    "meetings_to": "2015-12",
+    "cases": 875,
+    "horizons_days": [
+      1,
+      7,
+      14,
+      21,
+      28
+    ]
+  },
+  "holdout": {
+    "meetings_from": "2016-01",
+    "meetings_to": "2026-09-16",
+    "cases": 425,
+    "metrics": {
+      "model": {
+        "multiclass_brier": 0.5229,
+        "log_loss": 0.8936,
+        "top_outcome_accuracy": 0.565
+      },
+      "climatology": {
+        "multiclass_brier": 0.5317,
+        "log_loss": 1.0933,
+        "top_outcome_accuracy": 0.659
+      },
+      "persistence": {
+        "multiclass_brier": 0.5704,
+        "log_loss": 1.0585,
+        "top_outcome_accuracy": 0.6
+      }
+    },
+    "by_horizon": {
+      "1d": {
+        "multiclass_brier": 0.5128,
+        "log_loss": 0.869,
+        "top_outcome_accuracy": 0.565
+      },
+      "7d": {
+        "multiclass_brier": 0.5255,
+        "log_loss": 0.9039,
+        "top_outcome_accuracy": 0.553
+      },
+      "14d": {
+        "multiclass_brier": 0.5062,
+        "log_loss": 0.8635,
+        "top_outcome_accuracy": 0.588
+      },
+      "21d": {
+        "multiclass_brier": 0.5294,
+        "log_loss": 0.921,
+        "top_outcome_accuracy": 0.565
+      },
+      "28d": {
+        "multiclass_brier": 0.5407,
+        "log_loss": 0.9106,
+        "top_outcome_accuracy": 0.553
+      }
+    }
+  },
+  "in_sample": {
+    "model": {
+      "multiclass_brier": 0.3502,
+      "log_loss": 0.6955,
+      "top_outcome_accuracy": 0.769
+    },
+    "climatology": {
+      "multiclass_brier": 0.4841,
+      "log_loss": 0.9888,
+      "top_outcome_accuracy": 0.697
+    },
+    "persistence": {
+      "multiclass_brier": 0.3511,
+      "log_loss": 0.702,
+      "top_outcome_accuracy": 0.754
+    }
+  },
+  "registry": {
+    "meetings": 272,
+    "decided": 262
+  },
+  "generated_at": "2026-10-03T18:09:38.093Z"
+}
