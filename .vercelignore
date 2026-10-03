@@ -1,0 +1,11 @@
+# Only the public site is deployed; engine source, SQL, research and tests stay out of the static output.
+workers
+src
+sql
+scripts
+test
+docs
+data
+README.md
+package.json
+.github

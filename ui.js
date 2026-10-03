@@ -1,120 +1,130 @@
-const markets = [
-  {id:'fed-next',path:'/events/fed-september-2026/',category:'macro',venue:'Kalshi',title:'Federal Reserve decision — next meeting',sub:'Policy decision · model v0.1 research',model:68,market:56,edge:12,updated:4,liquidity:92,resolution:'Federal Reserve · official FOMC decision',sources:['FRED CPI series','FRED unemployment series','Federal Reserve policy data'],sourceClasses:[['official','Official macro'],['market','Venue pricing']],status:'research'},
-  {id:'cpi-3',category:'macro',venue:'Kalshi',title:'Headline CPI above 3.0%',sub:'Inflation release · research pipeline',model:47,market:41,edge:6,updated:11,liquidity:74,resolution:'U.S. Bureau of Labor Statistics',sources:['BLS CPI','FRED mirror','Release calendar'],sourceClasses:[['official','Official inflation data'],['market','Venue pricing']],status:'research'},
-  {id:'home-yoy',category:'housing',venue:'Research',title:'U.S. home prices positive YoY',sub:'Housing intelligence · PropData research track',model:61,market:54,edge:7,updated:19,liquidity:41,resolution:'Declared housing index source',sources:['PropData property and market intelligence','FHFA HPI','Market datasets'],sourceClasses:[['propdata','PropData'],['official','Official housing'],['market','Venue / market data']],status:'research'},
-  {id:'atlantic-landfall',category:'weather',venue:'Research',title:'Major Atlantic hurricane landfall',sub:'Weather intelligence · research track',model:32,market:38,edge:-6,updated:27,liquidity:38,resolution:'Declared official weather authority',sources:['NOAA/NHC research inputs','Historical storm archive','Property exposure data when relevant'],sourceClasses:[['official','NOAA / NHC'],['propdata','Property exposure when used'],['market','Venue / market data']],status:'research'}
-];
+// Intelligence desk — live records only. Every number is a stored Kalshi observation (linked back to Kalshi)
+// or a stored, versioned PBE forecast from /api (pbe-predictions Worker). Contracts without a model are
+// MARKET MONITORING with no PBE number. Nothing here is illustrative.
+const API = '/api';
+const list = document.querySelector('#market-list');
+const sortSelect = document.querySelector('#sort');
+let activeDomain = 'all';
+let rows = [];
 
-const list=document.querySelector('#market-list');
-const sortSelect=document.querySelector('#sort');
-let activeCategory='all';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = (n) => (n === null || n === undefined ? '—' : `${n}%`);
+const pts = (n) => (n === null || n === undefined ? '—' : `${n > 0 ? '+' : ''}${n} pts`);
+const ago = (iso) => { const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`; };
+const recordUrl = (id) => `/record/?id=${encodeURIComponent(id)}`;
 
-const pct=n=>`${Math.round(n)}%`;
-const signed=n=>`${n>0?'+':''}${Number(n).toFixed(1)} pts`;
-const badges=m=>(m.sourceClasses||[]).map(([kind,label])=>`<span class="source-badge ${kind}">${label}</span>`).join('');
-
-function filtered(){
-  let rows=activeCategory==='all'?[...markets]:markets.filter(m=>m.category===activeCategory);
-  const mode=sortSelect?.value||'edge';
-  if(mode==='edge')rows.sort((a,b)=>Math.abs(b.edge)-Math.abs(a.edge));
-  if(mode==='updated')rows.sort((a,b)=>a.updated-b.updated);
-  if(mode==='liquidity')rows.sort((a,b)=>b.liquidity-a.liquidity);
-  return rows;
+function flatten(board) {
+  const out = [];
+  for (const e of board.events || []) {
+    for (const c of e.contracts) {
+      const live = c.market && !['CLOSED', 'SETTLED'].includes(c.market.lifecycle);
+      if (!live) continue;
+      if (c.mode !== 'MODELED' && e.model_state !== 'MARKET_MONITORING') continue; // modeled family without a pre-window forecast is not listed
+      out.push({ ...c, question: e.canonical_question, domain: e.domain, close_time: e.close_time });
+    }
+  }
+  return out;
 }
 
-function render(){
-  const rows=filtered();
-  list.innerHTML=rows.map(m=>`
-    <article class="market-card" data-market="${m.id}" tabindex="0" aria-label="Open intelligence record for ${m.title}">
+function sorted() {
+  const r = activeDomain === 'all' ? [...rows] : rows.filter((x) => x.domain === activeDomain);
+  const mode = sortSelect?.value || 'edge';
+  if (mode === 'edge') r.sort((a, b) => Math.abs(b.divergence_pts ?? -1) - Math.abs(a.divergence_pts ?? -1));
+  if (mode === 'closing') r.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time));
+  if (mode === 'updated') r.sort((a, b) => Date.parse(b.pbe?.published_at || 0) - Date.parse(a.pbe?.published_at || 0));
+  return r;
+}
+
+function card(c) {
+  const kalshi = c.market?.kalshi_url ? `<a class="venue" href="${esc(c.market.kalshi_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Kalshi ↗</a>` : '<span class="venue">Kalshi</span>';
+  const probs = c.mode === 'MODELED'
+    ? `<div class="prob-box"><span>PBE model</span><strong>${pct(c.pbe.probability_pct)}</strong></div>
+       <div class="prob-box"><span>Market</span><strong>${pct(c.market?.probability_pct)}</strong></div>
+       <div class="prob-box edge"><span>Divergence</span><strong>${pts(c.divergence_pts)}</strong></div>`
+    : `<div class="prob-box monitoring"><span>PBE model</span><strong>Market monitoring</strong></div>
+       <div class="prob-box"><span>Market</span><strong>${pct(c.market?.probability_pct)}</strong></div>`;
+  return `
+    <article class="market-card" data-id="${esc(c.contract_id)}" tabindex="0" aria-label="Open forecast record">
       <div>
-        <div class="market-meta"><span class="tag">${m.category}</span><span class="venue">${m.venue}</span><span class="venue">Updated ${m.updated}m ago</span></div>
-        <div class="market-title">${m.title}</div>
-        <div class="market-sub">${m.sub}</div>
-        <div class="source-badges">${badges(m)}</div>
+        <div class="market-meta"><span class="tag">${esc(c.domain.toLowerCase())}</span>${kalshi}${c.pbe ? `<span class="venue">PBE ${esc(c.pbe.model_state.toLowerCase())} · ${esc(c.pbe.confidence.toLowerCase())} data quality · ${ago(c.pbe.published_at)}</span>` : ''}</div>
+        <div class="market-title">${esc(c.question)}</div>
+        <div class="market-sub"><b>${esc(c.label)}</b> · ${esc(c.station || '')} ${esc(c.station_name || '')}${c.window ? ` · climate day ${esc(c.window.start.slice(0, 10))}` : ''}</div>
       </div>
-      <div class="prob-grid">
-        <div class="prob-box"><span>Model</span><strong>${pct(m.model)}</strong></div>
-        <div class="prob-box"><span>Market</span><strong>${pct(m.market)}</strong></div>
-        <div class="prob-box edge"><span>Divergence</span><strong>${signed(m.edge)}</strong></div>
-      </div>
-    </article>`).join('')||'<div class="rail-card">No research markets in this category yet.</div>';
-  bindCards();
-  updateLargest(rows);
+      <div class="prob-grid">${probs}</div>
+    </article>`;
 }
 
-function updateLargest(rows){
-  const top=[...rows].sort((a,b)=>Math.abs(b.edge)-Math.abs(a.edge))[0];
-  if(!top)return;
-  document.querySelector('#largest-edge').innerHTML=`${top.edge>0?'+':''}${top.edge.toFixed(1)}<span> pts</span>`;
-  document.querySelector('#largest-edge-title').textContent=top.title;
-}
-
-function bindCards(){
-  document.querySelectorAll('[data-market]').forEach(card=>{
-    const open=()=>openDrawer(markets.find(m=>m.id===card.dataset.market));
-    card.addEventListener('click',open);
-    card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+function render() {
+  const r = sorted();
+  list.innerHTML = r.slice(0, 60).map(card).join('');
+  document.querySelector('#desk-count').textContent = r.length ? `${r.length} live contracts · ${r.filter((x) => x.mode === 'MODELED').length} with a PBE forecast` : '';
+  list.querySelectorAll('[data-id]').forEach((el) => {
+    const open = () => { location.href = recordUrl(el.dataset.id); };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
+  featured(r);
 }
 
-function openDrawer(m){
-  if(!m)return;
-  const drawer=document.querySelector('#event-drawer');
-  const content=document.querySelector('#drawer-content');
-  content.innerHTML=`
-    <div class="drawer-hero">
-      <span class="overline">FORECAST RECORD · ${m.category.toUpperCase()}</span>
-      <h2>${m.title}</h2>
-      <p>${m.sub}</p>
-      <div class="source-badges">${badges(m)}</div>
-      <div class="drawer-kpis">
-        <div><span>Model</span><strong>${pct(m.model)}</strong></div>
-        <div><span>Market</span><strong>${pct(m.market)}</strong></div>
-        <div><span>Divergence</span><strong>${signed(m.edge)}</strong></div>
-      </div>
-    </div>
-    <div class="drawer-section"><h3>Source classes used</h3><p>${(m.sourceClasses||[]).map(x=>x[1]).join(' · ')}</p></div>
-    <div class="drawer-section"><h3>Resolution authority</h3><p>${m.resolution}</p></div>
-    <div class="drawer-section"><h3>Evidence ledger</h3><ul>${m.sources.map(s=>`<li>${s}</li>`).join('')}</ul></div>
-    <div class="drawer-section"><h3>Research state</h3><p>This is a ${m.status} forecast. It is not presented as validated edge until point-in-time backtesting and calibration are complete.</p></div>
-    <div class="drawer-section"><h3>Permanent record concept</h3><p>Production records will preserve model version, market snapshot, feature snapshot, source provenance, capture time, resolution rule and final score.</p></div>
-    ${m.path?`<div class="drawer-section"><a class="primary-btn" href="${m.path}">Open full Event Record →</a></div>`:''}`;
-  drawer.classList.add('open');
-  drawer.setAttribute('aria-hidden','false');
+function featured(r) {
+  const top = [...r].filter((x) => x.divergence_pts !== null).sort((a, b) => Math.abs(b.divergence_pts) - Math.abs(a.divergence_pts))[0];
+  const rail = document.querySelector('#largest-card');
+  const ref = document.querySelector('#reference-live');
+  if (!top) { rail.hidden = true; ref.hidden = true; return; }
+  rail.hidden = false;
+  document.querySelector('#largest-edge').innerHTML = `${top.divergence_pts > 0 ? '+' : ''}${top.divergence_pts}<span> pts</span>`;
+  document.querySelector('#largest-edge-title').textContent = `${top.question} — ${top.label}`;
+  document.querySelector('#largest-bars').innerHTML = `
+    <div><span>PBE model</span><div><b style="width:${top.pbe.probability_pct}%"></b></div><strong>${top.pbe.probability_pct}%</strong></div>
+    <div><span>Market price</span><div><b style="width:${top.market.probability_pct}%"></b></div><strong>${top.market.probability_pct}%</strong></div>`;
+  document.querySelector('#largest-link').href = recordUrl(top.contract_id);
+  ref.hidden = false;
+  document.querySelector('#ref-code').textContent = top.market_id;
+  document.querySelector('#ref-title').textContent = `${top.question} — ${top.label}`;
+  document.querySelector('#ref-probs').innerHTML = `<div><span>PBE model</span><strong>${top.pbe.probability_pct}%</strong></div><div><span>Market</span><strong>${top.market.probability_pct}%</strong></div><div><span>Divergence</span><strong>${pts(top.divergence_pts)}</strong></div>`;
+  document.querySelector('#ref-meta').innerHTML = `<span>${esc(top.pbe.model)}</span><span>Published ${esc(new Date(top.pbe.published_at).toISOString().slice(0, 16).replace('T', ' '))} UTC</span><span>${esc(top.pbe.model_state)}</span>`;
+  document.querySelector('#ref-open').href = recordUrl(top.contract_id);
 }
 
-function closeDrawer(){
-  const d=document.querySelector('#event-drawer');
-  d.classList.remove('open');
-  d.setAttribute('aria-hidden','true');
+async function trackRecord() {
+  try {
+    const t = await (await fetch(`${API}/track-record`)).json();
+    if (!t.resolved_contracts) return; // keep the pre-declared "Building / Pending" states until real resolutions exist
+    const g = (d, m) => t.groups.find((x) => x.designation === d && x.method === m);
+    const b = g('FINAL_PRE_RESOLUTION', 'brier');
+    const l = g('FINAL_PRE_RESOLUTION', 'log_loss');
+    document.querySelector('#tr-resolved').textContent = String(t.resolved_contracts);
+    if (b) document.querySelector('#tr-brier').textContent = `${b.pbe_mean.toFixed(3)} (market ${b.market_mean?.toFixed(3) ?? '—'}, n=${b.n})`;
+    if (l) document.querySelector('#tr-logloss').textContent = `${l.pbe_mean.toFixed(3)} (market ${l.market_mean?.toFixed(3) ?? '—'})`;
+  } catch {}
 }
 
-document.querySelectorAll('.category').forEach(btn=>btn.addEventListener('click',()=>{
-  document.querySelectorAll('.category').forEach(x=>x.classList.remove('active'));
+async function load() {
+  try {
+    const board = await (await fetch(`${API}/board`)).json();
+    rows = flatten(board);
+  } catch { rows = []; }
+  render();
+}
+
+document.querySelectorAll('.category').forEach((btn) => btn.addEventListener('click', () => {
+  document.querySelectorAll('.category').forEach((x) => x.classList.remove('active'));
   btn.classList.add('active');
-  activeCategory=btn.dataset.category;
+  activeDomain = btn.dataset.category;
   render();
 }));
-sortSelect?.addEventListener('change',render);
-document.querySelectorAll('[data-close-drawer]').forEach(el=>el.addEventListener('click',closeDrawer));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
-
-document.querySelector('#citation-mode')?.addEventListener('click',e=>{
+sortSelect?.addEventListener('change', render);
+document.querySelector('#citation-mode')?.addEventListener('click', (e) => {
   document.body.classList.toggle('citation-on');
-  e.currentTarget.textContent=document.body.classList.contains('citation-on')?'Citation mode on':'Citation mode';
+  e.currentTarget.textContent = document.body.classList.contains('citation-on') ? 'Citation mode on' : 'Citation mode';
 });
-
-document.querySelector('#copy-citation')?.addEventListener('click',async e=>{
-  const text='PropBetEdge Predictions, Forecast Record PBE-FED-2026-09-001, Federal Reserve target-rate decision, model v0.1.0, research status.';
-  try{await navigator.clipboard.writeText(text);e.currentTarget.textContent='Copied';setTimeout(()=>e.currentTarget.textContent='Copy citation',1400);}catch{e.currentTarget.textContent='Citation ready';}
-});
-
-document.querySelectorAll('[data-scroll]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector(btn.dataset.scroll)?.scrollIntoView({behavior:'smooth'})));
-document.querySelectorAll('.nav-link').forEach(btn=>btn.addEventListener('click',()=>{
-  document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('[data-scroll]').forEach((btn) => btn.addEventListener('click', () => document.querySelector(btn.dataset.scroll)?.scrollIntoView({ behavior: 'smooth' })));
+document.querySelectorAll('.nav-link').forEach((btn) => btn.addEventListener('click', () => {
+  document.querySelectorAll('.nav-link').forEach((x) => x.classList.remove('active'));
   btn.classList.add('active');
-  if(btn.dataset.view==='track')document.querySelector('#methodology')?.scrollIntoView({behavior:'smooth'});
-  else document.querySelector('#intelligence')?.scrollIntoView({behavior:'smooth'});
+  document.querySelector(btn.dataset.view === 'track' ? '#methodology' : '#intelligence')?.scrollIntoView({ behavior: 'smooth' });
 }));
 
-render();
+load();
+trackRecord();
+setInterval(load, 120000);

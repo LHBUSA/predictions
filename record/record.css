@@ -1,0 +1,37 @@
+.record{padding:40px 0 70px}
+.rec-head{padding:10px 0 26px;border-bottom:1px solid #dde6f1;margin-bottom:22px}
+.rec-head h1{font-size:clamp(30px,4vw,52px);line-height:1.04;letter-spacing:-.035em;margin:10px 0 8px}
+.rec-yes{color:#4f6a86;font-size:15px;margin:0 0 18px}
+.rec-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:860px}
+.rec-kpis>div{padding:16px 18px;border:1px solid #dce6ef;border-radius:16px;background:#fff}
+.rec-kpis span,.rec-kpis strong,.rec-kpis small{display:block}
+.rec-kpis span{font-size:10px;letter-spacing:.12em;font-weight:900;color:#5f7790;text-transform:uppercase}
+.rec-kpis strong{font-size:40px;letter-spacing:-.04em;margin-top:4px;color:#102033}
+.rec-kpis strong em{font-style:normal;font-size:15px;color:#4d6a88;margin-left:4px}
+.rec-kpis small{font-size:11px;color:#6f8499;margin-top:2px}
+.rec-kpis .div strong{color:#1f67ad}
+.rec-sentence{font-size:16px;font-weight:700;color:#173f6b;margin:16px 0 0}
+.rec-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.9fr);gap:18px}
+.rec-card{padding:20px;border:1px solid #dce6ef;border-radius:18px;background:#fff;margin-bottom:16px}
+.rec-card h2{font-size:16px;margin:0 0 12px}
+.ev-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-top:1px solid #edf2f7}
+.ev-row:first-child{border-top:0}
+.ev-row b{font-size:13px}.ev-row small{display:block;color:#7189a1;font-size:11px;margin-top:2px}
+.ev-row strong{font-size:22px;color:#123b69;white-space:nowrap}
+dl#rec-contract{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px}
+dl#rec-contract dt{color:#71879d;font-weight:700}dl#rec-contract dd{margin:0;color:#1d3550}
+.rules{margin-top:10px;padding:10px;border-radius:10px;background:#f4f7fb;font-size:11px;color:#4d6680}
+table.hist{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+table.hist th{text-align:left;font-size:10px;text-transform:uppercase;color:#7f90a2;padding:6px 4px;border-bottom:1px solid #e3ebf3}
+table.hist td{padding:7px 4px;border-bottom:1px solid #f0f4f8}
+.prov{font-size:12px;padding:9px 0;border-top:1px solid #edf2f7}.prov:first-child{border-top:0}
+.prov b{display:block}.prov span{color:#6f8499;font-size:11px;word-break:break-all}
+.grade{display:inline-block;padding:4px 9px;border-radius:999px;font-weight:900;font-size:12px;background:#eaf3fd;color:#174c83}
+.grade.HIGH{background:#e7f8f0;color:#1d7650}.grade.LOW{background:#fff3d7;color:#9a6818}
+.tl svg{width:100%;height:auto}.legend{font-size:11px;color:#5d7690;display:flex;gap:14px;margin-top:6px}
+.legend i{display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle}
+@media(max-width:900px){.rec-grid{grid-template-columns:1fr}.rec-kpis{grid-template-columns:1fr}}
+.rec-grid>div,.rec-grid>aside{min-width:0}
+#rec-history{overflow-x:auto;-webkit-overflow-scrolling:touch}
+dl#rec-contract dd,.rules,.ev-row b,.ev-row small{overflow-wrap:anywhere}
+@media(max-width:600px){.record{padding:24px 0 48px}.rec-card{padding:16px}.rec-kpis strong{font-size:32px}dl#rec-contract{grid-template-columns:1fr}dl#rec-contract dt{margin-top:6px}}

@@ -1,0 +1,13 @@
+{
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*" }
+  ],
+  "redirects": [
+    { "source": "/events/fed-september-2026", "destination": "/", "permanent": false },
+    { "source": "/events/fed-september-2026/", "destination": "/", "permanent": false }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }] }
+  ]
+}

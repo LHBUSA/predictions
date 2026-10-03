@@ -8,6 +8,7 @@
   <meta name="description" content="Independent, source-backed probability intelligence for real-world events, informed by proprietary real-estate and sports data infrastructure where relevant." />
   <link rel="stylesheet" href="/ui.css" />
   <link rel="stylesheet" href="/data-infra.css" />
+  <link rel="stylesheet" href="/live.css" />
 </head>
 <body>
   <header class="topbar">
@@ -103,21 +104,19 @@
         <div>
           <span class="overline">INTELLIGENCE DESK</span>
           <h2>Where our models diverge from live markets</h2>
-          <p>Research-stage examples clearly separated from validated performance.</p>
+          <p>Live Kalshi contracts. A PBE probability appears only where a specialist model is enabled; everything else is market monitoring. Research-stage models are labelled as such.</p>
+          <p class="desk-count" id="desk-count"></p>
         </div>
         <div class="desk-controls">
           <div class="category-tabs" id="categories">
             <button class="category active" data-category="all">All</button>
-            <button class="category" data-category="macro">Macro</button>
-            <button class="category" data-category="housing">Housing</button>
-            <button class="category" data-category="weather">Weather</button>
-            <button class="category" data-category="companies">Companies</button>
-            <button class="category" data-category="crypto">Crypto</button>
+            <button class="category" data-category="WEATHER">Weather</button>
+            <button class="category" data-category="MACRO">Macro</button>
           </div>
           <select id="sort" aria-label="Sort markets">
             <option value="edge">Largest divergence</option>
-            <option value="updated">Recently updated</option>
-            <option value="liquidity">Market liquidity</option>
+            <option value="closing">Closing soonest</option>
+            <option value="updated">Newest forecast</option>
           </select>
         </div>
       </div>
@@ -129,14 +128,12 @@
         </div>
 
         <aside class="insight-rail">
-          <article class="rail-card featured-signal">
+          <article class="rail-card featured-signal" id="largest-card" hidden>
             <div class="rail-head"><span>Largest divergence</span><b>Research</b></div>
-            <div class="big-number" id="largest-edge">+12.0<span> pts</span></div>
-            <p id="largest-edge-title">Federal Reserve decision — next meeting</p>
-            <div class="comparison-bars">
-              <div><span>PropBetEdge model</span><div><b style="width:68%"></b></div><strong>68%</strong></div>
-              <div><span>Market price</span><div><b style="width:56%"></b></div><strong>56%</strong></div>
-            </div>
+            <div class="big-number" id="largest-edge"></div>
+            <p id="largest-edge-title"></p>
+            <div class="comparison-bars" id="largest-bars"></div>
+            <p><a id="largest-link" href="#">Open the forecast record →</a> PBE probability vs. current market price. A divergence is not a guarantee of anything.</p>
           </article>
 
           <article class="rail-card pulse-card">
@@ -151,7 +148,8 @@
             <div class="integrity-row"><span>Forecast snapshots</span><strong>Immutable</strong></div>
             <div class="integrity-row"><span>Source classes</span><strong>Disclosed</strong></div>
             <div class="integrity-row"><span>Unknown inputs</span><strong>Fail closed</strong></div>
-            <div class="integrity-row"><span>Model status</span><strong>Research v0.1</strong></div>
+            <div class="integrity-row"><span>Market inputs to models</span><strong>None</strong></div>
+            <div class="integrity-row"><span>Model status</span><strong>Research (weather v1)</strong></div>
           </article>
         </aside>
       </div>
@@ -164,17 +162,13 @@
           <h2>Not a picks feed. A public record of probability.</h2>
           <p>Every market page is designed to become a durable research object: one event, one canonical question, one forecast history, one evidence trail and one resolution record.</p>
         </div>
-        <div class="reference-demo">
-          <div class="reference-top"><span>FORECAST RECORD</span><code>PBE-FED-2026-09-001</code></div>
-          <h3>Federal Reserve target-rate decision</h3>
-          <div class="reference-probs">
-            <div><span>Model</span><strong>68%</strong></div>
-            <div><span>Market</span><strong>56%</strong></div>
-            <div><span>Divergence</span><strong>+12.0 pts</strong></div>
-          </div>
-          <div class="reference-meta"><span>Model v0.1.0</span><span>Captured 15:04 UTC</span><span>Research status</span></div>
-          <div class="reference-source"><b>Source classes</b><span>Official macro data · market pricing · no proprietary domain input</span></div>
-          <div class="reference-footer"><span>Permanent snapshot</span><button id="copy-citation">Copy citation</button></div>
+        <div class="reference-demo" id="reference-live" hidden>
+          <div class="reference-top"><span>FORECAST RECORD</span><code id="ref-code"></code></div>
+          <h3 id="ref-title"></h3>
+          <div class="reference-probs" id="ref-probs"></div>
+          <div class="reference-meta" id="ref-meta"></div>
+          <div class="reference-source"><b>Source classes</b><span>Official weather data (NWS guidance, NOAA climatology) · market price stored separately as the benchmark · no proprietary domain input</span></div>
+          <div class="reference-footer"><span>Immutable snapshot</span><a class="ref-open" id="ref-open" href="#">Open record →</a></div>
         </div>
       </div>
     </section>
@@ -214,22 +208,14 @@
           <p>Historical tests must use only data available before each event. Revised or post-event information is excluded from legitimate backtests.</p>
         </div>
         <div class="metric-grid">
-          <div><span>Resolved forecasts</span><strong>Building</strong></div>
-          <div><span>Brier score</span><strong>Pending</strong></div>
-          <div><span>Log loss</span><strong>Pending</strong></div>
+          <div><span>Resolved forecasts</span><strong id="tr-resolved">Building</strong></div>
+          <div><span>Brier score</span><strong id="tr-brier">Pending</strong></div>
+          <div><span>Log loss</span><strong id="tr-logloss">Pending</strong></div>
           <div><span>Calibration</span><strong>Pending</strong></div>
         </div>
       </div>
     </section>
   </main>
-
-  <div class="event-drawer" id="event-drawer" aria-hidden="true">
-    <div class="drawer-backdrop" data-close-drawer></div>
-    <article class="drawer-panel">
-      <button class="drawer-close" data-close-drawer aria-label="Close">×</button>
-      <div id="drawer-content"></div>
-    </article>
-  </div>
 
   <footer class="footer">
     <div class="wrap footer-grid">
