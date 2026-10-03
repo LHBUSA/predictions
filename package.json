@@ -10,13 +10,16 @@
     "replay:fomc": "node scripts/replay-fomc.mjs",
     "replay:cpi": "node scripts/replay-cpi.mjs",
     "replay:payroll": "node scripts/replay-payroll.mjs",
-    "brand": "python scripts/brand/brand-kit.py && node scripts/brand/rasterize.mjs"
+    "brand": "python scripts/brand/brand-kit.py && node scripts/brand/rasterize.mjs",
+    "qa:serve": "node scripts/qa/serve.mjs",
+    "qa:articles": "node scripts/qa/article-qa.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
-    "@resvg/resvg-js": "^2.6.2"
+    "@resvg/resvg-js": "^2.6.2",
+    "puppeteer-core": "^23.11.1"
   },
   "dependencies": {
     "@resvg/resvg-wasm": "^2.6.2"
