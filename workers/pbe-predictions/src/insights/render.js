@@ -62,8 +62,8 @@ function heroArt(img, eager) {
   return `<picture class="ix-hero-art">
 <source media="(max-width: 760px)" type="image/avif" srcset="${b}/mobile-640.avif 640w, ${b}/mobile-960.avif 960w" sizes="100vw">
 <source media="(max-width: 760px)" type="image/webp" srcset="${b}/mobile-640.webp 640w, ${b}/mobile-960.webp 960w" sizes="100vw">
-<source type="image/avif" srcset="${b}/hero-800.avif 800w, ${b}/hero-1200.avif 1200w, ${b}/hero-1600.avif 1600w" sizes="(max-width: 1100px) 100vw, 70vw">
-<source type="image/webp" srcset="${b}/hero-800.webp 800w, ${b}/hero-1200.webp 1200w, ${b}/hero-1600.webp 1600w" sizes="(max-width: 1100px) 100vw, 70vw">
+<source type="image/avif" srcset="${b}/hero-800.avif 800w, ${b}/hero-1200.avif 1200w, ${b}/hero-1600.avif 1600w" sizes="(max-width: 760px) 100vw, 74vw">
+<source type="image/webp" srcset="${b}/hero-800.webp 800w, ${b}/hero-1200.webp 1200w, ${b}/hero-1600.webp 1600w" sizes="(max-width: 760px) 100vw, 74vw">
 <img src="${b}/hero-1200.webp" width="1600" height="900" alt="${esc(img.hero_alt)}" style="object-position:${esc(img.hero_focal_point)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>`;
 }
 const cardArt = (img, eager = false) => `<picture class="ix-card-art"><source type="image/avif" srcset="${img.base}/hero-800.avif"><img src="${img.base}/hero-800.webp" width="800" height="450" alt="" style="object-position:${esc(img.hero_focal_point)}"${eager ? '' : ' loading="lazy"'} decoding="async"></picture>`;

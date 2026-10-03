@@ -387,3 +387,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
   .ix-hero.has-art .ix-hero-inner{margin-top:-56px;position:relative;z-index:1}
   .ix-card-lg{min-height:0}
 }
+@media (min-width:761px){
+  .ix-hero-art{inset:0 0 0 auto;width:min(1600px,74%)}
+  .ix-hero-shade{background:linear-gradient(90deg,#020a16 0%,#020a16 26%,rgba(2,10,22,.72) 40%,rgba(2,10,22,.32) 62%,rgba(2,10,22,.18) 84%,rgba(2,10,22,.4) 100%),linear-gradient(180deg,rgba(2,10,22,.3) 0%,rgba(2,10,22,0) 30%,rgba(2,10,22,0) 70%,rgba(2,10,22,.85) 100%)}
+}
