@@ -1,0 +1,2522 @@
+{
+  "model_id": "pbe-weather-precip",
+  "version": "1.0.0",
+  "status": "RESEARCH",
+  "target": "P(NWS CLI daily precipitation > 0.00 in) at the contract CLI site over the local-standard-time climate day; trace = NO",
+  "features": [
+    "intercept",
+    "logit_pop_union",
+    "logit_pop_max",
+    "logit_climatology",
+    "run_lead_days_minus_1"
+  ],
+  "coefficients": [
+    0.297061,
+    0.623364,
+    0.625439,
+    0.081119,
+    -0.052915
+  ],
+  "probability_bounds": [
+    0.02,
+    0.98
+  ],
+  "inputs": [
+    "NWS GFS MOS (MAV) 6-h PoP for the CLI window, latest run published before the cutoff (runtime + 5 h)",
+    "NOAA RCC-ACIS 1991-2020 station climatology (+/-10 days)"
+  ],
+  "training": {
+    "cases": 112777,
+    "from": "2023-01-03",
+    "to_exclusive": "2025-07-01",
+    "cutoff_leads_h": [
+      6,
+      18,
+      30,
+      42
+    ],
+    "stations": 31,
+    "iterations": 7
+  },
+  "holdout": {
+    "cases": 56632,
+    "from": "2025-07-01",
+    "to": "2026-09-30",
+    "overall": {
+      "p_model": {
+        "brier": 0.0929,
+        "log_loss": 0.2957
+      },
+      "p_union": {
+        "brier": 0.0964,
+        "log_loss": 0.312
+      },
+      "p_max": {
+        "brier": 0.1033,
+        "log_loss": 0.325
+      },
+      "p_clim": {
+        "brier": 0.1808,
+        "log_loss": 0.5397
+      }
+    },
+    "by_cutoff_lead": {
+      "6h": {
+        "p_model": {
+          "brier": 0.084,
+          "log_loss": 0.2688
+        },
+        "p_union": {
+          "brier": 0.0865,
+          "log_loss": 0.283
+        },
+        "p_max": {
+          "brier": 0.0939,
+          "log_loss": 0.2991
+        },
+        "p_clim": {
+          "brier": 0.1808,
+          "log_loss": 0.5397
+        }
+      },
+      "18h": {
+        "p_model": {
+          "brier": 0.0911,
+          "log_loss": 0.2901
+        },
+        "p_union": {
+          "brier": 0.094,
+          "log_loss": 0.3053
+        },
+        "p_max": {
+          "brier": 0.1013,
+          "log_loss": 0.3195
+        },
+        "p_clim": {
+          "brier": 0.1808,
+          "log_loss": 0.5397
+        }
+      },
+      "30h": {
+        "p_model": {
+          "brier": 0.0951,
+          "log_loss": 0.3027
+        },
+        "p_union": {
+          "brier": 0.0989,
+          "log_loss": 0.3168
+        },
+        "p_max": {
+          "brier": 0.1055,
+          "log_loss": 0.3293
+        },
+        "p_clim": {
+          "brier": 0.1808,
+          "log_loss": 0.5397
+        }
+      },
+      "42h": {
+        "p_model": {
+          "brier": 0.1013,
+          "log_loss": 0.321
+        },
+        "p_union": {
+          "brier": 0.1062,
+          "log_loss": 0.3428
+        },
+        "p_max": {
+          "brier": 0.1126,
+          "log_loss": 0.3521
+        },
+        "p_clim": {
+          "brier": 0.1808,
+          "log_loss": 0.5397
+        }
+      }
+    },
+    "reliability_model": [
+      {
+        "bin": "0.0-0.1",
+        "n": 29125,
+        "mean_forecast": 0.025,
+        "observed": 0.022
+      },
+      {
+        "bin": "0.1-0.2",
+        "n": 5181,
+        "mean_forecast": 0.144,
+        "observed": 0.15
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 3599,
+        "mean_forecast": 0.248,
+        "observed": 0.253
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 2808,
+        "mean_forecast": 0.349,
+        "observed": 0.345
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 2518,
+        "mean_forecast": 0.449,
+        "observed": 0.436
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 2290,
+        "mean_forecast": 0.551,
+        "observed": 0.55
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 2345,
+        "mean_forecast": 0.649,
+        "observed": 0.64
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 2335,
+        "mean_forecast": 0.751,
+        "observed": 0.738
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 2563,
+        "mean_forecast": 0.849,
+        "observed": 0.834
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 3868,
+        "mean_forecast": 0.964,
+        "observed": 0.958
+      }
+    ],
+    "reliability_mos_union": [
+      {
+        "bin": "0.0-0.1",
+        "n": 23695,
+        "mean_forecast": 0.033,
+        "observed": 0.014
+      },
+      {
+        "bin": "0.1-0.2",
+        "n": 7006,
+        "mean_forecast": 0.145,
+        "observed": 0.07
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 4198,
+        "mean_forecast": 0.247,
+        "observed": 0.178
+      },
+      {
+        "bin": "0.3-0.4",
+        "n": 3399,
+        "mean_forecast": 0.349,
+        "observed": 0.272
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 3004,
+        "mean_forecast": 0.449,
+        "observed": 0.364
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 2770,
+        "mean_forecast": 0.549,
+        "observed": 0.46
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 2622,
+        "mean_forecast": 0.651,
+        "observed": 0.59
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 2688,
+        "mean_forecast": 0.75,
+        "observed": 0.697
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 2920,
+        "mean_forecast": 0.85,
+        "observed": 0.801
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 4330,
+        "mean_forecast": 0.964,
+        "observed": 0.951
+      }
+    ],
+    "by_station": {
+      "CLINYC": {
+        "n": 1828,
+        "base_rate": 0.357,
+        "p_model": {
+          "brier": 0.1007,
+          "log_loss": 0.3258
+        },
+        "p_union": {
+          "brier": 0.1016,
+          "log_loss": 0.3359
+        },
+        "p_max": {
+          "brier": 0.1158,
+          "log_loss": 0.3744
+        },
+        "p_clim": {
+          "brier": 0.2299,
+          "log_loss": 0.6526
+        }
+      },
+      "CLIORD": {
+        "n": 1828,
+        "base_rate": 0.339,
+        "p_model": {
+          "brier": 0.1205,
+          "log_loss": 0.3858
+        },
+        "p_union": {
+          "brier": 0.1211,
+          "log_loss": 0.4065
+        },
+        "p_max": {
+          "brier": 0.1387,
+          "log_loss": 0.4478
+        },
+        "p_clim": {
+          "brier": 0.2205,
+          "log_loss": 0.6324
+        }
+      },
+      "CLIMDW": {
+        "n": 1828,
+        "base_rate": 0.319,
+        "p_model": {
+          "brier": 0.102,
+          "log_loss": 0.3249
+        },
+        "p_union": {
+          "brier": 0.1045,
+          "log_loss": 0.3365
+        },
+        "p_max": {
+          "brier": 0.1213,
+          "log_loss": 0.3725
+        },
+        "p_clim": {
+          "brier": 0.2136,
+          "log_loss": 0.6179
+        }
+      },
+      "CLIAUS": {
+        "n": 1828,
+        "base_rate": 0.171,
+        "p_model": {
+          "brier": 0.078,
+          "log_loss": 0.2519
+        },
+        "p_union": {
+          "brier": 0.0821,
+          "log_loss": 0.2685
+        },
+        "p_max": {
+          "brier": 0.0862,
+          "log_loss": 0.2722
+        },
+        "p_clim": {
+          "brier": 0.1447,
+          "log_loss": 0.4649
+        }
+      },
+      "CLIMIA": {
+        "n": 1828,
+        "base_rate": 0.383,
+        "p_model": {
+          "brier": 0.1453,
+          "log_loss": 0.4402
+        },
+        "p_union": {
+          "brier": 0.1485,
+          "log_loss": 0.4576
+        },
+        "p_max": {
+          "brier": 0.1784,
+          "log_loss": 0.5128
+        },
+        "p_clim": {
+          "brier": 0.2165,
+          "log_loss": 0.6234
+        }
+      },
+      "CLIDEN": {
+        "n": 1828,
+        "base_rate": 0.19,
+        "p_model": {
+          "brier": 0.092,
+          "log_loss": 0.2959
+        },
+        "p_union": {
+          "brier": 0.0941,
+          "log_loss": 0.3073
+        },
+        "p_max": {
+          "brier": 0.1021,
+          "log_loss": 0.3201
+        },
+        "p_clim": {
+          "brier": 0.154,
+          "log_loss": 0.4855
+        }
+      },
+      "CLIPHL": {
+        "n": 1828,
+        "base_rate": 0.326,
+        "p_model": {
+          "brier": 0.0956,
+          "log_loss": 0.2989
+        },
+        "p_union": {
+          "brier": 0.0964,
+          "log_loss": 0.3074
+        },
+        "p_max": {
+          "brier": 0.1102,
+          "log_loss": 0.3373
+        },
+        "p_clim": {
+          "brier": 0.2194,
+          "log_loss": 0.6307
+        }
+      },
+      "CLILAX": {
+        "n": 1828,
+        "base_rate": 0.083,
+        "p_model": {
+          "brier": 0.0215,
+          "log_loss": 0.0764
+        },
+        "p_union": {
+          "brier": 0.0233,
+          "log_loss": 0.0882
+        },
+        "p_max": {
+          "brier": 0.0243,
+          "log_loss": 0.0912
+        },
+        "p_clim": {
+          "brier": 0.0718,
+          "log_loss": 0.2537
+        }
+      },
+      "CLILAS": {
+        "n": 1828,
+        "base_rate": 0.059,
+        "p_model": {
+          "brier": 0.0323,
+          "log_loss": 0.1155
+        },
+        "p_union": {
+          "brier": 0.0338,
+          "log_loss": 0.1186
+        },
+        "p_max": {
+          "brier": 0.033,
+          "log_loss": 0.1167
+        },
+        "p_clim": {
+          "brier": 0.056,
+          "log_loss": 0.2288
+        }
+      },
+      "CLIMSY": {
+        "n": 1808,
+        "base_rate": 0.294,
+        "p_model": {
+          "brier": 0.1363,
+          "log_loss": 0.4067
+        },
+        "p_union": {
+          "brier": 0.1414,
+          "log_loss": 0.4307
+        },
+        "p_max": {
+          "brier": 0.1444,
+          "log_loss": 0.4249
+        },
+        "p_clim": {
+          "brier": 0.2073,
+          "log_loss": 0.6047
+        }
+      },
+      "CLISFO": {
+        "n": 1828,
+        "base_rate": 0.125,
+        "p_model": {
+          "brier": 0.0381,
+          "log_loss": 0.1329
+        },
+        "p_union": {
+          "brier": 0.0397,
+          "log_loss": 0.1394
+        },
+        "p_max": {
+          "brier": 0.0417,
+          "log_loss": 0.145
+        },
+        "p_clim": {
+          "brier": 0.1031,
+          "log_loss": 0.341
+        }
+      },
+      "CLIDCA": {
+        "n": 1828,
+        "base_rate": 0.313,
+        "p_model": {
+          "brier": 0.0922,
+          "log_loss": 0.2938
+        },
+        "p_union": {
+          "brier": 0.0972,
+          "log_loss": 0.3117
+        },
+        "p_max": {
+          "brier": 0.1074,
+          "log_loss": 0.3336
+        },
+        "p_clim": {
+          "brier": 0.2138,
+          "log_loss": 0.6187
+        }
+      },
+      "CLISEA": {
+        "n": 1824,
+        "base_rate": 0.307,
+        "p_model": {
+          "brier": 0.0855,
+          "log_loss": 0.291
+        },
+        "p_union": {
+          "brier": 0.0966,
+          "log_loss": 0.3247
+        },
+        "p_max": {
+          "brier": 0.078,
+          "log_loss": 0.276
+        },
+        "p_clim": {
+          "brier": 0.181,
+          "log_loss": 0.5405
+        }
+      },
+      "CLIBOS": {
+        "n": 1828,
+        "base_rate": 0.333,
+        "p_model": {
+          "brier": 0.1063,
+          "log_loss": 0.33
+        },
+        "p_union": {
+          "brier": 0.1114,
+          "log_loss": 0.3454
+        },
+        "p_max": {
+          "brier": 0.1121,
+          "log_loss": 0.3483
+        },
+        "p_clim": {
+          "brier": 0.2172,
+          "log_loss": 0.6254
+        }
+      },
+      "CLIPHX": {
+        "n": 1828,
+        "base_rate": 0.09,
+        "p_model": {
+          "brier": 0.0519,
+          "log_loss": 0.169
+        },
+        "p_union": {
+          "brier": 0.0568,
+          "log_loss": 0.1851
+        },
+        "p_max": {
+          "brier": 0.0506,
+          "log_loss": 0.1691
+        },
+        "p_clim": {
+          "brier": 0.0817,
+          "log_loss": 0.2981
+        }
+      },
+      "CLIATL": {
+        "n": 1828,
+        "base_rate": 0.293,
+        "p_model": {
+          "brier": 0.1165,
+          "log_loss": 0.3676
+        },
+        "p_union": {
+          "brier": 0.123,
+          "log_loss": 0.4034
+        },
+        "p_max": {
+          "brier": 0.1242,
+          "log_loss": 0.3968
+        },
+        "p_clim": {
+          "brier": 0.1999,
+          "log_loss": 0.5871
+        }
+      },
+      "CLIMSP": {
+        "n": 1828,
+        "base_rate": 0.302,
+        "p_model": {
+          "brier": 0.1142,
+          "log_loss": 0.3594
+        },
+        "p_union": {
+          "brier": 0.1151,
+          "log_loss": 0.3691
+        },
+        "p_max": {
+          "brier": 0.1312,
+          "log_loss": 0.4042
+        },
+        "p_clim": {
+          "brier": 0.2107,
+          "log_loss": 0.6122
+        }
+      },
+      "CLIDFW": {
+        "n": 1820,
+        "base_rate": 0.171,
+        "p_model": {
+          "brier": 0.0747,
+          "log_loss": 0.2427
+        },
+        "p_union": {
+          "brier": 0.0788,
+          "log_loss": 0.2585
+        },
+        "p_max": {
+          "brier": 0.0815,
+          "log_loss": 0.2611
+        },
+        "p_clim": {
+          "brier": 0.1398,
+          "log_loss": 0.4506
+        }
+      },
+      "CLISAT": {
+        "n": 1828,
+        "base_rate": 0.168,
+        "p_model": {
+          "brier": 0.0779,
+          "log_loss": 0.243
+        },
+        "p_union": {
+          "brier": 0.0801,
+          "log_loss": 0.2589
+        },
+        "p_max": {
+          "brier": 0.0877,
+          "log_loss": 0.2682
+        },
+        "p_clim": {
+          "brier": 0.1419,
+          "log_loss": 0.4574
+        }
+      },
+      "CLIHOU": {
+        "n": 1828,
+        "base_rate": 0.252,
+        "p_model": {
+          "brier": 0.1048,
+          "log_loss": 0.325
+        },
+        "p_union": {
+          "brier": 0.1075,
+          "log_loss": 0.3405
+        },
+        "p_max": {
+          "brier": 0.1217,
+          "log_loss": 0.37
+        },
+        "p_clim": {
+          "brier": 0.1897,
+          "log_loss": 0.5672
+        }
+      },
+      "CLIOKC": {
+        "n": 1828,
+        "base_rate": 0.193,
+        "p_model": {
+          "brier": 0.0887,
+          "log_loss": 0.291
+        },
+        "p_union": {
+          "brier": 0.0888,
+          "log_loss": 0.3021
+        },
+        "p_max": {
+          "brier": 0.0996,
+          "log_loss": 0.3242
+        },
+        "p_clim": {
+          "brier": 0.1567,
+          "log_loss": 0.4927
+        }
+      },
+      "CLIEWR": {
+        "n": 1828,
+        "base_rate": 0.313,
+        "p_model": {
+          "brier": 0.0917,
+          "log_loss": 0.2942
+        },
+        "p_union": {
+          "brier": 0.0952,
+          "log_loss": 0.3172
+        },
+        "p_max": {
+          "brier": 0.1004,
+          "log_loss": 0.3287
+        },
+        "p_clim": {
+          "brier": 0.2165,
+          "log_loss": 0.6249
+        }
+      },
+      "CLITTN": {
+        "n": 1828,
+        "base_rate": 0.33,
+        "p_model": {
+          "brier": 0.0922,
+          "log_loss": 0.2938
+        },
+        "p_union": {
+          "brier": 0.0939,
+          "log_loss": 0.3083
+        },
+        "p_max": {
+          "brier": 0.1068,
+          "log_loss": 0.3369
+        },
+        "p_clim": {
+          "brier": 0.2207,
+          "log_loss": 0.6331
+        }
+      },
+      "CLIMKE": {
+        "n": 1828,
+        "base_rate": 0.357,
+        "p_model": {
+          "brier": 0.1266,
+          "log_loss": 0.3998
+        },
+        "p_union": {
+          "brier": 0.1267,
+          "log_loss": 0.4175
+        },
+        "p_max": {
+          "brier": 0.1461,
+          "log_loss": 0.4557
+        },
+        "p_clim": {
+          "brier": 0.2273,
+          "log_loss": 0.6467
+        }
+      },
+      "CLILEX": {
+        "n": 1828,
+        "base_rate": 0.328,
+        "p_model": {
+          "brier": 0.1084,
+          "log_loss": 0.3414
+        },
+        "p_union": {
+          "brier": 0.1154,
+          "log_loss": 0.3609
+        },
+        "p_max": {
+          "brier": 0.1226,
+          "log_loss": 0.3764
+        },
+        "p_clim": {
+          "brier": 0.217,
+          "log_loss": 0.6245
+        }
+      },
+      "CLICMH": {
+        "n": 1828,
+        "base_rate": 0.35,
+        "p_model": {
+          "brier": 0.1067,
+          "log_loss": 0.342
+        },
+        "p_union": {
+          "brier": 0.1129,
+          "log_loss": 0.3601
+        },
+        "p_max": {
+          "brier": 0.1173,
+          "log_loss": 0.3666
+        },
+        "p_clim": {
+          "brier": 0.2261,
+          "log_loss": 0.6445
+        }
+      },
+      "CLIPVD": {
+        "n": 1828,
+        "base_rate": 0.346,
+        "p_model": {
+          "brier": 0.0997,
+          "log_loss": 0.3152
+        },
+        "p_union": {
+          "brier": 0.103,
+          "log_loss": 0.3308
+        },
+        "p_max": {
+          "brier": 0.1107,
+          "log_loss": 0.3521
+        },
+        "p_clim": {
+          "brier": 0.224,
+          "log_loss": 0.6398
+        }
+      },
+      "CLICLL": {
+        "n": 1828,
+        "base_rate": 0.186,
+        "p_model": {
+          "brier": 0.0911,
+          "log_loss": 0.2914
+        },
+        "p_union": {
+          "brier": 0.1026,
+          "log_loss": 0.3288
+        },
+        "p_max": {
+          "brier": 0.0919,
+          "log_loss": 0.2972
+        },
+        "p_clim": {
+          "brier": 0.1555,
+          "log_loss": 0.4912
+        }
+      },
+      "CLIPIT": {
+        "n": 1828,
+        "base_rate": 0.385,
+        "p_model": {
+          "brier": 0.1127,
+          "log_loss": 0.3583
+        },
+        "p_union": {
+          "brier": 0.1168,
+          "log_loss": 0.3698
+        },
+        "p_max": {
+          "brier": 0.1277,
+          "log_loss": 0.3943
+        },
+        "p_clim": {
+          "brier": 0.2296,
+          "log_loss": 0.6513
+        }
+      },
+      "CLIABQ": {
+        "n": 1828,
+        "base_rate": 0.164,
+        "p_model": {
+          "brier": 0.0858,
+          "log_loss": 0.2717
+        },
+        "p_union": {
+          "brier": 0.0859,
+          "log_loss": 0.2751
+        },
+        "p_max": {
+          "brier": 0.0895,
+          "log_loss": 0.2839
+        },
+        "p_clim": {
+          "brier": 0.1373,
+          "log_loss": 0.4442
+        }
+      },
+      "CLISGF": {
+        "n": 1824,
+        "base_rate": 0.237,
+        "p_model": {
+          "brier": 0.0901,
+          "log_loss": 0.2912
+        },
+        "p_union": {
+          "brier": 0.095,
+          "log_loss": 0.3079
+        },
+        "p_max": {
+          "brier": 0.1004,
+          "log_loss": 0.3176
+        },
+        "p_clim": {
+          "brier": 0.1804,
+          "log_loss": 0.5462
+        }
+      }
+    }
+  },
+  "in_sample": {
+    "overall": {
+      "p_model": {
+        "brier": 0.0887,
+        "log_loss": 0.2841
+      },
+      "p_union": {
+        "brier": 0.0916,
+        "log_loss": 0.2981
+      },
+      "p_max": {
+        "brier": 0.1004,
+        "log_loss": 0.3157
+      },
+      "p_clim": {
+        "brier": 0.1888,
+        "log_loss": 0.5575
+      }
+    }
+  },
+  "generated_at": "2026-10-03T17:52:47.106Z",
+  "comparable_conditions": {
+    "definition": "Past days at the same station (2023-01..2025-06, run ~18 h before the window) whose MOS window PoP fell in the same 10-point bin; observed share with measurable CLI precipitation",
+    "by_station": {
+      "CLINYC": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 374,
+          "observed_rate": 0.021
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 81,
+          "observed_rate": 0.062
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 47,
+          "observed_rate": 0.128
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 45,
+          "observed_rate": 0.333
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 39,
+          "observed_rate": 0.231
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 32,
+          "observed_rate": 0.469
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 40,
+          "observed_rate": 0.575
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 53,
+          "observed_rate": 0.811
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 54,
+          "observed_rate": 0.852
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 145,
+          "observed_rate": 0.979
+        }
+      ],
+      "CLIORD": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 312,
+          "observed_rate": 0.01
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 110,
+          "observed_rate": 0.082
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 72,
+          "observed_rate": 0.222
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 57,
+          "observed_rate": 0.298
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 51,
+          "observed_rate": 0.412
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 48,
+          "observed_rate": 0.5
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 50,
+          "observed_rate": 0.76
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 51,
+          "observed_rate": 0.745
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 60,
+          "observed_rate": 0.917
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 99,
+          "observed_rate": 0.96
+        }
+      ],
+      "CLIMDW": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 312,
+          "observed_rate": 0.022
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 110,
+          "observed_rate": 0.009
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 78,
+          "observed_rate": 0.192
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 55,
+          "observed_rate": 0.236
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 42,
+          "observed_rate": 0.429
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 60,
+          "observed_rate": 0.55
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 39,
+          "observed_rate": 0.641
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 50,
+          "observed_rate": 0.68
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 64,
+          "observed_rate": 0.875
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 100,
+          "observed_rate": 0.92
+        }
+      ],
+      "CLIAUS": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 513,
+          "observed_rate": 0.018
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 66,
+          "observed_rate": 0.106
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 70,
+          "observed_rate": 0.314
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 50,
+          "observed_rate": 0.28
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 32,
+          "observed_rate": 0.375
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 40,
+          "observed_rate": 0.525
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 36,
+          "observed_rate": 0.583
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 28,
+          "observed_rate": 0.821
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 33,
+          "observed_rate": 0.818
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 42,
+          "observed_rate": 1
+        }
+      ],
+      "CLIMIA": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 226,
+          "observed_rate": 0.004
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 93,
+          "observed_rate": 0.065
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 88,
+          "observed_rate": 0.205
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 88,
+          "observed_rate": 0.307
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 88,
+          "observed_rate": 0.477
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 69,
+          "observed_rate": 0.522
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 65,
+          "observed_rate": 0.677
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 62,
+          "observed_rate": 0.774
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 71,
+          "observed_rate": 0.831
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 60,
+          "observed_rate": 0.883
+        }
+      ],
+      "CLIDEN": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 370,
+          "observed_rate": 0.011
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 132,
+          "observed_rate": 0.083
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 93,
+          "observed_rate": 0.118
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 64,
+          "observed_rate": 0.328
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 53,
+          "observed_rate": 0.358
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 59,
+          "observed_rate": 0.61
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 44,
+          "observed_rate": 0.659
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 38,
+          "observed_rate": 0.763
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 29,
+          "observed_rate": 0.759
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 28,
+          "observed_rate": 1
+        }
+      ],
+      "CLIPHL": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 374,
+          "observed_rate": 0.032
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 79,
+          "observed_rate": 0.101
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 61,
+          "observed_rate": 0.115
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 41,
+          "observed_rate": 0.317
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 39,
+          "observed_rate": 0.282
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 41,
+          "observed_rate": 0.488
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 43,
+          "observed_rate": 0.581
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 39,
+          "observed_rate": 0.667
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 65,
+          "observed_rate": 0.769
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 128,
+          "observed_rate": 0.953
+        }
+      ],
+      "CLILAX": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 669,
+          "observed_rate": 0.004
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 67,
+          "observed_rate": 0.075
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 36,
+          "observed_rate": 0.111
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 23,
+          "observed_rate": 0.261
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 15,
+          "observed_rate": 0.2
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 11,
+          "observed_rate": 0.636
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 11,
+          "observed_rate": 0.545
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 10,
+          "observed_rate": 0.7
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 15,
+          "observed_rate": 0.933
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 53,
+          "observed_rate": 0.981
+        }
+      ],
+      "CLILAS": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 740,
+          "observed_rate": 0.003
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 48,
+          "observed_rate": 0.063
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 36,
+          "observed_rate": 0.139
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 24,
+          "observed_rate": 0.125
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 11,
+          "observed_rate": 0.455
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 11,
+          "observed_rate": 0.364
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 8,
+          "observed_rate": 0.375
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 4,
+          "observed_rate": 1
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 11,
+          "observed_rate": 0.727
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 17,
+          "observed_rate": 0.882
+        }
+      ],
+      "CLIMSY": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 305,
+          "observed_rate": 0.023
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 134,
+          "observed_rate": 0.104
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 67,
+          "observed_rate": 0.239
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 58,
+          "observed_rate": 0.276
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 59,
+          "observed_rate": 0.271
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 50,
+          "observed_rate": 0.48
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 45,
+          "observed_rate": 0.556
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 56,
+          "observed_rate": 0.696
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 58,
+          "observed_rate": 0.793
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 74,
+          "observed_rate": 1
+        }
+      ],
+      "CLISFO": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 571,
+          "observed_rate": 0.004
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 80,
+          "observed_rate": 0.037
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 42,
+          "observed_rate": 0.119
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 20,
+          "observed_rate": 0.05
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 19,
+          "observed_rate": 0.368
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 17,
+          "observed_rate": 0.529
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 13,
+          "observed_rate": 0.538
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 11,
+          "observed_rate": 0.818
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 32,
+          "observed_rate": 0.938
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 105,
+          "observed_rate": 0.981
+        }
+      ],
+      "CLIDCA": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 370,
+          "observed_rate": 0.005
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 86,
+          "observed_rate": 0.081
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 50,
+          "observed_rate": 0.24
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 37,
+          "observed_rate": 0.324
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 55,
+          "observed_rate": 0.382
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 39,
+          "observed_rate": 0.59
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 56,
+          "observed_rate": 0.643
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 50,
+          "observed_rate": 0.68
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 54,
+          "observed_rate": 0.796
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 112,
+          "observed_rate": 0.955
+        }
+      ],
+      "CLISEA": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 302,
+          "observed_rate": 0.003
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 56,
+          "observed_rate": 0.071
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 36,
+          "observed_rate": 0.139
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 35,
+          "observed_rate": 0.343
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 31,
+          "observed_rate": 0.452
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 35,
+          "observed_rate": 0.286
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 42,
+          "observed_rate": 0.595
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 43,
+          "observed_rate": 0.488
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 77,
+          "observed_rate": 0.727
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 251,
+          "observed_rate": 0.928
+        }
+      ],
+      "CLIBOS": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 323,
+          "observed_rate": 0.012
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 91,
+          "observed_rate": 0.044
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 51,
+          "observed_rate": 0.137
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 48,
+          "observed_rate": 0.292
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 51,
+          "observed_rate": 0.314
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 61,
+          "observed_rate": 0.443
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 41,
+          "observed_rate": 0.659
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 43,
+          "observed_rate": 0.791
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 59,
+          "observed_rate": 0.864
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 142,
+          "observed_rate": 0.958
+        }
+      ],
+      "CLIPHX": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 708,
+          "observed_rate": 0.001
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 51,
+          "observed_rate": 0.059
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 32,
+          "observed_rate": 0.125
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 33,
+          "observed_rate": 0.212
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 8,
+          "observed_rate": 0.375
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 21,
+          "observed_rate": 0.286
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 12,
+          "observed_rate": 0.5
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 10,
+          "observed_rate": 0.6
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 15,
+          "observed_rate": 0.733
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 20,
+          "observed_rate": 0.95
+        }
+      ],
+      "CLIATL": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 375,
+          "observed_rate": 0.013
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 105,
+          "observed_rate": 0.057
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 35,
+          "observed_rate": 0.114
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 41,
+          "observed_rate": 0.39
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 53,
+          "observed_rate": 0.34
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 57,
+          "observed_rate": 0.544
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 36,
+          "observed_rate": 0.639
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 61,
+          "observed_rate": 0.623
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 49,
+          "observed_rate": 0.918
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 98,
+          "observed_rate": 0.939
+        }
+      ],
+      "CLIMSP": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 376,
+          "observed_rate": 0.016
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 121,
+          "observed_rate": 0.124
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 57,
+          "observed_rate": 0.158
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 48,
+          "observed_rate": 0.396
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 37,
+          "observed_rate": 0.27
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 44,
+          "observed_rate": 0.477
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 34,
+          "observed_rate": 0.676
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 60,
+          "observed_rate": 0.667
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 40,
+          "observed_rate": 0.875
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 93,
+          "observed_rate": 0.968
+        }
+      ],
+      "CLIDFW": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 481,
+          "observed_rate": 0.021
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 82,
+          "observed_rate": 0.146
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 63,
+          "observed_rate": 0.27
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 49,
+          "observed_rate": 0.224
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 37,
+          "observed_rate": 0.432
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 39,
+          "observed_rate": 0.564
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 30,
+          "observed_rate": 0.633
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 38,
+          "observed_rate": 0.684
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 39,
+          "observed_rate": 0.795
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 52,
+          "observed_rate": 0.942
+        }
+      ],
+      "CLISAT": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 495,
+          "observed_rate": 0.022
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 103,
+          "observed_rate": 0.204
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 58,
+          "observed_rate": 0.276
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 53,
+          "observed_rate": 0.302
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 42,
+          "observed_rate": 0.333
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 35,
+          "observed_rate": 0.514
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 39,
+          "observed_rate": 0.59
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 25,
+          "observed_rate": 0.8
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 23,
+          "observed_rate": 0.87
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 36,
+          "observed_rate": 0.889
+        }
+      ],
+      "CLIHOU": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 331,
+          "observed_rate": 0.003
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 165,
+          "observed_rate": 0.109
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 79,
+          "observed_rate": 0.177
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 65,
+          "observed_rate": 0.4
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 32,
+          "observed_rate": 0.438
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 41,
+          "observed_rate": 0.537
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 40,
+          "observed_rate": 0.625
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 42,
+          "observed_rate": 0.786
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 41,
+          "observed_rate": 0.829
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 74,
+          "observed_rate": 0.919
+        }
+      ],
+      "CLIOKC": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 485,
+          "observed_rate": 0.019
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 96,
+          "observed_rate": 0.125
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 68,
+          "observed_rate": 0.206
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 40,
+          "observed_rate": 0.3
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 41,
+          "observed_rate": 0.561
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 34,
+          "observed_rate": 0.529
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 34,
+          "observed_rate": 0.618
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 29,
+          "observed_rate": 0.724
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 38,
+          "observed_rate": 0.842
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 45,
+          "observed_rate": 1
+        }
+      ],
+      "CLIEWR": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 364,
+          "observed_rate": 0.016
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 84,
+          "observed_rate": 0.095
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 55,
+          "observed_rate": 0.164
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 47,
+          "observed_rate": 0.234
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 42,
+          "observed_rate": 0.31
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 28,
+          "observed_rate": 0.429
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 44,
+          "observed_rate": 0.636
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 50,
+          "observed_rate": 0.76
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 54,
+          "observed_rate": 0.889
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 142,
+          "observed_rate": 0.972
+        }
+      ],
+      "CLITTN": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 367,
+          "observed_rate": 0.016
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 89,
+          "observed_rate": 0.169
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 62,
+          "observed_rate": 0.145
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 34,
+          "observed_rate": 0.382
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 34,
+          "observed_rate": 0.324
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 47,
+          "observed_rate": 0.426
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 37,
+          "observed_rate": 0.649
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 45,
+          "observed_rate": 0.778
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 58,
+          "observed_rate": 0.845
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 137,
+          "observed_rate": 0.942
+        }
+      ],
+      "CLIMKE": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 307,
+          "observed_rate": 0.026
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 107,
+          "observed_rate": 0.075
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 68,
+          "observed_rate": 0.206
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 59,
+          "observed_rate": 0.305
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 55,
+          "observed_rate": 0.436
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 51,
+          "observed_rate": 0.569
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 53,
+          "observed_rate": 0.604
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 53,
+          "observed_rate": 0.755
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 53,
+          "observed_rate": 0.849
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 104,
+          "observed_rate": 0.971
+        }
+      ],
+      "CLILEX": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 291,
+          "observed_rate": 0.027
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 118,
+          "observed_rate": 0.059
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 68,
+          "observed_rate": 0.162
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 39,
+          "observed_rate": 0.256
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 46,
+          "observed_rate": 0.457
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 36,
+          "observed_rate": 0.472
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 47,
+          "observed_rate": 0.574
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 48,
+          "observed_rate": 0.563
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 89,
+          "observed_rate": 0.798
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 128,
+          "observed_rate": 0.977
+        }
+      ],
+      "CLICMH": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 277,
+          "observed_rate": 0.022
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 103,
+          "observed_rate": 0.058
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 70,
+          "observed_rate": 0.114
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 44,
+          "observed_rate": 0.25
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 49,
+          "observed_rate": 0.306
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 45,
+          "observed_rate": 0.289
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 44,
+          "observed_rate": 0.682
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 42,
+          "observed_rate": 0.714
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 76,
+          "observed_rate": 0.829
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 160,
+          "observed_rate": 0.925
+        }
+      ],
+      "CLIPVD": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 325,
+          "observed_rate": 0.012
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 99,
+          "observed_rate": 0.061
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 55,
+          "observed_rate": 0.2
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 54,
+          "observed_rate": 0.241
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 43,
+          "observed_rate": 0.395
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 44,
+          "observed_rate": 0.432
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 43,
+          "observed_rate": 0.558
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 48,
+          "observed_rate": 0.771
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 57,
+          "observed_rate": 0.842
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 142,
+          "observed_rate": 0.979
+        }
+      ],
+      "CLICLL": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 357,
+          "observed_rate": 0.017
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 135,
+          "observed_rate": 0.03
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 81,
+          "observed_rate": 0.123
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 60,
+          "observed_rate": 0.267
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 48,
+          "observed_rate": 0.417
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 44,
+          "observed_rate": 0.318
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 34,
+          "observed_rate": 0.618
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 48,
+          "observed_rate": 0.625
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 46,
+          "observed_rate": 0.717
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 57,
+          "observed_rate": 0.965
+        }
+      ],
+      "CLIPIT": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 237,
+          "observed_rate": 0.013
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 95,
+          "observed_rate": 0.105
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 52,
+          "observed_rate": 0.192
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 48,
+          "observed_rate": 0.25
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 57,
+          "observed_rate": 0.404
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 51,
+          "observed_rate": 0.431
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 56,
+          "observed_rate": 0.625
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 40,
+          "observed_rate": 0.7
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 92,
+          "observed_rate": 0.783
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 182,
+          "observed_rate": 0.978
+        }
+      ],
+      "CLIABQ": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 620,
+          "observed_rate": 0.006
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 53,
+          "observed_rate": 0.057
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 56,
+          "observed_rate": 0.196
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 38,
+          "observed_rate": 0.342
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 33,
+          "observed_rate": 0.394
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 34,
+          "observed_rate": 0.412
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 29,
+          "observed_rate": 0.621
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 22,
+          "observed_rate": 0.636
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 12,
+          "observed_rate": 0.75
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 13,
+          "observed_rate": 1
+        }
+      ],
+      "CLISGF": [
+        {
+          "pop_union_bin": "0.0-0.1",
+          "n": 390,
+          "observed_rate": 0.005
+        },
+        {
+          "pop_union_bin": "0.1-0.2",
+          "n": 94,
+          "observed_rate": 0.117
+        },
+        {
+          "pop_union_bin": "0.2-0.3",
+          "n": 73,
+          "observed_rate": 0.178
+        },
+        {
+          "pop_union_bin": "0.3-0.4",
+          "n": 49,
+          "observed_rate": 0.327
+        },
+        {
+          "pop_union_bin": "0.4-0.5",
+          "n": 48,
+          "observed_rate": 0.5
+        },
+        {
+          "pop_union_bin": "0.5-0.6",
+          "n": 46,
+          "observed_rate": 0.391
+        },
+        {
+          "pop_union_bin": "0.6-0.7",
+          "n": 43,
+          "observed_rate": 0.628
+        },
+        {
+          "pop_union_bin": "0.7-0.8",
+          "n": 35,
+          "observed_rate": 0.714
+        },
+        {
+          "pop_union_bin": "0.8-0.9",
+          "n": 39,
+          "observed_rate": 0.821
+        },
+        {
+          "pop_union_bin": "0.9-1.0",
+          "n": 93,
+          "observed_rate": 0.935
+        }
+      ]
+    }
+  }
+}

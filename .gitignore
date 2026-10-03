@@ -1,4 +1,6 @@
-.replay/
+!.env.example
 .env
 .env.*
-!.env.example
+.replay/
+.wrangler/
+node_modules/
