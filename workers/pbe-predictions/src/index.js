@@ -34,7 +34,11 @@ export default {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const dry = url.searchParams.get('dry_run') !== '0';
         const r = await runCycle(env, { store: storeFor(env), dryRun: dry });
-        return json(dry ? { summary: r.summary, sample: { contracts: r.writes.contracts.slice(0, 3), forecasts: r.writes.forecasts.slice(0, 3), venue: r.writes.venue.slice(0, 3) } } : { summary: r.summary }, 200, 'no-store');
+        return json(dry ? {
+          summary: r.summary,
+          fail_closed: r.writes.contracts.filter((c) => c.normalization_status !== 'NORMALIZED').map((c) => ({ market_id: c.market_id, status: c.normalization_status, reason: c.status_reason, detail: c.detail, rules: c.rules_primary })),
+          forecasts: r.writes.forecasts.map((f) => ({ market_id: f.market_id, model: `${f.model_id}@${f.model_version}`, state: f.model_state, pbe: f.probability, market: f.market_probability, confidence: f.confidence, cutoff: f.data_cutoff_at, evidence: f.explanation.evidence, tier: f.explanation.model_tier ?? null })),
+        } : { summary: r.summary }, 200, 'no-store');
       }
       if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
