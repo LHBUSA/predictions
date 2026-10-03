@@ -125,6 +125,7 @@ export default {
       if (p === '/pages/insights' || p.startsWith('/pages/insights/')) {
         const rest = decodeURIComponent(p.slice('/pages/insights'.length).replace(/^\//, ''));
         const items = await publishedStories(store);
+        if (!items.length) return html(renderNotFound('/insights/'), 404);
         if (!rest || VERTICALS[rest]) {
           if (rest && !items.some((i) => i.story.vertical === rest)) return html(renderNotFound(`/insights/${rest}/`), 404);
           const d = await desk(store);
