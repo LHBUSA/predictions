@@ -4,6 +4,7 @@
 // (T_MINUS_24H only where a qualifying forecast existed; nothing captured after window start); Brier/log-loss
 // recomputed from stored rows; public record endpoint serves the stored scores; append-only history intact.
 import { brierScore, logLoss } from '../../src/scoring.js';
+import { scoringReference } from '../../src/engine/designations.js';
 
 const URL_ = process.env.SUPABASE_URL; const KEY = process.env.SUPABASE_SERVICE_KEY;
 const DATE = process.argv[2] || '2026-10-04';
@@ -12,7 +13,7 @@ const q = async (path) => { const r = await fetch(`${URL_}/rest/v1/${path}`, { h
 const inList = (ids) => `in.(${ids.map((i) => `"${i}"`).join(',')})`;
 const fails = []; const check = (ok, msg) => { if (!ok) fails.push(msg); };
 
-const contracts = (await q(`pred_contracts?select=contract_id,market_id,observation_start,domain&domain=eq.WEATHER&normalization_status=eq.NORMALIZED&observation_start=gte.${DATE}T00:00:00Z&observation_start=lt.${DATE}T23:59:59Z&limit=1000`));
+const contracts = (await q(`pred_contracts?select=contract_id,market_id,observation_start,detail,domain&domain=eq.WEATHER&normalization_status=eq.NORMALIZED&observation_start=gte.${DATE}T00:00:00Z&observation_start=lt.${DATE}T23:59:59Z&limit=1000`));
 const ids = contracts.map((c) => c.contract_id);
 const forecasts = []; const des = []; const res = []; const scores = [];
 for (let i = 0; i < ids.length; i += 60) {
@@ -33,9 +34,10 @@ for (const r of res) {
   check(r.sources_agree === (r.official_outcome === r.venue_result?.toUpperCase()), `${r.contract_id}: sources_agree inconsistent`);
 }
 for (const c of withForecast) {
-  const start = Date.parse(c.observation_start);
+  const res0 = res.find((r) => r.contract_id === c.contract_id);
+  const start = scoringReference(c, res0?.venue_settled_at || null);
   const fs = forecasts.filter((f) => f.contract_id === c.contract_id);
-  check(fs.every((f) => Date.parse(f.captured_at) < start), `${c.market_id}: forecast captured after window start`);
+  check(fs.every((f) => Date.parse(f.captured_at) < Date.parse(c.observation_start) || c.detail?.scoring_reference), `${c.market_id}: weather forecast captured after window start`);
   for (const m of [...new Set(fs.map((f) => f.model_id))]) {
     const mine = fs.filter((f) => f.model_id === m).sort((a, b) => Date.parse(a.captured_at) - Date.parse(b.captured_at));
     const d = Object.fromEntries(des.filter((x) => x.contract_id === c.contract_id && x.model_id === m).map((x) => [x.designation, x]));
@@ -43,7 +45,9 @@ for (const c of withForecast) {
     check(d.FIRST_PUBLISHED?.forecast_id === mine[0].forecast_id, `${c.market_id}: FIRST_PUBLISHED wrong`);
     const t24 = mine.filter((f) => Date.parse(f.captured_at) <= start - 86400000).pop();
     check(t24 ? d.T_MINUS_24H?.forecast_id === t24.forecast_id : !d.T_MINUS_24H, `${c.market_id}: T_MINUS_24H ${t24 ? 'wrong/missing' : 'manufactured without a qualifying forecast'}`);
-    if (Date.now() >= start) check(d.FINAL_PRE_RESOLUTION?.forecast_id === mine.at(-1).forecast_id, `${c.market_id}: FINAL_PRE_RESOLUTION wrong/missing`);
+    const finalF = mine.filter((f) => Date.parse(f.captured_at) < start).pop();
+    if (Date.now() >= start && finalF) check(d.FINAL_PRE_RESOLUTION?.forecast_id === finalF.forecast_id, `${c.market_id}: FINAL_PRE_RESOLUTION wrong/missing`);
+    if (d.FINAL_PRE_RESOLUTION) check(Date.parse(mine.find((f) => f.forecast_id === d.FINAL_PRE_RESOLUTION.forecast_id).captured_at) < start, `${c.market_id}: FINAL designated a forecast at/after its reference`);
   }
 }
 for (const s of scores) {

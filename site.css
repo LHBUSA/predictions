@@ -1,7 +1,7 @@
 /* PropBetEdge Predictions — design system v4 (institutional research terminal). Shared by static pages and
    Worker-rendered event pages. Light theme; numbers use tabular figures; no layout shift on data load. */
 :root{
-  --bg:#f4f7fb;--panel:#fff;--panel-2:#f8fafd;--ink:#0f2033;--ink-2:#334a63;--muted:#5d7288;--faint:#8597a9;--line:#dde6f0;--line-2:#e9eff6;
+  --bg:#f4f7fb;--panel:#fff;--panel-2:#f8fafd;--ink:#0f2033;--ink-2:#334a63;--muted:#5d7288;--faint:#66798c;--line:#dde6f0;--line-2:#e9eff6;
   --navy:#0e2a4a;--blue:#1f63b5;--blue-2:#3f8cff;--blue-bg:#eaf2fc;--mkt:#8a9db1;--mkt-bg:#eef2f6;
   --pos:#0f7a55;--pos-bg:#e5f6ee;--neg:#b4441b;--neg-bg:#fdeee6;--amber:#8a5a00;--amber-bg:#fff4d9;--violet:#5b3fa8;--violet-bg:#efeafc;
   --r:14px;--r-sm:10px;--shadow:0 1px 2px rgba(16,32,51,.04),0 6px 24px rgba(16,32,51,.05);
@@ -178,3 +178,5 @@ details.snap summary{cursor:pointer;font-weight:650;font-size:13px}
 .stats-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media (max-width:760px){.stats-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .stat strong,.stat small{overflow-wrap:anywhere}
+/* WCAG: links inside running text are underlined, not colour-only */
+p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{text-decoration:underline;text-underline-offset:2px}
