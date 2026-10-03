@@ -4,8 +4,9 @@
 // venue-derived key at any depth: price, bid, ask, midpoint, spread, order book / depth, last trade, volume,
 // liquidity, open interest, venue consensus, token / condition ids, CLOB / Gamma payloads.
 // Reference: propbetedge-workers workers/propsports-markets/src/leakage-guard.js. The database CHECK
-// pred_features_market_free (sql/002) enforces the original subset; this module is the stricter gate and
-// runs before any value reaches a model function.
+// pred_features_market_free (sql/004) is GENERATED from MARKET_KEY_PATTERN (scripts/db/gen-market-free-sql.mjs;
+// test/leakage-db-parity.test.js fails on drift): changing the pattern = regenerate + a new migration. This
+// module runs before any value reaches a model function; the CHECK backstops every stored feature vector.
 //
 // Names that are legitimate domain features and must stay allowed (pinned by test/leakage-guard.test.js):
 // nbm_max_temp_spread_f (NBM ensemble spread, degF), cmt6m_minus_target_mid (Fed target-range midpoint).
