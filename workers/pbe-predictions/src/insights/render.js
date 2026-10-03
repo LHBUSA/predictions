@@ -21,7 +21,7 @@ function heroNumbers(h) {
   if (h.type === 'flow') {
     return `<div class="ix-flow" aria-label="${esc(`${h.from} to ${h.to}`)}"><span class="from">${esc(h.from)}</span><span class="arrow" aria-hidden="true">→</span><span class="to">${esc(h.to)}</span></div><p class="ix-flow-label">${esc(h.label)}</p>${h.stats ? `<div class="ix-hstats small">${h.stats.map(stat).join('')}</div>` : ''}`;
   }
-  return `<div class="ix-hstats">${h.stats.map(stat).join('')}</div>${h.outcome ? `<p class="ix-flow-label">${esc(h.outcome)}</p>` : ''}`;
+  return `<div class="ix-hstats${h.four ? ' four' : ''}">${h.stats.map(stat).join('')}</div>${h.outcome ? `<p class="ix-flow-label">${esc(h.outcome)}</p>` : ''}`;
 }
 const stat = (s) => `<div class="ix-hstat t-${esc(s.tone)}"><span>${esc(s.label)}</span><strong>${esc(s.value)}</strong>${s.sub ? `<small>${esc(s.sub)}</small>` : ''}</div>`;
 

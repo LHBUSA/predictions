@@ -11,6 +11,7 @@ import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './i
 import { renderArticle, renderDesk, rssXml, newsSitemapXml } from './insights/render.js';
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
+import { runNewsroom, evidenceView } from './newsroom/engine.js';
 
 // no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
 const json = (data, status = 200, cache = 'public, max-age=30') => new Response(JSON.stringify(data), {
@@ -68,6 +69,26 @@ export default {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
         return rec ? json(rec, 200, 'no-store') : json({ error: 'not_found' }, 404, 'no-store');
+      }
+      // Automated Newsroom V1 — DRY RUN ONLY (no writes, nothing published): candidates, holds, evidence packets, previews
+      if (req.method === 'GET' && (p === '/admin/newsroom' || p.startsWith('/admin/newsroom/'))) {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const store = storeFor(env);
+        const now = url.searchParams.get('now') || new Date().toISOString();
+        const fams = (await models(store)).families;
+        const r = await runNewsroom(store, { now, familyResolved: Object.fromEntries(fams.map((f) => [f.id, f.resolved])) });
+        const rest = p.slice('/admin/newsroom'.length).replace(/^\//, '');
+        if (!rest) return json({ ...r, stories: r.stories.map((s) => ({ story_id: s.story_id, class: s.class, state: s.state, reason: s.reason ?? null, slug: s.slug ?? null, title: s.built?.title ?? null, trigger: s.trigger, preview: s.state === 'VALIDATED' ? `/admin/newsroom/preview/${s.story_id}` : null, evidence: `/admin/newsroom/evidence/${s.story_id}` })) }, 200, 'no-store');
+        const [kind, sid] = rest.split('/');
+        const s = r.stories.find((x) => x.story_id === sid);
+        if (!s) return json({ error: 'not_found' }, 404, 'no-store');
+        if (kind === 'evidence') return json(evidenceView(s), 200, 'no-store');
+        if (kind === 'card' && s.built) return png(await renderPng(cardSvg(s.built.card)), 'no-store');
+        if (kind === 'preview' && s.built) {
+          const live = await eventRecord(store, s.def.primary);
+          return html(renderArticle(s.def, s.built, { live, related: [], model: FAMILIES.find((f) => f.id === live?.event.model_family) || null }).replace('content="index,follow,max-image-preview:large"', 'content="noindex"'), 200, 'no-store');
+        }
+        return json({ error: 'not_available', state: s.state, reason: s.reason ?? null }, 409, 'no-store');
       }
       // pre-publication QA: renders a story regardless of its publish time (admin token only, never indexed)
       if (req.method === 'GET' && p.startsWith('/admin/insights/')) {

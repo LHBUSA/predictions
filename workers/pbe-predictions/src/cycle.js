@@ -160,7 +160,7 @@ async function fredInputs({ fetchImpl, now }) {
 export async function runCycle(env, { store, markets = null, fetchImpl = globalThis.fetch, now = new Date().toISOString(), dryRun = false } = {}) {
   const mkt = markets || new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN });
   const nowMs = Date.parse(now);
-  const summary = { now, dry_run: dryRun, series: {}, events: 0, contracts: { NORMALIZED: 0, UNMODELABLE: 0, HOLD_RESOLUTION_AMBIGUOUS: 0, UNSUPPORTED_DOMAIN: 0 }, venue_snapshots: 0, forecasts: 0, forecast_skips: {}, designations: 0, resolutions: 0, scores: 0, errors: [] };
+  const summary = { now, dry_run: dryRun, series: {}, events: 0, contracts: { NORMALIZED: 0, UNMODELABLE: 0, HOLD_RESOLUTION_AMBIGUOUS: 0, UNSUPPORTED_DOMAIN: 0 }, venue_snapshots: 0, forecasts: 0, forecast_skips: {}, skipped: {}, designations: 0, resolutions: 0, scores: 0, errors: [] };
   const writes = { events: [], contracts: [], venue: [], observations: [], features: [], forecasts: [] };
   const seriesList = [env.WEATHER_SERIES, env.MACRO_SERIES, env.RATES_SERIES, env.MONITOR_SERIES].filter(Boolean).join(',').split(',').map((s) => s.trim()).filter(Boolean);
   const stationSources = new Map();
@@ -205,7 +205,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
             if (!treasurySources) {
               try { treasurySources = await treasuryInputs({ fetchImpl, now }); } catch (e) { treasurySources = { error: e.message }; }
             }
-            if (treasurySources.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; summary.errors.push({ source: 'treasury', error: treasurySources.error }); continue; }
+            if (treasurySources.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; summary.errors.push({ source: 'treasury', error: treasurySources.error }); noteSkip(summary, 'source:treasury', 'SOURCE_ERROR', treasurySources.error); continue; }
             f = forecastRates(c, { treasury: treasurySources }, { now });
           } else if (c.domain === 'MACRO') {
             if (!fredSources) {
@@ -219,7 +219,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
               try { stationSources.set(st.cli, await weatherSources(st, { fetchImpl, now })); } catch (e) { stationSources.set(st.cli, { error: e.message }); }
             }
             const src = stationSources.get(st.cli);
-            if (src.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; continue; }
+            if (src.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; noteSkip(summary, `station:${st.cli}`, 'SOURCE_ERROR', src.error); continue; }
             f = forecastWeather(c, src, { now });
           }
           if (f.status !== 'OK') { summary.forecast_skips[f.status] = (summary.forecast_skips[f.status] || 0) + 1; continue; }
@@ -280,7 +280,18 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
 
   const post = await designateResolveScore(env, { store, mkt, fetchImpl, now });
   Object.assign(summary, post);
+  // Diagnostic record of skipped publications (expected input unavailable -> skip, never substitute).
+  // Persisted once sql/003 is applied and NEWSROOM_DB=true; always present in the logged cycle summary.
+  if (env.NEWSROOM_DB === 'true' && Object.keys(summary.skipped).length) {
+    try { await store.insertReturning('pred_cycle_diagnostics', Object.entries(summary.skipped).map(([scope, v]) => ({ cycle_at: now, kind: 'FORECAST_SKIP', scope, reason: v.reason, contracts: v.contracts, detail: { error: v.detail } }))); } catch (e) { summary.errors.push({ source: 'diagnostics', error: e.message }); }
+  }
   return { summary };
+}
+
+export function noteSkip(summary, scope, reason, detail) {
+  const cur = summary.skipped[scope] || { reason, contracts: 0, detail: String(detail || '').slice(0, 240) };
+  cur.contracts += 1;
+  summary.skipped[scope] = cur;
 }
 
 // Official FOMC outcome: change in the target upper bound across the meeting (FRED DFEDTARU), bucketed.

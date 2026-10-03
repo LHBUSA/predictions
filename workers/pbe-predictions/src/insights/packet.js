@@ -3,6 +3,7 @@
 // observations stored up to that time, the exact contract versions those forecasts were made against, and any stored
 // resolution/score (which may arrive later and is shown as a dated update, never rewritten into the original story).
 import { PUBLIC_STATES, CATEGORY_LABEL } from '../../../../src/engine/registry.js';
+import { distributionKind } from '../api.js';
 
 const pct = (p) => (p === null || p === undefined ? null : Math.round(Number(p) * 100));
 
@@ -12,7 +13,7 @@ export async function loadEventPacket(store, slug, asOf) {
   const contractRows = await store.select('pred_contracts', { select: '*', event_id: `eq.${event.event_id}` });
   const ids = contractRows.map((c) => c.contract_id);
   if (!ids.length) return null;
-  const forecasts = (await store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,model_id,model_version,model_state,probability,market_probability,confidence,captured_at,data_cutoff_at,features_sha256,provenance,explanation', captured_at: `lte.${asOf}` }, 'contract_id', ids))
+  const forecasts = (await store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,model_id,model_version,model_state,probability,market_probability,confidence,captured_at,data_cutoff_at,features_sha256,feature_snapshot_id,provenance,explanation', captured_at: `lte.${asOf}` }, 'contract_id', ids))
     .filter((f) => PUBLIC_STATES.includes(f.model_state));
   const market = await store.selectIn('pred_venue_snapshots', { select: 'contract_id,captured_at,probability,bid,ask', captured_at: `lte.${asOf}` }, 'contract_id', ids);
   const visible = new Set(forecasts.map((f) => f.forecast_id));
@@ -39,7 +40,7 @@ export async function loadEventPacket(store, slug, asOf) {
       snapshots: fs.map((f) => ({
         id: f.forecast_id, t: f.captured_at, pbe: pct(f.probability), pbe_raw: Number(f.explanation?.raw_probability ?? f.probability), market: pct(f.market_probability),
         model: `${f.model_id}@${f.model_version}`, model_id: f.model_id, version: f.model_version, state: f.model_state, confidence: f.confidence, cutoff: f.data_cutoff_at,
-        sha: f.features_sha256, evidence: f.explanation?.evidence ?? [], provenance: f.provenance ?? [], tier: f.explanation?.model_tier ?? null,
+        sha: f.features_sha256, feature_snapshot_id: f.feature_snapshot_id ?? null, evidence: f.explanation?.evidence ?? [], provenance: f.provenance ?? [], tier: f.explanation?.model_tier ?? null,
         roles: designations.filter((d) => d.forecast_id === f.forecast_id).map((d) => d.designation),
       })),
       market_path: ms.map((m) => ({ t: m.captured_at, mid: pct(m.probability), bid: pct(m.bid), ask: pct(m.ask) })),
@@ -49,7 +50,7 @@ export async function loadEventPacket(store, slug, asOf) {
   }).sort((a, b) => ((a.threshold_low ?? a.threshold_high ?? 0) - (b.threshold_low ?? b.threshold_high ?? 0)) || String(a.market_id).localeCompare(String(b.market_id)));
   return {
     as_of: asOf,
-    event: { id: event.event_id, slug: event.slug, title: event.canonical_question, category: event.category, category_label: CATEGORY_LABEL[event.category] || event.category, close_time: event.close_time, venue_event_id: event.venue_event_id, model_family: event.model_family },
+    event: { id: event.event_id, kind: distributionKind(event, [...byMarket.values()]), slug: event.slug, title: event.canonical_question, category: event.category, category_label: CATEGORY_LABEL[event.category] || event.category, close_time: event.close_time, venue_event_id: event.venue_event_id, model_family: event.model_family },
     outcomes,
   };
 }
