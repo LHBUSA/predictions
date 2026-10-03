@@ -11,11 +11,12 @@ let ready = null;
 let bgUri = null;
 const b64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
 
-export async function renderPng(svg) {
+export async function renderPng(svg, { background = null } = {}) {
   ready ||= initWasm(resvgWasm);
   await ready;
   bgUri ||= `data:image/jpeg;base64,${b64(cardBg)}`;
-  const withBg = svg.replace('<rect width="1200" height="630" fill="#020a16"/>', `<rect width="1200" height="630" fill="#020a16"/><image href="${bgUri}" x="0" y="0" width="1200" height="630"/>`);
+  const uri = background ? `data:image/jpeg;base64,${b64(background)}` : bgUri;
+  const withBg = svg.replace('<rect width="1200" height="630" fill="#020a16"/>', `<rect width="1200" height="630" fill="#020a16"/><image href="${uri}" x="0" y="0" width="1200" height="630"/>`);
   const r = new Resvg(withBg, { font: { fontBuffers: [new Uint8Array(inter500), new Uint8Array(inter700), new Uint8Array(inter800)], loadSystemFonts: false, defaultFontFamily: 'Inter' } });
   const png = r.render().asPng();
   r.free?.();

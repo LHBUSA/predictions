@@ -37,6 +37,7 @@ const S1 = {
   slug: 'los-angeles-99-degree-high-model-vs-market-oct-4-2026',
   family: 'MODEL_VS_MARKET', family_label: 'Model vs Market', vertical: 'weather',
   link_title: 'The market prices a 99°F day at LAX far above our model',
+  image: { key: 'lax-99', version: 'v1', focal: '70% 46%', alt: 'Illustration: an airport runway at the edge of the Pacific on a blistering afternoon — heat haze over the far end, a jet climbing out, threshold markings in the foreground, and a probability curve whose thin right-hand tail crosses a glowing threshold line.' },
   events: [LA], primary: LA, as_of: '2026-10-03T21:00:00Z', published_at: '2026-10-03T21:40:00Z',
   build(PK) {
     const ev = PK[LA]; if (!ev) return fail('packet');
@@ -141,6 +142,7 @@ const S2 = {
   slug: 'treasury-yields-october-2026-market-prices-near-certain-dip-path-model',
   family: 'RESEARCH', family_label: 'Research', vertical: 'rates',
   link_title: 'The market prices an October Treasury dip as near-certain; the path model does not',
+  image: { key: 'treasury-7y', version: 'v1', focal: '58% 44%', alt: 'Illustration: a Treasury yield curve glowing across a dark terminal grid, with the seven-year point isolated by a vertical beam and a fan of simulated yield paths running toward a dashed threshold.' },
   events: RATES_EVENTS, primary: R7, as_of: '2026-10-03T21:00:00Z', published_at: '2026-10-03T21:40:00Z',
   build(PK) {
     const ev = PK[R7]; if (!ev) return fail('packet');
@@ -230,6 +232,7 @@ const S3 = {
   slug: 'same-data-two-guidance-systems-national-blend-vs-gfs-mos-oct-4-2026',
   family: 'FORECAST_CHANGE', family_label: 'Forecast Change', vertical: 'weather',
   link_title: 'Same data, two guidance systems: National Blend vs GFS MOS',
+  image: { key: 'two-guidance', version: 'v1', focal: '50% 50%', alt: 'Illustration: two forecast fields — violet on the left, blue on the right — radiating from the same bright point above one city grid, their contours diverging from identical starting information.' },
   events: CITIES.map((c) => c.slug), primary: 'highest-temperature-in-austin-on-oct-4-2026', as_of: '2026-10-03T21:00:00Z', published_at: '2026-10-03T21:40:00Z',
   build(PK) {
     const cities = [];

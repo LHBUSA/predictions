@@ -6,6 +6,7 @@ import { runCycle } from './cycle.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome } from './pages.js';
 import { renderPng } from './og.js';
+import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
 import { renderArticle, renderDesk, rssXml, newsSitemapXml } from './insights/render.js';
@@ -33,12 +34,19 @@ const png = (bytes, cache = 'public, max-age=900, s-maxage=900') => new Response
 const xml = (body, type = 'application/xml') => new Response(body, { headers: { 'content-type': `${type}; charset=utf-8`, 'cache-control': 'public, max-age=900, no-transform', vary: 'Accept-Encoding' } });
 
 // Social cards are cached at the edge by full URL (event cards carry a ?v= content key).
-async function cachedPng(req, ctx, render) {
+async function storyBackground(story) {
+  try {
+    const r = await fetch(storyImage(story).og_background, { cf: { cacheTtl: 86400, cacheEverything: true } });
+    return r.ok && /image\/jpeg/.test(r.headers.get('content-type') || '') ? new Uint8Array(await r.arrayBuffer()) : null;
+  } catch { return null; }
+}
+
+async function cachedPng(req, ctx, render, opts = {}) {
   const cache = caches.default;
   const key = new Request(req.url, { method: 'GET' });
   const hit = await cache.match(key);
   if (hit) return hit;
-  const res = png(await renderPng(await render()));
+  const res = png(await renderPng(await render(), opts));
   ctx.waitUntil(cache.put(key, res.clone()));
   return res;
 }
@@ -97,7 +105,7 @@ export default {
         const store = storeFor(env);
         const item = st ? await buildStory(store, st) : null;
         if (!item) return json({ error: 'unavailable' }, 404, 'no-store');
-        if (url.searchParams.get('card') === '1') return png(await renderPng(cardSvg(item.built.card)), 'no-store');
+        if (url.searchParams.get('card') === '1') return png(await renderPng(cardSvg(item.built.card), { background: await storyBackground(st) }), 'no-store');
         const [live, d] = await Promise.all([eventRecord(store, st.primary), desk(store)]);
         const exclude = new Set(st.events);
         const related = d.events.filter((e) => e.category === live?.event.category && !exclude.has(e.slug) && e.state !== 'MARKET_MONITORING').sort((x, y) => y.max_abs_divergence - x.max_abs_divergence).slice(0, 4);
@@ -138,7 +146,7 @@ export default {
       if (p.startsWith('/og/insights/') && p.endsWith('.png')) {
         const item = await storyForSlug(store, decodeURIComponent(p.slice('/og/insights/'.length, -4)));
         if (!item) return json({ error: 'not_found' }, 404);
-        return cachedPng(req, ctx, () => cardSvg(item.built.card));
+        return cachedPng(req, ctx, () => cardSvg(item.built.card), { background: await storyBackground(item.story) });
       }
       // Prediction Intelligence (Vercel rewrites /insights/* here)
       if (p === '/pages/insights/rss.xml') return xml(rssXml(await publishedStories(store)), 'application/rss+xml');

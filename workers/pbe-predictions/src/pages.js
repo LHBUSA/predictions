@@ -7,7 +7,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'Organization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai', logo: LOGO, image: { '@id': `${SITE}/#logo` } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, inLanguage: 'en' };
-export const ASSET_V = '20261004a';
+export const ASSET_V = '20261004b';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
 const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
@@ -32,7 +32,7 @@ const utc = (iso) => (iso ? `${new Date(iso).toISOString().slice(0, 16).replace(
 const STATE_BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-official', MARKET_MONITORING: 'b-monitoring', MONITORING: 'b-monitoring', SHADOW: 'b-shadow', BACKTESTING: 'b-backtesting' };
 export const badge = (state) => `<span class="badge ${STATE_BADGE[state] || 'b-monitoring'}">${esc(state === 'MARKET_MONITORING' ? 'Market monitoring' : state)}</span>`;
 
-export function layout({ title, description, canonical, ogImage = OG_DEFAULT, ogType = 'website', jsonld = [], body, robots = 'index,follow,max-image-preview:large', extraHead = '', current = null }) {
+export function layout({ title, description, canonical, ogImage = OG_DEFAULT, ogImageAlt = '', ogType = 'website', jsonld = [], body, robots = 'index,follow,max-image-preview:large', extraHead = '', current = null }) {
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -44,7 +44,7 @@ export function layout({ title, description, canonical, ogImage = OG_DEFAULT, og
 <meta property="og:type" content="${esc(ogType)}"><meta property="og:site_name" content="PropBetEdge Predictions">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}"><meta property="og:image" content="${esc(ogImage)}">
-<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">${ogImageAlt ? `<meta property="og:image:alt" content="${esc(ogImageAlt)}"><meta name="twitter:image:alt" content="${esc(ogImageAlt)}">` : ''}
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">
 ${HEAD_ICONS}

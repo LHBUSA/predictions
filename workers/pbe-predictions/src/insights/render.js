@@ -3,12 +3,13 @@
 import { esc, layout, SITE, badge, headlineOutcome, shareBar, ORG_ID, WEBSITE_ID } from '../pages.js';
 import { fmtUtc } from './charts.js';
 import { VERTICALS } from './stories.js';
+import { storyImage } from './images.js';
 
 const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const longDate = (iso) => new Date(iso).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + ' UTC';
 const shortDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 export const storyUrl = (st) => `${SITE}/insights/${st.slug}`;
-export const storyImage = (st) => `${SITE}/og/insights/${st.slug}.png`;
+export const storyImageUrl = (st) => `${SITE}/og/insights/${st.slug}.png`;
 const AUTHOR = { '@type': 'Organization', '@id': `${SITE}/insights/#desk`, name: 'PropBetEdge Predictions Desk', url: `${SITE}/insights/` };
 
 // Abstract editorial textures per vertical (decorative only — never shaped like data).
@@ -56,14 +57,26 @@ ${model ? `<div class="ix-limits"><span class="ix-kicker">MODEL LIMITATIONS</spa
 <p class="note">Market prices are a benchmark only and never enter a PropBetEdge model. Research-stage probabilities; not advice.</p></section>`;
 }
 
+function heroArt(img, eager) {
+  const b = img.base;
+  return `<picture class="ix-hero-art">
+<source media="(max-width: 760px)" type="image/avif" srcset="${b}/mobile-640.avif 640w, ${b}/mobile-960.avif 960w" sizes="100vw">
+<source media="(max-width: 760px)" type="image/webp" srcset="${b}/mobile-640.webp 640w, ${b}/mobile-960.webp 960w" sizes="100vw">
+<source type="image/avif" srcset="${b}/hero-800.avif 800w, ${b}/hero-1200.avif 1200w, ${b}/hero-1600.avif 1600w" sizes="(max-width: 1100px) 100vw, 70vw">
+<source type="image/webp" srcset="${b}/hero-800.webp 800w, ${b}/hero-1200.webp 1200w, ${b}/hero-1600.webp 1600w" sizes="(max-width: 1100px) 100vw, 70vw">
+<img src="${b}/hero-1200.webp" width="1600" height="900" alt="${esc(img.hero_alt)}" style="object-position:${esc(img.hero_focal_point)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>`;
+}
+const cardArt = (img, eager = false) => `<picture class="ix-card-art"><source type="image/avif" srcset="${img.base}/hero-800.avif"><img src="${img.base}/hero-800.webp" width="800" height="450" alt="" style="object-position:${esc(img.hero_focal_point)}"${eager ? '' : ' loading="lazy"'} decoding="async"></picture>`;
+
 export function articleJsonLd(story, built, modified) {
   const url = storyUrl(story);
+  const img = storyImage(story);
   const node = {
     '@type': 'NewsArticle', '@id': `${url}#article`, url, mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     headline: built.title.length > 110 ? `${built.title.slice(0, 107)}…` : built.title, name: built.title, description: built.description,
     articleSection: VERTICALS[story.vertical], genre: story.family_label, inLanguage: 'en-US', isAccessibleForFree: true,
     isPartOf: { '@id': WEBSITE_ID }, author: AUTHOR, publisher: { '@id': ORG_ID },
-    image: [{ '@type': 'ImageObject', url: storyImage(story), width: 1200, height: 630 }],
+    image: [...img.schema.map(([u, w, h]) => ({ '@type': 'ImageObject', url: `${SITE}${u}`, width: w, height: h, creditText: img.image_credit, copyrightNotice: img.image_credit })), { '@type': 'ImageObject', url: storyImageUrl(story), width: 1200, height: 630 }],
     datePublished: story.published_at,
     about: story.events.slice(0, 7).map((slug) => ({ '@type': 'Dataset', '@id': `${SITE}/events/${slug}#dataset`, url: `${SITE}/events/${slug}` })),
     isBasedOn: story.events.map((slug) => `${SITE}/events/${slug}`),
@@ -79,14 +92,15 @@ export function renderArticle(story, built, { live, related = [], model, words }
   const url = storyUrl(story);
   const modified = built.resolution && (built.resolution.resolved_at || built.resolution.venue_settled_at) > story.published_at ? (built.resolution.resolved_at || built.resolution.venue_settled_at) : null;
   const rel = related.filter(Boolean).slice(0, 4);
+  const img = storyImage(story);
   const body = `<article class="ix-article fam-${esc(story.family.toLowerCase())}">
-<header class="ix-hero v-${esc(story.vertical)}"><div class="ix-texture">${TEXTURE[story.vertical] || ''}</div>
+<header class="ix-hero has-art v-${esc(story.vertical)}${story.family === 'RESOLUTION_REPORT' ? ' resolved' : ''}" data-image-version="${esc(img.image_version)}">${heroArt(img, true)}<div class="ix-hero-shade" aria-hidden="true"></div>
 <div class="wrap ix-hero-inner"><div class="ix-hero-copy">
 <nav class="ix-crumbs" aria-label="Breadcrumb"><a href="/insights/">Insights</a> › <a href="/insights/${esc(story.vertical)}/">${esc(VERTICALS[story.vertical])}</a></nav>
 <span class="ix-eyebrow">${esc(VERTICALS[story.vertical].toUpperCase())} · ${esc(story.family_label.toUpperCase())}</span>
 <h1>${esc(built.title)}</h1><p class="ix-dek">${esc(built.dek)}</p>
 <p class="ix-meta"><span>Published <time datetime="${esc(story.published_at)}">${esc(longDate(story.published_at))}</time></span>${modified ? `<span>Updated <time datetime="${esc(modified)}">${esc(longDate(modified))}</time></span>` : ''}<span>Model data as of ${esc(fmtUtc(built.model_as_of))}</span><span>By the PropBetEdge Predictions Desk</span>${words ? `<span>${Math.max(1, Math.round(words / 230))} min read</span>` : ''}</p>
-</div><div class="ix-hero-nums">${heroNumbers(built.hero)}</div></div></header>
+<p class="ix-credit">${esc(img.image_credit)}</p></div><div class="ix-hero-nums">${heroNumbers(built.hero)}</div></div></header>
 <div class="wrap ix-layout"><div class="ix-main">
 ${shareBar(url, built.title)}
 ${resolutionModule(built.resolution, story)}
@@ -98,14 +112,14 @@ ${liveModule(live, built.outcome_market_id)}
 ${rel.length ? `<section class="ix-related"><h3>Related predictions</h3>${rel.map((e) => `<a class="ix-rel" href="${esc(e.url)}"><span class="cat">${esc(e.category_label)}</span><b>${esc(e.title)}</b><small>${e.headline?.pbe_pct !== null && e.headline?.pbe_pct !== undefined ? `PBE ${e.headline.pbe_pct}% · ` : ''}${e.headline?.market_pct !== null && e.headline?.market_pct !== undefined ? `market ${e.headline.market_pct}%` : 'market monitoring'}</small></a>`).join('')}</section>` : ''}
 </aside></div></article>`;
   return layout({
-    title: `${built.seo_title} | PropBetEdge Predictions`, description: built.description, canonical: url, ogImage: storyImage(story), ogType: 'article',
+    title: `${built.seo_title} | PropBetEdge Predictions`, description: built.description, canonical: url, ogImage: storyImageUrl(story), ogType: 'article', ogImageAlt: `${built.title} — ${img.hero_alt}`,
     jsonld: [articleJsonLd(story, built, modified)], body,
     extraHead: `<meta property="article:published_time" content="${esc(story.published_at)}">${modified ? `<meta property="article:modified_time" content="${esc(modified)}">` : ''}<meta property="article:section" content="${esc(VERTICALS[story.vertical])}"><link rel="alternate" type="application/rss+xml" title="PropBetEdge Prediction Intelligence" href="${SITE}/insights/rss.xml">`,
     current: 'insights',
   });
 }
 
-const storyCard = (s, size = 'md') => `<a class="ix-card ix-card-${size} v-${esc(s.story.vertical)}" href="/insights/${esc(s.story.slug)}">
+const storyCard = (s, size = 'md') => `<a class="ix-card ix-card-${size} v-${esc(s.story.vertical)}" href="/insights/${esc(s.story.slug)}">${cardArt(storyImage(s.story), size === 'lg')}
 <span class="ix-eyebrow">${esc(VERTICALS[s.story.vertical].toUpperCase())} · ${esc(s.story.family_label.toUpperCase())}</span>
 <b>${esc(s.built.title)}</b>${size !== 'sm' ? `<p>${esc(s.built.dek)}</p>` : ''}
 ${s.built.hero.type === 'flow' ? `<div class="ix-card-nums"><span class="mkt">${esc(s.built.hero.from)}</span><span class="arr">→</span><span class="pbe">${esc(s.built.hero.to)}</span></div>` : `<div class="ix-card-nums">${s.built.hero.stats.map((x) => `<span class="t-${esc(x.tone)}"><small>${esc(x.label)}</small>${esc(x.value)}</span>`).join('')}</div>`}
@@ -136,7 +150,7 @@ ${gaps.length ? `<section class="ix-rail"><h3>Largest live model–market gaps</
 ${calendar.length ? `<section class="ix-rail"><h3>Upcoming resolutions</h3>${calendar.map((e) => `<a class="ix-rail-row" href="${esc(e.url)}"><span>${esc(e.title)}</span><small>${esc(fmtUtc(e.close_time))} · ${e.state === 'MARKET_MONITORING' ? 'market monitoring' : `${esc(e.state.toLowerCase())} model`}</small></a>`).join('')}</section>` : ''}
 ${models.length ? `<section class="ix-rail"><h3>Model research</h3>${models.map((m) => `<a class="ix-rail-row" href="/models/"><span>${esc(m.name)}</span><small>${badge(m.state)} ${m.live_forecasts} live forecasts · ${esc(m.calibration_state)}</small></a>`).join('')}</section>` : ''}
 </aside></div></main>`;
-  return layout({ title, description, canonical, jsonld, body, current: 'insights', ogImage: lead ? storyImage(lead.story) : undefined, extraHead: `<link rel="alternate" type="application/rss+xml" title="PropBetEdge Prediction Intelligence" href="${SITE}/insights/rss.xml">` });
+  return layout({ title, description, canonical, jsonld, body, current: 'insights', ogImage: lead ? storyImageUrl(lead.story) : undefined, extraHead: `<link rel="alternate" type="application/rss+xml" title="PropBetEdge Prediction Intelligence" href="${SITE}/insights/rss.xml">` });
 }
 
 export function rssXml(items) {
@@ -145,7 +159,7 @@ export function rssXml(items) {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
 <channel><title>PropBetEdge Prediction Intelligence</title><link>${SITE}/insights/</link><description>Model-vs-market analysis of real-world events from PropBetEdge's immutable forecast archive.</description><language>en-us</language>
 <atom:link href="${SITE}/insights/rss.xml" rel="self" type="application/rss+xml"/>
-${items.map((i) => `<item><title>${x(i.built.title)}</title><link>${storyUrl(i.story)}</link><guid isPermaLink="true">${storyUrl(i.story)}</guid><pubDate>${new Date(i.story.published_at).toUTCString()}</pubDate><category>${x(VERTICALS[i.story.vertical])}</category><description>${x(i.built.dek)}</description><media:content url="${storyImage(i.story)}" medium="image" width="1200" height="630"/></item>`).join('\n')}
+${items.map((i) => `<item><title>${x(i.built.title)}</title><link>${storyUrl(i.story)}</link><guid isPermaLink="true">${storyUrl(i.story)}</guid><pubDate>${new Date(i.story.published_at).toUTCString()}</pubDate><category>${x(VERTICALS[i.story.vertical])}</category><description>${x(i.built.dek)}</description><media:content url="${storyImageUrl(i.story)}" medium="image" width="1200" height="630"/></item>`).join('\n')}
 </channel></rss>
 `;
 }

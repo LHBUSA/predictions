@@ -361,3 +361,29 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .share-btn{text-decoration:none!important}
 .ix-hstats.four{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media (max-width:760px){.ix-hstats.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- Insights editorial art ---------- */
+.ix-hero.has-art{background:#020a16}
+.ix-hero-art{position:absolute;inset:0;z-index:-2;display:block}
+.ix-hero-art img{display:block;width:100%;height:100%;object-fit:cover}
+.ix-hero-shade{position:absolute;inset:0;z-index:-1;pointer-events:none;background:
+  linear-gradient(90deg,rgba(2,10,22,.94) 0%,rgba(2,10,22,.86) 34%,rgba(2,10,22,.5) 58%,rgba(2,10,22,.28) 80%,rgba(2,10,22,.4) 100%),
+  linear-gradient(180deg,rgba(2,10,22,.35) 0%,rgba(2,10,22,0) 30%,rgba(2,10,22,0) 70%,rgba(2,10,22,.85) 100%)}
+.ix-credit{margin:10px 0 0;font-size:11px;color:#8fa5bd;letter-spacing:.02em}
+.ix-hero.resolved .ix-hero-art img{filter:grayscale(.6) brightness(.78)}
+.ix-hero.resolved::after{content:"RESOLVED";position:absolute;top:18px;right:18px;padding:5px 10px;border-radius:6px;background:#13804b;color:#fff;font:850 11px/1 var(--font);letter-spacing:.16em}
+.ix-card{position:relative;overflow:hidden}
+.ix-card-art{display:block;margin:-18px -20px 6px;aspect-ratio:16/9;overflow:hidden;background:#061427}
+.ix-card-art img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
+.ix-card:hover .ix-card-art img{transform:scale(1.03)}
+.ix-card-lg{isolation:isolate;min-height:360px;justify-content:flex-end}
+.ix-card-lg .ix-card-art{position:absolute;inset:0;margin:0;aspect-ratio:auto;z-index:-2}
+.ix-card-lg::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(3,12,26,.96) 0%,rgba(3,12,26,.85) 45%,rgba(3,12,26,.35) 100%),linear-gradient(0deg,rgba(3,12,26,.9),rgba(3,12,26,0) 60%)}
+.ix-card-sm .ix-card-art{margin:-18px -20px 4px}
+@media (max-width:760px){
+  .ix-hero.has-art{padding-top:0}
+  .ix-hero-art{position:relative;inset:auto;z-index:0;aspect-ratio:4/3;max-height:330px}
+  .ix-hero-shade{inset:0 0 auto 0;height:min(75vw,330px);background:linear-gradient(180deg,rgba(2,10,22,.15) 0%,rgba(2,10,22,0) 40%,rgba(2,10,22,.75) 85%,#020a16 100%)}
+  .ix-hero.has-art .ix-hero-inner{margin-top:-56px;position:relative;z-index:1}
+  .ix-card-lg{min-height:0}
+}
