@@ -436,3 +436,4 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .net-module-kicker{font-size:11px;letter-spacing:.16em;font-weight:850;color:#79b4ff;text-transform:uppercase}
 .net-module p{margin:0;font-size:14.5px;line-height:1.55}
 .net-module p a{color:#fff;text-decoration:underline}
+.net-module .aa-pill{white-space:normal;line-height:1.35;text-align:left;max-width:100%}
