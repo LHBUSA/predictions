@@ -1,5 +1,18 @@
 # Generates the static /models/ and /methodology/ pages, favicon.svg and robots.txt (run from the repo root).
-import io, os
+import io, json, os
+
+SITE = 'https://predictions.propbetedge.ai'
+ORG = {"@type": "Organization", "@id": f"{SITE}/#org", "name": "PropBetEdge", "url": "https://propbetedge.ai", "logo": {"@type": "ImageObject", "@id": f"{SITE}/#logo", "url": f"{SITE}/brand/predictions-logo-512.png", "width": 512, "height": 512}}
+SITE_NODE = {"@type": "WebSite", "@id": f"{SITE}/#website", "name": "PropBetEdge Predictions", "url": f"{SITE}/", "publisher": {"@id": f"{SITE}/#org"}}
+
+def ld(title, desc, path):
+    page = {"@type": "WebPage", "@id": f"{SITE}{path}#webpage", "name": title, "url": f"{SITE}{path}", "description": desc, "isPartOf": {"@id": f"{SITE}/#website"}, "publisher": {"@id": f"{SITE}/#org"},
+            "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Predictions", "item": f"{SITE}/"}, {"@type": "ListItem", "position": 2, "name": title.split(' | ')[0].split(' — ')[0], "item": f"{SITE}{path}"}]}}
+    graph = [ORG, SITE_NODE, page]
+    if path == '/models/':
+        page["mainEntity"] = {"@id": f"{SITE}/models/#dataset"}
+        graph.append({"@type": "Dataset", "@id": f"{SITE}/models/#dataset", "name": "PropBetEdge Predictions model registry", "description": "Every PropBetEdge Predictions model family with its state, live forecast counts, resolved sample, calibration status and known limitations.", "url": f"{SITE}/models/", "creator": {"@id": f"{SITE}/#org"}, "isAccessibleForFree": True, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{SITE}/api/models"}]})
+    return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace('<', '\\u003c')
 
 def head(title, desc, path):
     cur = lambda p: ' aria-current="page"' if path == p else ''
@@ -8,13 +21,13 @@ def head(title, desc, path):
 <title>{title}</title><meta name="description" content="{desc}">
 <link rel="canonical" href="https://predictions.propbetedge.ai{path}"><meta name="robots" content="index,follow"><meta name="theme-color" content="#0e2a4a">
 <meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions"><meta property="og:title" content="{title}"><meta property="og:description" content="{desc}">
-<meta property="og:url" content="https://predictions.propbetedge.ai{path}"><meta property="og:image" content="https://predictions.propbetedge.ai/og/default.png">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{title}"><meta name="twitter:description" content="{desc}"><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/default.png">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css?v=20261003k">
-<script type="application/ld+json">{{"@context":"https://schema.org","@type":"WebPage","name":"{title}","url":"https://predictions.propbetedge.ai{path}","description":"{desc}","isPartOf":{{"@type":"WebSite","name":"PropBetEdge Predictions","url":"https://predictions.propbetedge.ai/"}}}}</script>
+<meta property="og:url" content="https://predictions.propbetedge.ai{path}"><meta property="og:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{title}"><meta name="twitter:description" content="{desc}"><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261004a">
+<script type="application/ld+json">{ld(title, desc, path)}</script>
 </head><body>
-<header class="topbar"><div class="wrap"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">P</span><span>PropBetEdge<small>PREDICTIONS</small></span></a>
-<nav class="nav" aria-label="Primary"><a href="/#desk">Intelligence desk</a><a href="/#calendar">Calendar</a><a href="/models/"{cur('/models/')}>Models</a><a href="/#track-record">Track record</a><a href="/methodology/"{cur('/methodology/')}>Methodology</a></nav>
+<header class="topbar"><div class="wrap"><a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>
+<nav class="nav" aria-label="Primary"><a href="/#desk">Intelligence desk</a><a href="/insights/">Insights</a><a href="/#calendar">Calendar</a><a href="/models/"{cur('/models/')}>Models</a><a href="/#track-record">Track record</a><a href="/methodology/"{cur('/methodology/')}>Methodology</a></nav>
 <div class="top-right"><span class="live-dot"><i></i>Live engine</span></div></div></header>'''
 
 FOOT = '''<footer class="footer"><div class="wrap"><div><strong>PropBetEdge Predictions</strong><br>Independent model probabilities, stored separately from market prices.</div><div><strong>Market data</strong><br>Kalshi prices are a benchmark, never a model input.</div><div><strong>Records</strong><br>Append-only forecasts, fixed scoring roles.</div><div><strong>Not advice</strong><br>Research-stage probabilities.</div></div></footer>'''
@@ -51,6 +64,6 @@ meth = head('Methodology — How PropBetEdge Predictions Forecasts Real-World Ev
 os.makedirs('models', exist_ok=True); os.makedirs('methodology', exist_ok=True)
 io.open('models/index.html', 'w', encoding='utf-8', newline='\n').write(models)
 io.open('methodology/index.html', 'w', encoding='utf-8', newline='\n').write(meth)
-io.open('favicon.svg', 'w', encoding='utf-8', newline='\n').write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0e2a4a"/><text x="32" y="44" font-family="Segoe UI,Arial,sans-serif" font-size="36" font-weight="800" fill="#fff" text-anchor="middle">P</text></svg>\n')
-io.open('robots.txt', 'w', encoding='utf-8', newline='\n').write('User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\n\nSitemap: https://predictions.propbetedge.ai/sitemap.xml\n')
+# favicon.svg is generated by scripts/brand/brand-kit.py (the Predictions mark)
+io.open('robots.txt', 'w', encoding='utf-8', newline='\n').write('User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\n\nSitemap: https://predictions.propbetedge.ai/sitemap.xml\nSitemap: https://predictions.propbetedge.ai/news-sitemap.xml\n')
 print('static pages written')

@@ -1,19 +1,125 @@
 {
   "cleanUrls": false,
   "redirects": [
-    { "source": "/events/fed-september-2026", "destination": "/", "permanent": true },
-    { "source": "/events/fed-september-2026/", "destination": "/", "permanent": true }
+    {
+      "source": "/events/fed-september-2026",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/events/fed-september-2026/",
+      "destination": "/",
+      "permanent": true
+    }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*" },
-    { "source": "/events/:slug", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/events/:slug" },
-    { "source": "/record", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record" },
-    { "source": "/record/", "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record" },
-    { "source": "/sitemap.xml", "destination": "https://pbe-predictions.sales-fd3.workers.dev/sitemap.xml" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*"
+    },
+    {
+      "source": "/events/:slug",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/events/:slug"
+    },
+    {
+      "source": "/record",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record"
+    },
+    {
+      "source": "/record/",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/record"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/sitemap.xml"
+    },
+    {
+      "source": "/insights",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights"
+    },
+    {
+      "source": "/insights/",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights"
+    },
+    {
+      "source": "/insights/rss.xml",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights/rss.xml"
+    },
+    {
+      "source": "/insights/:path*",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/pages/insights/:path*"
+    },
+    {
+      "source": "/news-sitemap.xml",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/news-sitemap.xml"
+    },
+    {
+      "source": "/og/events/:file",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/og/events/:file"
+    },
+    {
+      "source": "/og/insights/:file",
+      "destination": "https://pbe-predictions.sales-fd3.workers.dev/og/insights/:file"
+    }
   ],
   "headers": [
-    { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }, { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }] },
-    { "source": "/(site.css|home.js|favicon.svg)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }] },
-    { "source": "/og/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(site.css|home.js|favicon.svg)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/og/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|site.webmanifest)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/brand/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, immutable"
+        }
+      ]
+    }
   ]
 }

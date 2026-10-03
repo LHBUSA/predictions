@@ -4,3 +4,4 @@
 .replay/
 .wrangler/
 node_modules/
+_preview/

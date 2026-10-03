@@ -6,6 +6,8 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
+  // social cards: bundled Inter fonts + card background as binary Data modules (src/og.js)
+  "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
   "triggers": { "crons": ["*/15 * * * *"] },
   // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
   "services": [{ "binding": "MARKETS", "service": "propsports-markets" }],

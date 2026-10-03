@@ -9,9 +9,16 @@
     "check": "find src workers scripts \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check",
     "replay:fomc": "node scripts/replay-fomc.mjs",
     "replay:cpi": "node scripts/replay-cpi.mjs",
-    "replay:payroll": "node scripts/replay-payroll.mjs"
+    "replay:payroll": "node scripts/replay-payroll.mjs",
+    "brand": "python scripts/brand/brand-kit.py && node scripts/brand/rasterize.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  },
+  "dependencies": {
+    "@resvg/resvg-wasm": "^2.6.2"
   }
 }

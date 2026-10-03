@@ -9,3 +9,7 @@ data
 README.md
 package.json
 .github
+_preview
+brand/fonts
+node_modules
+package-lock.json

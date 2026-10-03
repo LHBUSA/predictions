@@ -1,7 +1,29 @@
 // Server-rendered pages (served at predictions.propbetedge.ai via Vercel rewrites). Metadata, canonical URL, Open Graph
 // and JSON-LD are in the initial HTML. Every number rendered is a stored observation or a stored PBE forecast.
 export const SITE = 'https://predictions.propbetedge.ai';
-const OG_DEFAULT = `${SITE}/og/default.png`;
+const OG_DEFAULT = `${SITE}/og/predictions-card.jpg`;
+export const ORG_ID = `${SITE}/#org`;
+export const WEBSITE_ID = `${SITE}/#website`;
+export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
+export const ORG_NODE = { '@type': 'Organization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai', logo: LOGO, image: { '@id': `${SITE}/#logo` } };
+export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, inLanguage: 'en' };
+export const ASSET_V = '20261004a';
+export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
+export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
+const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
+export const nav = (current) => `<nav class="nav" aria-label="Primary">${NAV.map(([k, href, label]) => `<a href="${href}"${k === current ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>`;
+
+// Native share controls: every URL is the canonical page URL. Web Share appears only where supported.
+export function shareBar(url, text) {
+  const u = encodeURIComponent(url); const t = encodeURIComponent(text);
+  return `<div class="share" role="group" aria-label="Share"><span class="share-label">Share</span>
+<button type="button" class="share-btn" data-copy="${esc(url)}">Copy link</button>
+<a class="share-btn" href="https://x.com/intent/post?url=${u}&amp;text=${t}" target="_blank" rel="noopener">X</a>
+<a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=${u}" target="_blank" rel="noopener">LinkedIn</a>
+<a class="share-btn" href="https://www.facebook.com/sharer/sharer.php?u=${u}" target="_blank" rel="noopener">Facebook</a>
+<button type="button" class="share-btn" data-share="${esc(url)}" data-title="${esc(text)}" hidden>Share…</button></div>`;
+}
+const SHARE_JS = `<script>(()=>{const n=navigator;document.querySelectorAll('[data-share]').forEach(b=>{if(n.share){b.hidden=false;b.addEventListener('click',()=>n.share({title:b.dataset.title,url:b.dataset.share}).catch(()=>{}))}});document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{try{await n.clipboard.writeText(b.dataset.copy);b.textContent='Link copied'}catch(e){b.textContent=b.dataset.copy}setTimeout(()=>{b.textContent='Copy link'},2400)}))})()</script>`;
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const jsonLd = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -10,7 +32,7 @@ const utc = (iso) => (iso ? `${new Date(iso).toISOString().slice(0, 16).replace(
 const STATE_BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-official', MARKET_MONITORING: 'b-monitoring', MONITORING: 'b-monitoring', SHADOW: 'b-shadow', BACKTESTING: 'b-backtesting' };
 export const badge = (state) => `<span class="badge ${STATE_BADGE[state] || 'b-monitoring'}">${esc(state === 'MARKET_MONITORING' ? 'Market monitoring' : state)}</span>`;
 
-export function layout({ title, description, canonical, ogImage = OG_DEFAULT, jsonld = [], body, robots = 'index,follow', extraHead = '' }) {
+export function layout({ title, description, canonical, ogImage = OG_DEFAULT, ogType = 'website', jsonld = [], body, robots = 'index,follow,max-image-preview:large', extraHead = '', current = null }) {
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,20 +41,20 @@ export function layout({ title, description, canonical, ogImage = OG_DEFAULT, js
 <link rel="canonical" href="${esc(canonical)}">
 <meta name="robots" content="${esc(robots)}">
 <meta name="theme-color" content="#0e2a4a">
-<meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions">
+<meta property="og:type" content="${esc(ogType)}"><meta property="og:site_name" content="PropBetEdge Predictions">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}"><meta property="og:image" content="${esc(ogImage)}">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/site.css?v=20261003k">
+${HEAD_ICONS}
+<link rel="stylesheet" href="/site.css?v=${ASSET_V}">
 ${jsonld.map((j) => `<script type="application/ld+json">${jsonLd(j)}</script>`).join('\n')}
 ${extraHead}
 </head><body>
 <header class="topbar"><div class="wrap">
-<a class="brand" href="/"><span class="brand-mark" aria-hidden="true">P</span><span>PropBetEdge<small>PREDICTIONS</small></span></a>
-<nav class="nav" aria-label="Primary"><a href="/#desk">Intelligence desk</a><a href="/#calendar">Calendar</a><a href="/models/">Models</a><a href="/#track-record">Track record</a><a href="/methodology/">Methodology</a></nav>
+${BRAND}
+${nav(current)}
 <div class="top-right"><span class="live-dot"><i></i>Live engine</span></div>
 </div></header>
 ${body}
@@ -40,8 +62,9 @@ ${body}
 <div><strong>PropBetEdge Predictions</strong><br>Independent model probabilities, stored separately from market prices. No retroactive rewrites.</div>
 <div><strong>Records</strong><br>Immutable forecast snapshots, fixed scoring roles, venue and official resolution stored independently.</div>
 <div><strong>Market data</strong><br>Kalshi prices are a benchmark, never a model input. Every Kalshi value links to Kalshi.</div>
-<div><strong>Not advice</strong><br>Research-stage probabilities. A divergence is not a guarantee of anything.</div>
+<div><strong>Not advice</strong><br>Research-stage probabilities. A divergence is not a guarantee of anything. <a href="/insights/">Prediction Intelligence</a> · <a href="/insights/rss.xml">RSS</a></div>
 </div></footer>
+${body.includes('data-copy=') ? SHARE_JS : ''}
 </body></html>`;
 }
 
@@ -96,18 +119,27 @@ export function headlineOutcome(rec) {
   return [...m].filter((o) => o.divergence_pts !== null).sort((a, b) => Math.abs(b.divergence_pts) - Math.abs(a.divergence_pts))[0] || m[0] || rec.outcomes[0] || null;
 }
 
-export function renderEvent(rec) {
+export function eventOgImage(rec) {
+  const h = headlineOutcome(rec);
+  const key = [h?.pbe_pct, h?.market_pct, h?.published_at, h?.market_observed_at, rec.event.state].join('|');
+  let x = 0; for (const ch of key) x = (Math.imul(x, 31) + ch.charCodeAt(0)) >>> 0;
+  return `${SITE}/og/events/${rec.event.slug}.png?v=${x.toString(36)}`;
+}
+
+export function renderEvent(rec, { stories = [] } = {}) {
   const e = rec.event; const h = headlineOutcome(rec);
   const canonical = `${SITE}/events/${e.slug}`;
   const title = `${e.title.replace(/\?$/, '')} — forecast vs market | PropBetEdge Predictions`;
   const description = eventDescription(rec);
   const stale = e.latest_market_at && Date.now() - Date.parse(e.latest_market_at) > 3 * 3600000 && !['CLOSED', 'SETTLED'].includes(e.lifecycle);
   const c = rec.contract || {};
-  const jsonld = [
-    { '@context': 'https://schema.org', '@type': 'WebPage', '@id': canonical, url: canonical, name: title, description, dateModified: e.date_modified, isPartOf: { '@type': 'WebSite', name: 'PropBetEdge Predictions', url: SITE }, publisher: { '@type': 'Organization', name: 'PropBetEdge', url: 'https://propbetedge.ai' } },
-    { '@context': 'https://schema.org', '@type': 'Dataset', name: `PBE forecast record: ${e.title}`, description: `Immutable PropBetEdge forecast snapshots${rec.model ? ` (${rec.model.id})` : ''}, stored market observations, exact resolution rule and resolution/score for "${e.title}".`, url: canonical, creator: { '@type': 'Organization', name: 'PropBetEdge', url: 'https://propbetedge.ai' }, dateModified: e.date_modified, datePublished: e.created_at, isAccessibleForFree: true, keywords: [e.category_label, 'forecast', 'prediction market', 'probability'], variableMeasured: ['PBE model probability', 'market-implied probability (Kalshi mid)', 'divergence (percentage points)'], distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/api/event/${e.slug}` }] },
-    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Predictions', item: SITE }, { '@type': 'ListItem', position: 2, name: e.category_label, item: `${SITE}/?category=${encodeURIComponent(e.category)}#desk` }, { '@type': 'ListItem', position: 3, name: e.title, item: canonical }] },
-  ];
+  const ogImage = eventOgImage(rec);
+  const jsonld = [{ '@context': 'https://schema.org', '@graph': [
+    ORG_NODE, WEBSITE_NODE,
+    { '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: title, description, dateModified: e.date_modified, isPartOf: { '@id': WEBSITE_ID }, publisher: { '@id': ORG_ID }, breadcrumb: { '@id': `${canonical}#breadcrumbs` }, mainEntity: { '@id': `${canonical}#dataset` }, primaryImageOfPage: { '@type': 'ImageObject', '@id': `${canonical}#card`, url: ogImage, width: 1200, height: 630, caption: `${e.title} — PBE forecast vs market` } },
+    { '@type': 'Dataset', '@id': `${canonical}#dataset`, name: `PBE forecast record: ${e.title}`, description: `Immutable PropBetEdge forecast snapshots${rec.model ? ` (${rec.model.id})` : ''}, stored market observations, exact resolution rule and resolution/score for "${e.title}".`, url: canonical, creator: { '@id': ORG_ID }, publisher: { '@id': ORG_ID }, image: { '@id': `${canonical}#card` }, isPartOf: { '@id': WEBSITE_ID }, dateModified: e.date_modified, datePublished: e.created_at, isAccessibleForFree: true, keywords: [e.category_label, 'forecast', 'prediction market', 'probability'], variableMeasured: ['PBE model probability', 'market-implied probability (Kalshi mid)', 'divergence (percentage points)'], distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/api/event/${e.slug}` }] },
+    { '@type': 'BreadcrumbList', '@id': `${canonical}#breadcrumbs`, itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Predictions', item: SITE }, { '@type': 'ListItem', position: 2, name: e.category_label, item: `${SITE}/?category=${encodeURIComponent(e.category)}#desk` }, { '@type': 'ListItem', position: 3, name: e.title, item: canonical }] },
+  ] }];
   const kpis = h ? `<div class="kpis">
 <div class="kpi"><span>PBE data model</span><strong class="num">${h.pbe_pct !== null ? `${h.pbe_pct}%` : '—'}</strong><small>${h.pbe_pct !== null ? `${esc(h.label)} · ${esc(h.model)}` : 'Market monitoring — no PBE model'}</small></div>
 <div class="kpi"><span>Market</span><strong class="num">${h.market_pct !== null ? `${h.market_pct}%` : '—'}</strong><small>${h.kalshi_url ? `<a href="${esc(h.kalshi_url)}" target="_blank" rel="noopener">Kalshi ↗</a> · ` : ''}mid ${h.market_observed_at ? utc(h.market_observed_at) : ''}</small></div>
@@ -138,6 +170,7 @@ ${(c.exceptions || []).length ? `<dt>Exceptions</dt><dd>${(c.exceptions || []).m
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Predictions</a> › <a href="/?category=${encodeURIComponent(e.category)}#desk">${esc(e.category_label)}</a> › ${esc(e.venue_event_id)}</nav>
 <header class="ev-head"><div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
 <h1>${esc(e.title)}</h1>
+${shareBar(canonical, e.title)}
 <div class="ev-meta"><span>Latest PBE forecast: <b class="num">${utc(e.latest_forecast_at)}</b></span><span>Latest market observation: <b class="num">${utc(e.latest_market_at)}</b>${stale ? ' <span class="stale">· stale</span>' : ''}</span><span>Closes ${utc(e.close_time)}</span><span>${rec.outcomes.length} outcome${rec.outcomes.length > 1 ? 's' : ''}</span></div></header>
 <div class="ev-grid"><div>
 <section class="card panel">${kpis}</section>
@@ -150,17 +183,19 @@ ${resolution}
 ${contract}
 ${model}
 ${prov ? `<section class="card panel"><h2>Provenance</h2><ul class="ev-list">${prov}<li class="ev-item"><div><b>Market observations — benchmark only, never a model input</b><small>Kalshi via the PropBetEdge canonical market service; first observed by PBE is not necessarily the opening price</small></div><span class="note">benchmark</span></li></ul></section>` : ''}
+${stories.length ? `<section class="card panel"><h2>Prediction Intelligence on this event</h2><ul class="ev-list">${stories.map((st) => `<li class="ev-item"><div><b><a href="/insights/${esc(st.slug)}">${esc(st.title)}</a></b><small>${esc(st.family_label)} · ${esc(new Date(st.published_at).toISOString().slice(0, 10))}</small></div></li>`).join('')}</ul></section>` : ''}
 <section class="card panel"><h2>Cite this record</h2><div class="cite" id="cite">${esc(citation)}</div><p class="note" style="margin-top:8px">Machine-readable: <a href="/api/event/${esc(e.slug)}">/api/event/${esc(e.slug)}</a></p></section>
 </aside></div></main>`;
-  return layout({ title, description, canonical, jsonld, body });
+  return layout({ title, description, canonical, jsonld, body, ogImage, current: 'desk' });
 }
 
 export function renderNotFound(path) {
   return layout({ title: 'Not found | PropBetEdge Predictions', description: 'This record does not exist.', canonical: `${SITE}${path}`, robots: 'noindex', body: `<main class="wrap section"><h1>Record not found</h1><p class="empty-honest">There is no event at this address. <a href="/">Back to the intelligence desk</a>.</p></main>` });
 }
 
-export function sitemapXml(entries) {
+export function sitemapXml(entries, insights = []) {
   const urls = [
+    ...(insights.length ? [{ loc: `${SITE}/insights/`, changefreq: 'daily', priority: '0.9' }, ...[...new Set(insights.map((i) => i.vertical))].map((v) => ({ loc: `${SITE}/insights/${v}/`, changefreq: 'daily', priority: '0.6' })), ...insights.map((i) => ({ loc: `${SITE}/insights/${i.slug}`, lastmod: (i.modified || i.published_at).slice(0, 10), changefreq: 'weekly', priority: '0.8' }))] : []),
     { loc: `${SITE}/`, changefreq: 'hourly', priority: '1.0' },
     { loc: `${SITE}/models/`, changefreq: 'daily', priority: '0.6' },
     { loc: `${SITE}/methodology/`, changefreq: 'monthly', priority: '0.5' },

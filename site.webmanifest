@@ -1,0 +1,16 @@
+{
+  "name": "PropBetEdge Predictions",
+  "short_name": "Predictions",
+  "description": "Independent model probabilities for real-world events, compared with live prediction-market prices.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050f1f",
+  "theme_color": "#0e2a4a",
+  "icons": [
+    { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/brand/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/brand/predictions-mark.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
