@@ -222,7 +222,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
           if (f.status !== 'OK') { summary.forecast_skips[f.status] = (summary.forecast_skips[f.status] || 0) + 1; continue; }
           assertMarketFree(f.features);
           const featuresSha = await sha256Hex(JSON.stringify({ model: f.model, features: f.features }));
-          const recordId = `${c.contract_id}|${f.model.id}@${f.model.version}|${featuresSha.slice(0, 16)}`;
+          const recordId = `${c.contract_id}|${f.model.id}@${f.model.version}|${featuresSha.slice(0, 16)}|${now}`;
           const snapshotId = `fs|${recordId}`;
           const v = writes.venue.find((x) => x.contract_id === c.contract_id);
           writes.features.push({ snapshot_id: snapshotId, event_id: eventId, model_id: f.model.id, cutoff_at: f.dataCutoffAt, created_at: now, features: f.features, source_classes: [...new Set(f.featureSources.map((x) => x.sourceClass))], source_observation_keys: [...new Set(f.featureSources.map((s) => s.observationKey).filter(Boolean))], context: { contract_id: c.contract_id, inputs: f.inputs }, quality: { grade: f.confidence, rules: f.explanation.quality_rules } });
@@ -245,12 +245,14 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   if (fredSources?.observations) writes.observations.push(...fredSources.observations.map(observationRow));
   if (treasurySources?.observations) writes.observations.push(...treasurySources.observations.map(observationRow));
 
-  // A forecast is only new when its feature hash is new for the contract (same inputs -> no duplicate record).
+  // Publish a new snapshot only when the inputs differ from the LATEST snapshot for that contract + model
+  // (an A -> B -> A sequence publishes A again; identical consecutive inputs publish nothing).
   if (writes.forecasts.length) {
-    const ids = writes.forecasts.map((f) => f.record_id);
-    const existing = dryRun || !store ? [] : await store.selectIn('pred_forecasts', { select: 'record_id' }, 'record_id', ids, { chunkSize: 25 });
-    const have = new Set(existing.map((r) => r.record_id));
-    writes.forecasts = writes.forecasts.filter((f) => !have.has(f.record_id));
+    const contractIds = [...new Set(writes.forecasts.map((f) => f.contract_id))];
+    const prior = dryRun || !store ? [] : await store.selectIn('pred_forecasts', { select: 'contract_id,model_id,features_sha256,captured_at', captured_at: `gte.${new Date(Date.parse(now) - 10 * 86400000).toISOString()}` }, 'contract_id', contractIds, { chunkSize: 30 });
+    const latest = new Map();
+    for (const r of prior) { const k = `${r.contract_id}|${r.model_id}`; if (!latest.has(k) || latest.get(k).captured_at < r.captured_at) latest.set(k, r); }
+    writes.forecasts = writes.forecasts.filter((f) => latest.get(`${f.contract_id}|${f.model_id}`)?.features_sha256 !== f.features_sha256);
     const keep = new Set(writes.forecasts.map((f) => f.feature_snapshot_id));
     writes.features = writes.features.filter((f) => keep.has(f.snapshot_id));
   }

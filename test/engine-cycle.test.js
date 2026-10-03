@@ -125,3 +125,31 @@ test('rates lane through the real cycle path (Treasury CSV via fetch) produces f
   assert.ok(writes.forecasts.length >= 10);
   assert.ok(writes.forecasts.every((f) => f.model_id === 'pbe-rates-path' && f.model_state === 'RESEARCH'));
 });
+
+test('dedupe compares with the LATEST snapshot: identical inputs publish nothing; A -> B -> A republishes A', async () => {
+  const { writes: dry } = await runCycle(env, { markets: fakeMarkets(0), fetchImpl: fakeFetch, now: NOW, dryRun: true });
+  const target = dry.forecasts.find((f) => f.market_id === 'KXRAIN-26OCT04-MIA');
+  assert.match(target.record_id, /\|2026-10-03T18:30:00\.000Z$/); // capture time is part of the record id
+  const fakeStore = (priorForMia) => {
+    const inserted = [];
+    return {
+      inserted,
+      async selectIn(table, query) { return table === 'pred_forecasts' && query.select.includes('features_sha256') ? priorForMia : []; },
+      async select() { return []; },
+      async upsertEventRow() {}, async insertContracts() {}, async insertVenueSnapshots() {}, async insertObservations() {}, async insertFeatureRows() {},
+      async insertForecastRows(rows) { inserted.push(...rows); },
+      async write() {}, async insertReturning() { return []; },
+    };
+  };
+  // latest snapshot has the SAME inputs -> MIA is not republished
+  const same = fakeStore([{ contract_id: target.contract_id, model_id: target.model_id, features_sha256: target.features_sha256, captured_at: '2026-10-03T18:15:00Z' }]);
+  await runCycle(env, { store: same, markets: fakeMarkets(0), fetchImpl: fakeFetch, now: NOW });
+  assert.ok(!same.inserted.some((f) => f.contract_id === target.contract_id));
+  // A (older) -> B (latest, different) -> now A again: MIA IS republished
+  const back = fakeStore([
+    { contract_id: target.contract_id, model_id: target.model_id, features_sha256: target.features_sha256, captured_at: '2026-10-03T17:00:00Z' },
+    { contract_id: target.contract_id, model_id: target.model_id, features_sha256: 'something-else', captured_at: '2026-10-03T18:15:00Z' },
+  ]);
+  await runCycle(env, { store: back, markets: fakeMarkets(0), fetchImpl: fakeFetch, now: NOW });
+  assert.ok(back.inserted.some((f) => f.contract_id === target.contract_id && f.features_sha256 === target.features_sha256));
+});
