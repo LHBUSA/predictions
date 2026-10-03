@@ -11,6 +11,7 @@ const dcls = (d) => (d > 0 ? 'dpos' : d < 0 ? 'dneg' : '');
 const getJSON = async (p) => { const r = await fetch(`${API}/${p}`); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
 
 let events = [];
+const MV = new URLSearchParams(location.search).get('mv') === '1'; // hidden multi-venue desk: OFF unless ?mv=1
 const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div' };
 
 function stats(s) {
@@ -65,6 +66,7 @@ function desk() {
   if (state.sort === 'div') rows.sort((a, b) => b.max_abs_divergence - a.max_abs_divergence || Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'close') rows.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'fresh') rows.sort((a, b) => Date.parse(b.headline?.published_at || 0) - Date.parse(a.headline?.published_at || 0));
+  if (window.PBE_MV?.handles(state.sort)) rows = window.PBE_MV.order(state.sort, rows); // hidden multi-venue modes (?mv=1)
   if (!rows.length) { $('desk-list').innerHTML = `<div class="card empty-honest">No live events match this filter.</div>`; return; }
   $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined;
     return `<a class="card row" href="${esc(e.url)}">
@@ -74,6 +76,7 @@ function desk() {
         ? `<div class="cell"><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</strong></div><div class="cell"><span>Div.</span><strong class="num ${dcls(h.divergence_pts)}">${h.divergence_pts !== null ? sign(h.divergence_pts) : '—'}</strong></div>`
         : `<div class="cell mon" style="grid-column:span 2"><span>PBE</span><strong>Market monitoring</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null && h.market_pct !== undefined ? '%' : ''}</strong></div>`}</div>
       <div class="when"><b>${until(e.close_time)}</b>to close</div></a>`; }).join('');
+  window.PBE_MV?.decorate(rows);
 }
 
 function calendar(c) {
@@ -104,6 +107,7 @@ async function main() {
   $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
   const [s, d, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('desk'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
+  if (d.status === 'fulfilled' && MV) await import('./multivenue.js?v=20261004mv1').then((m) => m.ready).then(() => window.PBE_MV?.addModes(d.value.events)).catch((e) => fail('multi-venue', e));
   if (d.status === 'fulfilled') { events = d.value.events; tape(); featured(); cats(); desk(); }
   else { $('desk-list').innerHTML = '<div class="card empty-honest">The live desk could not be loaded right now. Stored records are unaffected; try again shortly.</div>'; fail('desk', d.reason); }
   if (c.status === 'fulfilled') calendar(c.value);

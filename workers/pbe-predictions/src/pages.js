@@ -126,7 +126,7 @@ export function eventOgImage(rec) {
   return `${SITE}/og/events/${rec.event.slug}.png?v=${x.toString(36)}`;
 }
 
-export function renderEvent(rec, { stories = [] } = {}) {
+export function renderEvent(rec, { stories = [], multiVenue = false } = {}) {
   const e = rec.event; const h = headlineOutcome(rec);
   const canonical = `${SITE}/events/${e.slug}`;
   const title = `${e.title.replace(/\?$/, '')} — forecast vs market | PropBetEdge Predictions`;
@@ -179,6 +179,7 @@ ${h && (h.history.length || h.market_path.length) ? `<section class="card panel"
 ${evidence}
 ${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Forecast snapshots (immutable archive)</h2>${snaps}</section>` : ''}
 ${resolution}
+${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div></section><script type="module" src="/multivenue.js?v=20261004mv1"></script>` : ''}
 </div><aside>
 ${contract}
 ${model}
