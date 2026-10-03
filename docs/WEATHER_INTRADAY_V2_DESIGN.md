@@ -16,3 +16,18 @@ Separate model generation. It never edits, replaces or re-designates pre-window 
   so the probability is bounded (e.g. ≤ 0.98) rather than 1, with the bound justified by observed ASOS-vs-CLI disagreement rates.
 - **Point-in-time:** observation `available_at` = publication time of the ob (not its valid time); forecasts carry data_cutoff_at.
 - **Validation before RESEARCH:** backtest on archived ASOS + guidance 2023–2026 with the same holdout discipline as v1.
+
+## Acceptance requirements (owner, 2026-10-03)
+
+1. **No arbitrary caps.** Any bound after an apparently decisive observation (e.g. measurable ASOS rain, observed max
+   already inside/above a bucket) must be calibrated per station from historical preliminary-observation vs final
+   resolution (TWC settlement / NWS CLI) disagreement rates, with the sample size recorded in the artifact.
+2. **Point-in-time observations.** Every observation used carries its actual publication/availability time; backtests use
+   only what was published before each forecast cutoff (no hindsight finals).
+
+## Pre-window v1.x is frozen
+
+`pbe-weather-precip@1.1.0` / `@1.0.0`, `pbe-weather-maxtemp@1.1.0` / `@1.0.0` stay unchanged. The candidate pre-window feature
+"previous-day station guidance error" may only be added in a new version after a strict point-in-time holdout shows
+incremental skill over v1.1, using the value actually available before the next window opened (preliminary ASOS /
+publication timestamps — the final CLI for D-1 is often issued after the D window opens).
