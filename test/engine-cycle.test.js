@@ -111,3 +111,17 @@ test('designations are fixed by rule and scoring compares PBE and market on the 
   assert.equal(+brier.benchmark_score.toFixed(4), 0.49);
   assert.ok(brier.improvement > 0);
 });
+
+test('rates lane through the real cycle path (Treasury CSV via fetch) produces forecasts, not INCOMPLETE_INPUTS', async () => {
+  const hi = read('./fixtures/kalshi/KX10YRDIRHM-26OCT30H.json');
+  const tre = (y) => readFileSync(new URL(`./fixtures/treasury/treasury-par-${y}.csv`, import.meta.url), 'utf8');
+  const markets = { requests: 0, async series() { return hi.series; }, async openEvents() { return { events: [{ ...hi.event, markets: hi.markets }] }; }, async marketsByTicker() { return []; } };
+  const fetchImpl = (url) => {
+    const m = /daily-treasury-rates\.csv\/(\d{4})/.exec(String(url));
+    return Promise.resolve(m ? new Response(tre(m[1]), { status: 200, headers: { 'content-type': 'text/csv' } }) : new Response('{}', { status: 404 }));
+  };
+  const { summary, writes } = await runCycle({ RATES_SERIES: 'KX10YRDIRHM' }, { markets, fetchImpl, now: '2026-10-03T19:30:00.000Z', dryRun: true });
+  assert.ok(!summary.forecast_skips.INCOMPLETE_INPUTS, JSON.stringify(summary.forecast_skips));
+  assert.ok(writes.forecasts.length >= 10);
+  assert.ok(writes.forecasts.every((f) => f.model_id === 'pbe-rates-path' && f.model_state === 'RESEARCH'));
+});

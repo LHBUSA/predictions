@@ -2,7 +2,8 @@
 // NORMALIZED contract (exact station, window, authority, comparator, threshold) or a fail-closed record
 // with a machine-readable reason. Nothing is guessed: any disagreement between the rules text and the
 // venue's structured fields is HOLD_RESOLUTION_AMBIGUOUS.
-import { classifyContract } from './classify.js';
+import { categorizeContract, commercialSettlementSource } from './classify.js';
+import { normalizeRates } from '../rates/rates-contract.js';
 import { cliStation } from '../weather/stations.js';
 import { cliWindow } from '../weather/time.js';
 import { normalizeFed } from '../macro/fed-contract.js';
@@ -173,28 +174,38 @@ function macroFed(ctx) {
   return { ...base(ctx), ...r };
 }
 
-// Additional domain normalizers register here. Each returns null when the template does not match.
-const DOMAIN_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [macroFed] };
+function ratesPath(ctx) {
+  const r = normalizeRates(ctx);
+  if (!r) return null;
+  if (r.__fail) return fail(r.status, r.reason, ctx, r.extra);
+  return { ...base(ctx), ...r };
+}
 
-export function registerNormalizer(domain, fn) {
-  if (!DOMAIN_NORMALIZERS[domain]) DOMAIN_NORMALIZERS[domain] = [];
-  DOMAIN_NORMALIZERS[domain].push(fn);
+// Normalizers by product category. Each returns null when its template does not match.
+const CATEGORY_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [macroFed], RATES: [ratesPath] };
+
+export function registerNormalizer(category, fn) {
+  if (!CATEGORY_NORMALIZERS[category]) CATEGORY_NORMALIZERS[category] = [];
+  CATEGORY_NORMALIZERS[category].push(fn);
 }
 
 export async function normalizeContract({ series = null, event = null, market }, { now = new Date().toISOString() } = {}) {
   if (!market?.ticker) throw new TypeError('market.ticker is required');
-  const domain = classifyContract({ series: series || {}, event: event || {}, market });
-  const ctx = { series, event, market, domain, normalizedAt: now };
+  const { domain, category } = categorizeContract({ series: series || {}, event: event || {}, market });
+  const ctx = { series, event, market, domain, category, normalizedAt: now };
   let out = null;
-  if (!DOMAIN_NORMALIZERS[domain]?.length) {
-    out = fail('UNSUPPORTED_DOMAIN', 'MODEL_NOT_YET_ENABLED', ctx);
+  const commercial = commercialSettlementSource(series);
+  if (commercial) {
+    out = fail('UNMODELABLE', 'COMMERCIAL_SETTLEMENT_SOURCE', ctx, { settlement_source: commercial, category });
+  } else if (!CATEGORY_NORMALIZERS[category]?.length) {
+    out = fail('UNSUPPORTED_DOMAIN', 'MODEL_NOT_YET_ENABLED', ctx, { category });
   } else {
-    for (const fn of DOMAIN_NORMALIZERS[domain]) {
+    for (const fn of CATEGORY_NORMALIZERS[category]) {
       out = fn(ctx);
       if (out) break;
     }
-    if (!out) out = fail('UNMODELABLE', `NO_${domain}_CONTRACT_TEMPLATE`, ctx);
+    if (!out) out = fail('UNMODELABLE', `NO_${domain}_CONTRACT_TEMPLATE`, ctx, { category });
   }
   const rulesSha = await sha256Hex(`${market.rules_primary || ''}\n---\n${market.rules_secondary || ''}`);
-  return Object.freeze({ ...out, rules_sha256: rulesSha, contract_id: `kalshi:${market.ticker}:${NORMALIZER_VERSION}:${rulesSha.slice(0, 12)}` });
+  return Object.freeze({ ...out, category, rules_sha256: rulesSha, contract_id: `kalshi:${market.ticker}:${NORMALIZER_VERSION}:${rulesSha.slice(0, 12)}` });
 }

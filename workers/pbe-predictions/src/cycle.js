@@ -15,6 +15,10 @@ import { sha256Hex } from '../../../src/engine/contracts.js';
 import { MarketsService, MarketsBackoffError } from './markets.js';
 import { forecastFed, fetchFredSeries, FED_INPUT_SERIES, FED_CONTEXT_SERIES, FED_MODEL } from '../../../src/macro/engine.js';
 import { valueAsOf } from '../../../src/macro/fed-model.js';
+import { forecastRates, ratesOfficialOutcome, parseTreasuryCsv, TREASURY_CSV, RATES_MODEL } from '../../../src/rates/engine.js';
+import { chunk } from '../../../src/engine/store.js';
+import { slugify } from '../../../src/vendor/propsports-markets/core.js';
+import { scoringReference } from '../../../src/engine/designations.js';
 
 export const USER_AGENT = 'PropBetEdgePredictions/1.0 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const bpToProb = (bp) => (bp === null || bp === undefined ? null : bp / 10000);
@@ -109,6 +113,31 @@ function observationRow(o) {
   };
 }
 
+// Canonical event slug: readable title; tickers appended only when the title carries no year (uniqueness).
+export function eventSlug(ev) {
+  const base = slugify(ev.title || ev.event_ticker).slice(0, 90).replace(/-+$/, '');
+  return /\b(19|20)\d{2}\b/.test(ev.title || '') ? base : `${base}-${slugify(ev.event_ticker)}`;
+}
+
+// Official Treasury par curve (current + previous year CSV; the settlement source itself).
+async function treasuryInputs({ fetchImpl, now }) {
+  const year = Number(now.slice(0, 4));
+  const urls = [TREASURY_CSV(year - 1), TREASURY_CSV(year)];
+  const rows = [];
+  for (const url of urls) {
+    const res = await fetchImpl(url, { headers: { accept: 'text/csv', 'user-agent': USER_AGENT }, cf: { cacheTtl: 1800, cacheEverything: true } });
+    const text = await res.text();
+    const parsed = res.ok ? parseTreasuryCsv(text) : [];
+    if (!res.ok || parsed.length < 20) throw new Error(`Treasury par curve ${res.status} ${res.headers.get('content-type')} ${parsed.length} rows: ${text.slice(0, 120).replace(/\s+/g, ' ')}`);
+    rows.push(...parsed);
+  }
+  rows.sort((a, b) => a.date.localeCompare(b.date));
+  const last = rows.at(-1);
+  const o = { provider: 'U.S. Treasury Daily Par Yield Curve Rates', sourceId: 'treasury-par:5,7,10,30', sourceClass: 'official', observedAt: `${last.date}T20:00:00.000Z`, availableAt: now, capturedAt: now,
+    revision: `${last.date}:${last[5]}/${last[7]}/${last[10]}/${last[30]}`, value: { 5: last[5], 7: last[7], 10: last[10], 30: last[30] }, data: { rows: rows.slice(-60) }, units: 'percent', geography: { country: 'US' }, provenance: { urls } };
+  return { rows, urls, observations: [o], observationKey: sourceObservationKey(o) };
+}
+
 // Official macro inputs (FRED public CSV; daily H.15 never revised; context series = latest vintage at capture).
 async function fredInputs({ fetchImpl, now }) {
   const since = new Date(Date.parse(now) - 500 * 86400000).toISOString().slice(0, 10);
@@ -129,9 +158,10 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   const nowMs = Date.parse(now);
   const summary = { now, dry_run: dryRun, series: {}, events: 0, contracts: { NORMALIZED: 0, UNMODELABLE: 0, HOLD_RESOLUTION_AMBIGUOUS: 0, UNSUPPORTED_DOMAIN: 0 }, venue_snapshots: 0, forecasts: 0, forecast_skips: {}, designations: 0, resolutions: 0, scores: 0, errors: [] };
   const writes = { events: [], contracts: [], venue: [], observations: [], features: [], forecasts: [] };
-  const seriesList = [env.WEATHER_SERIES, env.MACRO_SERIES].join(',').split(',').map((s) => s.trim()).filter(Boolean);
+  const seriesList = [env.WEATHER_SERIES, env.MACRO_SERIES, env.RATES_SERIES, env.MONITOR_SERIES].filter(Boolean).join(',').split(',').map((s) => s.trim()).filter(Boolean);
   const stationSources = new Map();
   let fredSources = null;
+  let treasurySources = null;
 
   for (const seriesTicker of seriesList) {
     try {
@@ -147,13 +177,14 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
         const domain = contracts[0]?.domain || 'OTHER';
         const states = (ev.markets || []).map((m) => normalizeMarket(m, { series, event: ev, capturedAt: now }).state);
         const lifecycle = lifecycleFor(states, normalized[0]?.observation_start || null, nowMs) || 'DISCOVERED';
-        const modelFamily = normalized[0] ? (WEATHER_MODELS[normalized[0].event_type]?.id ?? (normalized[0].event_type === 'FOMC_DECISION_BUCKET' ? FED_MODEL.id : null)) : null;
+        const modelFamily = normalized[0] ? (WEATHER_MODELS[normalized[0].event_type]?.id ?? (normalized[0].event_type === 'FOMC_DECISION_BUCKET' ? FED_MODEL.id : /^YIELD_PATH_/.test(normalized[0].event_type) ? RATES_MODEL.id : null)) : null;
+        const category = contracts[0]?.category || domain;
         writes.events.push({
-          event_id: eventId, canonical_question: ev.title, category: domain.toLowerCase(), status: 'open', domain, event_family: seriesTicker, venue: 'kalshi',
+          event_id: eventId, slug: eventSlug(ev), canonical_question: ev.title, category, status: 'open', domain, event_family: seriesTicker, venue: 'kalshi',
           venue_event_id: ev.event_ticker, venue_series_id: seriesTicker, model_family: modelFamily, model_state: modelFamily ? (domain === 'MACRO' ? 'SHADOW' : 'RESEARCH') : 'MARKET_MONITORING', lifecycle,
           close_time: ev.markets?.[0]?.close_time ?? null, resolution_authority: normalized[0]?.resolution_authority ?? null,
           resolution_rule: normalized[0]?.rules_primary ?? null, resolution_time: ev.markets?.[0]?.expected_expiration_time ?? null,
-          metadata: { series_title: series?.title ?? null, settlement_sources: series?.settlement_sources ?? [], strike_date: ev.strike_date ?? null, sub_title: ev.sub_title ?? null },
+          metadata: { series_title: series?.title ?? null, series_category: series?.category ?? null, settlement_sources: series?.settlement_sources ?? [], strike_date: ev.strike_date ?? null, sub_title: ev.sub_title ?? null, mutually_exclusive: ev.mutually_exclusive ?? null, category, fail_closed: contracts.filter((c) => c.normalization_status !== 'NORMALIZED').map((c) => c.status_reason).filter((v, i, a) => a.indexOf(v) === i) },
         });
         for (const c of contracts) writes.contracts.push(contractRow(c, eventId));
         for (const m of ev.markets || []) {
@@ -166,7 +197,13 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
         // forecasts: domain data only; the market row captured above is attached as the benchmark afterwards
         for (const c of normalized) {
           let f;
-          if (c.domain === 'MACRO') {
+          if (c.category === 'RATES') {
+            if (!treasurySources) {
+              try { treasurySources = await treasuryInputs({ fetchImpl, now }); } catch (e) { treasurySources = { error: e.message }; }
+            }
+            if (treasurySources.error) { summary.forecast_skips.SOURCE_ERROR = (summary.forecast_skips.SOURCE_ERROR || 0) + 1; summary.errors.push({ source: 'treasury', error: treasurySources.error }); continue; }
+            f = forecastRates(c, { treasury: treasurySources }, { now });
+          } else if (c.domain === 'MACRO') {
             if (!fredSources) {
               try { fredSources = await fredInputs({ fetchImpl, now }); } catch (e) { fredSources = { error: e.message }; }
             }
@@ -194,7 +231,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
             market_probability: v?.probability ?? null, market_snapshot_key: v?.snapshot_key ?? null, market_observed_at: v?.captured_at ?? null,
             data_cutoff_at: f.dataCutoffAt, model_state: f.model.state, confidence: f.confidence, features_sha256: featuresSha,
             provenance: f.provenance, explanation: { ...f.explanation, evidence: f.evidence, raw_probability: f.rawProbability },
-            metadata: { domain: c.domain, event_type: c.event_type, station_id: c.station_id, observation_start: c.observation_start, ...(f.distribution ? { distribution: f.distribution } : {}) },
+            metadata: { domain: c.domain, category: c.category, event_type: c.event_type, station_id: c.station_id, observation_start: c.observation_start, ...(f.distribution ? { distribution: f.distribution } : {}) },
           });
         }
       }
@@ -205,11 +242,12 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   }
   for (const s of stationSources.values()) if (s.observations) writes.observations.push(...s.observations.map(observationRow));
   if (fredSources?.observations) writes.observations.push(...fredSources.observations.map(observationRow));
+  if (treasurySources?.observations) writes.observations.push(...treasurySources.observations.map(observationRow));
 
   // A forecast is only new when its feature hash is new for the contract (same inputs -> no duplicate record).
   if (writes.forecasts.length) {
     const ids = writes.forecasts.map((f) => f.record_id);
-    const existing = dryRun || !store ? [] : await store.select('pred_forecasts', { select: 'record_id', record_id: `in.(${ids.map((i) => `"${i.replace(/"/g, '\\"')}"`).join(',')})` });
+    const existing = dryRun || !store ? [] : await store.selectIn('pred_forecasts', { select: 'record_id' }, 'record_id', ids, { chunkSize: 25 });
     const have = new Set(existing.map((r) => r.record_id));
     writes.forecasts = writes.forecasts.filter((f) => !have.has(f.record_id));
     const keep = new Set(writes.forecasts.map((f) => f.feature_snapshot_id));
@@ -219,9 +257,15 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   summary.forecasts = writes.forecasts.length;
   summary.observations = writes.observations.length;
   summary.market_requests = mkt.requests;
+  if (treasurySources?.rows) summary.treasury = { rows: treasurySources.rows.length, first: treasurySources.rows[0]?.date, last: treasurySources.rows.at(-1)?.date, last10y: treasurySources.rows.at(-1)?.[10] };
   if (dryRun || !store) return { summary, writes };
 
-  for (const e of writes.events) await store.upsertEventRow(e);
+  for (const e of writes.events) {
+    try { await store.upsertEventRow(e); } catch (err) {
+      if (!/slug|duplicate|unique/i.test(err.message)) throw err;
+      await store.upsertEventRow({ ...e, slug: `${e.slug}-${slugify(e.venue_event_id)}` }); // title collision with another event
+    }
+  }
   await store.insertContracts(writes.contracts);
   await store.insertVenueSnapshots(writes.venue);
   await store.insertObservations(writes.observations);
@@ -246,82 +290,93 @@ export function fedOfficialOutcome(c, upperRows) {
   return { outcome: yes ? 'YES' : 'NO', value: bps, units: 'bps', basis: 'target upper bound change', before_date: before.date, after_date: after.date };
 }
 
-// Designations, resolution (official source + venue settlement, independently) and scoring.
+// Resolution (official source + venue settlement, independently), then designations (fixed by rule, reference =
+// scoring reference or the venue settlement if earlier), then scoring. Every list read is chunked and paged.
 export async function designateResolveScore(env, { store, mkt, fetchImpl, now }) {
   const out = { designations: 0, resolutions: 0, scores: 0 };
   const since = new Date(Date.parse(now) - 10 * 86400000).toISOString();
-  const contracts = await store.select('pred_contracts', { select: '*', normalization_status: 'eq.NORMALIZED', observation_start: `gte.${since}` }, { limit: 2000 });
+  const contracts = await store.select('pred_contracts', { select: '*', normalization_status: 'eq.NORMALIZED', observation_end: `gte.${since}` });
   if (!contracts.length) return out;
-  const latestById = new Map();
-  for (const c of contracts) { const prev = latestById.get(c.market_id); if (!prev || prev.normalized_at < c.normalized_at) latestById.set(c.market_id, c); }
-  const forecasts = await store.select('pred_forecasts', { select: 'forecast_id,contract_id,model_id,probability,market_probability,captured_at', contract_id: `in.(${contracts.map((c) => `"${c.contract_id}"`).join(',')})` }, { limit: 5000 });
-  const designations = await store.select('pred_forecast_designations', { select: '*', contract_id: `in.(${contracts.map((c) => `"${c.contract_id}"`).join(',')})` }, { limit: 5000 });
-  const newDes = [];
-  for (const c of contracts) {
-    const fs = forecasts.filter((f) => f.contract_id === c.contract_id);
-    const byModel = new Map();
-    for (const f of fs) { if (!byModel.has(f.model_id)) byModel.set(f.model_id, []); byModel.get(f.model_id).push(f); }
-    for (const [modelId, list] of byModel) {
-      const existing = designations.filter((d) => d.contract_id === c.contract_id && d.model_id === modelId);
-      for (const d of dueDesignations({ contract: c, forecasts: list, existing, now })) {
-        newDes.push({ contract_id: c.contract_id, model_id: modelId, designation: d.designation, forecast_id: d.forecast.forecast_id, rule_version: DESIGNATION_RULES, reference_time: d.reference_time, detail: { captured_at: d.forecast.captured_at } });
-      }
-    }
-  }
-  for (const d of newDes) { try { await store.write('pred_forecast_designations', d, {}); out.designations += 1; } catch (e) { if (!/duplicate|unique/i.test(e.message)) throw e; } }
+  const ids = contracts.map((c) => c.contract_id);
+  const forecasts = await store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,model_id,probability,market_probability,captured_at' }, 'contract_id', ids);
+  const withForecast = new Set(forecasts.map((f) => f.contract_id));
+  let resolutions = await store.selectIn('pred_resolutions', { select: 'resolution_id,contract_id,outcome,venue_result,resolved_at' }, 'contract_id', ids);
+  const resolvedSet = new Set(resolutions.map((r) => r.contract_id));
 
-  // resolution: contracts whose window ended, not yet resolved; venue settlement read through the canonical service
-  const resolved = await store.select('pred_resolutions', { select: 'resolution_id,contract_id', contract_id: `in.(${contracts.map((c) => `"${c.contract_id}"`).join(',')})` }, { limit: 5000 });
-  const resolvedSet = new Set(resolved.map((r) => r.contract_id));
-  const due = contracts.filter((c) => !resolvedSet.has(c.contract_id) && Date.parse(c.observation_end) + 3600000 < Date.parse(now) && forecasts.some((f) => f.contract_id === c.contract_id));
+  // 1. resolution: window ended (or a path contract that may have settled early); venue settlement via canonical service
+  const isPath = (c) => /^YIELD_PATH_/.test(c.event_type || '');
+  const due = contracts.filter((c) => withForecast.has(c.contract_id) && !resolvedSet.has(c.contract_id) && (isPath(c) || Date.parse(c.observation_end) + 3600000 < Date.parse(now)));
   if (due.length) {
     const venue = new Map();
-    for (let i = 0; i < due.length; i += 50) {
-      for (const m of await mkt.marketsByTicker(due.slice(i, i + 50).map((c) => c.market_id))) venue.set(m.ticker, m);
-    }
-    const cliCache = new Map();
+    for (const part of chunk(due.map((c) => c.market_id), 50)) for (const m of await mkt.marketsByTicker(part)) venue.set(m.ticker, m);
+    const cache = new Map();
     const newRes = [];
     for (const c of due) {
       const m = venue.get(c.market_id);
       if (!m || !['yes', 'no'].includes(m.result)) continue; // venue not settled yet
-      let day = null; let official = null;
+      let day = null; let official = null; let sourceLabel = null;
       if (c.event_type === 'FOMC_DECISION_BUCKET') {
-        if (!cliCache.has('fred')) { try { cliCache.set('fred', await fetchFredSeries(['DFEDTARU'], { fetchImpl, userAgent: USER_AGENT, since: '2026-01-01' })); } catch (e) { cliCache.set('fred', { error: e.message }); } }
-        official = fedOfficialOutcome(c, cliCache.get('fred')?.DFEDTARU?.rows || []);
-        if (official) day = { product_id: `FRED DFEDTARU ${official.before_date}->${official.after_date}`, product_url: 'https://fred.stlouisfed.org/series/DFEDTARU' };
+        if (!cache.has('fred')) { try { cache.set('fred', await fetchFredSeries(['DFEDTARU'], { fetchImpl, userAgent: USER_AGENT, since: '2026-01-01' })); } catch (e) { cache.set('fred', { error: e.message }); } }
+        official = fedOfficialOutcome(c, cache.get('fred')?.DFEDTARU?.rows || []);
+        if (official) { day = { product_id: `FRED DFEDTARU ${official.before_date}->${official.after_date}`, product_url: 'https://fred.stlouisfed.org/series/DFEDTARU' }; sourceLabel = `Federal funds target ${day.product_id}`; }
+      } else if (isPath(c)) {
+        if (!cache.has('treasury')) { try { cache.set('treasury', await treasuryInputs({ fetchImpl, now })); } catch (e) { cache.set('treasury', { error: e.message, rows: [] }); } }
+        official = ratesOfficialOutcome(c, cache.get('treasury').rows || []);
+        if (official) { day = { product_id: `Treasury par ${c.detail.tenor}Y ${official.basis}`, product_url: 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve' }; sourceLabel = `U.S. Treasury ${day.product_id}`; }
       } else {
         const st = cliStation(c.station_id);
         const year = c.detail.climate_date.slice(0, 4);
         const key = `${st.icao}:${year}`;
-        if (!cliCache.has(key)) { try { cliCache.set(key, await fetchCliYear({ icao: st.icao, year }, { fetchImpl, userAgent: USER_AGENT })); } catch (e) { cliCache.set(key, { error: e.message, rows: [] }); } }
-        day = cliDay(cliCache.get(key).rows, c.detail.climate_date);
+        if (!cache.has(key)) { try { cache.set(key, await fetchCliYear({ icao: st.icao, year }, { fetchImpl, userAgent: USER_AGENT })); } catch (e) { cache.set(key, { error: e.message, rows: [] }); } }
+        day = cliDay(cache.get(key).rows, c.detail.climate_date);
         official = officialOutcome(c, day);
+        if (day) sourceLabel = `NWS CLI ${c.station_id} product ${day.product_id}`;
       }
       newRes.push({
         event_id: c.event_id, resolved_at: m.settlement_ts || now, authority: c.resolution_authority, source_url: day?.product_url ?? null,
         outcome: { venue_result: m.result, official: official ?? null, scored_outcome: m.result === 'yes' ? 1 : 0, scored_on: 'venue settlement (the contract authority value as settled)' },
         contract_id: c.contract_id, market_id: c.market_id, official_outcome: official?.outcome ?? null, official_value: official?.value ?? null, official_units: official?.units ?? null,
-        official_source: day ? (c.event_type === 'FOMC_DECISION_BUCKET' ? `Federal funds target ${day.product_id}` : `NWS CLI ${c.station_id} product ${day.product_id}`) : null, official_observation_key: day?.product_id ?? null,
+        official_source: sourceLabel, official_observation_key: day?.product_id ?? null,
         venue_result: m.result, venue_settlement_value: m.settlement_value_dollars != null ? Number(m.settlement_value_dollars) : null, venue_expiration_value: m.expiration_value ?? null,
         venue_settled_at: m.settlement_ts ?? null, sources_agree: official ? official.outcome === m.result.toUpperCase() : null,
         metadata: { resolution_rule: c.rules_primary, verification: c.verification_dataset },
       });
     }
-    const inserted = await store.insertReturning('pred_resolutions', newRes);
+    const inserted = newRes.length ? (await Promise.all(chunk(newRes, 200).map((part) => store.insertReturning('pred_resolutions', part)))).flat() : [];
     out.resolutions = inserted.length;
+    resolutions = resolutions.concat(inserted);
   }
+  const resByContract = new Map(resolutions.map((r) => [r.contract_id, r]));
 
-  // scoring: every designation whose contract is resolved and not yet scored
-  const allRes = await store.select('pred_resolutions', { select: 'resolution_id,contract_id,outcome,venue_result', contract_id: `in.(${contracts.map((c) => `"${c.contract_id}"`).join(',')})` }, { limit: 5000 });
-  if (allRes.length) {
-    const allDes = await store.select('pred_forecast_designations', { select: '*', contract_id: `in.(${allRes.map((r) => `"${r.contract_id}"`).join(',')})` }, { limit: 5000 });
-    const scored = await store.select('pred_scores', { select: 'forecast_id,designation', contract_id: `in.(${allRes.map((r) => `"${r.contract_id}"`).join(',')})` }, { limit: 10000 });
-    const done = new Set(scored.map((s) => `${s.forecast_id}|${s.designation}`));
+  // 2. designations
+  const designations = await store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', ids);
+  const newDes = [];
+  for (const c of contracts) {
+    const fs = forecasts.filter((f) => f.contract_id === c.contract_id);
+    if (!fs.length) continue;
+    const resolvedAt = resByContract.get(c.contract_id)?.resolved_at || null;
+    const byModel = new Map();
+    for (const f of fs) { if (!byModel.has(f.model_id)) byModel.set(f.model_id, []); byModel.get(f.model_id).push(f); }
+    for (const [modelId, list] of byModel) {
+      const existing = designations.filter((d) => d.contract_id === c.contract_id && d.model_id === modelId);
+      for (const d of dueDesignations({ contract: c, forecasts: list, existing, now, resolvedAt })) {
+        newDes.push({ contract_id: c.contract_id, model_id: modelId, designation: d.designation, forecast_id: d.forecast.forecast_id, rule_version: DESIGNATION_RULES, reference_time: d.reference_time, detail: { captured_at: d.forecast.captured_at, scoring_reference: new Date(scoringReference(c, resolvedAt)).toISOString() } });
+      }
+    }
+  }
+  for (const d of newDes) { try { await store.write('pred_forecast_designations', d, {}); out.designations += 1; designations.push(d); } catch (e) { if (!/duplicate|unique|after resolution/i.test(e.message)) throw e; } }
+
+  // 3. scoring: every designation of a resolved contract not yet scored
+  const resolvedIds = [...resByContract.keys()];
+  if (resolvedIds.length) {
+    const allDes = await store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', resolvedIds);
+    const scored = await store.selectIn('pred_scores', { select: 'forecast_id,designation' }, 'contract_id', resolvedIds);
+    const done = new Set(scored.map((x) => `${x.forecast_id}|${x.designation}`));
     const fById = new Map(forecasts.map((f) => [f.forecast_id, f]));
     const rows = [];
     for (const d of allDes) {
       if (done.has(`${d.forecast_id}|${d.designation}`)) continue;
-      const r = allRes.find((x) => x.contract_id === d.contract_id);
+      const r = resByContract.get(d.contract_id);
       const f = fById.get(d.forecast_id);
       if (!r || !f || !['yes', 'no'].includes(r.venue_result)) continue;
       rows.push(...scoreRows({ designation: d.designation, forecast: f, resolution: r, outcome: r.venue_result === 'yes' ? 1 : 0 }));

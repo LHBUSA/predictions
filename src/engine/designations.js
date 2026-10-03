@@ -1,5 +1,6 @@
 // Scoring designations (designation/1) — which forecast counts is fixed by rule BEFORE the outcome exists.
-// Reference time = the contract's observation-window start (v1 publishes pre-window forecasts only).
+// Reference time = the contract's scoring reference: observation-window start for weather/Fed (pre-window forecasts
+// only); the period close for path contracts (detail.scoring_reference), or the venue settlement if that came first.
 //   FIRST_PUBLISHED       the first forecast ever published for the contract/model
 //   T_MINUS_24H           the latest forecast captured at or before window start - 24 h (if one exists)
 //   FINAL_PRE_RESOLUTION  the latest forecast captured strictly before window start
@@ -8,8 +9,14 @@ import { brierScore, logLoss } from '../scoring.js';
 
 export const DESIGNATION_RULES = 'designation/1';
 
-export function dueDesignations({ contract, forecasts, existing, now }) {
-  const start = Date.parse(contract.observation_start);
+export function scoringReference(contract, resolvedAt = null) {
+  const ref = Date.parse(contract.detail?.scoring_reference || contract.observation_start);
+  const res = resolvedAt ? Date.parse(resolvedAt) : Infinity;
+  return Math.min(ref, res);
+}
+
+export function dueDesignations({ contract, forecasts, existing, now, resolvedAt = null }) {
+  const start = scoringReference(contract, resolvedAt);
   const nowMs = Date.parse(now);
   const have = new Set(existing.map((d) => d.designation));
   const sorted = [...forecasts].sort((a, b) => Date.parse(a.captured_at) - Date.parse(b.captured_at));

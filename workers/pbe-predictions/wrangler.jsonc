@@ -14,6 +14,10 @@
     "WEATHER_SERIES": "KXRAIN,KXHIGHNY,KXHIGHMIA,KXHIGHCHI,KXHIGHLAX,KXHIGHAUS,KXHIGHDEN,KXHIGHPHIL",
     // macro: Fed decision (SHADOW model; stored, not served publicly)
     "MACRO_SERIES": "KXFEDDECISION",
+    // rates: Treasury par-yield path contracts (RESEARCH model)
+    "RATES_SERIES": "KX10YRDIRHM,KX10YRDIRLM,KX5YRDIRHM,KX5YRDIRLM,KX7YRDIRLM,KX30YRDIRLM,KX10YRDIRHW,KX10YRDIRLW",
+    // market monitoring only (no PBE model yet; Amazon settles on a commercial dataset)
+    "MONITOR_SERIES": "KXTESLADELIVERYBY,KXAMZN,KXSPACEXCOUNT,KXSPACEXSTARSHIP,KXREACTOR,KXMEASLES,KXFLDENGUE,KXIPOANTHROPIC,KXIPOBREX",
     // cron writes only when "true" (requires sql/002 applied on tkmln)
     "ENGINE_ENABLED": "true"
   }
