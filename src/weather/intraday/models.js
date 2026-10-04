@@ -59,8 +59,7 @@ export function tempAnchor(art, { M, g }) {
 
 // Full distribution over E in [support[0], support[1]] for one case. Each level: P = (count + alpha * P_parent) / (n + alpha);
 // the root (hour) shrinks to uniform over the support with weight 1.
-export function tempEDistribution(art, x) {
-  const keys = tempCellKeys(x);
+export function tempEDistribution(art, x, keys = tempCellKeys(x)) {
   const [lo, hi] = art.support;
   const K = hi - lo + 1;
   let p = new Float64Array(K).fill(1 / K);
@@ -98,8 +97,8 @@ export function belowRate(art, x) {
 // Distribution of the FINAL integer CLI max y: { lo (smallest y), p[] }. Without a below_obs_max block it is the
 // hierarchical E table mapped to y = anchor + E. With it, y >= M comes from the table (renormalised over y >= M) and
 // y < M carries the pooled disagreement rate q spread by the pooled deficit histogram (M - y = 1..15).
-export function tempFinalDistribution(art, x) {
-  const e = tempEDistribution(art, x);
+export function tempFinalDistribution(art, x, keys) {
+  const e = tempEDistribution(art, x, keys);
   const anchor = tempAnchor(art, x);
   const y0 = anchor + e.lo;
   if (!art.below_obs_max) return { lo: y0, p: e.p, keys: e.keys };
@@ -152,4 +151,49 @@ export function precipIntradayProbability(art, f) {
   const terms = art.coefficients.map((c, i) => c * x[i]);
   const z = terms.reduce((a, b) => a + b, 0);
   return { probability: 1 / (1 + Math.exp(-z)), branch: 'logistic', contributions: Object.fromEntries(art.features.map((n, i) => [n, +terms[i].toFixed(4)])) };
+}
+
+// ---- maxtemp-intraday 2.2.0 (additive; the functions above keep their v2.0/v2.1 behaviour) ----
+// Hourly calibration hour (1..23 h after the LST window opened) instead of the 2-hourly floor.
+export const tableHour22 = (hoursIntoWindow) => Math.min(23, Math.max(1, Math.floor(hoursIntoWindow)));
+const bucketBy = (edges, labels) => (v) => { if (v === null || v === undefined || !Number.isFinite(v)) return 'na'; for (let i = 0; i < edges.length; i += 1) if (v <= edges[i]) return labels[i]; return labels[labels.length - 1]; };
+// Candidate feature buckets (fixed before fitting; never tuned per station). x carries the raw values.
+export const FEATURE_BUCKETS = Object.freeze({
+  wx: (x) => x.wx ?? 'na', // weatherRegime: precip | overcast | broken | clear | unknown
+  precip: (x) => (x.wx === 'precip' ? 'p' : x.wx == null ? 'na' : 'n'),
+  sky: (x) => (x.sky_rank == null ? 'na' : x.sky_rank >= 4 ? 'ovc' : x.sky_rank === 3 ? 'bkn' : 'clr'),
+  ceil: (x) => (x.sky_rank == null ? 'na' : x.ceil == null ? 'none' : x.ceil < 1000 ? 'lt1k' : x.ceil < 3000 ? 'lt3k' : x.ceil < 10000 ? 'lt10k' : 'hi'),
+  obsc: (x) => (x.obsc ? 'o' : 'n'),
+  resid: (x) => bucketBy([-3.5, -1.5, 1.5, 3.5], ['m4', 'm2', '0', 'p2', 'p4'])(x.resid),
+  warm: (x) => bucketBy([0.5, 2.5, 5.5, 9.5], ['0', '1', '3', '6', '10'])(x.rem_peak == null || x.D == null ? null : x.rem_peak - x.D),
+  slope3: (x) => bucketBy([-2.5, -0.5, 0.5, 2.5], ['m3', 'm1', '0', 'p1', 'p3'])(x.s3),
+  slope1: (x) => bucketBy([-1.5, -0.25, 0.25, 1.5], ['m2', 'm1', '0', 'p1', 'p2'])(x.s1),
+  path: (x) => bucketBy([-1.5, -0.5, 0.5, 1.5], ['m2', 'm1', '0', 'p1', 'p2'])(x.path_chg),
+  lead: (x) => bucketBy([0, 2, 5], ['0', '2', '5', '6p'])(x.rem_peak_lead),
+});
+// Level names: a base level from tempCellKeys, optionally extended with feature buckets: 'hour_gap_drop+wx+resid'.
+export function tempCellKeys22(x, levels) {
+  const base = tempCellKeys(x);
+  const keys = { ...base };
+  for (const l of levels) {
+    if (keys[l] !== undefined) continue;
+    const [b, ...feats] = l.split('+');
+    if (base[b] === undefined || !feats.length) throw new RangeError(`unknown 2.2 level ${l}`);
+    keys[l] = `${base[b]}|${feats.map((f) => { const fn = FEATURE_BUCKETS[f]; if (!fn) throw new RangeError(`unknown 2.2 feature ${f}`); return fn(x); }).join('|')}`;
+  }
+  return keys;
+}
+// Gap guidance for 2.2: 'txn' = NBS day max (as v2.x); 'proj' = remaining NBM path peak + current obs-vs-path residual;
+// 'proj_half' = remaining path peak + half the residual.
+export function gapGuidance22(source, x) {
+  if (source === 'txn') return x.txn;
+  if (x.rem_peak == null || x.resid == null) return null;
+  return source === 'proj' ? x.rem_peak + x.resid : source === 'proj_half' ? x.rem_peak + 0.5 * x.resid : null;
+}
+export function tempFinalDistribution22(art, x) {
+  return tempFinalDistribution(art, x, tempCellKeys22(x, art.levels));
+}
+export function tempCellSample22(art, x) {
+  const keys = tempCellKeys22(x, art.levels);
+  return Object.fromEntries(art.levels.map((l) => [l, art.tables[l]?.[keys[l]]?.n ?? 0]));
 }

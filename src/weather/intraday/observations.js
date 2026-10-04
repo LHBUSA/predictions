@@ -84,3 +84,49 @@ export function parseMetarSixHour(metar) {
   }
   return out;
 }
+
+// ---- maxtemp-intraday 2.2.0 candidate fields (additive; v2.0/v2.1 rows and outputs are unchanged) ----
+// METAR present-weather group (WMO 4678 / FMH-1 ch. 12) and sky condition. Parsed from the METAR body only (before RMK).
+// Returns { wxcodes: string[] (e.g. ['-RA','BR']), sky: [{ cover: 'CLR'|'SKC'|'FEW'|'SCT'|'BKN'|'OVC'|'VV', base_ft: number|null }] }.
+// A METAR with no sky group returns sky: null (unknown), never an invented clear sky.
+const WX_TOKEN = /^(\+|-|VC)?(MI|PR|BC|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)*$/;
+const WX_PHEN = /(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|TS)/;
+export function parseMetarWeather(metar) {
+  const s = String(metar || '');
+  if (!s.trim()) return { wxcodes: null, sky: null };
+  const rmk = s.indexOf(' RMK');
+  const body = (rmk >= 0 ? s.slice(0, rmk) : s).trim().split(/\s+/);
+  const wxcodes = []; let sky = null;
+  for (const tok of body.slice(2)) { // skip station id + DDHHMMZ
+    const k = /^(CLR|SKC)$/.exec(tok);
+    if (k) { (sky ||= []).push({ cover: k[1], base_ft: null }); continue; }
+    const c = /^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)(CB|TCU)?$/.exec(tok);
+    if (c) { (sky ||= []).push({ cover: c[1], base_ft: c[2] === '///' ? null : Number(c[2]) * 100 }); continue; }
+    if (tok.length >= 2 && WX_TOKEN.test(tok) && WX_PHEN.test(tok) && !/^(A|Q)\d{4}$/.test(tok)) wxcodes.push(tok);
+  }
+  return { wxcodes, sky };
+}
+
+// IEM asos.py decoded columns -> the same shape: wxcodes "-RA BR" (M = none reported), skycN/skylN (M = absent layer).
+export function iemWeatherFields(wxcodes, skyc = [], skyl = []) {
+  const w = String(wxcodes ?? '').trim();
+  const codes = w === '' || w === 'M' ? [] : w.split(/\s+/);
+  const sky = [];
+  for (let i = 0; i < skyc.length; i += 1) {
+    const c = String(skyc[i] ?? '').trim();
+    if (!c || c === 'M') continue;
+    const b = Number(skyl[i]);
+    sky.push({ cover: c, base_ft: skyl[i] !== 'M' && skyl[i] !== '' && Number.isFinite(b) ? b : null });
+  }
+  return { wxcodes: codes, sky: sky.length ? sky : null };
+}
+
+// api.weather.gov observations with the 2.2.0 fields added (present weather + sky from properties.rawMessage).
+// Same rows as parseNwsObservations (which is left unchanged), plus wxcodes / sky.
+export function parseNwsObservationsV22(body, opts = {}) {
+  const rows = parseNwsObservations(body, opts);
+  const feats = Array.isArray(body?.features) ? body.features : Array.isArray(body?.['@graph']) ? body['@graph'].map((p) => ({ properties: p })) : [];
+  const raw = new Map();
+  for (const f of feats) { const p = f.properties || {}; const ms = Date.parse(p.timestamp); if (Number.isFinite(ms) && String(p.rawMessage || '').trim()) raw.set(iso(ms), p.rawMessage); }
+  return rows.map((r) => ({ ...r, ...parseMetarWeather(raw.get(r.valid_at)) }));
+}

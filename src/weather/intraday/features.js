@@ -115,3 +115,100 @@ export function remainingPop(runs, from, to) {
 
 export const lstHour = (nowMs, win) => (toMs(nowMs) - toMs(win.start)) / H;
 export { MOS_AVAILABLE_LAG_H };
+
+// ---- maxtemp-intraday 2.2.0 candidate features (additive; nothing above is changed) ----
+const PRECIP_RE = /(DZ|RA|SN|SG|IC|PL|GR|GS|UP)/;
+const COVER_RANK = Object.freeze({ CLR: 0, SKC: 0, FEW: 1, SCT: 2, BKN: 3, OVC: 4, VV: 4 });
+
+// Weather state of ONE report (present-weather group + sky). wxcodes: string[] | null, sky: [{cover, base_ft}] | null.
+//   precip: precipitation (or thunder) at the station now (VC = vicinity, not counted)
+//   obscuration: fog/mist/haze with no precipitation
+//   sky_rank: 0 clear (CLR/SKC) .. 4 overcast/obscured (OVC/VV), max over layers; null when no sky group
+//   ceiling_ft: lowest BKN/OVC/VV base; null = no ceiling (or unknown when sky_rank is null)
+export function weatherState(wxcodes, sky) {
+  const codes = Array.isArray(wxcodes) ? wxcodes.filter((c) => !/^VC/.test(c)) : [];
+  const precip = codes.some((c) => PRECIP_RE.test(c) || /TS/.test(c));
+  const obscuration = !precip && codes.some((c) => /(BR|FG|HZ|FU)/.test(c));
+  let rank = null; let ceil = null;
+  if (Array.isArray(sky)) for (const l of sky) {
+    const r = COVER_RANK[l.cover]; if (r === undefined) continue;
+    rank = rank === null ? r : Math.max(rank, r);
+    if (r >= 3 && l.base_ft != null && (ceil === null || l.base_ft < ceil)) ceil = l.base_ft;
+  }
+  const known = Array.isArray(wxcodes) || Array.isArray(sky);
+  return { known, precip, obscuration, sky_rank: rank, ceiling_ft: ceil };
+}
+
+// Regime used by 2.2.0 tables and the regime slices: 'precip' | 'overcast' | 'broken' | 'clear' | 'unknown'.
+export function weatherRegime(ws) {
+  if (!ws || !ws.known) return 'unknown';
+  if (ws.precip) return 'precip';
+  if (ws.sky_rank === 4) return 'overcast';
+  if (ws.sky_rank === 3) return 'broken';
+  if (ws.sky_rank === null) return 'unknown';
+  return 'clear';
+}
+
+// Latest usable report's weather state (rows already filtered by usableObs, sorted by valid time). Rows must carry the
+// 2.2.0 fields (wxcodes, sky); returns null if the newest row has neither.
+export function latestWeather(rows) {
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const r = rows[i];
+    if (r.wxcodes !== undefined || r.sky !== undefined) return { valid_at: r.valid_at, ...weatherState(r.wxcodes ?? null, r.sky ?? null) };
+  }
+  return null;
+}
+
+// NBM (NBS) temperature path. NBS carries TMP every 3 h (the hourly NBH text product is not archived by IEM, so the
+// research and the engine both use the 3-hourly NBS TMP, linearly interpolated in time). For a time ms the value
+// comes from the NEWEST usable run whose TMP points bracket ms (runs newest-first, as from usableRuns).
+const TMP_PTS = new WeakMap();
+function tmpPoints(run) {
+  let pts = TMP_PTS.get(run);
+  if (!pts) { pts = (run.rows || []).filter((r) => r.tmp != null && Number.isFinite(r.tmp)).map((r) => [toMs(r.ftime), r.tmp]).sort((a, b) => a[0] - b[0]); TMP_PTS.set(run, pts); }
+  return pts;
+}
+export function runTempAt(run, ms) {
+  const p = tmpPoints(run);
+  if (!p.length || ms < p[0][0] || ms > p[p.length - 1][0]) return null;
+  let lo = 0; let hi = p.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p[m][0] <= ms) lo = m; else hi = m; }
+  if (p[lo][0] === ms) return p[lo][1];
+  if (p[hi][0] === ms) return p[hi][1];
+  const f = (ms - p[lo][0]) / (p[hi][0] - p[lo][0]);
+  if (p[hi][0] - p[lo][0] > 6 * H) return null; // never bridge a gap wider than two NBS steps
+  return p[lo][1] + f * (p[hi][1] - p[lo][1]);
+}
+export function nbmTempAt(runs, ms) {
+  for (const run of runs) { const v = runTempAt(run, ms); if (v !== null) return { tmp: v, runtime: run.runtime }; }
+  return null;
+}
+
+// Trajectory features at cutoff `now` for the rest of the window. runs: usable NBS runs, newest first.
+//   nbm_now: path value at the current report's valid time; resid = current temp - nbm_now (obs-vs-guidance residual)
+//   rem_peak: max of the path over the hourly grid [now, end) (+ now itself); rem_peak_lead_h: hours from now to it
+//   slope1/2/3: path(now + k h) - path(now)
+//   path_change: mean over the grid of (newest run - next-older usable run), where both cover the hour; null if no prior run
+// Returns null when the path cannot be evaluated at now (missing TMP coverage) -> engine fails closed.
+export function trajectoryFeatures(runs, { now, end, curValidAt, cur }) {
+  const n = toMs(now); const e = toMs(end);
+  if (!runs?.length) return null;
+  const at = (ms) => nbmTempAt(runs, ms);
+  const base = at(n);
+  const curV = curValidAt != null ? at(toMs(curValidAt)) : base;
+  if (!base || !curV) return null;
+  let peak = base.tmp; let lead = 0; const used = new Set([base.runtime]);
+  for (let ms = (Math.floor(n / H) + 1) * H; ms < e; ms += H) {
+    const v = at(ms); if (!v) continue;
+    used.add(v.runtime);
+    if (v.tmp > peak) { peak = v.tmp; lead = (ms - n) / H; }
+  }
+  const sl = (k) => { const v = at(n + k * H); return v ? v.tmp - base.tmp : null; };
+  let pc = null;
+  if (runs.length > 1) {
+    let s = 0; let k = 0;
+    for (let ms = n; ms < e; ms += H) { const a = runTempAt(runs[0], ms); const b = runTempAt(runs[1], ms); if (a !== null && b !== null) { s += a - b; k += 1; } }
+    pc = k ? s / k : null;
+  }
+  return { nbm_now: curV.tmp, resid: Number.isFinite(cur) ? cur - curV.tmp : null, rem_peak: peak, rem_peak_lead_h: lead, slope1: sl(1), slope2: sl(2), slope3: sl(3), path_change: pc, runs: [...used].sort() };
+}
