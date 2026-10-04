@@ -29,6 +29,9 @@
     // HOT lane on the one-minute wake-up: exact-station ASOS observations for active weather windows (immutable source
     // facts, new rows only), intraday recompute only on new inputs. Kill switch: anything but "true".
     "HOT_LANE": "true",
+    // live intraday forecasts (Weather Intraday V2) on new observations. OFF until maxtemp v2.1 (6-hour max groups) validates:
+    // v2.0 ignores the official METAR 6-hour maximum, which contradicts the live station block on the same page.
+    "INTRADAY_LIVE": "false",
     "NEWSROOM_MANUAL_PUBLISH": "true",
     // persist cycle skip diagnostics to pred_cycle_diagnostics (sql/003 applied 2026-10-03 23:30Z)
     "NEWSROOM_DB": "true",

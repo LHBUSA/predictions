@@ -7,6 +7,7 @@ import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { newsroomCycle } from './newsroom/auto.js';
 import { runHotLane } from './hot-lane.js';
+import { intradayForStation } from './intraday-live.js';
 import { callBlock, stationBlock, marketView } from './record-blocks.js';
 import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
@@ -79,7 +80,7 @@ export default {
     // never the engine cycle below. Off unless CRYPTO_SHADOW = "true" (sql/009 applied).
     if (event.cron === BTC_SHADOW_CRON) {
       // HOT lane (weather freshness): independent of the BTC gate, its own waitUntil + catch, hard-capped subrequests.
-      if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString() })
+      if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString(), onNewObservations: env.INTRADAY_LIVE === 'true' ? (st, fresh, { spend, now }) => intradayForStation(storeFor(env), st, { now, spend }).then((r) => console.log(JSON.stringify({ intraday: r }))) : null })
         .then((r) => console.log(JSON.stringify({ hot_lane: r }))).catch((e) => console.error('hot lane failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })

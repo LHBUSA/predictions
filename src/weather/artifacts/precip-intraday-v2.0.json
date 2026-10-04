@@ -1,0 +1,529 @@
+{
+ "model_id": "pbe-weather-precip-intraday",
+ "version": "2.0.0",
+ "generation": "intraday-v2",
+ "state": "RESEARCH",
+ "record_type": "live",
+ "event_type": "PRECIP_ANY",
+ "designation_rules": "designation-intraday/1",
+ "method": "If measurable (>= 0.01 in) ASOS precipitation is reported inside the window (report valid >= window start + 65 min, so its accumulation lies inside the window): P = calibrated per-station bound (empirical-Bayes Beta shrinkage to the pooled training rate). Otherwise: logistic regression on the remaining-window PoP (newest usable NBM, else GFS MOS, 6-h periods, constant hazard), remaining hours, trace/straddle flags, climatology.",
+ "selected_candidate": "R3",
+ "selection_validation": {
+  "R1": {
+   "features": [
+    "intercept",
+    "logit_remaining_pop",
+    "remaining_hours_frac"
+   ],
+   "val_log_loss": 0.17498
+  },
+  "R2": {
+   "features": [
+    "intercept",
+    "logit_remaining_pop",
+    "remaining_hours_frac",
+    "trace_seen",
+    "straddle_measurable",
+    "logit_climatology"
+   ],
+   "val_log_loss": 0.1574
+  },
+  "R3": {
+   "features": [
+    "intercept",
+    "logit_remaining_pop",
+    "remaining_hours_frac",
+    "trace_seen",
+    "straddle_measurable",
+    "logit_climatology",
+    "logit_remaining_pop_x_hours",
+    "remaining_from_gfs"
+   ],
+   "val_log_loss": 0.15731
+  }
+ },
+ "features": [
+  "intercept",
+  "logit_remaining_pop",
+  "remaining_hours_frac",
+  "trace_seen",
+  "straddle_measurable",
+  "logit_climatology",
+  "logit_remaining_pop_x_hours",
+  "remaining_from_gfs"
+ ],
+ "coefficients": [
+  -0.15859,
+  0.956358,
+  -0.175105,
+  0.618381,
+  3.169875,
+  0.174856,
+  0.233769,
+  0
+ ],
+ "measured_bound": {
+  "pooled": {
+   "n": 7153,
+   "yes": 7145,
+   "no": 8,
+   "bound": 0.99881,
+   "estimator": "(yes + 0.5) / (n + 1)"
+  },
+  "prior_strength_k": 12545.58,
+  "between_station": {
+   "observed_rate_variance": 0.000005238,
+   "binomial_variance_at_mean_n": 0.000005143,
+   "mean_n": 230.7
+  },
+  "by_station": {
+   "CLIABQ": {
+    "n": 100,
+    "yes": 100,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99882
+   },
+   "CLIATL": {
+    "n": 260,
+    "yes": 260,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIAUS": {
+    "n": 183,
+    "yes": 182,
+    "no": 1,
+    "raw_rate": 0.99454,
+    "bound": 0.99875
+   },
+   "CLIBOS": {
+    "n": 289,
+    "yes": 289,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLICLL": {
+    "n": 192,
+    "yes": 191,
+    "no": 1,
+    "raw_rate": 0.99479,
+    "bound": 0.99875
+   },
+   "CLICMH": {
+    "n": 302,
+    "yes": 302,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIDCA": {
+    "n": 268,
+    "yes": 268,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIDEN": {
+    "n": 191,
+    "yes": 191,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLIDFW": {
+    "n": 184,
+    "yes": 184,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLIEWR": {
+    "n": 274,
+    "yes": 274,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIHOU": {
+    "n": 238,
+    "yes": 238,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLILAS": {
+    "n": 50,
+    "yes": 50,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99882
+   },
+   "CLILAX": {
+    "n": 99,
+    "yes": 99,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99882
+   },
+   "CLILEX": {
+    "n": 288,
+    "yes": 288,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIMDW": {
+    "n": 262,
+    "yes": 262,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIMIA": {
+    "n": 314,
+    "yes": 311,
+    "no": 3,
+    "raw_rate": 0.99045,
+    "bound": 0.99861
+   },
+   "CLIMKE": {
+    "n": 277,
+    "yes": 277,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIMSP": {
+    "n": 242,
+    "yes": 242,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLIMSY": {
+    "n": 257,
+    "yes": 257,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLINYC": {
+    "n": 287,
+    "yes": 287,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIOKC": {
+    "n": 188,
+    "yes": 188,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLIORD": {
+    "n": 280,
+    "yes": 280,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIPHL": {
+    "n": 259,
+    "yes": 259,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIPHX": {
+    "n": 57,
+    "yes": 57,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99882
+   },
+   "CLIPIT": {
+    "n": 333,
+    "yes": 333,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLIPVD": {
+    "n": 280,
+    "yes": 280,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99884
+   },
+   "CLISAT": {
+    "n": 177,
+    "yes": 177,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLISEA": {
+    "n": 358,
+    "yes": 357,
+    "no": 1,
+    "raw_rate": 0.99721,
+    "bound": 0.99877
+   },
+   "CLISFO": {
+    "n": 161,
+    "yes": 161,
+    "no": 0,
+    "raw_rate": 1,
+    "bound": 0.99883
+   },
+   "CLISGF": {
+    "n": 234,
+    "yes": 233,
+    "no": 1,
+    "raw_rate": 0.99573,
+    "bound": 0.99876
+   },
+   "CLITTN": {
+    "n": 269,
+    "yes": 268,
+    "no": 1,
+    "raw_rate": 0.99628,
+    "bound": 0.99876
+   }
+  },
+  "straddle_only_days": {
+   "n": 202,
+   "yes": 184
+  }
+ },
+ "measured_bound_holdout_check": {
+  "pooled": {
+   "n": 3279,
+   "yes": 3272,
+   "rate": 0.99787
+  },
+  "by_station": {
+   "CLINYC": {
+    "n": 142,
+    "yes": 141
+   },
+   "CLIORD": {
+    "n": 137,
+    "yes": 137
+   },
+   "CLIMDW": {
+    "n": 120,
+    "yes": 120
+   },
+   "CLIAUS": {
+    "n": 67,
+    "yes": 67
+   },
+   "CLIMIA": {
+    "n": 159,
+    "yes": 159
+   },
+   "CLIDEN": {
+    "n": 80,
+    "yes": 80
+   },
+   "CLIPHL": {
+    "n": 127,
+    "yes": 127
+   },
+   "CLILAX": {
+    "n": 31,
+    "yes": 31
+   },
+   "CLILAS": {
+    "n": 26,
+    "yes": 26
+   },
+   "CLIMSY": {
+    "n": 126,
+    "yes": 126
+   },
+   "CLISFO": {
+    "n": 51,
+    "yes": 51
+   },
+   "CLIDCA": {
+    "n": 132,
+    "yes": 132
+   },
+   "CLISEA": {
+    "n": 136,
+    "yes": 136
+   },
+   "CLIBOS": {
+    "n": 134,
+    "yes": 134
+   },
+   "CLIPHX": {
+    "n": 31,
+    "yes": 31
+   },
+   "CLIATL": {
+    "n": 122,
+    "yes": 122
+   },
+   "CLIMSP": {
+    "n": 125,
+    "yes": 125
+   },
+   "CLIDFW": {
+    "n": 74,
+    "yes": 74
+   },
+   "CLISAT": {
+    "n": 68,
+    "yes": 68
+   },
+   "CLIHOU": {
+    "n": 109,
+    "yes": 109
+   },
+   "CLIOKC": {
+    "n": 81,
+    "yes": 81
+   },
+   "CLIEWR": {
+    "n": 126,
+    "yes": 124
+   },
+   "CLITTN": {
+    "n": 127,
+    "yes": 127
+   },
+   "CLIMKE": {
+    "n": 139,
+    "yes": 139
+   },
+   "CLILEX": {
+    "n": 133,
+    "yes": 133
+   },
+   "CLICMH": {
+    "n": 138,
+    "yes": 138
+   },
+   "CLIPVD": {
+    "n": 136,
+    "yes": 136
+   },
+   "CLICLL": {
+    "n": 82,
+    "yes": 81
+   },
+   "CLIPIT": {
+    "n": 159,
+    "yes": 159
+   },
+   "CLIABQ": {
+    "n": 63,
+    "yes": 60
+   },
+   "CLISGF": {
+    "n": 98,
+    "yes": 98
+   }
+  },
+  "straddle_only_days": {
+   "n": 98,
+   "yes": 87
+  }
+ },
+ "publication": "rawProbability is the calibrated value; probability is whole-percent with a 1%/99% publication-precision floor/ceiling (not a model bound)",
+ "observation_rule": {
+  "exact_station_only": true,
+  "valid_inside_window": true,
+  "publication_lag_min": 10,
+  "available_at": "valid_at + publication_lag_min (IEM archive has no receipt time; METARs are disseminated within minutes of the :51-:56 observation, so 10 min is conservative; at an on-the-hour cutoff the :5x report of the previous hour is EXCLUDED)",
+  "straddle_min": 65
+ },
+ "guidance_rule": "NBM (NBS) preferred, GFS MOS (MAV) fallback; run usable at cycle + 5 h and <= 24 h old (v1 rule)",
+ "split": {
+  "selection_fit": "2023-01-03..2024-12-31",
+  "selection_validate": "2025-01-01..2025-06-30",
+  "final_train": "2023-01-03..2025-06-30",
+  "holdout": "2025-07-01..2026-09-29 (scored once)"
+ },
+ "cutoffs_local_standard_hours": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20,
+  22
+ ],
+ "station_groups": {
+  "pacific_coast": [
+   "CLILAX",
+   "CLISFO",
+   "CLISEA"
+  ],
+  "desert_mountain": [
+   "CLIPHX",
+   "CLILAS",
+   "CLIABQ",
+   "CLIDEN"
+  ],
+  "gulf_texas": [
+   "CLIMIA",
+   "CLIMSY",
+   "CLIHOU",
+   "CLIAUS",
+   "CLISAT",
+   "CLICLL",
+   "CLIDFW"
+  ],
+  "northeast": [
+   "CLINYC",
+   "CLIEWR",
+   "CLIPHL",
+   "CLITTN",
+   "CLIBOS",
+   "CLIPVD",
+   "CLIDCA"
+  ],
+  "interior_east": [
+   "CLIATL",
+   "CLILEX",
+   "CLICMH",
+   "CLIPIT"
+  ],
+  "midwest_plains": [
+   "CLIORD",
+   "CLIMDW",
+   "CLIMKE",
+   "CLIMSP",
+   "CLISGF",
+   "CLIOKC"
+  ]
+ },
+ "target": "NOAA RCC-ACIS daily record at the CLI site (GHCN-D; the final NWS CLI value)",
+ "generated_at": "2026-10-04T17:53:31.394Z",
+ "training": {
+  "cases": 309644,
+  "logistic_cases": 260534
+ },
+ "holdout": {
+  "cases": 155130,
+  "gate": {
+   "prewindow_v11": true,
+   "observed_only": true,
+   "climatology_remaining": true
+  },
+  "gate_rule": "RESEARCH only if the 95% date-cluster bootstrap CI of (baseline - intraday) is > 0 on the full holdout for Brier AND log loss vs every baseline",
+  "significant_worse_subgroups": []
+ }
+}
