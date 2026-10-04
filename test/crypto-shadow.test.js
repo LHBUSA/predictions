@@ -213,3 +213,21 @@ test('completeness: expected minute ticks vs forecasts written, gap minutes, ven
   assert.deepEqual([c.expected_ticks, c.forecasts_written, c.forecast_gaps, c.kalshi_quote_misses, c.polymarket_quote_misses], [14, 13, 1, 13, 14]);
   assert.deepEqual(c.gap_minutes, ['15:45']);
 });
+
+test('exchange-read failure skips the forecast but still captures venue quotes for an existing window', async () => {
+  const store = fakeStore();
+  const iso = (x) => new Date(x * 1000).toISOString();
+  store.t.pred_crypto_windows.push({ window_id: windowId(OPEN), open_at: iso(OPEN), close_at: iso(OPEN + 900) });
+  const sel = store.select.bind(store);
+  store.select = async (tb, q, o) => (q.window_id ? store.t[tb].filter((r) => r.window_id === q.window_id.slice(3)) : sel(tb, q, o));
+  const fetchImpl = async (u) => {
+    if (String(u).includes('coinbase') || String(u).includes('bitstamp')) return { ok: false, status: 429, json: async () => ({}) };
+    if (String(u).includes('gamma-api')) return { ok: true, json: async () => [{ markets: [{ conditionId: '0xpm', outcomes: '["Up","Down"]', clobTokenIds: '["7","8"]', active: true }] }] };
+    return { ok: true, json: async () => ({ bids: [{ price: '0.5' }], asks: [{ price: '0.52' }] }) };
+  };
+  const mkt = { openEvents: async () => ({ events: [{ markets: [{ ticker: 'K', open_time: iso(OPEN), yes_bid_dollars: '0.4', yes_ask_dollars: '0.42' }] }] }), marketsByTicker: async () => [] };
+  const out = await runBtcShadow({ store, mkt, fetchImpl, now: iso(OPEN + 64) });
+  assert.equal(out.forecast.status, 'SOURCE_ERROR');
+  assert.equal(store.t.pred_crypto_forecasts.length, 0);
+  assert.deepEqual(store.t.pred_crypto_venue_obs.map((o) => [o.venue, o.mid]), [['kalshi', 0.41], ['polymarket', 0.51]]);
+});

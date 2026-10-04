@@ -228,6 +228,10 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
       kalshi_market_ticker: venueRows.find((v) => v.venue === 'kalshi')?.market_id ?? null, polymarket_slug: polymarketSlug(openS), proxy_open_usd: +proxyRef(candles, openS).toFixed(2),
       proxy_basis: { rule: 'mean of (o+h+l+c)/4 of the minute [open-60s, open) on Bitstamp + Coinbase', exchanges: ['bitstamp', 'coinbase'], minute: iso(openS - 60) } }, { conflictColumn: 'window_id' });
     windowKnown = true;
+  } else {
+    // exchange read failed this tick: the window row may already exist from an earlier tick — venue quotes are still
+    // captured (benchmarks never depend on the exchange read); only the forecast is skipped
+    try { windowKnown = (await store.select('pred_crypto_windows', { select: 'window_id', window_id: `eq.${wid}` }, { limit: 1 })).length > 0; } catch { windowKnown = false; }
   }
 
   if (windowKnown) {
@@ -244,7 +248,7 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
   // audit-only paths (never touch the frozen resolution / scores): venue settlement observations (sql/010) and the
   // completeness report for the window that just closed (first tick of each new window)
   if (settlements) { try { out.venue_settlements = await captureVenueSettlements({ store, mkt, fetchImpl, now }); } catch (e) { out.errors.push({ source: 'venue_settlements', error: e.message }); } }
-  if (nowS - openS < 60) { try { out.completeness = await completenessReport({ store, now, hours: 0.25 + 1 / 60 }); } catch (e) { out.errors.push({ source: 'completeness', error: e.message }); } }
+  if (nowS - openS < 60) { try { out.completeness = await completenessReport({ store, now, hours: 1 / 60 }); /* only the window that just closed */ } catch (e) { out.errors.push({ source: 'completeness', error: e.message }); } }
   return out;
 }
 
