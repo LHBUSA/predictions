@@ -91,3 +91,7 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   pred_forecast_designations (pred_decisions has its own from 006). NOT pred_events (mutable registry).
 - Rollback: `sql/007_ledger_truncate_guard_ROLLBACK.sql` (drops only the 007 triggers, restores the default service_role grant,
   removes the ledger row). Row-level update/delete guards from 001/002 are unaffected either way.
+
+## pred_contracts TRUNCATE guard (2026-10-04, final ledger-hardening follow-up)
+- `sql/008_contracts_truncate_guard.sql` applied as ledger `20261004160000` (PROOF `sql/008_contracts_truncate_guard_PROOF.sql`, always aborts).
+  Rollback: `sql/008_contracts_truncate_guard_ROLLBACK.sql`. pred_events remains mutable with no guard. Ledger architecture closed.
