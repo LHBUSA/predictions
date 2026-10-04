@@ -4,7 +4,8 @@
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { prospectiveRecord } from './prospective.js';
-import { verifyDecisions } from './decision-ledger.js';
+import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
+import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome } from './pages.js';
 import { renderPng } from './og.js';
@@ -93,6 +94,13 @@ export default {
       }
       // prediction-decision-v1 DRAFT preview (owner review before CALL becomes a public state): every live modeled
       // outcome's decision, evidence integrity and both venues at the current forecast. Admin only, never cached.
+      // the exact row the ledger writer would build for one designated forecast (NOT written; freeze not applied) — for
+      // payload proofs against the real table inside a rolled-back transaction
+      if (req.method === 'GET' && p === '/admin/decisions/preview-row') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const [inp] = await loadDecisionInputs(storeFor(env), [url.searchParams.get('forecast') || '']);
+        return inp ? json(await buildDecisionRecord(inp), 200, 'no-store') : json({ error: 'not_found' }, 404, 'no-store');
+      }
       if (req.method === 'GET' && p === '/admin/decisions/verify') {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         return json(await verifyDecisions(storeFor(env)), 200, 'no-store');
