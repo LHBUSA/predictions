@@ -140,3 +140,18 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   Stored observations / intraday rows are append-only and stay.
 - Worker rollback before the live layer: 8df28a94 (BTC e00b9b6). Keep both crons (that version routes the one-minute cron
   to BTC only).
+- 9fffadfd (c5bbdd1): INTRADAY_LIVE=true (first live intraday write 18:18:33Z).
+
+## Live Weather Intelligence V3 (2026-10-04)
+- Phase A rain predictive-state write invariant: main `a9604d2`, Worker `441296d6`. Rollback: `9fffadfd`, or INTRADAY_LIVE
+  != "true". 96 pre-fix time-only rain rows remain (append-only); the live timeline collapses them.
+- Phases C/D/E live weather panel, why-moved, market disagreement, atmosphere, timeline: `7e6de9d` -> `b5e9ae6` (snow)
+  -> `5d37f3c` causes, Worker `846b3e1b`. Rollback of the UI only: `441296d6`.
+- v2.2 SHADOW research `ff13d02`: research files only, nothing wired (byte parity v2.0/v2.1 vs HEAD = 0 diffs).
+
+## Engine run ledger + scheduler lanes (2026-10-04, Phases 2-3)
+- sql/011 applied (`engine_runs_v1`): pred_engine_runs (append-only) + pred_engine_lease + pred_engine_claim/release.
+  Rollback SQL `sql/011_engine_runs_ROLLBACK.sql` (set ENGINE_RUNS != "true" and deploy first).
+- main `90a95dd`, Worker `8cd99fd7`: crons FAST '* * * * *' / CORE '*/15 * * * *' / NEWSROOM '7,22,37,52 * * * *',
+  dispatched by identity. Kill switch ENGINE_RUNS (lanes still split, no lease/heartbeat). Code rollback: `846b3e1b`
+  (old */15 engine-then-newsroom; its two crons only — redeploying it drops the newsroom cron).
