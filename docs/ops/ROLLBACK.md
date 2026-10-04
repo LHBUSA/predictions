@@ -83,3 +83,11 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
 - Migration `sql/006_pred_decisions.sql` applied as ledger `20261004140000` (PROOF 12/12 via `sql/006_pred_decisions_PROOF.sql`, always aborts).
 - Kill switch: set `DECISIONS_DB` to anything but "true" and deploy (stops writes; the table stays). Table rollback
   `sql/006_pred_decisions_ROLLBACK.sql` destroys the prospective record — export first.
+
+## Ledger TRUNCATE guard (2026-10-04)
+- `sql/007_ledger_truncate_guard.sql` applied as ledger `20261004150000` (PROOF via `sql/007_ledger_truncate_guard_PROOF.sql`, always aborts).
+  Statement-level `before truncate` triggers + TRUNCATE revoked from service_role/anon/authenticated on exactly:
+  pred_source_observations, pred_feature_snapshots, pred_forecasts, pred_venue_snapshots, pred_resolutions, pred_scores,
+  pred_forecast_designations (pred_decisions has its own from 006). NOT pred_events (mutable registry).
+- Rollback: `sql/007_ledger_truncate_guard_ROLLBACK.sql` (drops only the 007 triggers, restores the default service_role grant,
+  removes the ledger row). Row-level update/delete guards from 001/002 are unaffected either way.
