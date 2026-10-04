@@ -112,6 +112,22 @@ async function rebuild(store, row, loadPacket = loadEventPacket) {
   return { packet: null, built: { ok: false, reason: `unpublishable class ${row.story_class}` } };
 }
 
+// Image subject + evidence geometry for the image resolver (insights/images.js), derived from the story's own packet:
+// mover = the moved contract's station and its from -> to path; resolution = the station (single-station events) and
+// the final PBE distribution with the winning outcome. Render-side only.
+export function imageSubject(row, packet) {
+  const t = row.evidence?.trigger || {};
+  if (row.story_class === 'FORECAST_MOVER') {
+    const o = packet.outcomes.find((x) => x.market_id === t.market_id);
+    return { subject: { station: o?.contract?.station_id || null }, overlay: { kind: 'mover', label: o?.label ?? t.outcome ?? '', from: t.from, to: t.to } };
+  }
+  const stations = [...new Set(packet.outcomes.map((o) => o.contract?.station_id).filter(Boolean))];
+  const modeled = packet.outcomes.filter((o) => o.snapshots.length);
+  const finalOf = (o) => (o.snapshots.find((x) => (x.roles || []).includes('FINAL_PRE_RESOLUTION')) || o.snapshots.at(-1))?.pbe ?? 0;
+  const winner = modeled.findIndex((o) => String(o.resolution?.venue_result || '').toLowerCase() === 'yes');
+  return { subject: { station: stations.length === 1 ? stations[0] : null }, overlay: { kind: 'resolution', values: modeled.slice(0, 24).map(finalOf), winner } };
+}
+
 // Published newsroom stories as { story, built } items, compatible with the flagship story renderer.
 export async function publishedNewsroomStories(store, { fresh = false, loadPacket = loadEventPacket } = {}) {
   if (!fresh && Date.now() - cache.at < TTL) return cache.items;
@@ -127,7 +143,7 @@ export async function publishedNewsroomStories(store, { fresh = false, loadPacke
       const problems = built.ok ? validateStory(built, packet, row.story_cutoff) : [built.reason];
       if (problems.length) { console.log(JSON.stringify({ newsroom: 'published_story_failed_revalidation', story_id: row.story_id, problems })); continue; }
       items.push({
-        story: { slug: row.slug, story_id: row.story_id, family: row.story_class, family_label: FAMILY[row.story_class], vertical: VERTICAL[packet.event.category] || 'weather', events: [packet.event.slug], primary: packet.event.slug, as_of: row.story_cutoff, published_at: new Date(pub.at).toISOString(), link_title: built.title, automated: true },
+        story: { slug: row.slug, story_id: row.story_id, family: row.story_class, family_label: FAMILY[row.story_class], vertical: VERTICAL[packet.event.category] || 'weather', events: [packet.event.slug], primary: packet.event.slug, as_of: row.story_cutoff, published_at: new Date(pub.at).toISOString(), link_title: built.title, automated: true, ...imageSubject(row, packet) },
         built, words: null,
       });
     } catch (e) { console.log(JSON.stringify({ newsroom: 'published_story_error', story_id: row.story_id, error: e.message })); }

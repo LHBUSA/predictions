@@ -6,7 +6,7 @@ import { premiumModule } from '../pages.js';
 import { publicEventView } from '../premium.js';
 import { fmtUtc } from './charts.js';
 import { VERTICALS } from './stories.js';
-import { storyImage } from './images.js';
+import { storyImage, heroOverlaySvg, storySvg } from './images.js';
 
 const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const longDate = (iso) => new Date(iso).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + ' UTC';
@@ -60,16 +60,25 @@ ${model ? `<div class="ix-limits"><span class="ix-kicker">MODEL LIMITATIONS</spa
 <p class="note">Market prices are a benchmark only and never enter a PropBetEdge model. Research-stage probabilities; not advice.</p></section>`;
 }
 
-function heroArt(img, eager) {
+// Hero: raster (photo / bespoke art) in a <picture>, with the story's evidence geometry layered over real photos;
+// Tier 3 = inline story-specific SVG. Both fill the same fixed box (zero CLS).
+function heroArt(img, eager, story) {
+  if (img.type === 'svg') return `<div class="ix-hero-art ix-svg-art" role="img" aria-label="${esc(img.hero_alt)}">${storySvg(story)}</div>`;
   const b = img.base;
-  return `<picture class="ix-hero-art">
+  return `<div class="ix-hero-art${img.type === 'photo' ? ' is-photo' : ''}"><picture>
 <source media="(max-width: 760px)" type="image/avif" srcset="${b}/mobile-640.avif 640w, ${b}/mobile-960.avif 960w" sizes="100vw">
 <source media="(max-width: 760px)" type="image/webp" srcset="${b}/mobile-640.webp 640w, ${b}/mobile-960.webp 960w" sizes="100vw">
 <source type="image/avif" srcset="${b}/hero-800.avif 800w, ${b}/hero-1200.avif 1200w, ${b}/hero-1600.avif 1600w" sizes="(max-width: 760px) 100vw, 74vw">
 <source type="image/webp" srcset="${b}/hero-800.webp 800w, ${b}/hero-1200.webp 1200w, ${b}/hero-1600.webp 1600w" sizes="(max-width: 760px) 100vw, 74vw">
-<img src="${b}/hero-1200.webp" width="1600" height="900" alt="${esc(img.hero_alt)}" style="object-position:${esc(img.hero_focal_point)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>`;
+<img src="${b}/hero-1200.webp" width="1600" height="900" alt="${esc(img.hero_alt)}" style="object-position:${esc(img.hero_focal_point)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>${img.overlay && story ? heroOverlaySvg(story) : ''}</div>`;
 }
-const cardArt = (img, eager = false) => `<picture class="ix-card-art"><source type="image/avif" srcset="${img.base}/hero-800.avif"><img src="${img.base}/hero-800.webp" width="800" height="450" alt="" style="object-position:${esc(img.hero_focal_point)}"${eager ? '' : ' loading="lazy"'} decoding="async"></picture>`;
+const cardArt = (img, eager = false, story = null) => (img.type === 'svg'
+  ? `<div class="ix-card-art ix-svg-art" aria-hidden="true">${storySvg(story, { w: 800, h: 450 })}</div>`
+  : `<picture class="ix-card-art"><source type="image/avif" srcset="${img.base}/hero-800.avif"><img src="${img.base}/hero-800.webp" width="800" height="450" alt="" style="object-position:${esc(img.hero_focal_point)}"${eager ? '' : ' loading="lazy"'} decoding="async"></picture>`);
+// Photo credit links to the Commons file page and the license; illustrations keep their plain credit line.
+const creditLine = (img) => (img.type === 'photo' && img.credit
+  ? `<p class="ix-credit">${img.credit.author ? `Photo: ${esc(img.credit.author)} · ` : 'Photo · '}${img.credit.license_url ? `<a href="${esc(img.credit.license_url)}" target="_blank" rel="noopener license">${esc(img.credit.license)}</a>` : esc(img.credit.license)} · <a href="${esc(img.credit.source_url)}" target="_blank" rel="noopener">Wikimedia Commons</a></p>`
+  : `<p class="ix-credit">${esc(img.image_credit)}</p>`);
 
 // One breadcrumb trail for the visible nav AND the BreadcrumbList (they must agree).
 export function articleCrumbs(story, built) {
@@ -97,7 +106,7 @@ export function articleJsonLd(story, built, modified) {
     headline: built.title.length > 110 ? `${built.title.slice(0, 107)}…` : built.title, name: built.title, description: built.description,
     articleSection: VERTICALS[story.vertical], genre: story.family_label, inLanguage: 'en-US', isAccessibleForFree: true,
     isPartOf: { '@id': WEBSITE_ID }, author: AUTHOR, publisher: { '@id': ORG_ID },
-    image: [...img.schema.map(([u, w, h]) => ({ '@type': 'ImageObject', url: `${SITE}${u}`, width: w, height: h, creditText: img.image_credit, copyrightNotice: img.image_credit })), { '@type': 'ImageObject', url: storyImageUrl(story), width: 1200, height: 630 }],
+    image: [...img.schema.map(([u, w, h]) => ({ '@type': 'ImageObject', url: `${SITE}${u}`, width: w, height: h, creditText: img.image_credit, ...(img.type === 'photo' && img.credit ? { license: img.credit.license_url || undefined, acquireLicensePage: img.credit.source_url, creator: img.credit.author ? { '@type': 'Person', name: img.credit.author } : undefined } : { copyrightNotice: img.image_credit }) })), { '@type': 'ImageObject', url: storyImageUrl(story), width: 1200, height: 630 }],
     datePublished: story.published_at,
     about: story.events.slice(0, 7).map((slug) => ({ '@type': 'Dataset', '@id': `${SITE}/events/${slug}#dataset`, url: `${SITE}/events/${slug}` })),
     isBasedOn: story.events.map((slug) => `${SITE}/events/${slug}`),
@@ -117,13 +126,13 @@ export function renderArticle(story, inputBuilt, { live, related = [], model, wo
   const rel = related.filter(Boolean).slice(0, 4);
   const img = storyImage(story);
   const body = `<article class="ix-article fam-${esc(story.family.toLowerCase())}">
-<header class="ix-hero has-art v-${esc(story.vertical)}${story.family === 'RESOLUTION_REPORT' ? ' resolved' : ''}" data-image-version="${esc(img.image_version)}">${heroArt(img, true)}<div class="ix-hero-shade" aria-hidden="true"></div>
+<header class="ix-hero has-art v-${esc(story.vertical)}${story.family === 'RESOLUTION_REPORT' ? ' resolved' : ''}" data-image-version="${esc(img.image_version)}" data-image-key="${esc(img.key)}" data-image-type="${esc(img.type)}">${heroArt(img, true, story)}<div class="ix-hero-shade" aria-hidden="true"></div>
 <div class="wrap ix-hero-inner"><div class="ix-hero-copy">
 <nav class="ix-crumbs" aria-label="Breadcrumb">${articleCrumbs(story, built).slice(0, -1).map((c) => `<a href="${c.url.startsWith(SITE) ? c.url.slice(SITE.length) : c.url}">${esc(c.name)}</a>`).join(' › ')}</nav>
 <span class="ix-eyebrow">${esc(VERTICALS[story.vertical].toUpperCase())} · ${esc(story.family_label.toUpperCase())}</span>
 <h1>${esc(built.title)}</h1><p class="ix-dek">${esc(built.dek)}</p>
 <p class="ix-meta"><span>Published <time datetime="${esc(story.published_at)}">${esc(longDate(story.published_at))}</time></span>${modified ? `<span>Updated <time datetime="${esc(modified)}">${esc(longDate(modified))}</time></span>` : ''}<span>Model data as of ${esc(fmtUtc(built.model_as_of))}</span><span>By the PropBetEdge Predictions Desk</span>${words ? `<span>${Math.max(1, Math.round(words / 230))} min read</span>` : ''}</p>
-<p class="ix-credit">${esc(img.image_credit)}</p></div><div class="ix-hero-nums">${heroNumbers(built.hero)}</div></div></header>
+${creditLine(img)}</div><div class="ix-hero-nums">${heroNumbers(built.hero)}</div></div></header>
 <div class="wrap ix-layout"><div class="ix-main">
 ${shareBar(url, built.title)}
 ${resolutionModule(built.resolution, story)}
@@ -145,7 +154,7 @@ ${rel.length ? `<section class="ix-related"><h3>Related predictions</h3>${rel.ma
   });
 }
 
-const storyCard = (s, size = 'md') => `<a class="ix-card ix-card-${size} v-${esc(s.story.vertical)}" href="/insights/${esc(s.story.slug)}">${cardArt(storyImage(s.story), size === 'lg')}
+const storyCard = (s, size = 'md') => `<a class="ix-card ix-card-${size} v-${esc(s.story.vertical)}" href="/insights/${esc(s.story.slug)}">${cardArt(storyImage(s.story), size === 'lg', s.story)}
 <span class="ix-eyebrow">${esc(VERTICALS[s.story.vertical].toUpperCase())} · ${esc(s.story.family_label.toUpperCase())}</span>
 <b>${esc(s.built.title)}</b>${size !== 'sm' ? `<p>${esc(s.built.dek)}</p>` : ''}
 ${s.built.hero.type === 'flow' ? `<div class="ix-card-nums"><span class="mkt">${esc(s.built.hero.from)}</span><span class="arr">→</span><span class="pbe">${esc(s.built.hero.to)}</span></div>` : `<div class="ix-card-nums">${s.built.hero.stats.map((x) => `<span class="t-${esc(x.tone)}"><small>${esc(x.label)}</small>${esc(x.value)}</span>`).join('')}</div>`}

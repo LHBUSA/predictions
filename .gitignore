@@ -5,3 +5,6 @@
 .wrangler/
 node_modules/
 _preview/
+
+# Insights photo masters: re-downloadable from Commons (photo-registry.json has the URL + sha256); derivatives are committed
+images/insights/_masters/photos/

@@ -1,0 +1,659 @@
+{
+ "generated_at": "2026-10-04T16:26:29.738Z",
+ "method": "Wikidata P18 of an explicit entity, verified by label + coordinates within 60 km of the station; Commons extmetadata license",
+ "subjects": {
+  "new-york": {
+   "key": "photo-new-york",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLINYC"
+   ],
+   "alt": "New York City — Downtown Manhattan Skyline seen from Paulus Hook showing various ferry services departing the Battery Park City ferry terminal, and helicopt",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q60",
+    "label": "New York City",
+    "verified": "label + coordinates within 60 km of CLINYC"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:NYC_Downtown_Manhattan_Skyline_seen_from_Paulus_Hook_2019-12-20_IMG_7347_FRD_(cropped).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/NYC_Downtown_Manhattan_Skyline_seen_from_Paulus_Hook_2019-12-20_IMG_7347_FRD_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Fred Hsu on en.wikipedia",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Fred Hsu on en.wikipedia · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:NYC Downtown Manhattan Skyline seen from Paulus Hook 2019-12-20 IMG 7347 FRD (cropped).jpg",
+    "commons_sha1": "afcc753d1b074975aa5910a8d409574e424f17da"
+   },
+   "master": {
+    "width": 2400,
+    "height": 962,
+    "sha256": "4cd342453128643953d626aad74b7d1b57e63c2574d8a03af113399771136750"
+   }
+  },
+  "chicago": {
+   "key": "photo-chicago",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIORD",
+    "CLIMDW"
+   ],
+   "alt": "Chicago — Downtown from the lakefront, Chicago, IL, USA",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q1297",
+    "label": "Chicago",
+    "verified": "label + coordinates within 60 km of CLIORD, CLIMDW"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2010-02-19_3000x2000_chicago_skyline.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/2010-02-19_3000x2000_chicago_skyline.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "J. Crocker",
+    "license": "Attribution",
+    "license_url": null,
+    "attribution_required": false,
+    "attribution": "Photo: J. Crocker · Attribution · via Wikimedia Commons",
+    "file": "File:2010-02-19 3000x2000 chicago skyline.jpg",
+    "commons_sha1": "bd9fd1b5148e8b51c5cbc30c31c312f71ce0eb4d"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1600,
+    "sha256": "6e7499a47cfb04f2759075c5fbab77f49eed0ba08719284b949df0ebf5751f94"
+   }
+  },
+  "austin": {
+   "key": "photo-austin",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIAUS"
+   ],
+   "alt": "Austin — The skyline of Austin, the capital city of Texas. With a population of 961,855, it's the 13th-most populous city in the U.S.",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q16559",
+    "label": "Austin",
+    "verified": "label + coordinates within 60 km of CLIAUS"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Skyline_of_Austin,_Texas_(cropped).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Skyline_of_Austin%2C_Texas_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Quintin Soloviev",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Quintin Soloviev · CC BY 4.0 · via Wikimedia Commons",
+    "file": "File:Skyline of Austin, Texas (cropped).jpg",
+    "commons_sha1": "d1cb7f2028da319b44169c5a66923fd988e7e7c9"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1321,
+    "sha256": "553ed4ee809293df2f128893b321e21e13c0f7e6a8f968fda87ef12a6d3376d8"
+   }
+  },
+  "miami": {
+   "key": "photo-miami",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIMIA"
+   ],
+   "alt": "Miami — Downtown aerial view of en:Miami, Florida",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q8652",
+    "label": "Miami",
+    "verified": "label + coordinates within 60 km of CLIMIA"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Downtown_Miami_aerial_2008.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Downtown_Miami_aerial_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Marc Averette",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "attribution_required": true,
+    "attribution": "Photo: Marc Averette · CC BY-SA 3.0 · via Wikimedia Commons",
+    "file": "File:Downtown Miami aerial 2008.jpg",
+    "commons_sha1": "d400140d9ba0bcca782ca42742f142bd427a6354"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1800,
+    "sha256": "d7abba716706a4828803c2643264a642eb890bb9a951783aa92f0bc3d9d71d31"
+   }
+  },
+  "denver": {
+   "key": "photo-denver",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIDEN"
+   ],
+   "alt": "Denver — Skyline of Denver, Colorado, the 19th-most populous city in the United States (715,522).",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q16554",
+    "label": "Denver",
+    "verified": "label + coordinates within 60 km of CLIDEN"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Denver,_Colorado_skyline_(cropped).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/3b/Denver%2C_Colorado_skyline_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Quintin Soloviev",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Quintin Soloviev · CC BY 4.0 · via Wikimedia Commons",
+    "file": "File:Denver, Colorado skyline (cropped).jpg",
+    "commons_sha1": "d4feaca4ff40ea73694124fa7ad51ae9291fd8c8"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1264,
+    "sha256": "8c458bd445464d24997376038403e2d3941d1ed248eaa2e019107c3d65034675"
+   }
+  },
+  "philadelphia": {
+   "key": "photo-philadelphia",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIPHL"
+   ],
+   "alt": "Philadelphia — Philadelphia Skyline from ​Schuylkill River",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q1345",
+    "label": "Philadelphia",
+    "verified": "label + coordinates within 60 km of CLIPHL"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Philadelphia_skyline_20240528_(cropped).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Philadelphia_skyline_20240528_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "颐园居",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: 颐园居 · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:Philadelphia skyline 20240528 (cropped).jpg",
+    "commons_sha1": "df007b6c54e67d6cd1ee7948c0f1b00ef0cf3452"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1500,
+    "sha256": "6c08f119239e8e94fd3c8ecb1914d853a04e59e9ad634ef01ae70da74543a8cf"
+   }
+  },
+  "los-angeles": {
+   "key": "photo-los-angeles",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLILAX"
+   ],
+   "alt": "Los Angeles — February shot of downtown Los Angeles sunset with Mount Baldy in the background after a large snow storm.",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q65",
+    "label": "Los Angeles",
+    "verified": "label + coordinates within 60 km of CLILAX"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Los_Angeles_with_Mount_Baldy.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/6/69/Los_Angeles_with_Mount_Baldy.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Alek Leckszas",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Alek Leckszas · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:Los Angeles with Mount Baldy.jpg",
+    "commons_sha1": "8a409828dd72276a9d1e66959c99d091071cbf10"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1124,
+    "sha256": "6a00f3e4c749ab6ec0d0fd831a53724c8b8546911a68f9e729350dcd00560749"
+   }
+  },
+  "new-orleans": {
+   "key": "photo-new-orleans",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIMSY"
+   ],
+   "alt": "New Orleans — New Orleans, LA, U.S",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q34404",
+    "label": "New Orleans",
+    "verified": "label + coordinates within 60 km of CLIMSY"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:New_Orleans_skyline-02.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/d/d6/New_Orleans_skyline-02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "thepipe26",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "attribution_required": true,
+    "attribution": "Photo: thepipe26 · CC BY 2.0 · via Wikimedia Commons",
+    "file": "File:New Orleans skyline-02.jpg",
+    "commons_sha1": "d3c807f21ff531ad84dcfcd34887413748fe851a"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1590,
+    "sha256": "de0fb9ea7a64ca3a41e0739aa73809b54ce123619c09a48b60a9dfcd48670e8b"
+   }
+  },
+  "san-francisco": {
+   "key": "photo-san-francisco",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLISFO"
+   ],
+   "alt": "San Francisco — San Francisco from the Marin Headlands on March 31, 2019 during California's Superbloom",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q62",
+    "label": "San Francisco",
+    "verified": "label + coordinates within 60 km of CLISFO"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:San_Francisco_from_the_Marin_Headlands_in_March_2019.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/San_Francisco_from_the_Marin_Headlands_in_March_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Lightandtruth",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Lightandtruth · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:San Francisco from the Marin Headlands in March 2019.jpg",
+    "commons_sha1": "3bbc9b84ecae8a8c996fc5a29e4c1754362f9efd"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1406,
+    "sha256": "292157c9a8c481f27079f6672d8c695dffb9a61f40a896eb4589b2d7e43d4bd4"
+   }
+  },
+  "washington": {
+   "key": "photo-washington",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIDCA"
+   ],
+   "alt": "Washington, D.C. — Title: Aerial view of White House and downtown, Washington, D.C Physical description: 1 photograph : digital, TIFF file, color. Notes: Gift ",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q61",
+    "label": "Washington, D.C.",
+    "verified": "label + coordinates within 60 km of CLIDCA"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_White_House_and_downtown,_Washington,_D.C_LCCN2010630891.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Aerial_view_of_White_House_and_downtown%2C_Washington%2C_D.C_LCCN2010630891.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Carol M. Highsmith",
+    "license": "Public domain",
+    "license_url": null,
+    "attribution_required": false,
+    "attribution": "Photo: Carol M. Highsmith · Public domain · via Wikimedia Commons",
+    "file": "File:Aerial view of White House and downtown, Washington, D.C LCCN2010630891.jpg",
+    "commons_sha1": "edcd172cf4534ad533b8e095ce44f65b65f01cd9"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1268,
+    "sha256": "86a8a308783d2e3d3762894b2d72db73ad3e9a1024d14582462def1f6a3a0e13"
+   }
+  },
+  "boston": {
+   "key": "photo-boston",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIBOS"
+   ],
+   "alt": "Boston — Boston from the Harbour, Massachusetts, United States",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q100",
+    "label": "Boston",
+    "verified": "label + coordinates within 60 km of CLIBOS"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Boston_from_the_Harbour,_Massachusetts_(493360)_(10772382303).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Boston_from_the_Harbour%2C_Massachusetts_%28493360%29_%2810772382303%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Robert Linsdell from St. Andrews, Canada",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "attribution_required": true,
+    "attribution": "Photo: Robert Linsdell from St. Andrews, Canada · CC BY 2.0 · via Wikimedia Commons",
+    "file": "File:Boston from the Harbour, Massachusetts (493360) (10772382303).jpg",
+    "commons_sha1": "92f35fb4c75a4c76905ef6393fe4f6cc91230898"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1351,
+    "sha256": "04f504e5405f4083ebae30438cbdaf0c04030da4062d6c6f1f0af25a01c26679"
+   }
+  },
+  "phoenix": {
+   "key": "photo-phoenix",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIPHX"
+   ],
+   "alt": "Phoenix — Downtown Phoenix, viewed from South Mountain",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q16556",
+    "label": "Phoenix",
+    "verified": "label + coordinates within 60 km of CLIPHX"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Phoenix,_Arizona.JPG",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Phoenix%2C_Arizona.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Bigmikebmw",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "attribution_required": true,
+    "attribution": "Photo: Bigmikebmw · CC BY-SA 3.0 · via Wikimedia Commons",
+    "file": "File:Phoenix, Arizona.JPG",
+    "commons_sha1": "6155d68641e555fdac880bfb42504c2d806f57a6"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1800,
+    "sha256": "4f8d860ae9d0e47300962df423317861972963a71fe2eb186a9f4fc3b5da1ca2"
+   }
+  },
+  "atlanta": {
+   "key": "photo-atlanta",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIATL"
+   ],
+   "alt": "Atlanta — Midtown and Downtown Atlanta",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q23556",
+    "label": "Atlanta",
+    "verified": "label + coordinates within 60 km of CLIATL"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:A2ATL20250614-0721_(cropped).jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/A2ATL20250614-0721_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "AtlChampion",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: AtlChampion · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:A2ATL20250614-0721 (cropped).jpg",
+    "commons_sha1": "42ac6db1e201d6b51d0bcd3300f584a98ef6fa04"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1326,
+    "sha256": "7c23e438af4fd7cfeb4a702500ed0947636e7ad37819a5e391569c85dd5f659c"
+   }
+  },
+  "minneapolis": {
+   "key": "photo-minneapolis",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIMSP"
+   ],
+   "alt": "Minneapolis — Panoramic photo of downtown Minneapolis, Minnesota. Among the major buildings and sites visible in this photo, from left to right are: some ",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q36091",
+    "label": "Minneapolis",
+    "verified": "label + coordinates within 60 km of CLIMSP"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2008-0712-MPLS-panorama.JPG",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/2008-0712-MPLS-panorama.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Bobak Ha'Eri",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "attribution_required": true,
+    "attribution": "Photo: Bobak Ha'Eri · CC BY 3.0 · via Wikimedia Commons",
+    "file": "File:2008-0712-MPLS-panorama.JPG",
+    "commons_sha1": "db307e05649a7a46391b9a5cd07c0c35917a174e"
+   },
+   "master": {
+    "width": 2400,
+    "height": 777,
+    "sha256": "2334e114e5f4fdbbfbb881d9267ccf77bd4d4a165044007d58b0e04283aee73e"
+   }
+  },
+  "dallas": {
+   "key": "photo-dallas",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIDFW"
+   ],
+   "alt": "Dallas — View of Dallas Arts District and the Downtown skyline.",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q16557",
+    "label": "Dallas",
+    "verified": "label + coordinates within 60 km of CLIDFW"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Dallas_Skyline_with_Arts_District.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/4/41/Dallas_Skyline_with_Arts_District.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Gattacal",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Gattacal · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:Dallas Skyline with Arts District.jpg",
+    "commons_sha1": "ce81d639cd454f23bbd61cf5e94514cd78f0fccc"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1350,
+    "sha256": "df89c7824eec32f75c3cc2fa5ba9dbf9617581b23029cc6d345f86f84ab23eb1"
+   }
+  },
+  "oklahoma-city": {
+   "key": "photo-oklahoma-city",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIOKC"
+   ],
+   "alt": "Oklahoma City — This photo of downtown Oklahoma City's skyline at twilight is current as of January 2015. It comes from the Flickr folder of photo assets fo",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q34863",
+    "label": "Oklahoma City",
+    "verified": "label + coordinates within 60 km of CLIOKC"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Downtown_Oklahoma_City_skyline_at_twilight.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Downtown_Oklahoma_City_skyline_at_twilight.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Greater Oklahoma City Chamber and Oklahoma City Convention and Visitors Bureau (uploaded by Chamber employee Lillie-Beth Brinkman lbrinkman@okcchamber.com)",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "attribution_required": true,
+    "attribution": "Photo: Greater Oklahoma City Chamber and Oklahoma City Convention and Visitors Bureau (uploaded by Chamber employee Lillie-Beth Brinkman lbrinkman@okcchamber.com) · CC BY-SA 3.0 · via Wikimedia Commons",
+    "file": "File:Downtown Oklahoma City skyline at twilight.jpg",
+    "commons_sha1": "f4240cc76aa07e8f1d012c048e2743aac9e51474"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1600,
+    "sha256": "fec89afcf8c1d3020071312672082607808aca51f69d8878e50db54a1ae4ba53"
+   }
+  },
+  "newark": {
+   "key": "photo-newark",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIEWR"
+   ],
+   "alt": "Newark — View of downtown Newark from the intersection of Essex County Route 510 (Market Street) and Mulberry Street in Newark, Essex County, New Jer",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q25395",
+    "label": "Newark",
+    "verified": "label + coordinates within 60 km of CLIEWR"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2021-09-25_10_50_38_View_of_downtown_Newark_from_the_intersection_of_Essex_County_Route_510_(Market_Street)_and_Mulberry_Street_in_Newark,_Essex_County,_New_Jersey.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/a/a6/2021-09-25_10_50_38_View_of_downtown_Newark_from_the_intersection_of_Essex_County_Route_510_%28Market_Street%29_and_Mulberry_Street_in_Newark%2C_Essex_County%2C_New_Jersey.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Famartin",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Famartin · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:2021-09-25 10 50 38 View of downtown Newark from the intersection of Essex County Route 510 (Market Street) and Mulberry Street in Newark, Essex County, New Jersey.jpg",
+    "commons_sha1": "21e28fadb1d2168a285693ce464e3931209e5d67"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1800,
+    "sha256": "919359228ce421fcb6741e8811ea7d357cd6560733ee911f7cd2f87149fd4d8f"
+   }
+  },
+  "milwaukee": {
+   "key": "photo-milwaukee",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIMKE"
+   ],
+   "alt": "Milwaukee — Milwaukee Skyline with New NW Mutual Building 2025 by Isaac Rowlett",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q37836",
+    "label": "Milwaukee",
+    "verified": "label + coordinates within 60 km of CLIMKE"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Milwaukee_Skyline_w_New_NW_Mutual_Building_2025_by_Isaac_Rowlett.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Milwaukee_Skyline_w_New_NW_Mutual_Building_2025_by_Isaac_Rowlett.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Bfkenney",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Bfkenney · CC BY-SA 4.0 · via Wikimedia Commons",
+    "file": "File:Milwaukee Skyline w New NW Mutual Building 2025 by Isaac Rowlett.jpg",
+    "commons_sha1": "dae0263fb25fe7515f1ba7634382f8165e62f3ca"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1596,
+    "sha256": "16aee994c40cacc80d8ffcb387f5cc3644cc236521a357f602b04f5725f71567"
+   }
+  },
+  "providence": {
+   "key": "photo-providence",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLIPVD"
+   ],
+   "alt": "Providence — Skyline of Providence, Rhode Island, USA with a view of Providence River Bridge",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q18383",
+    "label": "Providence",
+    "verified": "label + coordinates within 60 km of CLIPVD"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Providence_RI_skyline.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Providence_RI_skyline.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "Quintin Soloviev",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "attribution_required": true,
+    "attribution": "Photo: Quintin Soloviev · CC BY 4.0 · via Wikimedia Commons",
+    "file": "File:Providence RI skyline.jpg",
+    "commons_sha1": "27d1013592e9198aa1c57978644bf7a4fae5778e"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1627,
+    "sha256": "222f6dcd15ee89614e6f70f01d4d0352e348529a379a1c06c89e8243f6b6fd99"
+   }
+  },
+  "springfield": {
+   "key": "photo-springfield",
+   "version": "v1",
+   "focal": "50% 55%",
+   "stations": [
+    "CLISGF"
+   ],
+   "alt": "Springfield — Park Central Square in downtown Springfield, Missouri with Landers Building in the background.",
+   "match": {
+    "type": "wikidata-p18",
+    "entity": "Q135615",
+    "label": "Springfield",
+    "verified": "label + coordinates within 60 km of CLISGF"
+   },
+   "credit": {
+    "source_class": "wikimedia-commons",
+    "source_url": "https://commons.wikimedia.org/wiki/File:ParkCentralSquarefountainbyCVBCS.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/ParkCentralSquarefountainbyCVBCS.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "author": "The original uploader was Joelfun at English Wikipedia.",
+    "license": "FAL",
+    "license_url": "http://artlibre.org/licence/lal/en",
+    "attribution_required": true,
+    "attribution": "Photo: The original uploader was Joelfun at English Wikipedia. · FAL · via Wikimedia Commons",
+    "file": "File:ParkCentralSquarefountainbyCVBCS.jpg",
+    "commons_sha1": "24929a7e9fe339f6faa5829b3d077e16b2b19869"
+   },
+   "master": {
+    "width": 2400,
+    "height": 1600,
+    "sha256": "24fa74e6b2598ebe2e4f8d4adae8e9abf267fe01e99ebd0bddf083b6d5cc1b1d"
+   }
+  }
+ },
+ "rejected": {
+  "las-vegas": "too small 1280px",
+  "seattle": "too small 1280px",
+  "san-antonio": "too small 1150px",
+  "houston": "too small 1500px",
+  "trenton": "label mismatch: Q25668 is \"Where Do You Go To (My Lovely)?\", expected \"Trenton\"",
+  "lexington": "too small 1544px",
+  "columbus": "too small 1224px",
+  "college-station": "label mismatch: Q594362 is \"Tapeworm\", expected \"College Station\"",
+  "pittsburgh": "too small 1452px",
+  "albuquerque": "too small 658px"
+ }
+}
