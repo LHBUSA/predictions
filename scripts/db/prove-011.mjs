@@ -1,4 +1,4 @@
-// PGlite proof for sql/011_engine_runs.sql (+ ROLLBACK): builds pred_reject_mutation() from sql/001, applies 011, runs
+// PGlite proof for sql/011_engine_runs.sql + sql/012_engine_runs_abandoned.sql (+ ROLLBACKs): builds pred_reject_mutation() from sql/001, applies 011, runs
 // 011_PROOF.sql (aborts with PROOF_RESULT), checks TRUNCATE is rejected, then applies the ROLLBACK.
 //   node scripts/db/prove-011.mjs [path-to-a-package.json that resolves @electric-sql/pglite]
 import { readFileSync } from 'node:fs';
@@ -18,9 +18,15 @@ console.log('011 PROOF_RESULT', JSON.stringify(parsed));
 const persisted = (await db.query('select count(*)::int n from pred_engine_runs')).rows[0].n + (await db.query('select count(*)::int n from pred_engine_lease')).rows[0].n;
 const trunc = await db.exec('truncate pred_engine_runs').then(() => 'ALLOWED', (e) => `rejected: ${e.message.slice(0, 80)}`);
 console.log('rows persisted after proof:', persisted, '| truncate:', trunc);
+await db.exec(sql('012_engine_runs_abandoned.sql'));
+let p12 = null;
+try { await db.exec(sql('012_engine_runs_abandoned_PROOF.sql')); } catch (e) { p12 = JSON.parse(String(e.message).replace(/^.*PROOF_RESULT /, '')); }
+console.log('012 PROOF_RESULT', JSON.stringify(p12));
+const ok12 = p12 && Object.keys(p12).length === 4 && Object.values(p12).every((v) => v === true);
+await db.exec(sql('012_engine_runs_abandoned_ROLLBACK.sql'));
 await db.exec(sql('011_engine_runs_ROLLBACK.sql'));
 const left = (await db.query(`select count(*)::int n from information_schema.tables where table_name like 'pred_engine_%'`)).rows[0].n;
 console.log('after rollback, pred_engine_* tables:', left);
 const ok = parsed && Object.keys(parsed).length === 12 && Object.values(parsed).every((v) => v === true);
-if (!ok || persisted !== 0 || !/rejected/.test(trunc) || left !== 0) { console.error('PROOF FAILED'); process.exit(1); }
+if (!ok || !ok12 || persisted !== 0 || !/rejected/.test(trunc) || left !== 0) { console.error('PROOF FAILED'); process.exit(1); }
 console.log('PROOF PASSED');

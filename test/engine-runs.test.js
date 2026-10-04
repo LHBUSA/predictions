@@ -16,7 +16,11 @@ function fakeStore({ claimThrows = false } = {}) {
     if (fn === 'pred_engine_release') { const l = lease.get(a.p_lane); const mine = l?.holder === a.p_run_id; if (mine) l.holder = null; return { ok: true, json: async () => mine }; }
     throw new Error(fn);
   };
-  return { url: 'https://x', serviceKey: 'k', fetchImpl, write: async (t, row) => { assert.equal(t, 'pred_engine_runs'); if (runs.some((r) => r.run_id === row.run_id && r.transition === row.transition)) throw new Error('dup'); runs.push(row); }, runs, lease, calls };
+  const select = async (t, q) => {
+    if (t === 'pred_engine_lease') { const l = lease.get(q.lane.slice(3)); return l ? [{ holder: l.holder, expires_at: l.expires_at ?? null }] : []; }
+    return runs.filter((r) => r.lane === q.lane.slice(3)).slice().reverse();
+  };
+  return { url: 'https://x', serviceKey: 'k', fetchImpl, select, write: async (t, row) => { assert.equal(t, 'pred_engine_runs'); if (runs.some((r) => r.run_id === row.run_id && r.transition === row.transition)) throw new Error('dup'); runs.push(row); }, runs, lease, calls };
 }
 const args = (store, work, extra = {}) => ({ store, lane: 'core', cron: CRONS.CORE, scheduledAt: '2026-10-04T20:00:00.000Z', workerVersion: 'v-test', work, ...extra });
 
@@ -90,4 +94,36 @@ test('counts: engine summary + Supabase/market request counters', async () => {
   await c.fetch('u'); await c.fetch('u', { method: 'POST' });
   const k = coreCounts({ events: 4, contracts: { NORMALIZED: 30, UNMODELABLE: 2 }, forecasts: 5, venue_snapshots: 32, errors: [{ source: 'markets', error: 'canonical market service in rate-limit backoff until x' }] }, c.counts, { requests: 9, errors: 0, rate_limited: 0 });
   assert.deepEqual([k.events, k.contracts, k.forecasts, k.venue_snapshots, k.errors, k.market_backoff_errors, k.market_requests, k.supabase_requests, k.supabase_writes], [4, 32, 5, 32, 1, 1, 9, 2, 1]);
+});
+
+test('orphan recovery: STARTED -> process disappears -> lease expires -> next invocation appends ABANDONED -> new lease claimed', async () => {
+  const s = fakeStore();
+  // run A claims and writes STARTED, then the isolate is hard-killed: no terminal row, no release
+  s.lease.set('newsroom', { holder: 'newsroom:20:22:a', expires_at: '2026-10-04T20:38:53Z' });
+  s.runs.push({ run_id: 'newsroom:20:22:a', lane: 'newsroom', transition: 'STARTED', scheduled_at: '2026-10-04T20:22:39Z', at: '2026-10-04T20:22:53Z' });
+  // before expiry: the next tick must skip, never run concurrently
+  const early = await runLane(args(s, async () => ({}), { lane: 'newsroom', cron: CRONS.NEWSROOM }));
+  assert.equal(early.transition, 'SKIPPED_OVERLAP');
+  assert.ok(!s.runs.some((r) => r.transition === 'ABANDONED'), 'no ABANDONED while the lease may still be alive');
+  // lease expires (the SQL claim succeeds over an expired lease)
+  s.lease.get('newsroom').holder = null;
+  const r = await runLane(args(s, async () => ({ counts: { published: 0 } }), { lane: 'newsroom', cron: CRONS.NEWSROOM, scheduledAt: '2026-10-04T20:52:39Z' }));
+  assert.equal(r.transition, 'COMPLETED');
+  const ab = s.runs.filter((x) => x.transition === 'ABANDONED');
+  assert.equal(ab.length, 1); assert.equal(ab[0].run_id, 'newsroom:20:22:a'); assert.equal(ab[0].error, 'no_terminal_before_lease_expiry');
+  assert.equal(ab[0].counts.original_run_id, 'newsroom:20:22:a'); assert.equal(ab[0].counts.detected_by, r.run_id); assert.ok(ab[0].counts.detected_at);
+  const started = s.runs.find((x) => x.run_id === 'newsroom:20:22:a' && x.transition === 'STARTED');
+  assert.equal(started.at, '2026-10-04T20:22:53Z', 'the original STARTED row is untouched');
+  // a further run does not append a second ABANDONED
+  await runLane(args(s, async () => ({}), { lane: 'newsroom', cron: CRONS.NEWSROOM, scheduledAt: '2026-10-04T21:07:39Z' }));
+  assert.equal(s.runs.filter((x) => x.transition === 'ABANDONED').length, 1);
+  // health treats it as a killed (failed) run, not running
+  const h = healthFrom([...s.runs].reverse().filter((x) => x.lane === 'newsroom'), null, '2026-10-04T21:08:00Z');
+  assert.equal(h.recent.abandoned, 1);
+  assert.equal(healthFrom([{ transition: 'ABANDONED', run_id: 'x', at: '2026-10-04T21:00:00Z' }], null, '2026-10-04T21:01:00Z').state, 'failed');
+});
+
+test('lease TTL exceeds the Cloudflare cron wall-time cap (15 min) with margin', async () => {
+  const { LEASE_TTL_S } = await import('../workers/pbe-predictions/src/engine-runs.js');
+  assert.ok(LEASE_TTL_S.core > 900 && LEASE_TTL_S.newsroom > 900);
 });
