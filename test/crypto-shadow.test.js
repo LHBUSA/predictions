@@ -173,3 +173,43 @@ test('Coinbase Advanced Trade candles parse to the same bars as the Exchange end
   const adv = parseCoinbaseAdvanced({ candles: [{ start: '1791128580', low: '85326.29', high: '85339.64', open: '85339.63', close: '85334.75', volume: '1.4' }] });
   assert.deepEqual(adv.get(1791128580), ex.get(1791128580));
 });
+
+test('venue settlements (sql/010, audit only): Kalshi result without BRTI values; Polymarket only once UMA-resolved; source timestamps passed through, never derived', async () => {
+  const { kalshiSettlement, polymarketSettlement, captureVenueSettlements } = await import('../src/crypto/btc-shadow.js');
+  const k = kalshiSettlement({ ticker: 'KXBTC15M-X', result: 'no', settlement_ts: '2026-10-04T16:00:07.197596Z', expiration_value: '85269.12', settlement_value_dollars: '0', floor_strike: 85300.1 });
+  assert.deepEqual(k, { market_id: 'KXBTC15M-X', result: 'no', direction: 'DOWN', source_settled_at: '2026-10-04T16:00:07.197596Z', source: 'kalshi markets (via propsports-markets)', ref: { settlement_ts: '2026-10-04T16:00:07.197596Z', status: null } });
+  assert.ok(!/85269|85300|expiration|strike/.test(JSON.stringify(k)));
+  const ev = (over) => ({ slug: 's', markets: [{ conditionId: '0xpm', closed: true, umaResolutionStatus: 'resolved', outcomes: '["Up", "Down"]', outcomePrices: '["0", "1"]', umaEndDate: '2026-10-04T16:01:28Z', closedTime: '2026-10-04 16:01:28+00', ...over }] });
+  assert.equal(polymarketSettlement(ev({ umaResolutionStatus: 'proposed' })), null);
+  assert.equal(polymarketSettlement(ev({ closed: false })), null);
+  const p = polymarketSettlement(ev({}));
+  assert.deepEqual([p.result, p.direction, p.source_settled_at, p.ref.closedTime], ['down', 'DOWN', '2026-10-04T16:01:28Z', '2026-10-04 16:01:28+00']);
+  assert.equal(polymarketSettlement(ev({ umaEndDate: undefined })).source_settled_at, null, 'no source timestamp -> null, never invented');
+
+  const store = fakeStore();
+  store.t.pred_crypto_venue_settlements = [];
+  store.t.pred_crypto_windows.push({ window_id: 'W1', open_at: '2026-10-04T15:45:00Z', close_at: '2026-10-04T16:00:00Z', polymarket_slug: 's', kalshi_market_ticker: 'KXBTC15M-X' });
+  store.t.pred_crypto_resolutions.push({ window_id: 'W1', venue_result: 'no' });
+  const before = JSON.stringify([store.t.pred_crypto_resolutions, store.t.pred_crypto_scores]);
+  const mkt = { marketsByTicker: async (ts) => ts.map((t) => ({ ticker: t, result: 'no', settlement_ts: '2026-10-04T16:00:07Z' })) };
+  let pmCalls = 0;
+  const fetchImpl = async () => { pmCalls += 1; return { ok: true, json: async () => [ev(pmCalls === 1 ? { umaResolutionStatus: 'proposed' } : {})] }; };
+  const r1 = await captureVenueSettlements({ store, mkt, fetchImpl, now: '2026-10-04T16:00:33Z' });
+  assert.deepEqual(r1, { kalshi: 1, polymarket: 0, pending: 1 });
+  const r2 = await captureVenueSettlements({ store, mkt, fetchImpl, now: '2026-10-04T16:20:33Z' });
+  assert.deepEqual(r2, { kalshi: 0, polymarket: 1, pending: 0 });
+  const rows = store.t.pred_crypto_venue_settlements;
+  assert.deepEqual(rows.map((x) => [x.venue, x.result, x.observed_at, x.source_settled_at]), [['kalshi', 'no', '2026-10-04T16:00:33Z', '2026-10-04T16:00:07Z'], ['polymarket', 'down', '2026-10-04T16:20:33Z', '2026-10-04T16:01:28Z']]);
+  assert.deepEqual((await captureVenueSettlements({ store, mkt, fetchImpl, now: '2026-10-04T16:30:00Z' })), { kalshi: 0, polymarket: 0, pending: 0 }, 'one row per window + venue');
+  assert.equal(JSON.stringify([store.t.pred_crypto_resolutions, store.t.pred_crypto_scores]), before, 'frozen resolution + scores untouched');
+});
+
+test('completeness: expected minute ticks vs forecasts written, gap minutes, venue quote misses', async () => {
+  const { windowCompleteness } = await import('../src/crypto/btc-shadow.js');
+  const w = { window_id: 'W', open_at: '2026-10-04T15:45:00Z', close_at: '2026-10-04T16:00:00Z' };
+  const fc = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((m) => ({ captured_at: `2026-10-04T15:${String(45 + m).padStart(2, '0')}:33Z` }));
+  const obs = [{ venue: 'kalshi', mid: 0.5, captured_at: '2026-10-04T15:46:33Z' }, { venue: 'polymarket', mid: null, captured_at: '2026-10-04T15:46:33Z' }];
+  const c = windowCompleteness(w, fc, obs);
+  assert.deepEqual([c.expected_ticks, c.forecasts_written, c.forecast_gaps, c.kalshi_quote_misses, c.polymarket_quote_misses], [14, 13, 1, 13, 14]);
+  assert.deepEqual(c.gap_minutes, ['15:45']);
+});

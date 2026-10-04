@@ -77,7 +77,7 @@ export default {
     // never the engine cycle below. Off unless CRYPTO_SHADOW = "true" (sql/009 applied).
     if (event.cron === BTC_SHADOW_CRON) {
       if (env.CRYPTO_SHADOW !== 'true') return;
-      ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }) })
+      ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })
         .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
       return;
     }

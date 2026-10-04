@@ -1,4 +1,4 @@
-// PGlite proof for sql/009_crypto_shadow.sql (+ ROLLBACK): builds the two prerequisite functions from sql/001 and
+// PGlite proof for sql/009_crypto_shadow.sql + sql/010_crypto_venue_settlements.sql (+ both ROLLBACKs): builds the two prerequisite functions from sql/001 and
 // sql/004, applies 009, runs 009_PROOF.sql (which aborts with PROOF_RESULT), then applies the ROLLBACK.
 //   node scripts/db/prove-009.mjs [path-to-@electric-sql/pglite package dir]
 import { readFileSync } from 'node:fs';
@@ -13,11 +13,14 @@ await db.exec(`create role anon; create role authenticated; create role service_
 await db.exec(fn(sql('001_predictions_ledger.sql'), 'pred_reject_mutation()'));
 await db.exec(fn(sql('004_features_market_free_v2.sql'), 'pred_features_market_free(doc jsonb)'));
 await db.exec(sql('009_crypto_shadow.sql'));
-let result = null;
-try { await db.exec(sql('009_crypto_shadow_PROOF.sql')); } catch (e) { result = String(e.message).replace(/^.*PROOF_RESULT /, ''); }
-console.log('PROOF_RESULT', result);
-const parsed = JSON.parse(result);
-const ok = Object.values(parsed).every((v) => v === true);
+const proof = async (f) => { try { await db.exec(sql(f)); } catch (e) { return JSON.parse(String(e.message).replace(/^.*PROOF_RESULT /, '')); } return null; };
+const parsed = await proof('009_crypto_shadow_PROOF.sql');
+console.log('009 PROOF_RESULT', JSON.stringify(parsed));
+await db.exec(sql('010_crypto_venue_settlements.sql'));
+const parsed10 = await proof('010_crypto_venue_settlements_PROOF.sql');
+console.log('010 PROOF_RESULT', JSON.stringify(parsed10));
+const ok = [parsed, parsed10].every((p) => p && Object.values(p).every((v) => v === true));
+await db.exec(sql('010_crypto_venue_settlements_ROLLBACK.sql'));
 const trunc = await db.exec('truncate pred_crypto_scores').then(() => 'ALLOWED', (e) => `rejected: ${e.message.slice(0, 80)}`);
 console.log('truncate:', trunc);
 await db.exec(sql('009_crypto_shadow_ROLLBACK.sql'));

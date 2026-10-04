@@ -193,7 +193,7 @@ async function sha256Hex(s) { const b = await crypto.subtle.digest('SHA-256', ne
  * One shadow tick: forecast the open window, capture both venues, resolve closed windows from Kalshi's published
  * result, designate and score. Bounded and idempotent (unique keys + ignore-duplicates inserts).
  */
-export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, now = new Date().toISOString() }) {
+export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, now = new Date().toISOString(), settlements = false }) {
   const nowS = Math.floor(Date.parse(now) / 1000);
   const openS = windowOpenFor(nowS);
   const wid = windowId(openS);
@@ -241,6 +241,10 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
 
   // resolve + designate + score the recently closed windows (last 2 h)
   try { Object.assign(out, await settleClosed({ store, mkt, fetchImpl, now, candles })); } catch (e) { out.errors.push({ source: 'settle', error: e.message }); }
+  // audit-only paths (never touch the frozen resolution / scores): venue settlement observations (sql/010) and the
+  // completeness report for the window that just closed (first tick of each new window)
+  if (settlements) { try { out.venue_settlements = await captureVenueSettlements({ store, mkt, fetchImpl, now }); } catch (e) { out.errors.push({ source: 'venue_settlements', error: e.message }); } }
+  if (nowS - openS < 60) { try { out.completeness = await completenessReport({ store, now, hours: 0.25 + 1 / 60 }); } catch (e) { out.errors.push({ source: 'completeness', error: e.message }); } }
   return out;
 }
 
@@ -303,4 +307,91 @@ export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
     if (rows.length) { await store.write('pred_crypto_scores', rows, { conflictColumn: 'designation_id,method' }); res.scores = rows.length; res.detail.scores = rows.map((r) => ({ window: r.window_id, designation: r.designation, method: r.method, outcome: r.outcome, pbe: +Number(r.pbe_score).toFixed(4), kalshi: r.kalshi_score == null ? null : +Number(r.kalshi_score).toFixed(4), polymarket: r.polymarket_score == null ? null : +Number(r.polymarket_score).toFixed(4) })); }
   }
   return res;
+}
+
+// ---- venue settlement observations (sql/010; audit only) ---------------------------------------------------------
+/** Polymarket settled state as supplied: needs closed + UMA resolved + a 1/0 outcome price. Timestamps passed through. */
+export function polymarketSettlement(event) {
+  const m = event?.markets?.[0];
+  if (!m?.closed || m.umaResolutionStatus !== 'resolved') return null;
+  const result = polymarketResult(event);
+  if (!result) return null;
+  return {
+    market_id: String(m.conditionId || m.id || event.slug), result, direction: result.toUpperCase(), source_settled_at: m.umaEndDate || null,
+    source: 'gamma-api events', ref: { umaEndDate: m.umaEndDate ?? null, closedTime: m.closedTime ?? null, umaResolutionStatus: m.umaResolutionStatus, outcomePrices: m.outcomePrices ?? null, resolutionSource: m.resolutionSource ?? null },
+  };
+}
+
+/** Kalshi settled state: identity + result only — never expiration_value / settlement value (BRTI). */
+export function kalshiSettlement(m) {
+  if (!m || !['yes', 'no'].includes(m.result)) return null;
+  return { market_id: m.ticker, result: m.result, direction: m.result === 'yes' ? 'UP' : 'DOWN', source_settled_at: m.settlement_ts || null, source: 'kalshi markets (via propsports-markets)', ref: { settlement_ts: m.settlement_ts ?? null, status: m.status ?? null } };
+}
+
+/** First observation of each venue's settlement for windows closed in the last 48 h; one row per window + venue. */
+export async function captureVenueSettlements({ store, mkt, fetchImpl, now, maxPolymarket = 8 }) {
+  const out = { kalshi: 0, polymarket: 0, pending: 0 };
+  const nowMs = Date.parse(now);
+  const windows = await store.select('pred_crypto_windows', { select: 'window_id,open_at,close_at,polymarket_slug,kalshi_market_ticker', close_at: `lte.${now}`, and: `(close_at.gte.${new Date(nowMs - 48 * 3600e3).toISOString()})` });
+  if (!windows.length) return out;
+  const ids = windows.map((w) => w.window_id);
+  const have = new Set((await store.selectIn('pred_crypto_venue_settlements', { select: 'window_id,venue' }, 'window_id', ids)).map((x) => `${x.window_id}|${x.venue}`));
+  const obs = await store.selectIn('pred_crypto_venue_obs', { select: 'window_id,venue,market_id' }, 'window_id', ids);
+  const rows = [];
+  const kTickers = new Map();
+  for (const w of windows) {
+    if (have.has(`${w.window_id}|kalshi`)) continue;
+    const t = w.kalshi_market_ticker || obs.find((o) => o.window_id === w.window_id && o.venue === 'kalshi')?.market_id;
+    if (t) kTickers.set(t, w);
+  }
+  if (kTickers.size) {
+    for (const m of await mkt.marketsByTicker([...kTickers.keys()].slice(0, 50))) {
+      const st = kalshiSettlement(m);
+      if (st) { rows.push({ window_id: kTickers.get(m.ticker).window_id, venue: 'kalshi', observed_at: now, ...st }); out.kalshi += 1; } else out.pending += 1;
+    }
+  }
+  let pm = 0;
+  for (const w of windows) {
+    if (have.has(`${w.window_id}|polymarket`) || !w.polymarket_slug || pm >= maxPolymarket) continue;
+    pm += 1;
+    const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${w.polymarket_slug}`, { headers: { 'user-agent': UA, accept: 'application/json' }, cache: 'no-store' });
+    const st = r.ok ? polymarketSettlement((await r.json())?.[0]) : null;
+    if (st) { rows.push({ window_id: w.window_id, venue: 'polymarket', observed_at: now, ...st }); out.polymarket += 1; } else out.pending += 1;
+  }
+  if (rows.length) await store.write('pred_crypto_venue_settlements', rows, { conflictColumn: 'window_id,venue' });
+  return out;
+}
+
+// ---- operational completeness (report only; reads the ledger, writes nothing) -----------------------------------
+/** Pure: per window, expected minute ticks (open .. close - 60 s), forecasts written, venue quote misses. */
+export function windowCompleteness(w, forecasts, obs) {
+  const open = Date.parse(w.open_at) / 1000; const close = Date.parse(w.close_at) / 1000;
+  const minutes = [];
+  for (let t = open; t < close - 60; t += 60) minutes.push(t);
+  const inMinute = (iso, t) => { const x = Date.parse(iso) / 1000; return x >= t && x < t + 60; };
+  const fMin = minutes.filter((t) => forecasts.some((f) => inMinute(f.captured_at, t)));
+  const quoted = (venue) => minutes.filter((t) => obs.some((o) => o.venue === venue && o.mid != null && inMinute(o.captured_at, t))).length;
+  return {
+    window: w.window_id, expected_ticks: minutes.length, forecasts_written: fMin.length, forecast_gaps: minutes.length - fMin.length,
+    gap_minutes: minutes.filter((t) => !fMin.includes(t)).map((t) => new Date(t * 1000).toISOString().slice(11, 16)),
+    kalshi_quote_misses: minutes.length - quoted('kalshi'), polymarket_quote_misses: minutes.length - quoted('polymarket'),
+  };
+}
+
+export async function completenessReport({ store, now, hours = 24 }) {
+  const nowMs = Date.parse(now);
+  const windows = await store.select('pred_crypto_windows', { select: 'window_id,open_at,close_at', close_at: `lte.${now}`, and: `(close_at.gte.${new Date(nowMs - hours * 3600e3).toISOString()})` });
+  if (!windows.length) return { windows: 0 };
+  const ids = windows.map((w) => w.window_id);
+  const [forecasts, obs] = await Promise.all([
+    store.selectIn('pred_crypto_forecasts', { select: 'window_id,captured_at' }, 'window_id', ids),
+    store.selectIn('pred_crypto_venue_obs', { select: 'window_id,venue,captured_at,mid' }, 'window_id', ids),
+  ]);
+  const per = windows.map((w) => windowCompleteness(w, forecasts.filter((f) => f.window_id === w.window_id), obs.filter((o) => o.window_id === w.window_id)));
+  const sum = (k) => per.reduce((a, x) => a + x[k], 0);
+  return {
+    since: new Date(nowMs - hours * 3600e3).toISOString(), windows: per.length, expected_ticks: sum('expected_ticks'), forecasts_written: sum('forecasts_written'), forecast_gaps: sum('forecast_gaps'),
+    kalshi_quote_misses: sum('kalshi_quote_misses'), polymarket_quote_misses: sum('polymarket_quote_misses'), per_window: per,
+    note: 'gap reasons (exchange-source error, stale underlying, settlement window) are in each tick btc_shadow log line (Workers observability)',
+  };
 }
