@@ -248,7 +248,10 @@ export async function eventRecord(store, slug, { now = new Date().toISOString(),
     if (lf) {
       const { packet, sha256 } = await buildEvidencePacket({ event: e, contract: c, forecast: lf, snapshot: featById.get(lf.feature_snapshot_id) || null, limitations: famRow?.limitations ?? [] });
       const decision = decide(decisionInput({ forecast: lf, contract: c, integrityOk: packet.integrity.ok, asOf: now, isModal: exclusiveEvent ? Number(lf.probability) >= modalP : null, exclusive: exclusiveEvent }));
-      call = { forecast_id: lf.forecast_id, pbe_pct: pct(lf.probability), confidence: lf.confidence, model: `${lf.model_id}@${lf.model_version}`, model_state: lf.model_state, published_at: lf.captured_at, data_cutoff_at: lf.data_cutoff_at, evidence_sha256: sha256, evidence: packet, summary: driverSentence(packet), decision };
+      const intraday = /-intraday$/.test(lf.model_id);
+      const pre = intraday ? [...fs].reverse().find((f) => !/-intraday$/.test(f.model_id)) : null;
+      call = { forecast_id: lf.forecast_id, pbe_pct: pct(lf.probability), confidence: lf.confidence, model: `${lf.model_id}@${lf.model_version}`, model_state: lf.model_state, published_at: lf.captured_at, data_cutoff_at: lf.data_cutoff_at, evidence_sha256: sha256, evidence: packet, summary: driverSentence(packet), decision,
+        intraday, prewindow: pre ? { pbe_pct: pct(pre.probability), model: `${pre.model_id}@${pre.model_version}`, published_at: pre.captured_at } : null };
     }
     return {
       ...outcomeSummary(c, lf, lm),

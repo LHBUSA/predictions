@@ -49,7 +49,7 @@ export function liveUpdate(rec, marketId, story, built = null) {
   const updates = []; let last = pubPbe;
   for (const h of after) { if (last === null || Math.abs(h.pct - last) >= UPDATE_PTS) { updates.push(h); last = h.pct; } }
   const obs = L.observations;
-  const pbeLabel = L.pbe_frozen ? `PBE · pre-window, frozen ${fmtUtc(L.pbe_frozen.frozen_at)}` : 'PBE';
+  const pbeLabel = o.call?.intraday ? 'PBE · live intraday' : L.pbe_frozen ? `PBE · pre-window, frozen ${fmtUtc(L.pbe_frozen.frozen_at)}` : 'PBE';
   return `<section class="ix-live" aria-labelledby="live-h"><div class="ix-live-head"><span class="ix-pulse" aria-hidden="true"></span><span id="live-h">LIVE UPDATE · not part of the original story</span></div>
 <h3>${esc(rec.event.title)}</h3><p class="note" style="color:#a9bccf">${esc(o.label)} · <b>${esc(state)}</b></p>
 <div class="ix-live-grid"><div><span>${esc(pbeLabel)}</span><b>${o.pbe_pct !== null ? `${o.pbe_pct}%` : '—'}</b>${since(o.pbe_pct, pubPbe)}</div><div><span>Kalshi</span><b>${k?.mid_pct !== null && k?.mid_pct !== undefined ? `${k.mid_pct}%` : `<small style="font-size:13px">${k ? 'No two-sided quote' : 'Awaiting market'}</small>`}</b>${since(k?.mid_pct, pubMkt)}</div><div><span>Gap</span><b class="${o.divergence_pts > 0 ? 'pos' : o.divergence_pts < 0 ? 'neg' : ''}">${o.divergence_pts !== null ? `${sign(o.divergence_pts)}` : '<small style="font-size:13px">No comparable quote</small>'}</b></div></div>

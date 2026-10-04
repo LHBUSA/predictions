@@ -42,6 +42,17 @@ export const DRIVER_SPECS = Object.freeze({
     { feature: 'ewma_daily_sigma', label: 'Daily yield volatility (EWMA)', show: (v) => [num(Number(v) * 100, 1), ' bp'], source: /Treasury/ },
     { feature: 'last_published_date', label: 'Latest published value date', show: (v) => [v, ''], source: /Treasury/ },
   ],
+  'pbe-weather-maxtemp-intraday': [
+    { feature: 'obs_max_so_far_f', label: 'Observed high so far at the resolution station', show: (v) => [num(v, 1), '°F'], source: /ASOS|observation|METAR/i },
+    { feature: 'current_temp_f', label: 'Latest temperature reading', show: (v) => [num(v, 1), '°F'], source: /ASOS|observation|METAR/i },
+    { feature: 'guidance_max_temp_f', label: 'Latest guidance high for the day', show: (v) => [v, '°F'], source: /National Blend|GFS MOS/ },
+    { feature: 'hours_remaining', label: 'Hours left in the climate day', show: (v) => [num(v, 1), ' h'], source: /ASOS|observation|METAR/i },
+  ],
+  'pbe-weather-precip-intraday': [
+    { feature: 'measurable_precip_observed', label: 'Measurable rain reported at the station', show: (v) => [v ? 'yes' : 'no', ''], source: /ASOS|observation|METAR/i },
+    { feature: 'remaining_pop', label: 'Chance of rain in the remaining hours (guidance)', show: (v) => [pctOf(v), '%'], source: /National Blend|GFS MOS/ },
+    { feature: 'hours_remaining', label: 'Hours left in the climate day', show: (v) => [num(v, 1), ' h'], source: /ASOS|observation|METAR/i },
+  ],
   'pbe-fed-decision': [
     { feature: 'cmt6m_minus_target_mid', label: '6-month Treasury minus target-range midpoint', show: (v) => [num(v, 2), ' pp'], source: /DGS6MO|FRED/ },
     { feature: 'cmt6m_change_since_last_decision', label: '6-month Treasury change since last decision', show: (v) => [num(v, 2), ' pp'], source: /DGS6MO|FRED/ },

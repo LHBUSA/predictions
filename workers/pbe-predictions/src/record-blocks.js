@@ -23,12 +23,13 @@ export function callBlock(h) {
   const d = c.decision?.official ? c.decision : null;
   const state = d ? (d.state === 'CALL' ? `CALL ${d.side}` : d.state) : null;
   const fz = h.live?.pbe_frozen;
-  const kicker = d ? 'PBE CALL' : fz ? `PRE-WINDOW FORECAST · FROZEN ${utcHM(fz.frozen_at)}` : 'PBE FORECAST';
+  const kicker = d ? 'PBE CALL' : c.intraday ? `LIVE INTRADAY PBE · UPDATED ${utcHM(c.published_at)}` : fz ? `PRE-WINDOW FORECAST · FROZEN ${utcHM(fz.frozen_at)}` : 'PBE FORECAST';
   return `<section class="card panel v4-call${fz ? ' is-frozen' : ''}" aria-labelledby="call-h"><span class="v4-kicker">${esc(kicker)}</span>
 <h2 id="call-h" class="sr-only">${d ? 'The call' : 'The PBE forecast'} — ${esc(h.label)}</h2>
 <div class="v4-callrow"><strong class="num v4-big">${state ? `${esc(state)} · ` : ''}${pctTxt(c.pbe_pct)}</strong><span class="v4-callmeta"><b>${esc(h.label)}</b><span>Confidence: <b>${esc(c.confidence || '—')}</b> · Model: <b class="mono">${esc(c.model)}</b> · ${esc((c.model_state || '').toLowerCase())}</span><span>Published ${utc(c.published_at)} · data cutoff ${utc(c.data_cutoff_at)}</span></span></div>
 ${d && d.state !== 'CALL' ? `<p class="note">${esc(d.reasons.join(' · ').replace(/_/g, ' ').toLowerCase())}</p>` : ''}
 ${c.summary ? `<p class="v4-summary">${esc(c.summary)}</p>` : ''}
+${c.intraday && c.prewindow ? `<p class="v4-frozen-note">Live intraday model: recomputed from the resolution station's observations and the latest guidance whenever they change. The pre-window forecast was <b>${pctTxt(c.prewindow.pbe_pct)}</b> (${esc(c.prewindow.model)}, frozen ${utc(c.prewindow.published_at)}) and is kept unchanged in the record.</p>` : ''}
 ${fz ? `<p class="v4-frozen-note">This is the last pre-window forecast. The pre-window model stops when the climate day opens (${utc(h.live.window.start)}), so this number is not a live estimate. Live readings from the resolution station are below.</p>` : ''}</section>`;
 }
 

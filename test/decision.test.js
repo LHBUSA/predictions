@@ -3,6 +3,7 @@
 // the evidence packet hash and CALL/PASS/HOLD byte-identical.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { decide, decisionInput, assertDecisionInput, DECISION_POLICY, DECISION_INPUT_KEYS, REASONS, isOfficial, policyHash } from '../src/engine/decision.js';
 import { buildEvidencePacket, checkIntegrity, canonicalJson, driverSentence, DRIVER_SPECS } from '../src/engine/evidence.js';
 import { MarketLeakageError } from '../src/engine/leakage.js';
@@ -99,7 +100,10 @@ test('every live feature named in a driver spec exists in the model outputs (no 
   const r = await runAllLanes({ nbm: true });
   const seen = new Map();
   for (const fs of r.writes.features) for (const k of Object.keys(fs.features)) seen.set(`${fs.model_id}|${k}`, true);
-  for (const [fam, spec] of Object.entries(DRIVER_SPECS)) for (const s of spec) assert.ok(seen.has(`${fam}|${s.feature}`), `${fam}.${s.feature}`);
+  for (const [fam, spec] of Object.entries(DRIVER_SPECS)) { if (/-intraday$/.test(fam)) continue; for (const s of spec) assert.ok(seen.has(`${fam}|${s.feature}`), `${fam}.${s.feature}`); }
+  // intraday families: every driver feature is a feature the intraday engine actually emits
+  const eng = readFileSync(new URL('../src/weather/intraday/engine.js', import.meta.url), 'utf8');
+  for (const fam of ['pbe-weather-maxtemp-intraday', 'pbe-weather-precip-intraday']) for (const s of DRIVER_SPECS[fam]) assert.ok(eng.includes(`name: '${s.feature}'`), `${fam}.${s.feature}`);
 });
 
 function mulberry32(seed) { return () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
