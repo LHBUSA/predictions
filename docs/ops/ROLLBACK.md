@@ -155,3 +155,14 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
 - main `90a95dd`, Worker `8cd99fd7`: crons FAST '* * * * *' / CORE '*/15 * * * *' / NEWSROOM '7,22,37,52 * * * *',
   dispatched by identity. Kill switch ENGINE_RUNS (lanes still split, no lease/heartbeat). Code rollback: `846b3e1b`
   (old */15 engine-then-newsroom; its two crons only — redeploying it drops the newsroom cron).
+
+## Live cadence: core every 2 min, newsroom every 5 min (2026-10-04, owner P0)
+- Core parallel I/O: main `f9f21ed`, Worker `6b224593` (crons unchanged */15). Same requests, same writes
+  (scripts/ops/cycle-golden.mjs byte-identical); first production run 15.1 s (baseline 31-150 s).
+- Cadence: main `e115a57`, Worker `db2cf406`: CORE '*/2 * * * *', NEWSROOM '1,6,11,...,56 * * * *', FAST unchanged.
+- **Crons and code must move together.** A version rollback alone (`wrangler rollback`) does NOT change triggers, and
+  older code maps an unknown cron to no lane (core silently stops). Roll back by redeploying source:
+  - to 15-min with the optimization: `git checkout f9f21ed -- workers/pbe-predictions` then `npx wrangler deploy`
+    (restores '*/15' + '7,22,37,52' and the matching CRONS), then `git checkout main -- workers/pbe-predictions`.
+  - full pre-change: same with `e190964` (Worker was `bbc9a2f4`).
+- Fallback cadence (owner rule): if 2 min fails the safety gate, 3 min ('*/3'), never 15 without owner approval.
