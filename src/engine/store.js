@@ -12,6 +12,13 @@ const DEFAULT_ORDER = {
 
 export const inList = (ids) => `in.(${ids.map((i) => `"${String(i).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')})`;
 export function chunk(arr, n = 40) { const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
+// Bounded-concurrency map; results keep input order (callers stay deterministic).
+export async function pool(items, limit, fn) {
+  const out = new Array(items.length); let next = 0;
+  const worker = async () => { while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); } };
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, limit), items.length) }, worker));
+  return out;
+}
 
 export class EngineStore extends SupabasePredictionsLedger {
   // limit = maximum rows wanted in total (default: everything); pages of 1000 until a short page.
@@ -34,11 +41,10 @@ export class EngineStore extends SupabasePredictionsLedger {
     return rows;
   }
 
-  // select with a long id list: chunked `in.(...)` filters, each chunk paged.
+  // select with a long id list: chunked `in.(...)` filters, each chunk paged; chunks read 4 at a time, concatenated in order.
   async selectIn(table, query, column, ids, opts = {}) {
-    const out = [];
-    for (const part of chunk([...new Set(ids)], opts.chunkSize || 40)) out.push(...await this.select(table, { ...query, [column]: inList(part) }, opts));
-    return out;
+    const parts = await pool(chunk([...new Set(ids)], opts.chunkSize || 40), opts.concurrency || 4, (part) => this.select(table, { ...query, [column]: inList(part) }, opts));
+    return parts.flat();
   }
 
   insertMany(table, rows, conflictColumn) {

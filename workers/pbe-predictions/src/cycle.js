@@ -16,7 +16,7 @@ import { MarketsService, MarketsBackoffError } from './markets.js';
 import { forecastFed, fetchFredSeries, FED_INPUT_SERIES, FED_CONTEXT_SERIES, FED_MODEL } from '../../../src/macro/engine.js';
 import { valueAsOf } from '../../../src/macro/fed-model.js';
 import { forecastRates, ratesOfficialOutcome, parseTreasuryCsv, TREASURY_CSV, RATES_MODEL } from '../../../src/rates/engine.js';
-import { chunk } from '../../../src/engine/store.js';
+import { chunk, pool } from '../../../src/engine/store.js';
 import { slugify } from '../../../src/vendor/propsports-markets/core.js';
 import { scoringReference } from '../../../src/engine/designations.js';
 import { writeDecisions } from './decision-ledger.js';
@@ -24,6 +24,8 @@ import { writeDecisions } from './decision-ledger.js';
 export const USER_AGENT = 'PropBetEdgePredictions/1.0 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const bpToProb = (bp) => (bp === null || bp === undefined ? null : bp / 10000);
 const hourBucket = (iso) => iso.slice(0, 13);
+// bounded I/O fan-out for the core cycle (wall time was the serial sum of ~300 awaited requests)
+const MARKET_CONCURRENCY = 4; const SOURCE_CONCURRENCY = 6; const DB_CONCURRENCY = 6;
 
 export function contractRow(c, eventId) {
   return {
@@ -67,10 +69,17 @@ async function cachedJson(fetchImpl, url, init, ttl) {
 // Domain-source capture for one station, cached at the edge (MOS 30 min, NWS grid 60 min).
 export async function weatherSources(st, { fetchImpl, now }) {
   const cachingFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 1800, cacheEverything: true } });
-  const mos = await fetchUsableRun({ icao: st.icao, now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+  // the three sources are independent: fetched together (wall time = slowest, not the sum); same error semantics and
+  // observation order as the former sequential capture (MOS required, grid optional, NBM failure holds the station)
+  const [mosR, gridR, nbmR] = await Promise.allSettled([
+    fetchUsableRun({ icao: st.icao, now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT }),
+    fetchGridpoint({ lat: st.lat, lon: st.lon }, { fetchImpl: (u, i) => fetchImpl(u, { ...i, cf: { cacheTtl: 3600, cacheEverything: true } }), userAgent: USER_AGENT }),
+    fetchUsableRun({ icao: st.icao, model: 'NBS', now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT }),
+  ]);
+  if (mosR.status === 'rejected') throw mosR.reason;
+  const mos = mosR.value;
   if (!mos.runtime) throw new Error(`no usable GFS MOS run for ${st.icao}`);
-  let grid = null;
-  try { grid = await fetchGridpoint({ lat: st.lat, lon: st.lon }, { fetchImpl: (u, i) => fetchImpl(u, { ...i, cf: { cacheTtl: 3600, cacheEverything: true } }), userAgent: USER_AGENT }); } catch (e) { grid = { error: e.message }; }
+  const grid = gridR.status === 'fulfilled' ? gridR.value : { error: gridR.reason?.message };
   const mosObs = {
     provider: 'NWS GFS MOS (MAV) via IEM', sourceId: `mos:GFS:${st.icao}:${mos.runtime}`, sourceClass: 'official',
     observedAt: mos.runtime, availableAt: runAvailableAt(mos.runtime) < now ? runAvailableAt(mos.runtime) : now, capturedAt: now, revision: mos.runtime,
@@ -79,7 +88,8 @@ export async function weatherSources(st, { fetchImpl, now }) {
   };
   const out = { mos: { ...mos, observationKey: sourceObservationKey(mosObs) }, observations: [mosObs], grid: null, nbm: null };
   try {
-    const nbm = await fetchUsableRun({ icao: st.icao, model: 'NBS', now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
+    if (nbmR.status === 'rejected') throw nbmR.reason;
+    const nbm = nbmR.value;
     if (nbm.runtime) {
       const nbmObs = {
         provider: 'NWS National Blend of Models (NBS) via IEM', sourceId: `mos:NBS:${st.icao}:${nbm.runtime}`, sourceClass: 'official',
@@ -129,9 +139,12 @@ async function treasuryInputs({ fetchImpl, now }) {
   const year = Number(now.slice(0, 4));
   const urls = [TREASURY_CSV(year - 1), TREASURY_CSV(year)];
   const rows = [];
-  for (const url of urls) {
+  // both years fetched together (the current-year CSV alone has taken 18-19 s on an edge-cache miss)
+  const fetched = await Promise.all(urls.map(async (url) => {
     const res = await fetchImpl(url, { headers: { accept: 'text/csv', 'user-agent': USER_AGENT }, cf: { cacheTtl: 1800, cacheEverything: true } });
-    const text = await res.text();
+    return { res, text: await res.text() };
+  }));
+  for (const { res, text } of fetched) {
     const parsed = res.ok ? parseTreasuryCsv(text) : [];
     if (!res.ok || parsed.length < 20) throw new Error(`Treasury par curve ${res.status} ${res.headers.get('content-type')} ${parsed.length} rows: ${text.slice(0, 120).replace(/\s+/g, ' ')}`);
     rows.push(...parsed);
@@ -170,15 +183,60 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   let fredSources = null;
   let treasurySources = null;
 
-  for (const seriesTicker of seriesList) {
+  // 1. market reads, MARKET_CONCURRENCY series in flight, results kept in series order. A rate-limit backoff from the
+  //    canonical market service stops every series not yet started (never pushed through), as the serial loop did.
+  let backoff = false;
+  const reads = await pool(seriesList, MARKET_CONCURRENCY, async (seriesTicker) => {
+    if (backoff) return { skipped: true };
+    try { const series = await mkt.series(seriesTicker); const { events } = await mkt.openEvents(seriesTicker); return { series, events }; } catch (e) {
+      if (e instanceof MarketsBackoffError) backoff = true;
+      return { error: e };
+    }
+  });
+  let tp0 = phase('market_reads', tPhase);
+  // 2. normalize once (memoized; deterministic for a fixed `now`) and collect every domain input the forecasts need,
+  //    then fetch all of them together: stations SOURCE_CONCURRENCY at a time, FRED and Treasury alongside.
+  const normCache = new Map();
+  const normalizeOnce = (series, ev, m) => {
+    const k = `${ev.event_ticker}|${m.ticker}`;
+    if (!normCache.has(k)) { const p = normalizeContract({ series, event: ev, market: m }, { now }); p.catch(() => {}); normCache.set(k, p); }
+    return normCache.get(k);
+  };
+  const needStations = new Map(); let needFred = false; let needTreasury = false;
+  for (const r of reads) {
+    if (!r.events) continue;
+    for (const ev of r.events) {
+      for (const m of ev.markets || []) {
+        try {
+          const c = await normalizeOnce(r.series, ev, m);
+          if (c.normalization_status !== 'NORMALIZED') continue;
+          if (c.category === 'RATES') needTreasury = true;
+          else if (c.domain === 'MACRO') needFred = true;
+          else { const st = cliStation(c.station_id); if (!needStations.has(st.cli)) needStations.set(st.cli, st); }
+        } catch { /* surfaces as this series' error in the compute pass below, exactly as before */ }
+      }
+    }
+  }
+  const [stationResults] = await Promise.all([
+    pool([...needStations.values()], SOURCE_CONCURRENCY, (st) => weatherSources(st, { fetchImpl, now }).catch((e) => ({ error: e.message }))),
+    needTreasury ? treasuryInputs({ fetchImpl, now }).then((v) => { treasurySources = v; }, (e) => { treasurySources = { error: e.message }; }) : null,
+    needFred ? fredInputs({ fetchImpl, now }).then((v) => { fredSources = v; }, (e) => { fredSources = { error: e.message }; }) : null,
+  ]);
+  [...needStations.keys()].forEach((cli, i) => stationSources.set(cli, stationResults[i]));
+  tp0 = phase('domain_inputs', tp0);
+
+  // 3. compute (no network I/O for prefetched inputs; the lazy fetches below remain only as a fallback)
+  for (const [i, seriesTicker] of seriesList.entries()) {
+    const read = reads[i];
+    if (read.skipped) continue;
     try {
-      const series = await mkt.series(seriesTicker);
-      const { events } = await mkt.openEvents(seriesTicker);
+      if (read.error) throw read.error;
+      const { series, events } = read;
       summary.series[seriesTicker] = events.length;
       for (const ev of events) {
         const eventId = `PBE-${ev.event_ticker}`;
         const contracts = [];
-        for (const m of ev.markets || []) contracts.push(await normalizeContract({ series, event: ev, market: m }, { now }));
+        for (const m of ev.markets || []) contracts.push(await normalizeOnce(series, ev, m));
         const normalized = contracts.filter((c) => c.normalization_status === 'NORMALIZED');
         for (const c of contracts) summary.contracts[c.normalization_status] += 1;
         const domain = contracts[0]?.domain || 'OTHER';
@@ -247,7 +305,8 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
       if (e instanceof MarketsBackoffError) break;
     }
   }
-  let tp = phase('series_and_inputs', tPhase);
+  phase('compute', tp0);
+  let tp = phase('series_and_inputs', tPhase); // total of market_reads + domain_inputs + compute
   for (const s of stationSources.values()) if (s.observations) writes.observations.push(...s.observations.map(observationRow));
   if (fredSources?.observations) writes.observations.push(...fredSources.observations.map(observationRow));
   if (treasurySources?.observations) writes.observations.push(...treasurySources.observations.map(observationRow));
@@ -271,16 +330,15 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   if (treasurySources?.rows) summary.treasury = { rows: treasurySources.rows.length, first: treasurySources.rows[0]?.date, last: treasurySources.rows.at(-1)?.date, last10y: treasurySources.rows.at(-1)?.[10] };
   if (dryRun || !store) return { summary, writes };
 
-  for (const e of writes.events) {
+  // FK order: events -> contracts -> (venue snapshots | source observations | feature snapshots) -> forecasts
+  await pool(writes.events, DB_CONCURRENCY, async (e) => {
     try { await store.upsertEventRow(e); } catch (err) {
       if (!/slug|duplicate|unique/i.test(err.message)) throw err;
       await store.upsertEventRow({ ...e, slug: `${e.slug}-${slugify(e.venue_event_id)}` }); // title collision with another event
     }
-  }
+  });
   await store.insertContracts(writes.contracts);
-  await store.insertVenueSnapshots(writes.venue);
-  await store.insertObservations(writes.observations);
-  await store.insertFeatureRows(writes.features);
+  await Promise.all([store.insertVenueSnapshots(writes.venue), store.insertObservations(writes.observations), store.insertFeatureRows(writes.features)]);
   await store.insertForecastRows(writes.forecasts);
   tp = phase('ledger_writes', tp);
 
@@ -322,9 +380,13 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
   const contracts = await store.select('pred_contracts', { select: '*', normalization_status: 'eq.NORMALIZED', observation_end: `gte.${since}` });
   if (!contracts.length) return out;
   const ids = contracts.map((c) => c.contract_id);
-  const forecasts = await store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,model_id,probability,market_probability,captured_at' }, 'contract_id', ids);
+  // independent reads, issued together (designations do not depend on this cycle's resolution inserts)
+  let [forecasts, resolutions, designations] = await Promise.all([
+    store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,model_id,probability,market_probability,captured_at' }, 'contract_id', ids),
+    store.selectIn('pred_resolutions', { select: 'resolution_id,contract_id,outcome,venue_result,resolved_at' }, 'contract_id', ids),
+    store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', ids),
+  ]);
   const withForecast = new Set(forecasts.map((f) => f.contract_id));
-  let resolutions = await store.selectIn('pred_resolutions', { select: 'resolution_id,contract_id,outcome,venue_result,resolved_at' }, 'contract_id', ids);
   const resolvedSet = new Set(resolutions.map((r) => r.contract_id));
 
   // 1. resolution: window ended (or a path contract that may have settled early); venue settlement via canonical service
@@ -373,7 +435,6 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
   const resByContract = new Map(resolutions.map((r) => [r.contract_id, r]));
 
   // 2. designations
-  const designations = await store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', ids);
   const newDes = [];
   for (const c of contracts) {
     const fs = forecasts.filter((f) => f.contract_id === c.contract_id);
@@ -390,7 +451,7 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
       }
     }
   }
-  for (const d of newDes) { try { await store.write('pred_forecast_designations', d, {}); out.designations += 1; designations.push(d); } catch (e) { if (!/duplicate|unique|after resolution/i.test(e.message)) throw e; } }
+  await pool(newDes, DB_CONCURRENCY, async (d) => { try { await store.write('pred_forecast_designations', d, {}); out.designations += 1; designations.push(d); } catch (e) { if (!/duplicate|unique|after resolution/i.test(e.message)) throw e; } });
 
   // 2b. decision ledger (sql/006): one immutable row per FINAL_PRE_RESOLUTION designation captured after the freeze
   if (env.DECISIONS_DB === 'true') {
@@ -400,8 +461,7 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
   // 3. scoring: every designation of a resolved contract not yet scored
   const resolvedIds = [...resByContract.keys()];
   if (resolvedIds.length) {
-    const allDes = await store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', resolvedIds);
-    const scored = await store.selectIn('pred_scores', { select: 'forecast_id,designation' }, 'contract_id', resolvedIds);
+    const [allDes, scored] = await Promise.all([store.selectIn('pred_forecast_designations', { select: '*' }, 'contract_id', resolvedIds), store.selectIn('pred_scores', { select: 'forecast_id,designation' }, 'contract_id', resolvedIds)]);
     const done = new Set(scored.map((x) => `${x.forecast_id}|${x.designation}`));
     const fById = new Map(forecasts.map((f) => [f.forecast_id, f]));
     const rows = [];
@@ -412,7 +472,7 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
       if (!r || !f || !['yes', 'no'].includes(r.venue_result)) continue;
       rows.push(...scoreRows({ designation: d.designation, forecast: f, resolution: r, outcome: r.venue_result === 'yes' ? 1 : 0 }));
     }
-    for (const row of rows) { try { await store.write('pred_scores', row, {}); out.scores += 1; } catch (e) { if (!/duplicate|unique/i.test(e.message)) throw e; } }
+    await pool(rows, DB_CONCURRENCY, async (row) => { try { await store.write('pred_scores', row, {}); out.scores += 1; } catch (e) { if (!/duplicate|unique/i.test(e.message)) throw e; } });
   }
   return out;
 }
