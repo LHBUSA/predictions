@@ -5,6 +5,7 @@ import { buildEvidencePacket, driverSentence, driversFor } from '../../../src/en
 import { decide, decisionInput } from '../../../src/engine/decision.js';
 import { venueBlock, kalshiQuote, polymarketQuote, brier, logLoss, NO_OBSERVATION, semantics, divergence, freshness } from '../../../src/engine/venues.js';
 import { polymarketForContracts, coverageFromTicks } from './venue-data.js';
+import { loadStationObservations, liveForOutcome } from './live-state.js';
 
 // Per designation: PBE (stored score) vs Kalshi vs Polymarket at the SAME designated forecast timestamp. A venue
 // is scored only when comparable and observed at or before that timestamp; otherwise its reason is recorded.
@@ -225,6 +226,7 @@ export async function eventRecord(store, slug, { now = new Date().toISOString(),
   const featById = new Map(features.map((x) => [x.snapshot_id, x]));
   const pm = await polymarketForContracts(store, [...new Set(contracts.map((c) => c.market_id))], e.event_id);
   const pmCoverage = coverageFromTicks(pm.ticks);
+  const obsByIcao = contracts.some((c) => c.station_id && c.observation_start && Date.parse(c.observation_start) <= Date.parse(now)) ? await loadStationObservations(store, contracts) : new Map();
   const famRow = FAMILIES.find((f) => f.id === e.model_family) || null;
   const exclusiveEvent = distributionKind(e, contracts) === 'exclusive';
   const latestPublic = new Map();
@@ -252,6 +254,7 @@ export async function eventRecord(store, slug, { now = new Date().toISOString(),
       ...outcomeSummary(c, lf, lm),
       venues: { kalshi, polymarket },
       call,
+      live: liveForOutcome(c, call, obsByIcao, now),
       yes_condition: c.yes_condition, threshold_low: c.threshold_low, threshold_high: c.threshold_high, comparator: c.comparator,
       evidence: lf?.explanation?.evidence ?? [], provenance: lf?.provenance ?? [], data_cutoff_at: lf?.data_cutoff_at ?? null, tier: lf?.explanation?.model_tier ?? null,
       history: fs.map((f, i) => {

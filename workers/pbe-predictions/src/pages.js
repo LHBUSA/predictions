@@ -9,9 +9,10 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261004i1';
+export const ASSET_V = '20261004l1';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
-import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord } from './record-blocks.js';
+import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
+export const LIVE_V = '20261004l1';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
 const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
@@ -175,15 +176,16 @@ ${(c.exceptions || []).length ? `<dt>Exceptions</dt><dd>${(c.exceptions || []).m
 </dl>${c.rules_primary_example ? `<p class="note" style="margin-top:10px">Venue rule (example outcome):</p><div class="rules">${esc(c.rules_primary_example)}</div>` : ''}</section>` : '';
   const model = rec.model ? `<section class="card panel"><h2>Model</h2><dl class="kv"><dt>Family</dt><dd>${esc(rec.model.name)} (${esc(rec.model.id)})</dd><dt>State</dt><dd>${badge(rec.model.state)}</dd><dt>Versions here</dt><dd>${esc(rec.model.versions.join(', '))}</dd><dt>Inputs</dt><dd>${esc(rec.model.inputs)}</dd><dt>Data cutoff</dt><dd>${utc(h?.data_cutoff_at)}</dd>${h?.tier ? `<dt>Tier</dt><dd>${esc(h.tier)}</dd>` : ''}</dl><p class="note" style="margin-top:10px"><b>Known limitations:</b> ${rec.model.limitations.map(esc).join(' · ')}</p></section>` : '';
   const citation = `PropBetEdge Predictions. "${e.title}" forecast record${rec.model ? `, ${rec.model.id} (${rec.model.state.toLowerCase()})` : ''}. ${canonical} (retrieved ${new Date().toISOString().slice(0, 10)}).`;
-  const body = `<main class="wrap">
+  const body = `<main class="wrap" data-live-src="/api/live/event/${esc(e.slug)}">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="https://propbetedge.ai/">PropBetEdge</a> › <a href="/">Predictions</a> › <a href="/?category=${encodeURIComponent(e.category)}#desk">${esc(e.category_label)}</a> › ${esc(e.venue_event_id)}</nav>
 <header class="ev-head"><div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
 <h1>${esc(e.title)}</h1>
 ${shareBar(canonical, e.title)}
-<div class="ev-meta"><span>Latest PBE forecast: <b class="num">${utc(e.latest_forecast_at)}</b></span><span>Latest market observation: <b class="num">${utc(e.latest_market_at)}</b>${stale ? ' <span class="stale">· stale</span>' : ''}</span><span>Closes ${utc(e.close_time)}</span><span>${rec.outcomes.length} outcome${rec.outcomes.length > 1 ? 's' : ''}</span></div></header>
+<div class="ev-meta"><span>${h?.live?.pbe_frozen ? 'Pre-window PBE forecast (frozen)' : 'Latest PBE forecast'}: <b class="num">${utc(e.latest_forecast_at)}</b></span><span>Latest market observation: <b class="num">${utc(e.latest_market_at)}</b>${stale ? ' <span class="stale">· stale</span>' : ''}</span><span>Closes ${utc(e.close_time)}</span><span>${rec.outcomes.length} outcome${rec.outcomes.length > 1 ? 's' : ''}</span></div></header>
 <div class="ev-grid"><div>
-${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}
-${marketView(h)}
+<div data-live-region="call">${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}</div>
+<div data-live-region="station">${stationBlock(h)}</div>
+<div data-live-region="market">${marketView(h)}</div>
 <section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
 ${premiumModule(rec)}
 ${h?.call ? `${factsBlock(h)}
@@ -198,7 +200,7 @@ ${model}
 ${prov && !h?.call ? `<section class="card panel"><h2>Provenance</h2><ul class="ev-list">${prov}<li class="ev-item"><div><b>Market observations — benchmark only, never a model input</b><small>Kalshi via the PropBetEdge canonical market service; first observed by PBE is not necessarily the opening price</small></div><span class="note">benchmark</span></li></ul></section>` : ''}
 ${stories.length ? `<section class="card panel"><h2>Prediction Intelligence on this event</h2><ul class="ev-list">${stories.map((st) => `<li class="ev-item"><div><b><a href="/insights/${esc(st.slug)}">${esc(st.title)}</a></b><small>${esc(st.family_label)} · ${esc(new Date(st.published_at).toISOString().slice(0, 10))}</small></div></li>`).join('')}</ul></section>` : ''}
 ${permanentRecord(h, citation, e.slug)}
-</aside></div></main>`;
+</aside></div></main><script src="/live.js?v=${LIVE_V}" defer></script>`;
   return layout({ title, description, canonical, jsonld, body, ogImage, current: 'desk' });
 }
 

@@ -4,6 +4,7 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const utc = (iso) => (iso ? `${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '—');
 const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
+const utcHM = (iso) => (iso ? `${new Date(iso).toISOString().slice(11, 16)} UTC` : '—');
 const pctTxt = (v) => (v === null || v === undefined ? '—' : v < 1 ? '<1%' : v > 99 ? '>99%' : `${v}%`);
 const role = (r) => r.replace(/_/g, ' ').toLowerCase();
 const DIV_LABEL = { PBE_ABOVE_MARKET: 'PBE above market', PBE_BELOW_MARKET: 'PBE below market', PBE_MARKET_AGREEMENT: 'PBE / market agreement' };
@@ -21,11 +22,31 @@ export function callBlock(h) {
   if (!c) return '';
   const d = c.decision?.official ? c.decision : null;
   const state = d ? (d.state === 'CALL' ? `CALL ${d.side}` : d.state) : null;
-  return `<section class="card panel v4-call" aria-labelledby="call-h"><span class="v4-kicker">${d ? 'PBE CALL' : 'PBE FORECAST'}</span>
+  const fz = h.live?.pbe_frozen;
+  const kicker = d ? 'PBE CALL' : fz ? `PRE-WINDOW FORECAST · FROZEN ${utcHM(fz.frozen_at)}` : 'PBE FORECAST';
+  return `<section class="card panel v4-call${fz ? ' is-frozen' : ''}" aria-labelledby="call-h"><span class="v4-kicker">${esc(kicker)}</span>
 <h2 id="call-h" class="sr-only">${d ? 'The call' : 'The PBE forecast'} — ${esc(h.label)}</h2>
 <div class="v4-callrow"><strong class="num v4-big">${state ? `${esc(state)} · ` : ''}${pctTxt(c.pbe_pct)}</strong><span class="v4-callmeta"><b>${esc(h.label)}</b><span>Confidence: <b>${esc(c.confidence || '—')}</b> · Model: <b class="mono">${esc(c.model)}</b> · ${esc((c.model_state || '').toLowerCase())}</span><span>Published ${utc(c.published_at)} · data cutoff ${utc(c.data_cutoff_at)}</span></span></div>
 ${d && d.state !== 'CALL' ? `<p class="note">${esc(d.reasons.join(' · ').replace(/_/g, ' ').toLowerCase())}</p>` : ''}
-${c.summary ? `<p class="v4-summary">${esc(c.summary)}</p>` : ''}</section>`;
+${c.summary ? `<p class="v4-summary">${esc(c.summary)}</p>` : ''}
+${fz ? `<p class="v4-frozen-note">This is the last pre-window forecast. The pre-window model stops when the climate day opens (${utc(h.live.window.start)}), so this number is not a live estimate. Live readings from the resolution station are below.</p>` : ''}</section>`;
+}
+
+// LIVE AT THE RESOLUTION STATION: stored exact-station observations inside the open window (immutable source facts).
+export function stationBlock(h) {
+  const L = h?.live;
+  if (!L?.station || !L.window || L.window.state === 'PRE_WINDOW') return '';
+  const o = L.observations;
+  const ago = (iso) => `<span class="live-ago" data-ago="${esc(iso)}"></span>`;
+  const fr = o?.freshness ? `<span class="fresh fresh-${o.freshness.label.toLowerCase()}">${esc(o.freshness.label)}</span>` : '';
+  const rows = o ? `<div class="live-grid">
+<div><span>Observed high so far</span><strong class="num">${o.max_so_far ? `${o.max_so_far.temp_f.toFixed(1)}°F` : 'Awaiting reading'}</strong><small>${o.max_so_far ? `${utcHM(o.max_so_far.t)} · ${esc(o.max_so_far.basis)}` : ''}</small></div>
+<div><span>Latest reading</span><strong class="num">${o.latest.temp_f !== null ? `${o.latest.temp_f.toFixed(1)}°F` : '—'}</strong><small>${utcHM(o.latest.t)} · ${ago(o.latest.t)}</small></div>
+<div><span>Precipitation so far</span><strong class="num">${o.precip_so_far_in === null ? 'No report' : `${o.precip_so_far_in.toFixed(2)} in`}</strong><small>${o.precip_so_far_in === null ? '' : o.precip_measurable ? 'measurable · ASOS preliminary' : 'none measurable yet · ASOS preliminary'}</small></div>
+</div>
+<p class="note">${o.n} observations stored for this window · source NWS ASOS (${esc(L.station.icao)}) · each value timestamped when PBE first saw it. Preliminary readings; the contract settles on the official daily report.</p>`
+    : `<p class="note">Window open since ${utc(L.window.start)} · awaiting the first stored observation from ${esc(L.station.icao)}.</p>`;
+  return `<section class="card panel live-station" aria-labelledby="live-h"><div class="live-head"><h2 id="live-h">Live at ${esc(L.station.icao)} — the resolution station</h2>${fr}</div>${rows}</section>`;
 }
 
 // THE FACTS: material drivers from the frozen packet, the context evidence, and the source ledger.

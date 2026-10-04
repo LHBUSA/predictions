@@ -6,6 +6,8 @@ import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { newsroomCycle } from './newsroom/auto.js';
+import { runHotLane } from './hot-lane.js';
+import { callBlock, stationBlock, marketView } from './record-blocks.js';
 import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
@@ -76,6 +78,9 @@ export default {
     // BTC 15-minute nowcast SHADOW (src/crypto/btc-shadow.js): its own 1-minute cron, isolated pred_crypto_* tables,
     // never the engine cycle below. Off unless CRYPTO_SHADOW = "true" (sql/009 applied).
     if (event.cron === BTC_SHADOW_CRON) {
+      // HOT lane (weather freshness): independent of the BTC gate, its own waitUntil + catch, hard-capped subrequests.
+      if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString() })
+        .then((r) => console.log(JSON.stringify({ hot_lane: r }))).catch((e) => console.error('hot lane failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })
         .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
@@ -219,6 +224,15 @@ export default {
       if (p.startsWith('/v1/event/')) {
         const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
         return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
+      }
+      // Live regions of an event page (re-rendered by the SAME server functions; the page swaps them in place while visible).
+      if (p.startsWith('/v1/live/event/')) {
+        const slug = decodeURIComponent(p.slice('/v1/live/event/'.length));
+        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return json({ error: 'not_found' }, 404);
+        const full = await eventRecord(store, slug);
+        if (!full) return json({ error: 'not_found' }, 404);
+        const rec = publicEventView(full); const h = headlineOutcome(rec);
+        return json({ at: rec.generated_at, regions: { call: h?.call ? callBlock(h) : null, station: stationBlock(h), market: marketView(h) } }, 200, 'public, max-age=15');
       }
       if (p.startsWith('/v1/contract/')) {
         const rec = await contractRecord(store, decodeURIComponent(p.slice('/v1/contract/'.length)));
