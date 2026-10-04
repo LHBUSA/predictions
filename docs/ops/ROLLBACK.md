@@ -106,3 +106,11 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   (`"crons": ["*/15 * * * *"]` + `wrangler triggers deploy`), then deploy 56c88d6e. Kill switch without rollback:
   `CRYPTO_SHADOW="false"` + deploy (the 1-minute cron then returns immediately).
 - Table rollback `sql/009_crypto_shadow_ROLLBACK.sql` destroys the shadow record — export first.
+
+## Automated newsroom (2026-10-04)
+- The 15-minute engine cron now runs runCycle -> newsroomCycle (detect -> validate -> auto-publish VALIDATED movers and
+  resolution reports). Anomaly lane / HELD never publish. No schema change (uses sql/003 + sql/005).
+- Kill switch (preferred, no code rollback): set `NEWSROOM_AUTO_PUBLISH` to anything but "true" in wrangler.jsonc and deploy.
+  Detection keeps running; nothing publishes. Already-published stories stay (append-only).
+- Worker rollback: previous production `59496aa5` (BTC shadow 5d3b007; same crons, so no trigger change is needed):
+  `npx wrangler versions deploy 59496aa5-b252-490e-bc74-0afd5b18b47c@100% --config workers/pbe-predictions/wrangler.jsonc -y`

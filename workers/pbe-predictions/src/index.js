@@ -5,6 +5,7 @@ import { runBtcShadow } from '../../../src/crypto/btc-shadow.js';
 import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
+import { newsroomCycle } from './newsroom/auto.js';
 import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
@@ -81,7 +82,15 @@ export default {
       return;
     }
     if (env.ENGINE_ENABLED !== 'true') return;
-    ctx.waitUntil(runCycle(env, { store: storeFor(env) }).then((r) => console.log(JSON.stringify({ cycle: r.summary }))).catch((e) => console.error('cycle failed', e.stack || e.message)));
+    // 15-minute engine cycle, THEN the automated newsroom (detect -> validate -> publish VALIDATED movers/resolution
+    // reports; NEWSROOM_AUTO_PUBLISH kill switch). The newsroom runs once the engine has finished, success or not.
+    const cycleAt = new Date(event.scheduledTime || Date.now()).toISOString();
+    const store = storeFor(env);
+    ctx.waitUntil((async () => {
+      let engineOk = true;
+      try { const r = await runCycle(env, { store }); console.log(JSON.stringify({ cycle: r.summary })); } catch (e) { engineOk = false; console.error('cycle failed', e.stack || e.message); }
+      try { console.log(JSON.stringify({ newsroom: await newsroomCycle(env, store, { cycleAt, engineCompletedAt: new Date().toISOString(), engineOk }) })); } catch (e) { console.error('newsroom failed', e.stack || e.message); }
+    })());
   },
 
   async fetch(req, env, ctx) {
@@ -138,7 +147,7 @@ export default {
         return json({ policy: rows[0] ? { version: rows[0].decision.policy, status: rows[0].decision.policy_status } : null, n: rows.length, by_state: count((r) => (r.decision.state === 'CALL' ? `CALL_${r.decision.side}` : r.decision.state)), by_reason: count((r) => r.decision.reasons.join('+') || 'CALL'), integrity_failures: rows.filter((r) => !r.integrity.ok).length, rows }, 200, 'no-store');
       }
       // Automated Newsroom V1 — DRY RUN ONLY (no writes, nothing published): candidates, holds, evidence packets, previews
-      // Manual, admin-only publication of ONE validated story (automatic publication does not exist in V1).
+      // Manual, admin-only publication of ONE validated story: emergency/manual tool (the normal path is the cron's auto-publication).
       if (req.method === 'POST' && p.startsWith('/admin/newsroom/publish/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         if (env.NEWSROOM_MANUAL_PUBLISH !== 'true') return json({ error: 'manual publication disabled (NEWSROOM_MANUAL_PUBLISH)' }, 403, 'no-store');

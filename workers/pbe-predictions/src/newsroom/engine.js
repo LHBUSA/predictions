@@ -1,5 +1,5 @@
-// Automated Newsroom V1 engine: detect → evidence → generate → validate. Dry-run only until the newsroom tables
-// (sql/003) are applied and publication is explicitly enabled; nothing here writes.
+// Automated Newsroom engine: detect → evidence → generate → validate. Nothing here writes: publication of VALIDATED
+// stories happens in publish.js autoPublish (15-minute cron, NEWSROOM_AUTO_PUBLISH) or the manual admin route.
 //   CANDIDATE → EVIDENCE_READY → GENERATED → VALIDATED → (PUBLISHED, not in V1 dry-run)   or   HELD(reason)
 import { PUBLIC_STATES, FAMILIES, CATEGORY_LABEL } from '../../../../src/engine/registry.js';
 import { loadEventPacket } from '../insights/packet.js';
@@ -170,6 +170,8 @@ export async function runNewsroom(store, { now = new Date().toISOString(), famil
     if (problems.length) { hold(s, `VALIDATION_FAILED: ${problems.join('; ')}`); continue; }
     s.state = 'VALIDATED';
     s.slug = `${r.event_slug}-resolution-report`;
+    s.resolution_ids = r.resolutions.map((x) => x.resolution_id).sort();
+    s.family_resolved = fam ? familyResolved[fam.id] ?? null : null; // frozen into the published row
     s.def = storyDef({ id, cls: 'RESOLUTION_REPORT', slug: s.slug, packet, asOf: packet.as_of, title: built.title });
     s.built = built; s.packet = packet;
   }

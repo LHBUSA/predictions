@@ -23,7 +23,9 @@
     "MONITOR_SERIES": "KXTESLADELIVERYBY,KXAMZN,KXSPACEXCOUNT,KXSPACEXSTARSHIP,KXREACTOR,KXMEASLES,KXFLDENGUE,KXIPOANTHROPIC,KXIPOBREX",
     // cron writes only when "true" (requires sql/002 applied on tkmln)
     "ENGINE_ENABLED": "true",
-    // Newsroom V1: manual admin publication of one VALIDATED story at a time; there is NO automatic publication path
+    // Newsroom: AUTOMATIC publication of VALIDATED movers + resolution reports after each 15-minute engine cycle
+    // (owner 2026-10-04). Kill switch: set NEWSROOM_AUTO_PUBLISH to anything but "true". Manual admin route kept for emergencies.
+    "NEWSROOM_AUTO_PUBLISH": "true",
     "NEWSROOM_MANUAL_PUBLISH": "true",
     // persist cycle skip diagnostics to pred_cycle_diagnostics (sql/003 applied 2026-10-03 23:30Z)
     "NEWSROOM_DB": "true",
