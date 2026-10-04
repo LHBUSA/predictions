@@ -1,6 +1,8 @@
 // pbe-predictions — PropBetEdge Predictions real-world event engine (v1: WEATHER; MACRO next).
 // Internally modular: discovery + contract normalization (src/engine/contracts.js), domain routing
 // (src/engine/classify.js), weather model (src/weather/*), publication/resolution/scoring (cycle.js), API (api.js).
+import { runBtcShadow } from '../../../src/crypto/btc-shadow.js';
+import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { prospectiveRecord } from './prospective.js';
@@ -65,10 +67,19 @@ async function requireAllAccess(req, env) {
   return { ok: false, res: privateJson({ ...ALL_ACCESS_REQUIRED, authenticated: m.authenticated, membership: { state: m.membership.state, label: m.membership.label } }, m.authenticated ? 403 : 401) };
 }
 
+export const BTC_SHADOW_CRON = '* * * * *';
 const storeFor = (env) => new EngineStore({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY });
 
 export default {
   async scheduled(event, env, ctx) {
+    // BTC 15-minute nowcast SHADOW (src/crypto/btc-shadow.js): its own 1-minute cron, isolated pred_crypto_* tables,
+    // never the engine cycle below. Off unless CRYPTO_SHADOW = "true" (sql/009 applied).
+    if (event.cron === BTC_SHADOW_CRON) {
+      if (env.CRYPTO_SHADOW !== 'true') return;
+      ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }) })
+        .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
+      return;
+    }
     if (env.ENGINE_ENABLED !== 'true') return;
     ctx.waitUntil(runCycle(env, { store: storeFor(env) }).then((r) => console.log(JSON.stringify({ cycle: r.summary }))).catch((e) => console.error('cycle failed', e.stack || e.message)));
   },

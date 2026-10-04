@@ -8,7 +8,7 @@
   "observability": { "enabled": true },
   // social cards: bundled Inter fonts + card background as binary Data modules (src/og.js)
   "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
-  "triggers": { "crons": ["*/15 * * * *"] },
+  "triggers": { "crons": ["*/15 * * * *", "* * * * *"] },
   // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
   "services": [{ "binding": "MARKETS", "service": "propsports-markets" }, { "binding": "AUTH", "service": "propbetedge-auth-magic" }],
   // AUTH: network membership authority (GET /membership?product=predictions); Predictions is All-Access-only
@@ -28,7 +28,8 @@
     // persist cycle skip diagnostics to pred_cycle_diagnostics (sql/003 applied 2026-10-03 23:30Z)
     "NEWSROOM_DB": "true",
     // decision ledger: write pred_decisions rows at designation time (sql/006 applied 2026-10-04, ledger 20261004140000)
-    "DECISIONS_DB": "true"
+    "DECISIONS_DB": "true",
+    "CRYPTO_SHADOW": "false"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
 }
