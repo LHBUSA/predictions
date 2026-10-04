@@ -26,7 +26,9 @@
     // Newsroom V1: manual admin publication of one VALIDATED story at a time; there is NO automatic publication path
     "NEWSROOM_MANUAL_PUBLISH": "true",
     // persist cycle skip diagnostics to pred_cycle_diagnostics (sql/003 applied 2026-10-03 23:30Z)
-    "NEWSROOM_DB": "true"
+    "NEWSROOM_DB": "true",
+    // decision ledger: write pred_decisions rows at designation time (sql/006 applied 2026-10-04, ledger 20261004140000)
+    "DECISIONS_DB": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
 }

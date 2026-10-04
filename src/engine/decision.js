@@ -11,6 +11,7 @@
 // HOLD = PBE cannot responsibly evaluate the contract right now (rules, data, staleness, integrity, domain).
 // PASS = PBE evaluated it and deliberately declines to call (unvalidated model, band, confidence, near-certain).
 import { MARKET_KEY_PATTERN, MarketLeakageError } from './leakage.js';
+import { canonicalJson } from './evidence.js';
 
 export const DECISION_STATES = Object.freeze(['CALL', 'PASS', 'HOLD']);
 export const REASONS = Object.freeze({
@@ -65,7 +66,7 @@ export const DECISION_POLICY = Object.freeze({
   }),
 });
 
-export const DECISION_INPUT_KEYS = Object.freeze(['model_id', 'model_version', 'model_state', 'probability', 'confidence', 'data_cutoff_at', 'as_of',
+export const DECISION_INPUT_KEYS = Object.freeze(['model_id', 'model_version', 'model_state', 'probability', 'confidence', 'data_cutoff_at', 'as_of', 'decision_time',
   'contract_status', 'contract_reason', 'integrity_ok', 'is_modal', 'exclusive', 'contract_month']);
 
 export function assertDecisionInput(input) {
@@ -76,32 +77,47 @@ export function assertDecisionInput(input) {
   return input;
 }
 
-// official only once the owner ACTIVATES public CALL (activated_at); frozen parameters alone never make a call public
-const out = (state, side, reasons, policy, extra = {}) => Object.freeze({ state, side, reasons: Object.freeze(reasons), policy: policy.version, policy_status: policy.status, official: Boolean(policy.activated_at), ...extra });
+// NO RETROACTIVE OFFICIAL CALLS (owner 2026-10-04): a decision is official only if the policy is activated AND the
+// decision's own time (the designated forecast's capture time) is at/after activated_at. A pre-activation decision stays
+// unofficial forever, however often the same immutable forecast is recomputed after activation.
+export function isOfficial(policy, decisionTime) {
+  if (!policy.activated_at || !decisionTime) return false;
+  return Date.parse(decisionTime) >= Date.parse(policy.activated_at);
+}
+const out = (state, side, reasons, policy, decisionTime, extra = {}) => Object.freeze({ state, side, reasons: Object.freeze(reasons), policy: policy.version, policy_status: policy.status, official: isOfficial(policy, decisionTime), ...extra });
+
+// Hash of the frozen parameters (what a candidate IS). Any change = a different hash = a new candidate version.
+export function frozenParameters(policy = DECISION_POLICY) {
+  return { version: policy.version, candidate: policy.candidate, frozen_at: policy.frozen_at, near_certain: policy.near_certain, families: policy.families, promotion: policy.promotion };
+}
+export async function policyHash(policy = DECISION_POLICY) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalJson(frozenParameters(policy))));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 export function decide(input, policy = DECISION_POLICY) {
   const x = assertDecisionInput({ ...input });
-  if (x.contract_status && x.contract_status !== 'NORMALIZED') return out('HOLD', null, [REASONS[x.contract_status] ? x.contract_status : 'UNMODELABLE'], policy);
+  if (x.contract_status && x.contract_status !== 'NORMALIZED') return out('HOLD', null, [REASONS[x.contract_status] ? x.contract_status : 'UNMODELABLE'], policy, x.decision_time);
   const fam = policy.families[x.model_id];
-  if (x.probability === null || x.probability === undefined || !x.model_id) return out('HOLD', null, ['INSUFFICIENT_SOURCE_DATA'], policy);
-  if (!fam) return out('HOLD', null, ['UNSUPPORTED_DOMAIN'], policy);
-  if (!fam.resolution_proof) return out('HOLD', null, ['RESOLUTION_NOT_PROVEN'], policy);
-  if (x.integrity_ok === false) return out('HOLD', null, ['EVIDENCE_INTEGRITY_FAILED'], policy);
+  if (x.probability === null || x.probability === undefined || !x.model_id) return out('HOLD', null, ['INSUFFICIENT_SOURCE_DATA'], policy, x.decision_time);
+  if (!fam) return out('HOLD', null, ['UNSUPPORTED_DOMAIN'], policy, x.decision_time);
+  if (!fam.resolution_proof) return out('HOLD', null, ['RESOLUTION_NOT_PROVEN'], policy, x.decision_time);
+  if (x.integrity_ok === false) return out('HOLD', null, ['EVIDENCE_INTEGRITY_FAILED'], policy, x.decision_time);
   const ageH = (Date.parse(x.as_of) - Date.parse(x.data_cutoff_at)) / 3600000;
-  if (!Number.isFinite(ageH) || ageH > fam.max_evidence_age_h) return out('HOLD', null, ['STALE_EVIDENCE'], policy, { evidence_age_h: Number.isFinite(ageH) ? +ageH.toFixed(1) : null });
+  if (!Number.isFinite(ageH) || ageH > fam.max_evidence_age_h) return out('HOLD', null, ['STALE_EVIDENCE'], policy, x.decision_time, { evidence_age_h: Number.isFinite(ageH) ? +ageH.toFixed(1) : null });
   // from here PBE has a valid, current forecast: every remaining outcome is a deliberate decision (CALL or PASS)
-  if (x.model_state === 'SHADOW' || !fam.validated || !(fam.threshold > 0.5)) return out('PASS', null, ['MODEL_NOT_VALIDATED'], policy);
+  if (x.model_state === 'SHADOW' || !fam.validated || !(fam.threshold > 0.5)) return out('PASS', null, ['MODEL_NOT_VALIDATED'], policy, x.decision_time);
   const p = Number(x.probability);
-  if ((RANK[x.confidence] ?? -1) < RANK[fam.confidence_floor]) return out('PASS', null, ['INSUFFICIENT_CONFIDENCE'], policy);
-  if (Math.max(p, 1 - p) >= policy.near_certain) return out('PASS', null, ['NEAR_CERTAIN'], policy);
+  if ((RANK[x.confidence] ?? -1) < RANK[fam.confidence_floor]) return out('PASS', null, ['INSUFFICIENT_CONFIDENCE'], policy, x.decision_time);
+  if (Math.max(p, 1 - p) >= policy.near_certain) return out('PASS', null, ['NEAR_CERTAIN'], policy, x.decision_time);
   const exclusive = x.exclusive === true && fam.exclusive === 'modal_only';
   if (p >= fam.threshold) {
-    if (exclusive && x.is_modal === false) return out('PASS', null, ['NOT_MODAL_OUTCOME'], policy);
-    if (fam.no_yes_months?.includes(x.contract_month)) return out('PASS', null, ['MODEL_NOT_VALIDATED'], policy, { scope: 'yes_calls_in_month' });
-    return out('CALL', 'YES', [], policy, { threshold: fam.threshold });
+    if (exclusive && x.is_modal === false) return out('PASS', null, ['NOT_MODAL_OUTCOME'], policy, x.decision_time);
+    if (fam.no_yes_months?.includes(x.contract_month)) return out('PASS', null, ['MODEL_NOT_VALIDATED'], policy, x.decision_time, { scope: 'yes_calls_in_month' });
+    return out('CALL', 'YES', [], policy, x.decision_time, { threshold: fam.threshold });
   }
-  if (p <= 1 - fam.threshold && !exclusive) return out('CALL', 'NO', [], policy, { threshold: fam.threshold });
-  return out('PASS', null, [exclusive && p <= 1 - fam.threshold ? 'NOT_MODAL_OUTCOME' : 'WITHIN_UNCERTAINTY_BAND'], policy);
+  if (p <= 1 - fam.threshold && !exclusive) return out('CALL', 'NO', [], policy, x.decision_time, { threshold: fam.threshold });
+  return out('PASS', null, [exclusive && p <= 1 - fam.threshold ? 'NOT_MODAL_OUTCOME' : 'WITHIN_UNCERTAINTY_BAND'], policy, x.decision_time);
 }
 
 // Build the allowlisted input from stored rows (never from a venue snapshot).
@@ -109,7 +125,7 @@ export function decisionInput({ forecast, contract, integrityOk, asOf, isModal =
   return {
     model_id: forecast?.model_id ?? null, model_version: forecast?.model_version ?? null, model_state: forecast?.model_state ?? null,
     probability: forecast ? Number(forecast.probability) : null, confidence: forecast?.confidence ?? null, data_cutoff_at: forecast?.data_cutoff_at ?? null,
-    as_of: asOf, contract_status: contract?.normalization_status ?? null, contract_reason: contract?.status_reason ?? null,
+    as_of: asOf, decision_time: forecast?.captured_at ?? null, contract_status: contract?.normalization_status ?? null, contract_reason: contract?.status_reason ?? null,
     integrity_ok: integrityOk, is_modal: isModal, exclusive,
     // contract window month (resolution term, not a market value): the precip policy has no warm-season YES calls
     contract_month: contract?.observation_start ? new Date(contract.observation_start).getUTCMonth() + 1 : null,

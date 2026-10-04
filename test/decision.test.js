@@ -3,7 +3,7 @@
 // the evidence packet hash and CALL/PASS/HOLD byte-identical.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decide, decisionInput, assertDecisionInput, DECISION_POLICY, DECISION_INPUT_KEYS, REASONS } from '../src/engine/decision.js';
+import { decide, decisionInput, assertDecisionInput, DECISION_POLICY, DECISION_INPUT_KEYS, REASONS, isOfficial, policyHash } from '../src/engine/decision.js';
 import { buildEvidencePacket, checkIntegrity, canonicalJson, driverSentence, DRIVER_SPECS } from '../src/engine/evidence.js';
 import { MarketLeakageError } from '../src/engine/leakage.js';
 import { runAllLanes, polymarketVenue } from './helpers/venue-harness.js';
@@ -14,7 +14,7 @@ const TEST_POLICY = Object.freeze({
   ...DECISION_POLICY, status: 'ACTIVE_TEST', activated_at: '2026-10-04T00:00:00Z', version: 'prediction-decision-test',
   families: Object.fromEntries(Object.entries(DECISION_POLICY.families).map(([k, v]) => [k, { ...v, validated: true, threshold: 0.65 }])),
 });
-const base = { model_id: 'pbe-weather-precip', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.7, confidence: 'HIGH', data_cutoff_at: '2026-10-04T05:00:00Z', as_of: NOW, contract_status: 'NORMALIZED', contract_reason: null, integrity_ok: true, is_modal: null, exclusive: false, contract_month: 10 };
+const base = { model_id: 'pbe-weather-precip', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.7, confidence: 'HIGH', data_cutoff_at: '2026-10-04T05:00:00Z', as_of: NOW, contract_status: 'NORMALIZED', contract_reason: null, integrity_ok: true, is_modal: null, exclusive: false, contract_month: 10, decision_time: '2026-10-04T05:30:00Z' };
 
 test('input allowlist: any venue-derived key is refused; unknown keys are refused', () => {
   for (const k of ['kalshi_mid', 'polymarket_price', 'market_probability', 'bid', 'ask', 'mid_bp', 'spread_bp', 'volume', 'liquidity', 'venue_gap_pts', 'consensus_prob', 'last_price']) {
@@ -149,31 +149,25 @@ test('FROZEN: rain-v1-candidate parameters are pinned', async () => {
 });
 const FROZEN_SHA256 = 'fb495f6779e492174f54202543951d304065b6ec0de5fa3bc9db134dd44ce475';
 
-test('prospective record: only FINAL_PRE_RESOLUTION decisions captured after the freeze count, decided as of capture', async () => {
-  const { prospectiveRecord } = await import('../workers/pbe-predictions/src/prospective.js');
-  const F = DECISION_POLICY.frozen_at;
-  const prov = [{ source: 'NWS GFS MOS (MAV) station guidance', role: 'model input', available_at: '2026-10-05T05:00:00Z' }];
-  const tables = {
-    pred_forecast_designations: [{ contract_id: 'c1', forecast_id: 'f1', designated_at: '2026-10-05T06:00:00Z' }, { contract_id: 'c2', forecast_id: 'f2', designated_at: '2026-10-05T06:00:00Z' }, { contract_id: 'c3', forecast_id: 'f3', designated_at: '2026-10-05T06:00:00Z' }],
-    pred_forecasts: [
-      { forecast_id: 'f1', contract_id: 'c1', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.8, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's1', provenance: prov },
-      { forecast_id: 'f2', contract_id: 'c2', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.1, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's2', provenance: prov },
-      { forecast_id: 'f3', contract_id: 'c3', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.9, confidence: 'HIGH', captured_at: '2026-10-04T12:00:00Z', data_cutoff_at: '2026-10-04T11:00:00Z', feature_snapshot_id: 's3', provenance: [] },
-    ],
-    pred_contracts: ['c1', 'c2', 'c3'].map((id) => ({ contract_id: id, normalization_status: 'NORMALIZED', observation_start: '2026-10-06T05:00:00Z', detail: { climate_date: '2026-10-06' } })),
-    pred_resolutions: [{ contract_id: 'c1', venue_result: 'yes' }, { contract_id: 'c2', venue_result: 'yes' }],
-    pred_feature_snapshots: ['s1', 's2', 's3'].map((id) => ({ snapshot_id: id, cutoff_at: id === 's3' ? '2026-10-04T11:00:00Z' : '2026-10-05T05:00:00Z', features: { nbm_pop_union: 0.5 } })),
-  };
-  const store = {
-    select: async (t, q) => tables[t].filter((r) => !q.designated_at || r.designated_at >= q.designated_at.slice(4)),
-    selectIn: async (t, q, col, ids) => tables[t].filter((r) => ids.includes(r[col]) && (!q.model_id || r.model_id === q.model_id.slice(3))),
-  };
-  const r = await prospectiveRecord(store);
-  assert.equal(r.policy.activated_at, null);
-  assert.ok(F <= '2026-10-05T05:30:00Z');
-  assert.equal(r.decision_records, 2, 'the pre-freeze forecast never counts');
-  assert.equal(r.resolved_calls, 2);
-  assert.deepEqual([r.yes.n, r.yes.hits, r.no.n, r.no.hits], [1, 1, 1, 0]);
-  assert.equal(r.hit_rate, 0.5);
-  assert.equal(r.stage, 'COLLECTING');
+// NO RETROACTIVE OFFICIAL CALLS (owner 2026-10-04)
+test('activation invariant: a pre-activation decision stays unofficial forever; only decisions at/after activation are official', () => {
+  const oct5 = { forecast: { model_id: 'pbe-weather-precip', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.8, confidence: 'HIGH', data_cutoff_at: '2026-10-05T05:00:00Z', captured_at: '2026-10-05T05:30:00Z' }, contract: { normalization_status: 'NORMALIZED', observation_start: '2026-10-06T05:00:00Z' }, integrityOk: true };
+  // 1. frozen candidate, no activation -> Oct 5 decision unofficial
+  const d1 = decide(decisionInput({ ...oct5, asOf: oct5.forecast.captured_at }));
+  assert.deepEqual([d1.state, d1.side, d1.official], ['CALL', 'YES', false]);
+  // 2. activated Nov 20 -> recomputing Oct 5 (even "now", after activation) stays unofficial
+  const activated = { ...DECISION_POLICY, activated_at: '2026-11-20T00:00:00Z' };
+  assert.equal(decide(decisionInput({ ...oct5, asOf: oct5.forecast.captured_at }), activated).official, false);
+  assert.equal(decide(decisionInput({ ...oct5, asOf: oct5.forecast.captured_at }), activated).state, 'CALL');
+  // 3. a decision made on/after Nov 20 is official
+  const nov21 = { ...oct5, forecast: { ...oct5.forecast, captured_at: '2026-11-21T05:30:00Z', data_cutoff_at: '2026-11-21T05:00:00Z' }, contract: { ...oct5.contract, observation_start: '2026-11-22T05:00:00Z' } };
+  assert.equal(decide(decisionInput({ ...nov21, asOf: nov21.forecast.captured_at }), activated).official, true);
+  assert.equal(isOfficial(activated, '2026-11-20T00:00:00Z'), true, 'at activation counts');
+  // 4. no historical/backfilled row becomes official because activated_at is later populated, and no decision time = never official
+  for (const t of ['2026-10-04T13:21:00Z', '2026-11-19T23:59:59Z', null, undefined]) assert.equal(isOfficial(activated, t), false, String(t));
+  assert.equal(isOfficial(DECISION_POLICY, '2027-01-01T00:00:00Z'), false, 'not activated -> never official');
+});
+
+test('policyHash = the pinned frozen hash (one definition shared by tests and the decision ledger)', async () => {
+  assert.equal(await policyHash(), FROZEN_SHA256);
 });

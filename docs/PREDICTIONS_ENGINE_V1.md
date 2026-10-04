@@ -59,3 +59,16 @@ Weather forecasts are published only **before** the climate day opens (no intrad
 
 International TWC cities (no CLI site), lows/snow/monthly rain series, intraday (window-started) forecasts, CPI/payrolls/GDP markets,
 housing, energy, geo/natural, election/civic (classified, queued, no probability).
+
+## Decision ledger (sql/006, owner-approved 2026-10-04)
+
+- `pred_decisions` = the system of record for decisions (pbe-decision-record/1): one immutable row per contract for the
+  predeclared unit (FINAL_PRE_RESOLUTION designated forecast captured at/after the policy freeze), written by the cycle at
+  designation time (`DECISIONS_DB=true`) via `src/engine/decision-record.js`. Prospective only (DB CHECK: decision_as_of >=
+  2026-10-04 13:21Z); no backfill. Append-only (UPDATE/DELETE/TRUNCATE rejected); corrections = new rows with
+  `correction_of` + `correction_reason`. A trigger requires each row to restate its designated forecast exactly.
+- No market value in the row (no price/venue column; the firewall holds). Venue benchmarks join afterwards.
+- No retroactive official calls: `official_at_decision = activated_at known at decision time AND decision_as_of >= activated_at`
+  (DB CHECK + `isOfficial`). Activation later never makes an earlier row official.
+- `/admin/decisions/verify` recomputes every stored row from the pinned policy (state, side, reasons, policy hash, evidence
+  hash, official, probability, decision time must match). `/admin/decisions/prospective` counts the stored ledger.

@@ -19,6 +19,7 @@ import { forecastRates, ratesOfficialOutcome, parseTreasuryCsv, TREASURY_CSV, RA
 import { chunk } from '../../../src/engine/store.js';
 import { slugify } from '../../../src/vendor/propsports-markets/core.js';
 import { scoringReference } from '../../../src/engine/designations.js';
+import { writeDecisions } from './decision-ledger.js';
 
 export const USER_AGENT = 'PropBetEdgePredictions/1.0 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const bpToProb = (bp) => (bp === null || bp === undefined ? null : bp / 10000);
@@ -382,6 +383,11 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
     }
   }
   for (const d of newDes) { try { await store.write('pred_forecast_designations', d, {}); out.designations += 1; designations.push(d); } catch (e) { if (!/duplicate|unique|after resolution/i.test(e.message)) throw e; } }
+
+  // 2b. decision ledger (sql/006): one immutable row per FINAL_PRE_RESOLUTION designation captured after the freeze
+  if (env.DECISIONS_DB === 'true') {
+    try { out.decisions = await writeDecisions(store, designations); } catch (e) { out.decisions = { error: e.message }; console.error('decision ledger', e.message); }
+  }
 
   // 3. scoring: every designation of a resolved contract not yet scored
   const resolvedIds = [...resByContract.keys()];

@@ -78,3 +78,8 @@ Rolling back auth alone makes every Predictions visitor FREE (fail closed), with
 | pbe-predictions Worker | `24e4c9c3` (main 83cb9cd; first V4 deploy `79b3ab3c` = 37b8d26) | `bf48df27` (6315b0b): `npx wrangler versions deploy bf48df27-db42-457c-97d6-99044ff50e11@100% --config workers/pbe-predictions/wrangler.jsonc -y` |
 | Vercel predictions (static) | built from 83cb9cd (site.css/home.js ?v=20261004v4) | promote the 6315b0b deployment; the V4 desk lines render nothing without the V4 Worker, so either side can roll back alone |
 No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/admin/decisions` (ADMIN_TOKEN).
+
+## Decision ledger (2026-10-04)
+- Migration `sql/006_pred_decisions.sql` applied as ledger `20261004140000` (PROOF 12/12 via `sql/006_pred_decisions_PROOF.sql`, always aborts).
+- Kill switch: set `DECISIONS_DB` to anything but "true" and deploy (stops writes; the table stays). Table rollback
+  `sql/006_pred_decisions_ROLLBACK.sql` destroys the prospective record — export first.
