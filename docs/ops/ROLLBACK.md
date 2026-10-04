@@ -95,3 +95,14 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
 ## pred_contracts TRUNCATE guard (2026-10-04, final ledger-hardening follow-up)
 - `sql/008_contracts_truncate_guard.sql` applied as ledger `20261004160000` (PROOF `sql/008_contracts_truncate_guard_PROOF.sql`, always aborts).
   Rollback: `sql/008_contracts_truncate_guard_ROLLBACK.sql`. pred_events remains mutable with no guard. Ledger architecture closed.
+
+## BTC 15-minute nowcast SHADOW (2026-10-04)
+- `sql/009_crypto_shadow.sql` applied by the owner (six isolated append-only `pred_crypto_*` tables; PROOF
+  `sql/009_crypto_shadow_PROOF.sql`, PGlite `scripts/db/prove-009.mjs`). Protocol: `docs/research/CRYPTO_SHADOW_V1.md`.
+- pbe-predictions `768f0cad-5f2b-4864-b929-1dffdab506d6` (main 92950dc): `CRYPTO_SHADOW="true"`, cron `* * * * *`
+  routed by `event.cron` (the */15 engine cycle unchanged). Triggers deployed with `wrangler triggers deploy`.
+- Rollback: `npx wrangler versions deploy 56c88d6e-7819-44f0-89be-3230a78c657e@100% --config workers/pbe-predictions/wrangler.jsonc -y`
+  IMPORTANT: 56c88d6e runs the engine cycle on EVERY cron invocation, so remove the `* * * * *` trigger FIRST
+  (`"crons": ["*/15 * * * *"]` + `wrangler triggers deploy`), then deploy 56c88d6e. Kill switch without rollback:
+  `CRYPTO_SHADOW="false"` + deploy (the 1-minute cron then returns immediately).
+- Table rollback `sql/009_crypto_shadow_ROLLBACK.sql` destroys the shadow record — export first.
