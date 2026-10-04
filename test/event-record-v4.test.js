@@ -47,7 +47,7 @@ test('related market (RULE_MISMATCH): native price, labelled, never a gap', asyn
 test('venue absent: the record still renders, Polymarket reads "not listed"', async () => {
   const html = renderEvent(await record(null));
   assert.match(html, /Market view/);
-  assert.match(html, /not listed/);
+  assert.match(html, /No comparable market/);
   assert.doesNotMatch(html, /Polymarket<\/span><strong/);
 });
 

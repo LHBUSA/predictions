@@ -530,3 +530,4 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .spark-key i.k-k{border-top:2px dashed var(--mkt)}
 .spark-key i.k-p{margin-left:0}
 @media (max-width:760px){.why-drivers li{grid-template-columns:minmax(0,1fr)}.why-drivers li b{justify-self:start}}
+.v4-vrow strong .null-state{font-size:12px;font-weight:600;color:var(--muted)}

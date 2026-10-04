@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261004d2';
+export const ASSET_V = '20261004d3';
 import { siteHeader, siteFooter } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord } from './record-blocks.js';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
@@ -98,7 +98,7 @@ ${d.labels.map((l, i) => `<div class="dist-row"><div><b>${esc(l)}</b></div><div 
 <p class="note">${esc(d.note)}${d.market_raw_sum !== null ? ` Raw market mids sum to ${d.market_raw_sum}%.` : ' Some outcomes have no two-sided market quote (spread over 10¢), so no normalized market distribution is shown.'}</p>`;
   }
   return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Outcome</th><th>PBE</th><th>Market</th><th>Divergence</th><th>Kalshi</th></tr></thead><tbody>
-${outs.map((o) => `<tr><td><b>${esc(o.label)}</b>${o.status !== 'NORMALIZED' ? `<br><span class="note">${esc(o.reason || o.status)}</span>` : ''}</td><td class="num">${o.pbe_pct !== null ? `<b>${o.pbe_pct}%</b>` : '<span class="note">monitoring</span>'}</td><td class="num">${o.market_pct !== null ? `${o.market_pct}%` : '—'}</td><td class="num ${o.divergence_pts > 0 ? 'dpos' : o.divergence_pts < 0 ? 'dneg' : ''}">${o.divergence_pts !== null ? `${sign(o.divergence_pts)} pts` : '—'}</td><td>${o.kalshi_url ? `<a href="${esc(o.kalshi_url)}" rel="noopener" target="_blank">Kalshi ↗</a>` : ''}</td></tr>`).join('')}
+${outs.map((o) => `<tr><td><b>${esc(o.label)}</b>${o.status !== 'NORMALIZED' ? `<br><span class="note">${esc(o.reason || o.status)}</span>` : ''}</td><td class="num">${o.pbe_pct !== null ? `<b>${o.pbe_pct}%</b>` : '<span class="note">No PBE model</span>'}</td><td class="num">${o.market_pct !== null ? `${o.market_pct}%` : `<span class="note">${o.market_observed_at ? 'No two-sided quote' : 'Awaiting market'}</span>`}</td><td class="num ${o.divergence_pts > 0 ? 'dpos' : o.divergence_pts < 0 ? 'dneg' : ''}">${o.divergence_pts !== null ? `${sign(o.divergence_pts)} pts` : `<span class="note">${o.pbe_pct === null ? 'Not modeled' : 'No comparable market'}</span>`}</td><td>${o.kalshi_url ? `<a href="${esc(o.kalshi_url)}" rel="noopener" target="_blank">Kalshi ↗</a>` : ''}</td></tr>`).join('')}
 </tbody></table></div>${d?.note ? `<p class="note">${esc(d.note)}</p>` : ''}`;
 }
 

@@ -45,7 +45,7 @@ ${context ? `<details class="snap"><summary>Context evidence (${p.context.length
 
 function venueRow(v) {
   const cur = v.current;
-  const price = cur?.mid_pct !== null && cur?.mid_pct !== undefined ? pctTxt(cur.mid_pct) : '—';
+  const price = cur?.mid_pct !== null && cur?.mid_pct !== undefined ? pctTxt(cur.mid_pct) : cur ? '<span class="null-state">No quote</span>' : '<span class="null-state">Awaiting market</span>';
   const quote = cur ? `${cur.bid_pct !== null && cur.ask_pct !== null ? `bid ${cur.bid_pct} / ask ${cur.ask_pct} · ` : cur.mid_pct === null ? 'no two-sided quote · ' : ''}${cur.checked_at && cur.checked_at !== cur.observed_at ? `unchanged since ${utc(cur.observed_at)} · checked ${utc(cur.checked_at)}` : `observed ${utc(cur.observed_at)}`}${cur.freshness ? ` · ${cur.freshness.label}` : ''}` : 'no stored observation';
   const tag = v.comparable ? (v.semantic_class === 'EXACT_MATCH' ? '<span class="v4-tag ok">Exact match</span>' : '') : `<span class="v4-tag rel">${esc(v.display === 'native_price_unverified' ? 'UNVERIFIED · NOT COMPARED' : 'RELATED MARKET · RULES DIFFER')}</span>`;
   return `<li class="v4-vrow"><span class="v4-vname">${esc(v.venue_label)}</span><strong class="num">${price}</strong><span class="v4-vmeta">${tag}${esc(quote)}${!v.comparable && v.reasons?.length ? `<small>${esc(reasons(v.reasons))}</small>` : ''}</span>${v.url ? `<a class="v4-out" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="${esc(v.venue_label)} market">↗</a>` : '<span></span>'}</li>`;
@@ -69,7 +69,7 @@ export function pbeVsMarket(h) {
   const rows = (k || pm)?.at_forecast || [];
   if (!h?.call || !rows.length) return '';
   const cell = (v, fid) => {
-    if (!v) return '<td class="note">not listed</td><td></td>';
+    if (!v) return '<td class="note">No comparable market</td><td></td>';
     const a = v.at_forecast.find((x) => x.forecast_id === fid);
     if (!a || a.benchmark === 'NO_OBSERVATION_AT_PBE_FORECAST') return '<td class="note">no observation at PBE forecast</td><td></td>';
     const b = a.benchmark;
