@@ -33,13 +33,21 @@ document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled) l
 let events = [];
 const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div', view: 'ALL' };
 
-// Desk views (V4). A view chip is offered only when it matches at least one live event (no empty states).
-// "PBE calls" appears only once prediction-decision-v1 is an official public state.
+// Desk views. A view chip is offered only when it matches at least one live event (no empty states).
+// HIGH CONFIDENCE = PBE's own evidence grade only. LARGE DIVERGENCE = a separate market-comparison state (comparable
+// venues only). MARKET MOVING = stored Kalshi observations moved >= 3 pts in 3 h. Divergence is never called "alpha"
+// or conviction. "PBE calls" appears only once prediction-decision-v1 is activated (decisions are not public before).
+const LARGE_DIV = 10;
+const comparableDivs = (h) => [h?.venues?.kalshi, h?.venues?.polymarket].filter((v) => v?.divergence).map((v) => v.divergence.pts);
+const within = (iso, ms) => { const m = Date.parse(iso) - Date.now(); return m > 0 && m <= ms; };
 const VIEWS = {
+  CALLS: { label: 'PBE calls', test: (e) => e.headline?.decision?.official === true && e.headline.decision.state === 'CALL' },
   HIGH: { label: 'High confidence', test: (e) => e.headline?.pbe_pct != null && e.headline?.confidence === 'HIGH' },
-  VS_MARKET: { label: 'PBE vs market', test: (e) => [e.headline?.venues?.kalshi, e.headline?.venues?.polymarket].some((v) => v?.divergence && v.divergence.label !== 'PBE_MARKET_AGREEMENT') },
-  DISAGREE: { label: 'Market disagreement', test: (e) => e.headline?.venue_gap_pts != null && e.headline.venue_gap_pts >= 5 },
-  SOON: { label: 'Resolving soon', test: (e) => { const m = Date.parse(e.close_time) - Date.now(); return m > 0 && m <= 24 * 3600000; } },
+  LARGE_DIV: { label: 'Large divergence', test: (e) => comparableDivs(e.headline).some((d) => Math.abs(d) >= LARGE_DIV) },
+  MOVING: { label: 'Market moving', test: (e) => e.headline?.market_move?.moving === true },
+  CLOSING: { label: 'Closing <24h', test: (e) => within(e.close_time, 24 * 3600000) },
+  RESOLVING: { label: 'Resolving soon', test: (e) => within(e.resolves_at || e.close_time, 24 * 3600000) },
+  DISAGREE: { label: 'Venue disagreement', test: (e) => e.headline?.venue_gap_pts != null && e.headline.venue_gap_pts >= 5 },
 };
 function views() {
   const el = $('views'); if (!el) return;
@@ -51,13 +59,69 @@ function views() {
   el.innerHTML = btn('ALL', 'All views', events.length) + avail.map(([k, v, n]) => btn(k, v.label, n)).join('');
   el.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => { state.view = b.dataset.view; views(); desk(); }));
 }
+const pctTxt = (v) => (v == null ? null : v < 1 ? '<1%' : v > 99 ? '>99%' : `${v}%`);
+const utcHM = (iso) => (iso ? `${new Date(iso).toISOString().slice(11, 16)} UTC` : '—');
+// Semantic null states: say what we know instead of a naked dash.
+function marketState(e, h) {
+  const k = h.venues?.kalshi;
+  if (h.market_pct != null) return { value: pctTxt(h.market_pct), note: k?.freshness === 'stale' ? 'Stale quote' : null };
+  if (e.kalshi_url || h.market_observed_at) return { value: null, note: 'No two-sided quote' };
+  return { value: null, note: 'Awaiting market' };
+}
+function divState(h) {
+  if (h.pbe_pct == null) return { note: 'No PBE model' };
+  if (h.market_pct == null) return { note: 'No comparable market' };
+  return { pts: h.divergence_pts };
+}
+// Divergence hierarchy: subtle heat on the numeric cell only, always paired with sign + magnitude text (never color alone).
+const heat = (d) => { const a = Math.abs(d); return a >= 20 ? 'heat-3' : a >= LARGE_DIV ? 'heat-2' : a >= 5 ? 'heat-1' : 'heat-0'; };
+function divCell(h) {
+  const st = divState(h);
+  if (st.note) return `<div class="cell"><span>Div.</span><strong class="null-state">${esc(st.note)}</strong></div>`;
+  const d = st.pts;
+  const words = Math.abs(d) <= 2 ? 'PBE and market agree' : `PBE ${Math.abs(d)} points ${d > 0 ? 'above' : 'below'} market`;
+  return `<div class="cell"><span>Div.</span><strong class="num div-heat ${heat(d)} ${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}" title="${esc(words)}"><b aria-hidden="true">${sign(d)}</b><i class="sr-only">${esc(words)}</i></strong></div>`;
+}
 const venueLine = (h) => {
   const k = h.venues?.kalshi; const p = h.venues?.polymarket;
   if (!k && !p) return '';
-  const part = (name, v) => (v ? `${name} <b class="num">${v.mid_pct === null ? '—' : v.mid_pct < 1 ? '<1%' : `${v.mid_pct}%`}</b>${v.comparable === false ? ' <span class="note">(related market, rules differ)</span>' : ''}` : '');
+  const part = (name, v) => (v ? `${name} <b class="num">${v.mid_pct == null ? 'no two-sided quote' : pctTxt(v.mid_pct)}</b>${v.comparable === false ? ' <span class="note">(related · rules differ)</span>' : ''}` : '');
   return `<span class="v4-line">${[part('Kalshi', k), part('Polymarket', p)].filter(Boolean).join(' · ')}</span>`;
 };
-const driverLine = (h) => (h.driver ? `<span class="v4-line">Strongest driver: <b>${esc(h.driver.label)} ${esc(h.driver.display)}${esc(h.driver.unit)}</b>${h.evidence_age_h != null ? ` · data ${h.evidence_age_h < 1 ? '<1' : Math.round(h.evidence_age_h)} h old` : ''}</span>` : '');
+const driverLine = (h) => (h.why?.drivers?.length
+  ? `<span class="v4-line">Why PBE: <b>${h.why.drivers.slice(0, 3).map((d) => `${esc(d.label)} ${esc(d.display)}${esc(d.unit)}`).join(' · ')}</b></span><span class="v4-line">${h.why.sources.length} source${h.why.sources.length === 1 ? '' : 's'} · cutoff ${utcHM(h.why.data_cutoff_at)}${h.evidence_age_h != null ? ` (${h.evidence_age_h < 1 ? '<1' : Math.round(h.evidence_age_h)} h old)` : ''}</span>`
+  : h.driver ? `<span class="v4-line">Strongest driver: <b>${esc(h.driver.label)} ${esc(h.driver.display)}${esc(h.driver.unit)}</b></span>` : '');
+// Truthful sparkline (24 h): stored observations only, step lines (a value holds until the next stored one), no
+// smoothing/interpolation. PBE holds to now (a forecast stands until replaced); the Kalshi line ends at its last
+// stored observation and breaks wherever nothing was stored for longer than the gap limit.
+function spark(h) {
+  const sp = h.spark; if (!sp) return '';
+  const W = 132, H = 30, P = 2; const t0 = Date.parse(sp.from), t1 = Date.parse(sp.to);
+  const x = (t) => (P + ((Math.max(t0, Math.min(t1, t)) - t0) / Math.max(1, t1 - t0)) * (W - 2 * P)).toFixed(1);
+  const y = (v) => (P + (1 - v / 100) * (H - 2 * P)).toFixed(1);
+  const path = (pts, holdTo, gap) => pts.map((p, i) => {
+    const tp = Date.parse(p.t);
+    const nextT = pts[i + 1] ? Date.parse(pts[i + 1].t) : null;
+    const broken = i > 0 && gap && tp - Date.parse(pts[i - 1].t) > gap;
+    const until = nextT !== null ? (gap && nextT - tp > gap ? tp : nextT) : (holdTo ?? tp);
+    return `${i === 0 || broken ? 'M' : 'L'}${x(tp)},${y(p.v)} H${x(until)}`;
+  }).join(' ');
+  const k = sp.kalshi; const pb = sp.pbe;
+  const lastK = k.at(-1); const lastP = pb.at(-1);
+  const label = `Last 24 hours, stored observations only. PBE ${lastP ? `${lastP.v}%` : 'n/a'}; Kalshi ${lastK ? `${lastK.v}% at ${utcHM(lastK.t)}` : 'n/a'}.`;
+  return `<div class="spark-wrap"><svg class="spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}"><title>${esc(label)}</title>${k.length ? `<path d="${path(k, null, sp.gap_ms)}" class="sp-k"/>` : ''}${pb.length ? `<path d="${path(pb, t1, null)}" class="sp-p"/>` : ''}</svg><span class="spark-key" aria-hidden="true"><i class="k-p"></i>PBE <i class="k-k"></i>Kalshi · 24 h, stored only</span></div>`;
+}
+// Inline WHY: the deterministic evidence of the headline forecast, opened in place (no LLM text; every value is stored).
+function whyPanel(e, h) {
+  const w = h.why; if (!w) return '';
+  const drivers = w.drivers.map((d) => `<li><span>${esc(d.label)}</span><b class="num">${esc(d.display)}${esc(d.unit)}</b>${d.source ? `<small>${esc(d.source)}${d.available_at ? ` · available ${utcHM(d.available_at)}` : ''}</small>` : ''}</li>`).join('');
+  const ledger = w.sources.map((s) => `<li><span>${esc(s.name)}</span><small>${esc([s.provider, s.role, s.available_at && `available ${utcHM(s.available_at)}`, s.issued_at && `issued ${utcHM(s.issued_at)}`].filter(Boolean).join(' · '))}</small></li>`).join('');
+  return `<details class="why-row"><summary><span>Why PBE · ${esc(h.label)}</span><small>${w.drivers.length} facts · ${w.sources.length} sources · cutoff ${utcHM(w.data_cutoff_at)}</small></summary>
+<div class="why-body"><ul class="why-drivers">${drivers}</ul>
+<p class="why-meta">Model <b class="mono">${esc(w.model)}</b> · ${esc((w.model_state || '').toLowerCase())} · confidence <b>${esc(w.confidence || '—')}</b> · published ${utcHM(w.published_at)} · data cutoff ${utcHM(w.data_cutoff_at)}</p>
+<details class="why-ledger"><summary>Source ledger (${w.sources.length})</summary><ul>${ledger}</ul></details>
+<a class="why-link" href="${esc(w.record_url)}">Full evidence record →</a></div></details>`;
+}
 
 function stats(s) {
   $('s-live').textContent = s.live_contracts.toLocaleString(); $('s-live-sub').textContent = `${s.live_events} events · ${Object.keys(s.by_category).length} categories`;
@@ -113,14 +177,15 @@ function desk() {
   if (state.sort === 'fresh') rows.sort((a, b) => Date.parse(b.headline?.published_at || 0) - Date.parse(a.headline?.published_at || 0));
   if (window.PBE_MV?.handles(state.sort)) rows = window.PBE_MV.order(state.sort, rows); // multi-venue modes (offered only when non-empty)
   if (!rows.length) { $('desk-list').innerHTML = `<div class="card empty-honest">No live events match this filter.</div>`; return; }
-  $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined;
-    return `<a class="card row" href="${esc(e.url)}">
-      <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${e.kalshi_url ? '<span>Kalshi</span>' : ''}${modeled ? `<span>${esc(h.confidence?.toLowerCase() || '')} data quality · ${ago(h.published_at)}</span>` : ''}</div>
-      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div></div>
+  $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined; const m = marketState(e, h);
+    const mkt = `<div class="cell"><span>Market</span><strong class="${m.value ? 'num' : 'null-state'}">${esc(m.value || m.note)}</strong>${m.value && m.note ? `<small class="null-note">${esc(m.note)}</small>` : ''}</div>`;
+    return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
+      <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${modeled && h.confidence ? `<span>${esc(h.confidence.toLowerCase())} data quality</span>` : ''}${modeled ? `<span>${ago(h.published_at)}</span>` : ''}</div>
+      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${spark(h)}</div>
       <div class="cells">${modeled
-        ? `<div class="cell"><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</strong></div><div class="cell"><span>Div.</span><strong class="num ${dcls(h.divergence_pts)}">${h.divergence_pts !== null ? sign(h.divergence_pts) : '—'}</strong></div>`
-        : `<div class="cell mon" style="grid-column:span 2"><span>PBE</span><strong>Market monitoring</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null && h.market_pct !== undefined ? '%' : ''}</strong></div>`}</div>
-      <div class="when"><b>${until(e.close_time)}</b>to close</div></a>`; }).join('');
+        ? `<div class="cell"><span>PBE</span><strong class="num">${pctTxt(h.pbe_pct)}</strong></div>${mkt}${divCell(h)}`
+        : `<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>${mkt}<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>`}</div>
+      <div class="when"><b>${until(e.close_time)}</b>to close</div></a>${modeled ? whyPanel(e, h) : ''}</div>`; }).join('');
   window.PBE_MV?.decorate(rows);
 }
 
