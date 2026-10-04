@@ -125,6 +125,7 @@ test('runBtcShadow: full window — forecasts, both venues, Kalshi resolution, 5
   const fetchImpl = async (url) => {
     const u = String(url);
     const nowS = Number(new URL(u).searchParams.get('end') ? Date.parse(new URL(u).searchParams.get('end')) / 1000 : 0);
+    if (u.includes('api.coinbase.com')) return { ok: false, status: 429, json: async () => ({}) }; // primary down -> Exchange fallback
     if (u.includes('coinbase')) return { ok: true, json: async () => [...c.cb].filter(([t]) => t < nowS).map(([t, x]) => [t, x.l, x.h, x.o, x.c, 1]) };
     if (u.includes('bitstamp')) return { ok: true, json: async () => ({ data: { ohlc: [...c.bs].filter(([t]) => t < fetchImpl.nowS - (fetchImpl.nowS % 60)).map(([t, x]) => ({ timestamp: String(t), open: x.o, high: x.h, low: x.l, close: x.c, volume: 1 })) } }) };
     if (u.includes('gamma-api')) return { ok: true, json: async () => [{ slug: 's', markets: [{ conditionId: '0xpm', outcomes: '["Up","Down"]', clobTokenIds: '["7","8"]', active: true, closed: fetchImpl.nowS >= OPEN + 900, outcomePrices: '["1","0"]' }] }] };
@@ -164,4 +165,11 @@ test('cron isolation: the 1-minute cron never runs the engine cycle; off unless 
   const cfg = readFileSync(new URL('../workers/pbe-predictions/wrangler.jsonc', import.meta.url), 'utf8');
   assert.match(cfg, /"crons": \["\*\/15 \* \* \* \*", "\* \* \* \* \*"\]/);
   assert.equal(windowOpenFor(OPEN + 899), OPEN);
+});
+
+test('Coinbase Advanced Trade candles parse to the same bars as the Exchange endpoint', async () => {
+  const { parseCoinbase, parseCoinbaseAdvanced } = await import('../src/crypto/btc-shadow.js');
+  const ex = parseCoinbase([[1791128580, 85326.29, 85339.64, 85339.63, 85334.75, 1.4]]);
+  const adv = parseCoinbaseAdvanced({ candles: [{ start: '1791128580', low: '85326.29', high: '85339.64', open: '85339.63', close: '85334.75', volume: '1.4' }] });
+  assert.deepEqual(adv.get(1791128580), ex.get(1791128580));
 });

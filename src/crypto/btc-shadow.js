@@ -36,14 +36,19 @@ export const polymarketSlug = (openS) => `btc-updown-15m-${openS}`;
 
 // ---- underlying (public exchange candles; in memory only) -------------------------------------------------------
 export function parseCoinbase(rows) { return new Map((rows || []).map(([t, low, high, open, close]) => [Number(t), { o: +open, h: +high, l: +low, c: +close }])); }
+// Coinbase Advanced Trade public candles: the same Coinbase BTC-USD 1-minute bars (identical 60/60 vs the Exchange
+// endpoint, 2026-10-04 15:45Z); the Exchange host answers 429 to Cloudflare egress, so it is only the fallback.
+export function parseCoinbaseAdvanced(j) { return new Map((j?.candles || []).map((c) => [Number(c.start), { o: +c.open, h: +c.high, l: +c.low, c: +c.close }])); }
 export function parseBitstamp(j) { return new Map((j?.data?.ohlc || []).map((c) => [Number(c.timestamp), { o: +c.open, h: +c.high, l: +c.low, c: +c.close }])); }
 
 export async function fetchCandles(fetchImpl, nowS) {
   const end = Math.floor(nowS / 60) * 60;
   const start = end - 80 * 60;
-  const get = async (url) => { const r = await fetchImpl(url, { headers: { 'user-agent': UA, accept: 'application/json' } }); if (!r.ok) throw new Error(`${new URL(url).host} -> ${r.status}`); return r.json(); };
+  const get = async (url) => { const r = await fetchImpl(url, { headers: { 'user-agent': UA, accept: 'application/json' }, cache: 'no-store' }); if (!r.ok) throw new Error(`${new URL(url).host} -> ${r.status}`); return r.json(); };
+  const coinbase = () => get(`https://api.coinbase.com/api/v3/brokerage/market/products/BTC-USD/candles?granularity=ONE_MINUTE&start=${start}&end=${end}&limit=90`).then(parseCoinbaseAdvanced)
+    .catch(() => get(`https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60&start=${iso(start)}&end=${iso(end)}`).then(parseCoinbase));
   const [cb, bs] = await Promise.all([
-    get(`https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60&start=${iso(start)}&end=${iso(end)}`).then(parseCoinbase),
+    coinbase(),
     get(`https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=60&limit=80`).then(parseBitstamp),
   ]);
   return { cb, bs };
@@ -208,9 +213,9 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
     out.venues.kalshi = k ? { market: k.market_id, mid: k.mid } : 'not_listed';
   } catch (e) { out.errors.push({ source: 'kalshi', error: e.message }); }
   try {
-    const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${polymarketSlug(openS)}`, { headers: { 'user-agent': UA, accept: 'application/json' } });
+    const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${polymarketSlug(openS)}`, { headers: { 'user-agent': UA, accept: 'application/json' }, cache: 'no-store' });
     const up = r.ok ? polymarketUpToken((await r.json())?.[0]) : null;
-    const book = up ? await fetchImpl(`https://clob.polymarket.com/book?token_id=${up.token}`, { headers: { 'user-agent': UA, accept: 'application/json' } }).then((x) => (x.ok ? x.json() : null)) : null;
+    const book = up ? await fetchImpl(`https://clob.polymarket.com/book?token_id=${up.token}`, { headers: { 'user-agent': UA, accept: 'application/json' }, cache: 'no-store' }).then((x) => (x.ok ? x.json() : null)) : null;
     const p = polymarketObs(up, book, now);
     if (p) venueRows.push(p);
     out.venues.polymarket = p ? { market: p.market_id, mid: p.mid } : 'not_listed';
@@ -277,7 +282,7 @@ export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
       const pc = candles ? proxyRef(candles, closeS) : null; const po = candles ? proxyRef(candles, openS) : null;
       const proxyResult = pc && po ? (pc >= po ? 'yes' : 'no') : null;
       let pmResult = null;
-      try { const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${w.polymarket_slug}`, { headers: { 'user-agent': UA } }); if (r.ok) pmResult = polymarketResult((await r.json())?.[0]); } catch { /* optional */ }
+      try { const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${w.polymarket_slug}`, { headers: { 'user-agent': UA }, cache: 'no-store' }); if (r.ok) pmResult = polymarketResult((await r.json())?.[0]); } catch { /* optional */ }
       const row = { window_id: w.window_id, venue_result: m.result, venue_settled_at: m.settlement_ts ?? null, proxy_close_usd: pc ? +pc.toFixed(2) : null, proxy_result: proxyResult, proxy_agrees: proxyResult ? proxyResult === m.result : null, polymarket_result: pmResult };
       await store.write('pred_crypto_resolutions', row, { conflictColumn: 'window_id' });
       resolved.set(w.window_id, row); res.resolved += 1; res.detail.resolutions.push(row);
