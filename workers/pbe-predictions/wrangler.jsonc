@@ -10,7 +10,8 @@
   "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
   "triggers": { "crons": ["*/15 * * * *"] },
   // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
-  "services": [{ "binding": "MARKETS", "service": "propsports-markets" }],
+  "services": [{ "binding": "MARKETS", "service": "propsports-markets" }, { "binding": "AUTH", "service": "propbetedge-auth-magic" }],
+  // AUTH: network membership authority (GET /membership?product=predictions); Predictions is All-Access-only
   "vars": {
     "SUPABASE_URL": "https://tkmlnhmylqnttmnsnief.supabase.co",
     "WEATHER_SERIES": "KXRAIN,KXHIGHNY,KXHIGHMIA,KXHIGHCHI,KXHIGHLAX,KXHIGHAUS,KXHIGHDEN,KXHIGHPHIL",

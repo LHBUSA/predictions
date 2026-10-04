@@ -81,7 +81,7 @@
       ]
     },
     {
-      "source": "/(site.css|home.js|favicon.svg)",
+      "source": "/(site.css|home.js|access.js|favicon.svg)",
       "headers": [
         {
           "key": "Cache-Control",

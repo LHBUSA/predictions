@@ -4,6 +4,7 @@
 import NET from '../../../brand/network.json' with { type: 'json' };
 
 export const NETWORK = NET;
+export const ACCESS_V = '20261004a';
 const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ext = 'target="_blank" rel="noopener"';
 
@@ -16,11 +17,13 @@ ${BRAND}
 <nav class="nav" aria-label="Predictions">${productLinks(current)}</nav>
 <div class="top-right">
 <span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>
+<a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="free" aria-label="Membership"><span class="mem-state">FREE</span><span class="mem-action">Sign in</span></a>
 <a class="net-link" href="${NET.brand.url}" data-pbe-placement="predictions_header_network"><span class="net-long">PropBetEdge Network</span><span class="net-short">Network</span> <span aria-hidden="true">↗</span></a>
 <a class="aa-pill" href="${NET.all_access.url}" data-pbe-placement="predictions_header_all_access" aria-label="PropBetEdge All Access, ${e(NET.all_access.price)}">${e(NET.all_access.label)} · ${e(NET.all_access.price)}</a>
 </div></div>
-<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}</div></nav>
-</header>`;
+<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}<a class="subnav-net" href="${NET.brand.url}">PropBetEdge ↗</a></div></nav>
+</header>
+<script src="/access.js?v=${ACCESS_V}" defer></script>`;
 }
 
 export function siteFooter() {

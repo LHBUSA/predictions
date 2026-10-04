@@ -60,3 +60,14 @@ npx wrangler versions deploy b98f1aed-8417-4c06-880b-21ded196f92d@100% --config 
 - Main site `propbetedge.ai` (LHBUSA/propbetedge-news-site, push = production): `a6c962b` + `246678a` add Predictions
   to hasPart, /pro, footer, header, About, search. Revert those two commits to roll back; Stripe identity untouched.
 - sql/005 applied (20261003235900). Rollback file: sql/005_newsroom_transition_graph_ROLLBACK.sql (restores the 003 guard).
+
+## Free / All Access boundary (2026-10-04)
+
+| Layer | Live | Roll back to | How |
+|---|---|---|---|
+| auth-magic (propbetedge-workers 5546aa4) | v2.5 `54ea9acf` (adds `?product=predictions`, predictions origin/return host) | v2.4 `ce54843e` | `wrangler versions deploy ce54843e-fec1-4f20-9220-638d23e1b003@100%` in workers/propbetedge-auth-magic |
+| pbe-predictions Worker | `dc6b28b7` (/v1/membership, /v1/premium/*, public event view, free desk cap 12) | `da480b34` | `wrangler versions deploy da480b34-c6c2-49b7-97c6-6f2bb7ebb5a2@100%` |
+| Vercel static (access.js, home.js, site.css) | this commit | previous production deployment | Vercel instant rollback |
+
+Roll back the Worker and Vercel together: the new home.js expects `desk.access` (without it, search/sort hide and no unlock module shows).
+Rolling back auth alone makes every Predictions visitor FREE (fail closed), with no data exposure.

@@ -6,6 +6,8 @@ import { runCycle } from './cycle.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome } from './pages.js';
 import { renderPng } from './og.js';
+import { predictionsMembership, PRIVATE_HEADERS } from './membership.js';
+import { publicEventView, premiumEventView, eventCsv, publicDesk, ALL_ACCESS_REQUIRED } from './premium.js';
 import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
@@ -50,6 +52,14 @@ async function cachedPng(req, ctx, render, opts = {}) {
   const res = png(await renderPng(await render(), opts));
   ctx.waitUntil(cache.put(key, res.clone()));
   return res;
+}
+
+// Member-only and identity responses: private, no-store, Vary: Cookie (never in a shared cache).
+const privateJson = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...PRIVATE_HEADERS } });
+async function requireAllAccess(req, env) {
+  const m = await predictionsMembership(req, env);
+  if (m.membership.entitled) return { ok: true, m };
+  return { ok: false, res: privateJson({ ...ALL_ACCESS_REQUIRED, authenticated: m.authenticated, membership: { state: m.membership.state, label: m.membership.label } }, m.authenticated ? 403 : 401) };
 }
 
 const storeFor = (env) => new EngineStore({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY });
@@ -130,24 +140,39 @@ export default {
       const store = storeFor(env);
       if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
       if (p === '/v1/summary') return json(await summary(store));
-      if (p === '/v1/desk') return json(await desk(store));
+      if (p === '/v1/desk') return json(publicDesk(await desk(store)));
+      // Membership + All Access (Predictions is an All-Access-only product surface; network authority decides)
+      if (p === '/v1/membership') { const m = await predictionsMembership(req, env); return privateJson({ authenticated: m.authenticated, membership: m.membership }); }
+      if (p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store)), access: { tier: 'all_access' } }); }
+      if (p.startsWith('/v1/premium/event/')) {
+        const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
+        const rest = decodeURIComponent(p.slice('/v1/premium/event/'.length));
+        const csv = rest.endsWith('.csv');
+        const slug = csv ? rest.slice(0, -4) : rest;
+        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return privateJson({ error: 'not_found' }, 404);
+        const rec = await eventRecord(store, slug);
+        if (!rec) return privateJson({ error: 'not_found' }, 404);
+        if (csv) return new Response(eventCsv(rec), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="pbe-${slug}.csv"`, ...PRIVATE_HEADERS } });
+        return privateJson(premiumEventView(rec));
+      }
       if (p === '/v1/calendar') return json(await calendar(store));
       if (p === '/v1/models') return json(await models(store), 200, 'public, max-age=120');
       if (p === '/v1/queue') return json(await queue(store));
       if (p === '/v1/track-record') return json(await trackRecord(store));
       if (p.startsWith('/v1/event/')) {
         const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
-        return rec ? json(rec) : json({ error: 'not_found' }, 404);
+        return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
       }
       if (p.startsWith('/v1/contract/')) {
         const rec = await contractRecord(store, decodeURIComponent(p.slice('/v1/contract/'.length)));
-        return rec ? json(rec) : json({ error: 'not_found' }, 404);
+        return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
       }
       // server-rendered pages (Vercel rewrites predictions.propbetedge.ai/events/:slug, /record, /sitemap.xml here)
       if (p.startsWith('/pages/events/')) {
         const slug = decodeURIComponent(p.slice('/pages/events/'.length));
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return html(renderNotFound(`/events/${slug}`), 404);
-        const rec = await eventRecord(store, slug);
+        const full = await eventRecord(store, slug);
+        const rec = full ? publicEventView(full) : null; // public SSR never carries the member archive
         // ?mv=1 = hidden multi-venue chart (flag OFF by default: without it the page is byte-identical)
         return rec ? html(renderEvent(rec, { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: url.searchParams.get('mv') === '1' })) : html(renderNotFound(`/events/${slug}`), 404);
       }

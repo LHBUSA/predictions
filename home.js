@@ -9,6 +9,26 @@ const BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-o
 const badge = (s) => `<span class="badge ${BADGE[s] || 'b-monitoring'}">${esc(s === 'MARKET_MONITORING' ? 'Market monitoring' : s)}</span>`;
 const dcls = (d) => (d > 0 ? 'dpos' : d < 0 ? 'dneg' : '');
 const getJSON = async (p) => { const r = await fetch(`${API}/${p}`); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
+let deskAccess = { tier: 'free' };
+// All Access: the full divergence scanner (every market, search, sort). Free: the largest headline gaps.
+function applyAccess() {
+  const free = deskAccess.tier !== 'all_access';
+  for (const id of ['q', 'sort']) { const el = $(id); if (el) { el.hidden = free; const lab = document.querySelector(`label[for="${id}"]`); if (lab) lab.hidden = free; } }
+  let lock = $('desk-lock');
+  if (free && deskAccess.total_events > (deskAccess.shown || 0)) {
+    if (!lock) { lock = document.createElement('div'); lock.id = 'desk-lock'; lock.className = 'card prem prem-desk'; $('desk-list').after(lock); }
+    lock.innerHTML = `<span class="prem-kicker">ALL ACCESS</span><p>Showing the ${deskAccess.shown} largest model-vs-market gaps of <b class="num">${deskAccess.total_events}</b> live events (${deskAccess.total_contracts.toLocaleString()} contracts). The full divergence scanner — every market, search and sorting — is part of All Access.</p><a class="aa-pill" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_desk_unlock">10 sports + PropBetEdge Predictions · $29/month</a> <a class="prem-signin" href="#" data-pbe-signin>Already a member? Sign in</a>`;
+  } else if (lock) lock.remove();
+}
+async function loadPremiumDesk() {
+  try {
+    const r = await fetch(`${API}/premium/desk`, { credentials: 'same-origin', cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json(); events = d.events; deskAccess = d.access || { tier: 'all_access' };
+    cats(); desk(); applyAccess();
+  } catch { /* stays on the free desk */ }
+}
+document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled) loadPremiumDesk(); });
 
 let events = [];
 const MV = new URLSearchParams(location.search).get('mv') === '1'; // hidden multi-venue desk: OFF unless ?mv=1
@@ -108,7 +128,7 @@ async function main() {
   const [s, d, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('desk'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
   if (d.status === 'fulfilled' && MV) await import('./multivenue.js?v=20261004mv1').then((m) => m.ready).then(() => window.PBE_MV?.addModes(d.value.events)).catch((e) => fail('multi-venue', e));
-  if (d.status === 'fulfilled') { events = d.value.events; tape(); featured(); cats(); desk(); }
+  if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
   else { $('desk-list').innerHTML = '<div class="card empty-honest">The live desk could not be loaded right now. Stored records are unaffected; try again shortly.</div>'; fail('desk', d.reason); }
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);

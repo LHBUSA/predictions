@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261004e';
+export const ASSET_V = '20261004f';
 import { siteHeader, siteFooter } from './network.js';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
@@ -120,6 +120,18 @@ export function eventOgImage(rec) {
   return `${SITE}/og/events/${rec.event.slug}.png?v=${x.toString(36)}`;
 }
 
+// All Access module: a real preview (the archive's actual size) + unlock; members get the archive client-side from
+// /api/premium/event/<slug> (private, no-store). Nothing premium is in this HTML.
+export function premiumModule(rec) {
+  const a = rec.access?.archive;
+  if (!a) return '';
+  return `<section class="card panel prem" id="pbe-premium" data-slug="${esc(rec.event.slug)}" aria-labelledby="prem-h">
+<span class="prem-kicker">ALL ACCESS</span><h2 id="prem-h">Full forecast archive</h2>
+<p class="prem-preview"><b class="num">${a.snapshots}</b> immutable PBE snapshots and <b class="num">${a.market_observations}</b> stored market observations across ${a.outcomes} outcome${a.outcomes === 1 ? '' : 's'}: the complete probability path, every intermediate forecast, the changed-input ledger and a downloadable record.</p>
+<div class="prem-lock" data-prem-lock><p>Unlock the full forecast history, model-driver changes and cross-venue intelligence.</p><a class="aa-pill" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_event_unlock">10 sports + PropBetEdge Predictions · $29/month</a> <a class="prem-signin" href="#" data-pbe-signin>Already a member? Sign in</a></div>
+<div class="prem-body" data-prem-body hidden></div></section>`;
+}
+
 export function renderEvent(rec, { stories = [], multiVenue = false } = {}) {
   const e = rec.event; const h = headlineOutcome(rec);
   const canonical = `${SITE}/events/${e.slug}`;
@@ -140,9 +152,9 @@ export function renderEvent(rec, { stories = [], multiVenue = false } = {}) {
 <div class="kpi"><span>Divergence</span><strong class="num ${h.divergence_pts > 0 ? 'dpos' : h.divergence_pts < 0 ? 'dneg' : ''}">${h.divergence_pts !== null ? `${sign(h.divergence_pts)}<small style="display:inline;font-size:14px"> pts</small>` : '—'}</strong><small>PBE vs current market price</small></div></div>
 ${h.divergence_pts !== null ? `<p class="headline">${Math.abs(h.divergence_pts) <= 2 ? 'PBE and the market agree within 2 points on this outcome.' : `PBE sees a ${h.divergence_pts > 0 ? 'higher' : 'lower'} probability of “${esc(h.label)}” than the current market price.`}</p>` : ''}` : '';
   const evidence = h?.evidence?.length ? `<section class="card panel"><h2>Why the model sees it — ${esc(h.label)}</h2><ul class="ev-list">${h.evidence.map((x) => `<li class="ev-item"><div><b>${esc(x.label)}</b><small>${esc(x.detail || '')}</small></div><strong class="num">${esc(x.value)}${esc(x.unit)}</strong></li>`).join('')}</ul></section>` : '';
-  const snaps = rec.outcomes.filter((o) => o.history.length).map((o) => `<details class="snap"><summary>${esc(o.label)} — ${o.history.length} snapshot${o.history.length > 1 ? 's' : ''}${o.resolution ? ` · resolved ${esc(String(o.resolution.venue_result).toUpperCase())}` : ''}</summary>
-<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Published</th><th>PBE</th><th>Market then</th><th>Model</th><th>Data cutoff</th><th>Quality</th><th>Scoring role</th><th>What changed</th></tr></thead><tbody>
-${o.history.map((s) => `<tr><td class="num">${utc(s.t)}</td><td class="num"><b>${s.pct}%</b></td><td class="num">${s.market_pct ?? '—'}${s.market_pct !== null ? '%' : ''}</td><td>${esc(s.model)}</td><td class="num">${utc(s.cutoff)}</td><td>${esc(s.confidence || '')}</td><td>${esc(s.roles.map((r) => r.replace(/_/g, ' ').toLowerCase()).join(', '))}</td><td>${esc(s.changed.slice(0, 4).map((ch) => `${ch.feature}: ${typeof ch.from === 'object' ? '…' : ch.from} → ${typeof ch.to === 'object' ? '…' : ch.to}`).join('; '))}</td></tr>`).join('')}
+  const snaps = rec.outcomes.filter((o) => o.history.length).map((o) => `<details class="snap"><summary>${esc(o.label)} — ${o.history.length} checkpoint${o.history.length > 1 ? 's' : ''}${o.resolution ? ` · resolved ${esc(String(o.resolution.venue_result).toUpperCase())}` : ''}</summary>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Published</th><th>PBE</th><th>Market then</th><th>Model</th><th>Data cutoff</th><th>Quality</th><th>Scoring role</th></tr></thead><tbody>
+${o.history.map((s) => `<tr><td class="num">${utc(s.t)}</td><td class="num"><b>${s.pct}%</b></td><td class="num">${s.market_pct ?? '—'}${s.market_pct !== null ? '%' : ''}</td><td>${esc(s.model)}</td><td class="num">${utc(s.cutoff)}</td><td>${esc(s.confidence || '')}</td><td>${esc(s.roles.length ? s.roles.map((r) => r.replace(/_/g, ' ').toLowerCase()).join(', ') : 'current')}</td></tr>`).join('')}
 </tbody></table></div>${o.scores.length ? `<p class="note">Scores (Brier, PBE vs market on the same snapshot): ${o.scores.filter((s) => s.method === 'brier').map((s) => `${s.designation.replace(/_/g, ' ').toLowerCase()} ${s.pbe.toFixed(3)} vs ${s.market === null ? '—' : s.market.toFixed(3)}`).join(' · ')}</p>` : ''}</details>`).join('');
   const resolved = rec.outcomes.filter((o) => o.resolution);
   const resolution = resolved.length ? `<section class="card panel"><h2>Resolution</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Outcome</th><th>Venue settlement</th><th>Official value</th><th>Agree</th></tr></thead><tbody>${resolved.map((o) => `<tr><td>${esc(o.label)}</td><td>${esc(String(o.resolution.venue_result).toUpperCase())}${o.resolution.venue_value ? ` (${esc(o.resolution.venue_value)})` : ''}</td><td>${o.resolution.official_outcome ? `${esc(o.resolution.official_outcome)} · ${esc(o.resolution.official_value)} ${esc(o.resolution.official_units)}` : 'pending'}${o.resolution.source_url ? ` · <a href="${esc(o.resolution.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</td><td>${o.resolution.sources_agree === null ? '—' : o.resolution.sources_agree ? 'yes' : '<b>no — flagged</b>'}</td></tr>`).join('')}</tbody></table></div></section>` : '';
@@ -169,9 +181,9 @@ ${shareBar(canonical, e.title)}
 <div class="ev-grid"><div>
 <section class="card panel">${kpis}</section>
 <section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
-${h && (h.history.length || h.market_path.length) ? `<section class="card panel"><h2>Probability history — ${esc(h.label)}</h2>${historyChart(h)}</section>` : ''}
+${premiumModule(rec)}
 ${evidence}
-${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Forecast snapshots (immutable archive)</h2>${snaps}</section>` : ''}
+${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Scoring checkpoints</h2><p class="note">The designated snapshots that are scored (fixed by rule before the outcome) and the current forecast. Every intermediate snapshot is in the full archive.</p>${snaps}</section>` : ''}
 ${resolution}
 ${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div></section><script type="module" src="/multivenue.js?v=20261004mv1"></script>` : ''}
 </div><aside>
