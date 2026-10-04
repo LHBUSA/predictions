@@ -120,3 +120,5 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   window (log only); `CRYPTO_SETTLEMENTS="false"` until `sql/010_crypto_venue_settlements.sql` is applied (PROOF
   `sql/010_crypto_venue_settlements_PROOF.sql`, PGlite in `scripts/db/prove-009.mjs`). Rollback: `5e36f7bb` (844a618).
 - Table rollback `sql/010_crypto_venue_settlements_ROLLBACK.sql` (set CRYPTO_SETTLEMENTS="false" + deploy first).
+- pbe-predictions `8df28a94-f6cb-413b-bfda-66c12986951e` (main e00b9b6): venue quotes captured even when the exchange
+  read fails (forecast skipped); completeness = the window that just closed. Rollback: `83f0d3d0` (89cb6fa).
