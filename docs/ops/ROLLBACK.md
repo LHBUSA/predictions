@@ -122,3 +122,12 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
 - Table rollback `sql/010_crypto_venue_settlements_ROLLBACK.sql` (set CRYPTO_SETTLEMENTS="false" + deploy first).
 - pbe-predictions `8df28a94-f6cb-413b-bfda-66c12986951e` (main e00b9b6): venue quotes captured even when the exchange
   read fails (forecast skipped); completeness = the window that just closed. Rollback: `83f0d3d0` (89cb6fa).
+
+## Insights image resolver (2026-10-04) — CLOSED (owner PASS)
+- Release: main `89cb6fa`, Worker `83f0d3d0` = the image-release rollback point. The later BTC deployment
+  (workers-27, Worker `8df28a94`, main `e00b9b6`, rebased on 89cb6fa) preserves it.
+- Order is fixed: flagship art -> verified real photo (Wikidata entity + label/coordinate check, Commons free license,
+  >=1600 px) -> story-specific evidence SVG -> category art emergency-only. Do not lower the gates or expand the
+  registry for coverage. No further visual work unless production exposes a defect.
+- Rollback of images only: `npx wrangler versions deploy <pre-image version>@100%` is NOT recommended (it would also drop
+  later BTC work); instead revert 89cb6fa's images.js/render.js and redeploy from main.
