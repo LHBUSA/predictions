@@ -612,3 +612,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .fresh{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:2px 7px}
 .fresh-current{color:var(--pos);background:var(--pos-bg)}.fresh-delayed{color:var(--amber);background:var(--amber-bg)}.fresh-stale{color:var(--neg);background:var(--neg-bg)}
 @media (max-width:760px){.live-grid{grid-template-columns:1fr}}
+.ix-main>[data-live-region="insight"] .ix-live{margin:0 0 18px}
+.ix-live-grid small{display:block;font-size:11px;color:#a9bccf;margin-top:2px}
+.ix-live-updates{margin:10px 0 0;padding-left:18px;color:#c9d6e6;font-size:12.5px}
+.ix-live-updates li{margin:4px 0}.ix-live-updates small{display:block;color:#8fa5bd}

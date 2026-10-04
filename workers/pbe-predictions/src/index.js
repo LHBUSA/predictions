@@ -19,7 +19,7 @@ import { publicEventView, premiumEventView, eventCsv, publicDesk, ALL_ACCESS_REQ
 import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
-import { renderArticle, renderDesk, rssXml, newsSitemapXml } from './insights/render.js';
+import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from './insights/render.js';
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
@@ -224,6 +224,13 @@ export default {
       if (p.startsWith('/v1/event/')) {
         const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
         return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
+      }
+      // Live LIVE UPDATE layer of an Insights article (published evidence never changes; only this region refreshes).
+      if (p.startsWith('/v1/live/insight/')) {
+        const item = await storyForSlug(store, decodeURIComponent(p.slice('/v1/live/insight/'.length)));
+        if (!item) return json({ error: 'not_found' }, 404);
+        const live = await eventRecord(store, item.story.primary);
+        return json({ at: live?.generated_at ?? null, regions: { insight: liveUpdate(live, item.built.outcome_market_id, item.story, item.built) } }, 200, 'public, max-age=15');
       }
       // Live regions of an event page (re-rendered by the SAME server functions; the page swaps them in place while visible).
       if (p.startsWith('/v1/live/event/')) {

@@ -7,6 +7,7 @@ import { publicEventView } from '../premium.js';
 import { fmtUtc } from './charts.js';
 import { VERTICALS } from './stories.js';
 import { storyImage, heroOverlaySvg, storySvg } from './images.js';
+import { LIVE_V } from '../pages.js';
 
 const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const longDate = (iso) => new Date(iso).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + ' UTC';
@@ -29,15 +30,32 @@ function heroNumbers(h) {
 }
 const stat = (s) => `<div class="ix-hstat t-${esc(s.tone)}"><span>${esc(s.label)}</span><strong>${esc(s.value)}</strong>${s.sub ? `<small>${esc(s.sub)}</small>` : ''}</div>`;
 
-function liveModule(rec, marketId) {
+// LIVE UPDATE (freshness pass): current state of the story's contract, refreshed in place while the article is open
+// (/v1/live/insight/:slug via live.js). The published evidence below never changes. UPDATE entries are deterministic:
+// each later PUBLIC PBE snapshot of the same contract that moved >= UPDATE_PTS from the last reported value.
+export const UPDATE_PTS = 10;
+export function liveUpdate(rec, marketId, story, built = null) {
   if (!rec) return '';
   const o = rec.outcomes.find((x) => x.market_id === marketId) || headlineOutcome(rec);
   if (!o) return '';
-  const updated = [o.published_at, o.market_observed_at].filter(Boolean).sort().at(-1);
-  return `<section class="ix-live" aria-labelledby="live-h"><div class="ix-live-head"><span class="ix-pulse" aria-hidden="true"></span><span id="live-h">LIVE NOW · not part of the original story</span></div>
-<h3>${esc(rec.event.title)}</h3><p class="note" style="color:#a9bccf">${esc(o.label)}</p>
-<div class="ix-live-grid"><div><span>PBE</span><b>${o.pbe_pct !== null ? `${o.pbe_pct}%` : '—'}</b></div><div><span>Market</span><b>${o.market_pct !== null ? `${o.market_pct}%` : '—'}</b></div><div><span>Gap</span><b class="${o.divergence_pts > 0 ? 'pos' : o.divergence_pts < 0 ? 'neg' : ''}">${o.divergence_pts !== null ? `${sign(o.divergence_pts)}` : '—'}</b></div></div>
-<p class="ix-live-meta">${badge(rec.event.state)} ${updated ? `Updated ${esc(fmtUtc(updated))}` : ''}</p>
+  const L = o.live || {};
+  const resolved = Boolean(o.resolution);
+  const state = resolved ? 'RESOLVED' : L.window?.state === 'WINDOW_OPEN' ? 'WINDOW OPEN · OBSERVING' : L.window?.state === 'WINDOW_CLOSED' ? 'WINDOW CLOSED · AWAITING SETTLEMENT' : 'PRE-WINDOW';
+  const pubPbe = built?.hero?.type === 'flow' ? Number(String(built.hero.to).replace('%', '')) : null;
+  const pubMkt = (built?.claims || []).filter((c) => c.kind === 'market_at_snapshot').at(-1)?.value ?? null;
+  const k = o.venues?.kalshi?.current;
+  const since = (now, then) => (now === null || now === undefined || then === null || then === undefined ? '' : `<small>${sign(now - then)} pts since publication</small>`);
+  const after = (o.history || []).filter((h) => h.pct !== null && h.t > story.as_of);
+  const updates = []; let last = pubPbe;
+  for (const h of after) { if (last === null || Math.abs(h.pct - last) >= UPDATE_PTS) { updates.push(h); last = h.pct; } }
+  const obs = L.observations;
+  const pbeLabel = L.pbe_frozen ? `PBE · pre-window, frozen ${fmtUtc(L.pbe_frozen.frozen_at)}` : 'PBE';
+  return `<section class="ix-live" aria-labelledby="live-h"><div class="ix-live-head"><span class="ix-pulse" aria-hidden="true"></span><span id="live-h">LIVE UPDATE · not part of the original story</span></div>
+<h3>${esc(rec.event.title)}</h3><p class="note" style="color:#a9bccf">${esc(o.label)} · <b>${esc(state)}</b></p>
+<div class="ix-live-grid"><div><span>${esc(pbeLabel)}</span><b>${o.pbe_pct !== null ? `${o.pbe_pct}%` : '—'}</b>${since(o.pbe_pct, pubPbe)}</div><div><span>Kalshi</span><b>${k?.mid_pct !== null && k?.mid_pct !== undefined ? `${k.mid_pct}%` : '—'}</b>${since(k?.mid_pct, pubMkt)}</div><div><span>Gap</span><b class="${o.divergence_pts > 0 ? 'pos' : o.divergence_pts < 0 ? 'neg' : ''}">${o.divergence_pts !== null ? `${sign(o.divergence_pts)}` : '—'}</b></div></div>
+${obs ? `<p class="ix-live-meta">At ${esc(L.station.icao)}: high so far <b>${obs.max_so_far ? `${obs.max_so_far.temp_f.toFixed(1)}°F` : '—'}</b> · latest ${obs.latest.temp_f !== null ? `${obs.latest.temp_f.toFixed(1)}°F` : '—'} (<span data-ago="${esc(obs.latest.t)}"></span>)${obs.precip_so_far_in !== null ? ` · rain so far ${obs.precip_so_far_in.toFixed(2)} in` : ''} · ${esc(obs.freshness?.label || '')}</p>` : ''}
+<p class="ix-live-meta">${badge(rec.event.state)} PBE ${o.published_at ? esc(fmtUtc(o.published_at)) : '—'} · market ${k?.observed_at ? `<span data-ago="${esc(k.observed_at)}"></span>` : '—'}</p>
+${updates.length ? `<ol class="ix-live-updates">${updates.map((h) => `<li><b>UPDATE · ${esc(fmtUtc(h.t))}</b> PBE ${h.pct}% <small>${esc(h.model)} · data cutoff ${esc(fmtUtc(h.cutoff))}</small></li>`).join('')}</ol>` : ''}
 <a class="cta-primary ix-live-cta" href="/events/${esc(rec.event.slug)}">Open the live forecast →</a></section>`;
 }
 
@@ -125,7 +143,7 @@ export function renderArticle(story, inputBuilt, { live, related = [], model, wo
   const modified = built.resolution && (built.resolution.resolved_at || built.resolution.venue_settled_at) > story.published_at ? (built.resolution.resolved_at || built.resolution.venue_settled_at) : null;
   const rel = related.filter(Boolean).slice(0, 4);
   const img = storyImage(story);
-  const body = `<article class="ix-article fam-${esc(story.family.toLowerCase())}">
+  const body = `<article class="ix-article fam-${esc(story.family.toLowerCase())}" data-live-src="/api/live/insight/${esc(story.slug)}">
 <header class="ix-hero has-art v-${esc(story.vertical)}${story.family === 'RESOLUTION_REPORT' ? ' resolved' : ''}" data-image-version="${esc(img.image_version)}" data-image-key="${esc(img.key)}" data-image-type="${esc(img.type)}">${heroArt(img, true, story)}<div class="ix-hero-shade" aria-hidden="true"></div>
 <div class="wrap ix-hero-inner"><div class="ix-hero-copy">
 <nav class="ix-crumbs" aria-label="Breadcrumb">${articleCrumbs(story, built).slice(0, -1).map((c) => `<a href="${c.url.startsWith(SITE) ? c.url.slice(SITE.length) : c.url}">${esc(c.name)}</a>`).join(' › ')}</nav>
@@ -134,6 +152,7 @@ export function renderArticle(story, inputBuilt, { live, related = [], model, wo
 <p class="ix-meta"><span>Published <time datetime="${esc(story.published_at)}">${esc(longDate(story.published_at))}</time></span>${modified ? `<span>Updated <time datetime="${esc(modified)}">${esc(longDate(modified))}</time></span>` : ''}<span>Model data as of ${esc(fmtUtc(built.model_as_of))}</span><span>By the PropBetEdge Predictions Desk</span>${words ? `<span>${Math.max(1, Math.round(words / 230))} min read</span>` : ''}</p>
 ${creditLine(img)}</div><div class="ix-hero-nums">${heroNumbers(built.hero)}</div></div></header>
 <div class="wrap ix-layout"><div class="ix-main">
+<div data-live-region="insight">${liveUpdate(live, built.outcome_market_id, story, built)}</div>
 ${shareBar(url, built.title)}
 ${resolutionModule(built.resolution, story)}
 <section class="ix-quick" aria-labelledby="quick-h"><h2 id="quick-h">Quick read</h2><ul>${built.quick.map((q) => `<li>${q}</li>`).join('')}</ul></section>
@@ -143,9 +162,8 @@ ${ledger(built.ledger, built.rule, model)}
 ${continueResearch(story, built)}
 ${networkModule()}
 </div><aside class="ix-side">
-${liveModule(live, built.outcome_market_id)}
 ${rel.length ? `<section class="ix-related"><h3>Related predictions</h3>${rel.map((e) => `<a class="ix-rel" href="${esc(e.url)}"><span class="cat">${esc(e.category_label)}</span><b>${esc(e.title)}</b><small>${e.headline?.pbe_pct !== null && e.headline?.pbe_pct !== undefined ? `PBE ${e.headline.pbe_pct}% · ` : ''}${e.headline?.market_pct !== null && e.headline?.market_pct !== undefined ? `market ${e.headline.market_pct}%` : 'market monitoring'}</small></a>`).join('')}</section>` : ''}
-</aside></div></article>`;
+</aside></div></article><script src="/live.js?v=${LIVE_V}" defer></script>`;
   return layout({
     title: `${built.seo_title} | PropBetEdge Predictions`, description: built.description, canonical: url, ogImage: storyImageUrl(story), ogType: 'article', ogImageAlt: `${built.title} — ${img.hero_alt}`,
     jsonld: [articleJsonLd(story, built, modified)], body,
