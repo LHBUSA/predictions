@@ -231,6 +231,7 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
       await store.write('pred_crypto_forecasts', { window_id: wid, model_id: MODEL.id, model_version: MODEL.version, model_state: 'SHADOW', captured_at: now, data_cutoff_at: f.dataCutoffAt, p_up: +f.p_up.toFixed(6), features: f.features, features_sha256: featuresSha }, { conflictColumn: 'window_id,model_id,captured_at' });
     }
     if (venueRows.length) await store.write('pred_crypto_venue_obs', venueRows.map((v) => ({ window_id: wid, ...v })), { conflictColumn: 'window_id,venue,captured_at' });
+    out.written = { window: wid, forecast: f.status === 'OK', venues: venueRows.map((v) => `${v.venue}:${v.mid}`) };
   }
 
   // resolve + designate + score the recently closed windows (last 2 h)
@@ -239,7 +240,7 @@ export async function runBtcShadow({ store, mkt, fetchImpl = globalThis.fetch, n
 }
 
 export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
-  const res = { resolved: 0, designations: 0, scores: 0 };
+  const res = { resolved: 0, designations: 0, scores: 0, detail: { designations: [], resolutions: [], scores: [] } };
   const nowMs = Date.parse(now);
   const windows = await store.select('pred_crypto_windows', { select: 'window_id,open_at,close_at,polymarket_slug', close_at: `lte.${now}`, and: `(close_at.gte.${new Date(nowMs - 2 * 3600e3).toISOString()})` });
   if (!windows.length) return res;
@@ -259,7 +260,7 @@ export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
       const k = nearestObs(wobs, 'kalshi', d.forecast.captured_at); const p = nearestObs(wobs, 'polymarket', d.forecast.captured_at);
       const row = { window_id: w.window_id, model_id: MODEL.id, designation: d.designation, forecast_id: d.forecast.forecast_id, reference_time: d.reference_time, rule_version: DESIGNATION_RULES, kalshi_obs_id: k?.obs_id ?? null, polymarket_obs_id: p?.obs_id ?? null };
       const ins = await store.write('pred_crypto_designations', row, { conflictColumn: 'window_id,model_id,designation', returnRepresentation: true });
-      if (ins?.[0]) { des.push(ins[0]); res.designations += 1; }
+      if (ins?.[0]) { des.push(ins[0]); res.designations += 1; res.detail.designations.push({ window: w.window_id, designation: d.designation, captured_at: d.forecast.captured_at, p_up: Number(d.forecast.p_up), kalshi_mid: k?.mid ?? null, polymarket_mid: p?.mid ?? null }); }
     }
   }
   // 2. resolution: Kalshi's published result (yes / no) only
@@ -279,7 +280,7 @@ export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
       try { const r = await fetchImpl(`https://gamma-api.polymarket.com/events?slug=${w.polymarket_slug}`, { headers: { 'user-agent': UA } }); if (r.ok) pmResult = polymarketResult((await r.json())?.[0]); } catch { /* optional */ }
       const row = { window_id: w.window_id, venue_result: m.result, venue_settled_at: m.settlement_ts ?? null, proxy_close_usd: pc ? +pc.toFixed(2) : null, proxy_result: proxyResult, proxy_agrees: proxyResult ? proxyResult === m.result : null, polymarket_result: pmResult };
       await store.write('pred_crypto_resolutions', row, { conflictColumn: 'window_id' });
-      resolved.set(w.window_id, row); res.resolved += 1;
+      resolved.set(w.window_id, row); res.resolved += 1; res.detail.resolutions.push(row);
     }
   }
   // 3. scores for designations of resolved windows
@@ -294,7 +295,7 @@ export async function settleClosed({ store, mkt, fetchImpl, now, candles }) {
       if (!fc) continue;
       rows.push(...scoreRows({ designation: d, forecast: fc, outcome: resolved.get(d.window_id).venue_result === 'yes' ? 1 : 0, kalshi: byO.get(d.kalshi_obs_id), polymarket: byO.get(d.polymarket_obs_id) }));
     }
-    if (rows.length) { await store.write('pred_crypto_scores', rows, { conflictColumn: 'designation_id,method' }); res.scores = rows.length; }
+    if (rows.length) { await store.write('pred_crypto_scores', rows, { conflictColumn: 'designation_id,method' }); res.scores = rows.length; res.detail.scores = rows.map((r) => ({ window: r.window_id, designation: r.designation, method: r.method, outcome: r.outcome, pbe: +Number(r.pbe_score).toFixed(4), kalshi: r.kalshi_score == null ? null : +Number(r.kalshi_score).toFixed(4), polymarket: r.polymarket_score == null ? null : +Number(r.polymarket_score).toFixed(4) })); }
   }
   return res;
 }

@@ -29,7 +29,7 @@
     "NEWSROOM_DB": "true",
     // decision ledger: write pred_decisions rows at designation time (sql/006 applied 2026-10-04, ledger 20261004140000)
     "DECISIONS_DB": "true",
-    "CRYPTO_SHADOW": "false"
+    "CRYPTO_SHADOW": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN
 }
