@@ -1,5 +1,16 @@
 # prediction-decision-v1: holdout evidence (DRAFT, for owner approval)
 
+> **Owner decision 2026-10-04 — APPROVED WITH ACTIVATION GATE.** Rain candidate frozen as `rain-v1-candidate`
+> (`src/engine/decision.js`, status `FROZEN_PROSPECTIVE`, frozen_at 2026-10-04T13:21:00Z, `activated_at: null`):
+> pbe-weather-precip, T = 0.70, HIGH only, no YES Jun–Sep, NEAR_CERTAIN ≥ 0.97 = PASS, 12 h freshness, current
+> resolution rules. Parameters pinned by hash in `test/decision.test.js`; any change = a new candidate version.
+> Public CALL stays OFF (official = false until activation). Valid-but-unvalidated models = `PASS · MODEL_NOT_VALIDATED`;
+> HOLD only when PBE cannot evaluate (rules, data, staleness, integrity, domain). Station-skill grade now reads
+> training-period skill (`src/weather/artifacts/precip-station-skill-train-v1.json`; golden outputs byte-identical).
+> Promotion evidence: one FINAL_PRE_RESOLUTION decision per contract captured after the freeze, decided as of its
+> capture time (`/admin/decisions/prospective`). 100 resolved calls = diagnostic only; 300 resolved calls on >= 30
+> distinct resolution dates = owner promotion review (date-clustered CIs). Fail = candidate recorded as failed; V2 separate.
+
 Status: research evidence only. Nothing here is deployed, and nothing writes to a DB. Generated 2026-10-04.
 Owner rule: **Facts create the PBE probability. Kalshi and Polymarket benchmark it afterward.** No market or venue price, quote, volume or settlement is read anywhere in this evidence. Bucket grids for max-temp are synthetic, and strikes for rates are synthetic. Both are built from facts (guidance / last published yield), never from venue data.
 

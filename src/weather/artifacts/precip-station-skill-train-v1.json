@@ -1,0 +1,132 @@
+{
+ "artifact": "precip-station-skill-train-v1",
+ "definition": "Per-station Brier skill of pbe-weather-precip v1 vs 1991-2020 climatology over the TRAINING period only (2023-01-03..2025-06-30, leads 6/18/30/42 h, engine run-availability rules). Point-in-time: available before any live forecast; replaces the precip-v1 holdout by_station statistic previously used by wx-quality/1 (holdout leakage, owner 2026-10-04).",
+ "source_script": "scripts/research/decision/dp-wx-cases.mjs",
+ "generated_from": "D:/Workers/scratch/predictions-decision/precip-station-skill.json",
+ "by_station": {
+  "CLINYC": {
+   "n": 3639,
+   "skill": 0.6246
+  },
+  "CLIORD": {
+   "n": 3639,
+   "skill": 0.5651
+  },
+  "CLIMDW": {
+   "n": 3639,
+   "skill": 0.5453
+  },
+  "CLIAUS": {
+   "n": 3639,
+   "skill": 0.4889
+  },
+  "CLIMIA": {
+   "n": 3639,
+   "skill": 0.2975
+  },
+  "CLIDEN": {
+   "n": 3639,
+   "skill": 0.4407
+  },
+  "CLIPHL": {
+   "n": 3639,
+   "skill": 0.5304
+  },
+  "CLILAX": {
+   "n": 3639,
+   "skill": 0.6671
+  },
+  "CLILAS": {
+   "n": 3639,
+   "skill": 0.4678
+  },
+  "CLIMSY": {
+   "n": 3623,
+   "skill": 0.4707
+  },
+  "CLISFO": {
+   "n": 3639,
+   "skill": 0.7461
+  },
+  "CLIDCA": {
+   "n": 3635,
+   "skill": 0.5629
+  },
+  "CLISEA": {
+   "n": 3631,
+   "skill": 0.5434
+  },
+  "CLIBOS": {
+   "n": 3639,
+   "skill": 0.5935
+  },
+  "CLIPHX": {
+   "n": 3639,
+   "skill": 0.4895
+  },
+  "CLIATL": {
+   "n": 3639,
+   "skill": 0.5559
+  },
+  "CLIMSP": {
+   "n": 3639,
+   "skill": 0.5437
+  },
+  "CLIDFW": {
+   "n": 3639,
+   "skill": 0.4888
+  },
+  "CLISAT": {
+   "n": 3635,
+   "skill": 0.393
+  },
+  "CLIHOU": {
+   "n": 3639,
+   "skill": 0.4945
+  },
+  "CLIOKC": {
+   "n": 3639,
+   "skill": 0.4786
+  },
+  "CLIEWR": {
+   "n": 3639,
+   "skill": 0.6184
+  },
+  "CLITTN": {
+   "n": 3639,
+   "skill": 0.56
+  },
+  "CLIMKE": {
+   "n": 3639,
+   "skill": 0.5209
+  },
+  "CLILEX": {
+   "n": 3639,
+   "skill": 0.5484
+  },
+  "CLICMH": {
+   "n": 3639,
+   "skill": 0.5538
+  },
+  "CLIPVD": {
+   "n": 3639,
+   "skill": 0.5907
+  },
+  "CLICLL": {
+   "n": 3639,
+   "skill": 0.4786
+  },
+  "CLIPIT": {
+   "n": 3639,
+   "skill": 0.5334
+  },
+  "CLIABQ": {
+   "n": 3639,
+   "skill": 0.4254
+  },
+  "CLISGF": {
+   "n": 3639,
+   "skill": 0.5163
+  }
+ }
+}

@@ -5,6 +5,7 @@ import precipNbmArtifact from './artifacts/precip-nbm-v1.1.json' with { type: 'j
 import tempArtifact from './artifacts/temp-v1.json' with { type: 'json' };
 import tempNbmArtifact from './artifacts/temp-nbm-v1.1.json' with { type: 'json' };
 import climatology from './artifacts/climatology-v1.json' with { type: 'json' };
+import stationSkillTrain from './artifacts/precip-station-skill-train-v1.json' with { type: 'json' };
 import { cliStation } from './stations.js';
 import { windowPrecipFeatures, maxTempGuidance, nbmMaxTempGuidance, runAvailableAt } from './mos.js';
 import { gridWindowEvidence } from './nws.js';
@@ -46,10 +47,12 @@ export function gradeQuality({ complete, runAgeH, runLeadH, stationSkill, statio
   return 'LOW';
 }
 
+// Station skill for the grade comes from the TRAINING period only (point-in-time). It previously read the precip-v1
+// holdout by_station statistic — a holdout leak with zero effect on any grade (all stations clear the HIGH bar either
+// way, docs/research/DECISION_POLICY_V1_EVIDENCE.md), fixed before prospective decision scoring began.
 function precipStationSkill(cli) {
-  const s = precipArtifact.holdout.by_station?.[cli];
-  if (!s) return { skill: null, n: 0 };
-  return { skill: 1 - s.p_model.brier / s.p_clim.brier, n: s.n };
+  const s = stationSkillTrain.by_station?.[cli];
+  return s ? { skill: s.skill, n: s.n } : { skill: null, n: 0 };
 }
 
 // sources: { mos: {runtime, url, observationKey, rows}, grid: {url, observationKey, body}|null }

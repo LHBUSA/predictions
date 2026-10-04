@@ -3,9 +3,13 @@
 // no venue price, quote, spread, volume or any market-derived value can be passed (unknown keys and any key matching
 // the market denylist throw). Changing Kalshi or Polymarket therefore cannot change a decision (test/decision.test.js).
 //
-// STATUS: DRAFT. Thresholds are proposals backed by docs/research/DECISION_POLICY_V1_EVIDENCE.md and are NOT an
-// official public state until the owner approves and the policy is frozen (status FROZEN + frozen_at). While DRAFT,
-// `official` is false on every decision and public surfaces must not present CALL as a PBE call.
+// STATUS (owner 2026-10-04): FROZEN_PROSPECTIVE — parameters frozen at frozen_at so they cannot be tuned while the
+// natural live record accumulates; public CALL is NOT activated (activated_at = null => official=false everywhere).
+// Frozen != activated: activation is a separate owner decision after the promotion review below. Any parameter change
+// = a NEW candidate version (test/decision.test.js pins the frozen parameter hash).
+//
+// HOLD = PBE cannot responsibly evaluate the contract right now (rules, data, staleness, integrity, domain).
+// PASS = PBE evaluated it and deliberately declines to call (unvalidated model, band, confidence, near-certain).
 import { MARKET_KEY_PATTERN, MarketLeakageError } from './leakage.js';
 
 export const DECISION_STATES = Object.freeze(['CALL', 'PASS', 'HOLD']);
@@ -17,9 +21,9 @@ export const REASONS = Object.freeze({
   RESOLUTION_NOT_PROVEN: 'Settlement source not independently verified for this family',
   INSUFFICIENT_SOURCE_DATA: 'No complete forecast from source data',
   EVIDENCE_INTEGRITY_FAILED: 'Evidence packet failed an integrity rule',
-  MODEL_NOT_VALIDATED: 'Model has not passed out-of-sample validation for calls',
   STALE_EVIDENCE: 'Latest evidence is older than the family freshness limit',
-  // PASS — a valid decision: the evidence does not justify a call
+  // PASS — a valid decision: PBE evaluated the contract and the evidence does not justify a call
+  MODEL_NOT_VALIDATED: 'Valid forecast; the model has not passed out-of-sample validation for calls',
   WITHIN_UNCERTAINTY_BAND: 'PBE probability inside the no-call band',
   INSUFFICIENT_CONFIDENCE: 'Evidence quality below the call floor',
   NEAR_CERTAIN: 'Evidence makes the outcome near-certain; scored, not called',
@@ -31,9 +35,20 @@ const RANK = { LOW: 0, MEDIUM: 1, HIGH: 2 };
 // Per-family policy. `validated` + `threshold` are set from strict point-in-time holdout evidence ONLY.
 export const DECISION_POLICY = Object.freeze({
   version: 'prediction-decision-v1',
-  status: 'DRAFT',
-  frozen_at: null,
+  candidate: 'rain-v1-candidate',
+  status: 'FROZEN_PROSPECTIVE',
+  frozen_at: '2026-10-04T13:21:00Z',
+  activated_at: null,
   evidence: 'docs/research/DECISION_POLICY_V1_EVIDENCE.md',
+  // Prospective promotion evidence, predeclared before collection (owner 2026-10-04). Never raw 15-minute snapshots.
+  promotion: Object.freeze({
+    unit: 'one decision per contract: its FINAL_PRE_RESOLUTION designated forecast, captured at/after frozen_at, decided by this frozen policy as of the captured_at of that forecast',
+    counted: 'CALL decisions on resolved contracts (venue settlement), family pbe-weather-precip',
+    interim_diagnostic_at: 100, // review only, no promotion decision
+    promotion_review_at: 300, // owner promotion review; fail => candidate recorded as failed permanently, V2 researched separately
+    min_distinct_resolution_dates: 30,
+    evaluation: 'hit rate vs mean called probability with date-clustered bootstrap 95% CI; Brier of the called subset; YES and NO separately',
+  }),
   near_certain: 0.97,
   families: Object.freeze({
     // holdout 2025-07..2026-09 (52,896 cases, 457 dates): skill vs climatology 0.515 [0.493,0.536], vs raw NWS PoP 0.065
@@ -61,7 +76,8 @@ export function assertDecisionInput(input) {
   return input;
 }
 
-const out = (state, side, reasons, policy, extra = {}) => Object.freeze({ state, side, reasons: Object.freeze(reasons), policy: policy.version, policy_status: policy.status, official: policy.status === 'FROZEN', ...extra });
+// official only once the owner ACTIVATES public CALL (activated_at); frozen parameters alone never make a call public
+const out = (state, side, reasons, policy, extra = {}) => Object.freeze({ state, side, reasons: Object.freeze(reasons), policy: policy.version, policy_status: policy.status, official: Boolean(policy.activated_at), ...extra });
 
 export function decide(input, policy = DECISION_POLICY) {
   const x = assertDecisionInput({ ...input });
@@ -71,9 +87,10 @@ export function decide(input, policy = DECISION_POLICY) {
   if (!fam) return out('HOLD', null, ['UNSUPPORTED_DOMAIN'], policy);
   if (!fam.resolution_proof) return out('HOLD', null, ['RESOLUTION_NOT_PROVEN'], policy);
   if (x.integrity_ok === false) return out('HOLD', null, ['EVIDENCE_INTEGRITY_FAILED'], policy);
-  if (x.model_state === 'SHADOW' || !fam.validated || !(fam.threshold > 0.5)) return out('HOLD', null, ['MODEL_NOT_VALIDATED'], policy);
   const ageH = (Date.parse(x.as_of) - Date.parse(x.data_cutoff_at)) / 3600000;
   if (!Number.isFinite(ageH) || ageH > fam.max_evidence_age_h) return out('HOLD', null, ['STALE_EVIDENCE'], policy, { evidence_age_h: Number.isFinite(ageH) ? +ageH.toFixed(1) : null });
+  // from here PBE has a valid, current forecast: every remaining outcome is a deliberate decision (CALL or PASS)
+  if (x.model_state === 'SHADOW' || !fam.validated || !(fam.threshold > 0.5)) return out('PASS', null, ['MODEL_NOT_VALIDATED'], policy);
   const p = Number(x.probability);
   if ((RANK[x.confidence] ?? -1) < RANK[fam.confidence_floor]) return out('PASS', null, ['INSUFFICIENT_CONFIDENCE'], policy);
   if (Math.max(p, 1 - p) >= policy.near_certain) return out('PASS', null, ['NEAR_CERTAIN'], policy);

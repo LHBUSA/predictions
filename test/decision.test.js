@@ -11,7 +11,7 @@ import { runAllLanes, polymarketVenue } from './helpers/venue-harness.js';
 const NOW = '2026-10-04T12:00:00.000Z';
 // A test-only policy with every family validated, so every branch of the decision is exercised.
 const TEST_POLICY = Object.freeze({
-  ...DECISION_POLICY, status: 'FROZEN', version: 'prediction-decision-test',
+  ...DECISION_POLICY, status: 'ACTIVE_TEST', activated_at: '2026-10-04T00:00:00Z', version: 'prediction-decision-test',
   families: Object.fromEntries(Object.entries(DECISION_POLICY.families).map(([k, v]) => [k, { ...v, validated: true, threshold: 0.65 }])),
 });
 const base = { model_id: 'pbe-weather-precip', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.7, confidence: 'HIGH', data_cutoff_at: '2026-10-04T05:00:00Z', as_of: NOW, contract_status: 'NORMALIZED', contract_reason: null, integrity_ok: true, is_modal: null, exclusive: false, contract_month: 10 };
@@ -32,12 +32,14 @@ test('decisionInput never copies a market column from a forecast row', () => {
   assert.deepEqual(decide(a, TEST_POLICY), decide(b, TEST_POLICY));
 });
 
-test('DRAFT policy: nothing is official; only precip is validated (T=0.70, HIGH, no warm-season YES)', () => {
-  assert.equal(DECISION_POLICY.status, 'DRAFT');
+test('FROZEN_PROSPECTIVE policy: parameters frozen, CALL not activated (nothing official); only precip is validated', () => {
+  assert.equal(DECISION_POLICY.status, 'FROZEN_PROSPECTIVE');
+  assert.ok(DECISION_POLICY.frozen_at);
+  assert.equal(DECISION_POLICY.activated_at, null);
   for (const fam of ['pbe-weather-maxtemp', 'pbe-rates-path', 'pbe-fed-decision']) {
     const d = decide({ ...base, model_id: fam });
     assert.equal(d.official, false);
-    assert.deepEqual([d.state, ...d.reasons], ['HOLD', 'MODEL_NOT_VALIDATED']);
+    assert.deepEqual([d.state, ...d.reasons], ['PASS', 'MODEL_NOT_VALIDATED'], 'valid forecast, unvalidated model = PASS (evaluated, declined)');
   }
   const P = (x) => decide({ ...base, data_cutoff_at: '2026-10-04T05:00:00Z', as_of: '2026-10-04T12:00:00Z', ...x });
   assert.deepEqual([P({ probability: 0.72, contract_month: 10 }).state, P({ probability: 0.72, contract_month: 10 }).side, P({}).official], ['CALL', 'YES', false]);
@@ -57,7 +59,10 @@ test('states and reasons (validated test policy)', () => {
   assert.deepEqual([...D({ confidence: 'MEDIUM' }).reasons], ['INSUFFICIENT_CONFIDENCE']);
   assert.deepEqual([...D({ as_of: '2026-10-06T12:00:00Z' }).reasons], ['STALE_EVIDENCE']);
   assert.deepEqual([...D({ integrity_ok: false }).reasons], ['EVIDENCE_INTEGRITY_FAILED']);
-  assert.deepEqual([...D({ model_state: 'SHADOW', model_id: 'pbe-fed-decision' }).reasons], ['MODEL_NOT_VALIDATED']);
+  assert.deepEqual([D({ model_state: 'SHADOW', model_id: 'pbe-fed-decision' }).state, ...D({ model_state: 'SHADOW', model_id: 'pbe-fed-decision' }).reasons], ['PASS', 'MODEL_NOT_VALIDATED']);
+  // HOLD = cannot evaluate responsibly; it outranks PASS even for an unvalidated model
+  assert.deepEqual([D({ model_id: 'pbe-fed-decision', model_state: 'SHADOW', as_of: '2026-10-20T00:00:00Z' }).state], ['HOLD']);
+  assert.deepEqual([D({ model_id: 'pbe-rates-path', integrity_ok: false }).state], ['HOLD']);
   assert.deepEqual([...D({ probability: null }).reasons], ['INSUFFICIENT_SOURCE_DATA']);
   assert.deepEqual([...D({ model_id: 'corporate-fundamentals' }).reasons], ['UNSUPPORTED_DOMAIN']);
   for (const s of ['UNMODELABLE', 'HOLD_RESOLUTION_AMBIGUOUS', 'UNSUPPORTED_DOMAIN']) assert.deepEqual([...D({ contract_status: s }).reasons], [s]);
@@ -129,4 +134,46 @@ test('INVARIANT: absurd Kalshi AND Polymarket prices leave features_sha256, prob
     assert.equal(await decisionSide(r), baseSide, name);
     assert.notDeepEqual(r.writes.forecasts.map((f) => f.market_probability), baseRun.writes.forecasts.map((f) => f.market_probability), `${name}: the venue side did move`);
   }
+});
+
+// Frozen candidate parameters (owner 2026-10-04). Changing ANY of these = a new candidate version, never an edit.
+test('FROZEN: rain-v1-candidate parameters are pinned', async () => {
+  const { canonicalJson } = await import('../src/engine/evidence.js');
+  const { createHash } = await import('node:crypto');
+  const frozen = { version: DECISION_POLICY.version, candidate: DECISION_POLICY.candidate, frozen_at: DECISION_POLICY.frozen_at, near_certain: DECISION_POLICY.near_certain, families: DECISION_POLICY.families, promotion: DECISION_POLICY.promotion };
+  const h = createHash('sha256').update(canonicalJson(frozen)).digest('hex');
+  assert.equal(h, FROZEN_SHA256, `frozen policy changed (${h}) — create a new candidate version instead`);
+  const rain = DECISION_POLICY.families['pbe-weather-precip'];
+  assert.deepEqual([rain.validated, rain.threshold, rain.confidence_floor, [...rain.no_yes_months], DECISION_POLICY.near_certain], [true, 0.7, 'HIGH', [6, 7, 8, 9], 0.97]);
+  assert.deepEqual([DECISION_POLICY.promotion.interim_diagnostic_at, DECISION_POLICY.promotion.promotion_review_at], [100, 300]);
+});
+const FROZEN_SHA256 = 'fb495f6779e492174f54202543951d304065b6ec0de5fa3bc9db134dd44ce475';
+
+test('prospective record: only FINAL_PRE_RESOLUTION decisions captured after the freeze count, decided as of capture', async () => {
+  const { prospectiveRecord } = await import('../workers/pbe-predictions/src/prospective.js');
+  const F = DECISION_POLICY.frozen_at;
+  const prov = [{ source: 'NWS GFS MOS (MAV) station guidance', role: 'model input', available_at: '2026-10-05T05:00:00Z' }];
+  const tables = {
+    pred_forecast_designations: [{ contract_id: 'c1', forecast_id: 'f1', designated_at: '2026-10-05T06:00:00Z' }, { contract_id: 'c2', forecast_id: 'f2', designated_at: '2026-10-05T06:00:00Z' }, { contract_id: 'c3', forecast_id: 'f3', designated_at: '2026-10-05T06:00:00Z' }],
+    pred_forecasts: [
+      { forecast_id: 'f1', contract_id: 'c1', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.8, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's1', provenance: prov },
+      { forecast_id: 'f2', contract_id: 'c2', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.1, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's2', provenance: prov },
+      { forecast_id: 'f3', contract_id: 'c3', model_id: 'pbe-weather-precip', model_state: 'RESEARCH', probability: 0.9, confidence: 'HIGH', captured_at: '2026-10-04T12:00:00Z', data_cutoff_at: '2026-10-04T11:00:00Z', feature_snapshot_id: 's3', provenance: [] },
+    ],
+    pred_contracts: ['c1', 'c2', 'c3'].map((id) => ({ contract_id: id, normalization_status: 'NORMALIZED', observation_start: '2026-10-06T05:00:00Z', detail: { climate_date: '2026-10-06' } })),
+    pred_resolutions: [{ contract_id: 'c1', venue_result: 'yes' }, { contract_id: 'c2', venue_result: 'yes' }],
+    pred_feature_snapshots: ['s1', 's2', 's3'].map((id) => ({ snapshot_id: id, cutoff_at: id === 's3' ? '2026-10-04T11:00:00Z' : '2026-10-05T05:00:00Z', features: { nbm_pop_union: 0.5 } })),
+  };
+  const store = {
+    select: async (t, q) => tables[t].filter((r) => !q.designated_at || r.designated_at >= q.designated_at.slice(4)),
+    selectIn: async (t, q, col, ids) => tables[t].filter((r) => ids.includes(r[col]) && (!q.model_id || r.model_id === q.model_id.slice(3))),
+  };
+  const r = await prospectiveRecord(store);
+  assert.equal(r.policy.activated_at, null);
+  assert.ok(F <= '2026-10-05T05:30:00Z');
+  assert.equal(r.decision_records, 2, 'the pre-freeze forecast never counts');
+  assert.equal(r.resolved_calls, 2);
+  assert.deepEqual([r.yes.n, r.yes.hits, r.no.n, r.no.hits], [1, 1, 1, 0]);
+  assert.equal(r.hit_rate, 0.5);
+  assert.equal(r.stage, 'COLLECTING');
 });
