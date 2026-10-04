@@ -25,13 +25,39 @@ async function loadPremiumDesk() {
     const r = await fetch(`${API}/premium/desk`, { credentials: 'same-origin', cache: 'no-store' });
     if (!r.ok) return;
     const d = await r.json(); events = d.events; deskAccess = d.access || { tier: 'all_access' };
-    cats(); desk(); applyAccess();
+    cats(); views(); desk(); applyAccess();
   } catch { /* stays on the free desk */ }
 }
 document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled) loadPremiumDesk(); });
 
 let events = [];
-const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div' };
+const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div', view: 'ALL' };
+
+// Desk views (V4). A view chip is offered only when it matches at least one live event (no empty states).
+// "PBE calls" appears only once prediction-decision-v1 is an official public state.
+const VIEWS = {
+  HIGH: { label: 'High confidence', test: (e) => e.headline?.pbe_pct != null && e.headline?.confidence === 'HIGH' },
+  VS_MARKET: { label: 'PBE vs market', test: (e) => [e.headline?.venues?.kalshi, e.headline?.venues?.polymarket].some((v) => v?.divergence && v.divergence.label !== 'PBE_MARKET_AGREEMENT') },
+  DISAGREE: { label: 'Market disagreement', test: (e) => e.headline?.venue_gap_pts != null && e.headline.venue_gap_pts >= 5 },
+  SOON: { label: 'Resolving soon', test: (e) => { const m = Date.parse(e.close_time) - Date.now(); return m > 0 && m <= 24 * 3600000; } },
+};
+function views() {
+  const el = $('views'); if (!el) return;
+  const avail = Object.entries(VIEWS).map(([k, v]) => [k, v, events.filter(v.test).length]).filter(([, , n]) => n > 0);
+  if (state.view !== 'ALL' && !avail.some(([k]) => k === state.view)) state.view = 'ALL';
+  el.hidden = !avail.length;
+  if (!avail.length) { el.innerHTML = ''; return; }
+  const btn = (k, l, n) => `<button class="chip" data-view="${k}" aria-pressed="${state.view === k}">${esc(l)}<small>${n}</small></button>`;
+  el.innerHTML = btn('ALL', 'All views', events.length) + avail.map(([k, v, n]) => btn(k, v.label, n)).join('');
+  el.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => { state.view = b.dataset.view; views(); desk(); }));
+}
+const venueLine = (h) => {
+  const k = h.venues?.kalshi; const p = h.venues?.polymarket;
+  if (!k && !p) return '';
+  const part = (name, v) => (v ? `${name} <b class="num">${v.mid_pct === null ? '—' : v.mid_pct < 1 ? '<1%' : `${v.mid_pct}%`}</b>${v.comparable === false ? ' <span class="note">(related market, rules differ)</span>' : ''}` : '');
+  return `<span class="v4-line">${[part('Kalshi', k), part('Polymarket', p)].filter(Boolean).join(' · ')}</span>`;
+};
+const driverLine = (h) => (h.driver ? `<span class="v4-line">Strongest driver: <b>${esc(h.driver.label)} ${esc(h.driver.display)}${esc(h.driver.unit)}</b>${h.evidence_age_h != null ? ` · data ${h.evidence_age_h < 1 ? '<1' : Math.round(h.evidence_age_h)} h old` : ''}</span>` : '');
 
 function stats(s) {
   $('s-live').textContent = s.live_contracts.toLocaleString(); $('s-live-sub').textContent = `${s.live_events} events · ${Object.keys(s.by_category).length} categories`;
@@ -81,7 +107,7 @@ function cats() {
 
 function desk() {
   const q = state.q.trim().toLowerCase();
-  let rows = events.filter((e) => (state.cat === 'ALL' || e.category === state.cat) && (!q || `${e.title} ${e.category_label} ${e.outcomes.map((o) => o.label).join(' ')}`.toLowerCase().includes(q)));
+  let rows = events.filter((e) => (state.cat === 'ALL' || e.category === state.cat) && (state.view === 'ALL' || VIEWS[state.view]?.test(e)) && (!q || `${e.title} ${e.category_label} ${e.outcomes.map((o) => o.label).join(' ')}`.toLowerCase().includes(q)));
   if (state.sort === 'div') rows.sort((a, b) => b.max_abs_divergence - a.max_abs_divergence || Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'close') rows.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'fresh') rows.sort((a, b) => Date.parse(b.headline?.published_at || 0) - Date.parse(a.headline?.published_at || 0));
@@ -90,7 +116,7 @@ function desk() {
   $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined;
     return `<a class="card row" href="${esc(e.url)}">
       <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${e.kalshi_url ? '<span>Kalshi</span>' : ''}${modeled ? `<span>${esc(h.confidence?.toLowerCase() || '')} data quality · ${ago(h.published_at)}</span>` : ''}</div>
-      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div></div>
+      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div></div>
       <div class="cells">${modeled
         ? `<div class="cell"><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</strong></div><div class="cell"><span>Div.</span><strong class="num ${dcls(h.divergence_pts)}">${h.divergence_pts !== null ? sign(h.divergence_pts) : '—'}</strong></div>`
         : `<div class="cell mon" style="grid-column:span 2"><span>PBE</span><strong>Market monitoring</strong></div><div class="cell"><span>Market</span><strong class="num">${h.market_pct ?? '—'}${h.market_pct !== null && h.market_pct !== undefined ? '%' : ''}</strong></div>`}</div>
@@ -126,7 +152,7 @@ async function main() {
   $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
   const [s, d, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('desk'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
-  if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
+  if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); views(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
   // Multi-venue desk (no URL flag): loaded after the desk is on screen so a slow venue read never delays it;
   // the desk re-renders once with venue lines. Polymarket appears only when the shared Worker returns it.
   if (d.status === 'fulfilled') import('./multivenue.js?v=20261004mv4').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e));

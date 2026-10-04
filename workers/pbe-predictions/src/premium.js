@@ -8,20 +8,33 @@
 
 export const FREE_DESK_LIMIT = 12;
 
+// prediction-decision-v1 is DRAFT until the owner freezes it: no public or member surface carries a non-official
+// decision (admin routes only). Once official, the decision travels with the call on every surface.
+export function withOfficialDecisionsOnly(o) {
+  if (!o.call?.decision || o.call.decision.official) return o;
+  const { decision, ...call } = o.call;
+  return { ...o, call };
+}
+
+// Venue paths are archive depth (All Access); the public venue block keeps every checkpoint (first observed,
+// at each public PBE checkpoint, final pre-close, resolution, current) and the stored path length.
+const trimVenue = (v) => (v ? { ...v, path: [] } : v);
+
 export function publicEventView(rec) {
   let snapshots = 0; let marketObs = 0;
   const outcomes = rec.outcomes.map((o) => {
-    snapshots += o.history.length; marketObs += o.market_path.length;
+    snapshots += o.history.length; marketObs += o.market_path.length + (o.venues?.polymarket?.path_n ?? 0);
     const latestId = o.history.at(-1)?.forecast_id;
     const history = o.history.filter((h) => h.roles.length || h.forecast_id === latestId).map(({ changed, sha, ...h }) => ({ ...h, checkpoint: true }));
     const lastMarket = o.market_path.filter((m) => m.pct !== null).at(-1);
-    return { ...o, history, market_path: lastMarket ? [lastMarket] : [] };
+    const venues = o.venues ? { kalshi: trimVenue(o.venues.kalshi), polymarket: trimVenue(o.venues.polymarket) } : o.venues;
+    return withOfficialDecisionsOnly({ ...o, history, market_path: lastMarket ? [lastMarket] : [], venues });
   });
   return { ...rec, outcomes, access: { tier: 'free', archive: { snapshots, market_observations: marketObs, outcomes: rec.outcomes.length } } };
 }
 
 export function premiumEventView(rec) {
-  return { ...rec, access: { tier: 'all_access' } };
+  return { ...rec, outcomes: rec.outcomes.map(withOfficialDecisionsOnly), access: { tier: 'all_access' } };
 }
 
 export function eventCsv(rec) {

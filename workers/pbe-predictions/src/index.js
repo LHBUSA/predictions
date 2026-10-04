@@ -89,6 +89,25 @@ export default {
         const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
         return rec ? json(rec, 200, 'no-store') : json({ error: 'not_found' }, 404, 'no-store');
       }
+      // prediction-decision-v1 DRAFT preview (owner review before CALL becomes a public state): every live modeled
+      // outcome's decision, evidence integrity and both venues at the current forecast. Admin only, never cached.
+      if (req.method === 'GET' && p === '/admin/decisions') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const st = storeFor(env);
+        const d = await desk(st);
+        const rows = [];
+        for (const ev of d.events.filter((x) => x.outcomes_modeled > 0)) {
+          const rec = await eventRecord(st, ev.slug);
+          for (const o of rec?.outcomes || []) {
+            if (!o.call) continue;
+            const atF = (v) => (v ? v.at_forecast.at(-1) : null);
+            const dr = o.call.evidence.drivers[0];
+            rows.push({ slug: ev.slug, label: o.label, pbe_pct: o.call.pbe_pct, confidence: o.call.confidence, model: o.call.model, data_cutoff_at: o.call.data_cutoff_at, decision: o.call.decision, integrity: o.call.evidence.integrity, evidence_sha256: o.call.evidence_sha256, driver: dr ? `${dr.label} ${dr.display}${dr.unit}` : null, kalshi_at_forecast: atF(o.venues.kalshi)?.benchmark ?? null, polymarket: o.venues.polymarket ? { semantic_class: o.venues.polymarket.semantic_class, at_forecast: atF(o.venues.polymarket)?.benchmark ?? null } : null });
+          }
+        }
+        const count = (k) => rows.reduce((a, r) => { const key = k(r); a[key] = (a[key] || 0) + 1; return a; }, {});
+        return json({ policy: rows[0] ? { version: rows[0].decision.policy, status: rows[0].decision.policy_status } : null, n: rows.length, by_state: count((r) => (r.decision.state === 'CALL' ? `CALL_${r.decision.side}` : r.decision.state)), by_reason: count((r) => r.decision.reasons.join('+') || 'CALL'), integrity_failures: rows.filter((r) => !r.integrity.ok).length, rows }, 200, 'no-store');
+      }
       // Automated Newsroom V1 — DRY RUN ONLY (no writes, nothing published): candidates, holds, evidence packets, previews
       // Manual, admin-only publication of ONE validated story (automatic publication does not exist in V1).
       if (req.method === 'POST' && p.startsWith('/admin/newsroom/publish/')) {
@@ -140,10 +159,10 @@ export default {
       const store = storeFor(env);
       if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
       if (p === '/v1/summary') return json(await summary(store));
-      if (p === '/v1/desk') return json(publicDesk(await desk(store)));
+      if (p === '/v1/desk') return json(publicDesk(await desk(store, { venues: true })));
       // Membership + All Access (Predictions is an All-Access-only product surface; network authority decides)
       if (p === '/v1/membership') { const m = await predictionsMembership(req, env); return privateJson({ authenticated: m.authenticated, membership: m.membership }); }
-      if (p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store)), access: { tier: 'all_access' } }); }
+      if (p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
       if (p.startsWith('/v1/premium/event/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const rest = decodeURIComponent(p.slice('/v1/premium/event/'.length));

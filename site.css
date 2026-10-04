@@ -465,3 +465,29 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .signin-actions{display:flex;gap:8px;flex-wrap:wrap}
 .signin-close{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 14px;font:700 14px var(--font);cursor:pointer}
 .signin-msg{min-height:1.2em;margin:0;font-size:13.5px;color:var(--ink-2)}
+/* Predictions V4 event record: the call, market view, PBE vs market (record-blocks.js) */
+.v4-kicker{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--amber);background:var(--amber-bg);border-radius:6px;padding:3px 8px}
+.v4-callrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:10px}
+.v4-big{font-size:clamp(30px,6vw,40px);line-height:1;font-weight:800;color:var(--ink)}
+.v4-callmeta{display:flex;flex-direction:column;gap:2px;min-width:0;color:var(--muted);font-size:13px}
+.v4-callmeta b{color:var(--ink-2)}
+.v4-callmeta>b{font-size:15px;color:var(--ink)}
+.v4-summary{margin:12px 0 0;font-size:14px;color:var(--ink-2);overflow-wrap:anywhere}
+.v4-venues{list-style:none;margin:0;padding:0}
+.v4-vrow{display:grid;grid-template-columns:92px 64px minmax(0,1fr) 22px;align-items:baseline;gap:4px 10px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.v4-vrow:last-child{border-bottom:0}
+.v4-vrow.pbe strong{color:var(--amber)}
+.v4-vname{font-weight:700;font-size:14px}
+.v4-vrow strong{font-size:18px;font-weight:800}
+.v4-vmeta{font-size:12.5px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.v4-vmeta small{display:block;margin-top:2px}
+.v4-tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 6px;margin-right:6px}
+.v4-tag.ok{color:var(--pos);background:var(--pos-bg)}
+.v4-tag.rel{color:var(--violet);background:var(--violet-bg)}
+.v4-out{text-decoration:none;font-weight:700}
+.v4-divs{margin:10px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.v4-divs li{margin:3px 0}
+@media (max-width:760px){.v4-vrow{grid-template-columns:78px 56px minmax(0,1fr) 18px}.v4-vrow strong{font-size:16px}}
+.v4-line{display:block;margin-top:3px;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.v4-line b{color:var(--ink-2);font-weight:600}
+.views{margin:-2px 0 12px}
