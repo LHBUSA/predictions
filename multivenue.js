@@ -1,8 +1,10 @@
-// MULTI-VENUE DESK (hidden; propbetedge-workers docs/MULTI_VENUE_DESK.md). Loaded ONLY when the page URL carries
-// ?mv=1 — production output without the flag is byte-identical. Data: propsports-markets /v1/market-desk
-// (+ /series), which carries a second venue only when that Worker's POLYMARKET_DISPLAY_ENABLED is on and the
-// contract is EXACT_MATCH; anything else renders exactly today's single-venue design (no empty slot).
-// PBE is the product (gold); venues are benchmarks (one compact MARKETS block). No consensus number.
+// MULTI-VENUE DESK (propbetedge-workers docs/MULTI_VENUE_DESK.md). Loaded on every page (the ?mv=1 canary was
+// removed 2026-10-04, owner decision f357506: Polymarket display ON). Data: propsports-markets /v1/market-desk
+// (+ /series). That Worker's POLYMARKET_DISPLAY_ENABLED is the kill switch: off -> the desk carries no second venue
+// and every row renders exactly the single-venue design (no empty slot).
+//   EXACT_MATCH / COMPARABLE_EXCEPT_EXCEPTIONS quotes -> the MARKETS block (+ the comparable disclosure);
+//   related[] (RULE_MISMATCH / UNVERIFIED) -> a labelled related market with its own native price, never compared.
+// PBE is the product (gold); venues are benchmarks. No consensus number.
 const MV_API = 'https://propsports-markets.sales-fd3.workers.dev';
 const qs = new URLSearchParams(location.search);
 const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -21,6 +23,12 @@ const CSS = `
 .row.mv-row{box-shadow:inset 3px 0 0 rgba(31,99,181,.35)}
 .mv-sub{display:block;margin-top:3px;color:var(--muted,#6b7c8f);font-size:12.5px}
 .mv-sub b{color:inherit;font-weight:600}
+.mv-sub i{font-style:normal;font-weight:600;letter-spacing:.02em}
+.mv-sub a{color:inherit}
+.mv-related{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.mv-related li{font-size:13.5px;line-height:1.4}
+.mv-related .mv-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:4px;background:#f1ecfa;color:#4b3a8c;margin-right:6px}
+.mv-related small{display:block;color:var(--muted,#6b7c8f)}
 .mv-chart svg{width:100%;height:auto;display:block}
 .mv-chart .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12.5px;color:var(--muted,#6b7c8f)}
 .mv-chart .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
@@ -43,15 +51,29 @@ async function loadDesk() {
 }
 const slugOf = (e) => (e.url || '').split('/events/')[1];
 const contractFor = (e) => (e.headline?.market_id ? bySlugMarket.get(`${slugOf(e)}|${e.headline.market_id}`) : null);
-// multi-venue only: >= 2 EXACT venues with an aligned comparison. Anything else = today's row.
+// multi-venue only: >= 2 qualifying venue quotes (EXACT or COMPARABLE) with an aligned comparison.
 const multi = (e) => { const c = contractFor(e); return c && c.venues.length >= 2 && c.comparison ? c : null; };
+const VENUE_KEYS = Object.keys(VENUE);
+const pctOf = (q) => (q.mid_bp != null ? `${pts(q.mid_bp)}%` : q.bid_bp != null && q.ask_bp != null ? `${pts(q.bid_bp)}–${pts(q.ask_bp)}%` : null);
+// Related markets (RULE_MISMATCH / UNVERIFIED): a known venue with a native, non-stale price; one per venue market.
+function relatedOf(c) {
+  const seen = new Set();
+  return (c?.related || []).filter((r) => VENUE_KEYS.includes(r.venue) && r.market_url && pctOf(r) && r.freshness !== 'stale' && !seen.has(r.venue_market_id) && seen.add(r.venue_market_id));
+}
+const relatedLine = (r) => `<i>${esc(r.label || 'RELATED MARKET')}</i> · <a href="${esc(r.market_url)}" rel="noopener nofollow" target="_blank">${esc(VENUE[r.venue])}</a> <b class="num">${pctOf(r)}</b> (its own price, not compared) · ${esc(r.reason || 'Rules not verified as equivalent')}`;
 
 function decorate(list) {
   const rows = [...document.querySelectorAll('#desk-list a.card.row')];
   for (const a of rows) {
     const e = list.find((x) => x.url === a.getAttribute('href'));
     const c = e && multi(e);
-    if (!c) continue;
+    if (!c) {
+      const rel = e ? relatedOf(contractFor(e)) : [];
+      const sub = a.querySelector('.sub');
+      if (rel.length && sub && !sub.querySelector('.mv-sub')) sub.insertAdjacentHTML('beforeend', rel.slice(0, 2).map((r) => `<span class="mv-sub">${relatedLine(r)}</span>`).join(''));
+      continue;
+    }
+    if (a.classList.contains('mv-row')) continue;
     const cells = a.querySelectorAll('.cells .cell');
     if (cells.length < 3) continue;
     a.classList.add('mv-row');
@@ -65,7 +87,7 @@ function decorate(list) {
       cells[2].innerHTML = `<span>PBE vs range</span><strong class="num ${lo > 0 ? 'dpos' : hi < 0 ? 'dneg' : ''}">${lo === hi ? sgn(lo) : `${sgn(hi < 0 ? hi : lo)}…${sgn(hi < 0 ? lo : hi)}`}</strong>`;
     }
     const sub = a.querySelector('.sub');
-    if (sub) sub.insertAdjacentHTML('beforeend', `<span class="mv-sub">Venue gap <b class="num">${Math.round(cmp.venue_gap_pts)} pts</b>${cmp.pbe_vs_venues_pts ? ` · PBE vs range <b class="num">${sgn(Math.round(cmp.pbe_vs_venues_pts[0]))} to ${sgn(Math.round(cmp.pbe_vs_venues_pts.at(-1)))} pts</b>` : ''} · aligned within ${cmp.aligned_within_s} s</span>`);
+    if (sub) sub.insertAdjacentHTML('beforeend', `<span class="mv-sub">Venue gap <b class="num">${Math.round(cmp.venue_gap_pts)} pts</b>${cmp.pbe_vs_venues_pts ? ` · PBE vs range <b class="num">${sgn(Math.round(cmp.pbe_vs_venues_pts[0]))} to ${sgn(Math.round(cmp.pbe_vs_venues_pts.at(-1)))} pts</b>` : ''} · aligned within ${cmp.aligned_within_s} s</span>${cmp.match_class === 'COMPARABLE_EXCEPT_EXCEPTIONS' ? `<span class="mv-sub"><i>COMPARABLE</i> · ${esc(cmp.disclosure || 'Exception settlement rules differ between venues')}</span>` : ''}`);
   }
 }
 
@@ -110,11 +132,35 @@ async function eventChart(panel) {
   panel.querySelector('.mv-chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="PBE forecast, Kalshi and Polymarket over time (stored observations)">${grid}${axis}${paths}${res}</svg>
 <div class="legend">${d.series.map((s) => `<span><i style="background:${COLORS[s.source]}"></i>${esc(s.label)}${s.source === 'pbe' ? ' forecast' : ' mid (observed)'}</span>`).join('')}<span>Open circle = first observed by PBE · gaps = not observed</span></div>`;
   panel.hidden = false;
+  return true;
+}
+
+// Event page: related venue markets for this event's contracts (native price + disclosure, never compared).
+async function eventRelated(panel) {
+  const box = panel.querySelector('.mv-related-box');
+  if (!box) return false;
+  await loadDesk();
+  const slug = location.pathname.split('/events/')[1]?.replace(/\/$/, '');
+  const list = [];
+  const seen = new Set();
+  for (const [k, c] of bySlugMarket) {
+    if (k.split('|')[0] !== slug) continue;
+    for (const r of relatedOf(c)) if (!seen.has(r.venue_market_id)) { seen.add(r.venue_market_id); list.push(r); }
+  }
+  if (!list.length) return false; // nothing related: no panel, no placeholder
+  box.innerHTML = `<ul class="mv-related">${list.map((r) => `<li><span class="mv-tag">${esc(r.label || 'RELATED MARKET')}</span><a href="${esc(r.market_url)}" rel="noopener nofollow" target="_blank">${esc(r.title || VENUE[r.venue])}</a> — ${esc(VENUE[r.venue])} <b class="num">${pctOf(r)}</b><small>${esc(r.reason || 'Rules not verified as equivalent')}. Shown at its own venue price; not compared with Kalshi or PBE.</small></li>`).join('')}</ul>`;
+  box.hidden = false;
+  return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------
 style();
 const panel = document.getElementById('mv-chart-panel');
-if (panel) eventChart(panel).catch((e) => console.warn('mv chart', e));
+if (panel) {
+  Promise.allSettled([eventChart(panel), eventRelated(panel)]).then((r) => {
+    for (const x of r) if (x.status === 'rejected') console.warn('mv panel', x.reason);
+    if (r.some((x) => x.value === true)) panel.hidden = false;
+  });
+}
 export const ready = panel ? Promise.resolve() : loadDesk().catch((e) => console.warn('mv desk', e));
 window.PBE_MV = { decorate, order, addModes, handles: (m) => m in MODES };

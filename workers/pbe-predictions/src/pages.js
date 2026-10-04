@@ -185,7 +185,7 @@ ${premiumModule(rec)}
 ${evidence}
 ${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Scoring checkpoints</h2><p class="note">The designated snapshots that are scored (fixed by rule before the outcome) and the current forecast. Every intermediate snapshot is in the full archive.</p>${snaps}</section>` : ''}
 ${resolution}
-${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div></section><script type="module" src="/multivenue.js?v=20261004mv1"></script>` : ''}
+${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div><div class="mv-related-box" hidden></div></section><script type="module" src="/multivenue.js?v=20261004mv2"></script>` : ''}
 </div><aside>
 ${contract}
 ${model}

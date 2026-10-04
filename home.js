@@ -31,7 +31,6 @@ async function loadPremiumDesk() {
 document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled) loadPremiumDesk(); });
 
 let events = [];
-const MV = new URLSearchParams(location.search).get('mv') === '1'; // hidden multi-venue desk: OFF unless ?mv=1
 const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div' };
 
 function stats(s) {
@@ -86,7 +85,7 @@ function desk() {
   if (state.sort === 'div') rows.sort((a, b) => b.max_abs_divergence - a.max_abs_divergence || Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'close') rows.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'fresh') rows.sort((a, b) => Date.parse(b.headline?.published_at || 0) - Date.parse(a.headline?.published_at || 0));
-  if (window.PBE_MV?.handles(state.sort)) rows = window.PBE_MV.order(state.sort, rows); // hidden multi-venue modes (?mv=1)
+  if (window.PBE_MV?.handles(state.sort)) rows = window.PBE_MV.order(state.sort, rows); // multi-venue modes (offered only when non-empty)
   if (!rows.length) { $('desk-list').innerHTML = `<div class="card empty-honest">No live events match this filter.</div>`; return; }
   $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined;
     return `<a class="card row" href="${esc(e.url)}">
@@ -127,8 +126,10 @@ async function main() {
   $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
   const [s, d, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('desk'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
-  if (d.status === 'fulfilled' && MV) await import('./multivenue.js?v=20261004mv1').then((m) => m.ready).then(() => window.PBE_MV?.addModes(d.value.events)).catch((e) => fail('multi-venue', e));
   if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
+  // Multi-venue desk (no URL flag): loaded after the desk is on screen so a slow venue read never delays it;
+  // the desk re-renders once with venue lines. Polymarket appears only when the shared Worker returns it.
+  if (d.status === 'fulfilled') import('./multivenue.js?v=20261004mv2').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e));
   else { $('desk-list').innerHTML = '<div class="card empty-honest">The live desk could not be loaded right now. Stored records are unaffected; try again shortly.</div>'; fail('desk', d.reason); }
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);

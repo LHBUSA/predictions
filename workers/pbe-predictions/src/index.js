@@ -173,8 +173,9 @@ export default {
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return html(renderNotFound(`/events/${slug}`), 404);
         const full = await eventRecord(store, slug);
         const rec = full ? publicEventView(full) : null; // public SSR never carries the member archive
-        // ?mv=1 = hidden multi-venue chart (flag OFF by default: without it the page is byte-identical)
-        return rec ? html(renderEvent(rec, { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: url.searchParams.get('mv') === '1' })) : html(renderNotFound(`/events/${slug}`), 404);
+        // Multi-venue panel on every event page (?mv=1 canary removed 2026-10-04): hidden until a second venue has
+        // stored observations or a related venue market exists; the shared Worker's kill switch governs both.
+        return rec ? html(renderEvent(rec, { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: true })) : html(renderNotFound(`/events/${slug}`), 404);
       }
       // Social cards (Vercel rewrites /og/events/* and /og/insights/* here)
       if (p.startsWith('/og/events/') && p.endsWith('.png')) {
