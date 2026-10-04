@@ -114,3 +114,9 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   Detection keeps running; nothing publishes. Already-published stories stay (append-only).
 - Worker rollback: previous production `59496aa5` (BTC shadow 5d3b007; same crons, so no trigger change is needed):
   `npx wrangler versions deploy 59496aa5-b252-490e-bc74-0afd5b18b47c@100% --config workers/pbe-predictions/wrangler.jsonc -y`
+
+## BTC shadow: venue settlement observations + completeness (2026-10-04)
+- pbe-predictions `07f7cf8a-7332-4be8-93b1-a611844b1e09` (main 8c5f027): completeness report on the first tick of each
+  window (log only); `CRYPTO_SETTLEMENTS="false"` until `sql/010_crypto_venue_settlements.sql` is applied (PROOF
+  `sql/010_crypto_venue_settlements_PROOF.sql`, PGlite in `scripts/db/prove-009.mjs`). Rollback: `5e36f7bb` (844a618).
+- Table rollback `sql/010_crypto_venue_settlements_ROLLBACK.sql` (set CRYPTO_SETTLEMENTS="false" + deploy first).
