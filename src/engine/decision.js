@@ -41,7 +41,7 @@ export const DECISION_POLICY = Object.freeze({
   frozen_at: '2026-10-04T13:21:00Z',
   activated_at: null,
   evidence: 'docs/research/DECISION_POLICY_V1_EVIDENCE.md',
-  // Prospective promotion evidence, predeclared before collection (owner 2026-10-04). Never raw 15-minute snapshots.
+  // Prospective promotion evidence, predeclared before collection (owner 2026-10-04). Never raw engine-cadence snapshots.
   promotion: Object.freeze({
     unit: 'one decision per contract: its FINAL_PRE_RESOLUTION designated forecast, captured at/after frozen_at, decided by this frozen policy as of the captured_at of that forecast',
     counted: 'CALL decisions on resolved contracts (venue settlement), family pbe-weather-precip',

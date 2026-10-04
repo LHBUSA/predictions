@@ -4,7 +4,7 @@
 
 ## Runtime
 
-- Worker `pbe-predictions` (`workers/pbe-predictions`, cron `*/15`, writes only when `ENGINE_ENABLED=true`).
+- Worker `pbe-predictions` (`workers/pbe-predictions`, core cron `*/2` (cadence reported live by `/api/summary` engine.cadence_minutes), writes only when `ENGINE_ENABLED=true`).
 - Kalshi is read **only** through the canonical `propsports-markets` Worker (service binding `MARKETS`, signed reads,
   shared rate-limit backoff). Normalization/lifecycle code is vendored unchanged from it (`src/vendor/propsports-markets`, pinned + parity test).
 - Ledger: tkmln `pred_*` tables (sql/001 + sql/002), append-only by trigger. `pred_events` is the only mutable registry row.

@@ -9,8 +9,8 @@
   // social cards: bundled Inter fonts + card background as binary Data modules (src/og.js)
   "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
   // Lanes dispatched by cron identity (src/engine-runs.js CRONS; test/engine-runs.test.js keeps these in sync):
-  // "* * * * *" FAST (hot lane, intraday, BTC SHADOW) · "*/15 * * * *" CORE engine · "7,22,37,52 * * * *" NEWSROOM
-  "triggers": { "crons": ["*/15 * * * *", "* * * * *", "7,22,37,52 * * * *"] },
+  // "* * * * *" FAST (hot lane, intraday, BTC SHADOW) · "*/2 * * * *" CORE engine · every 5 min at :01/:06/... NEWSROOM
+  "triggers": { "crons": ["*/2 * * * *", "* * * * *", "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"] },
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
   "services": [{ "binding": "MARKETS", "service": "propsports-markets" }, { "binding": "AUTH", "service": "propbetedge-auth-magic" }],
@@ -26,7 +26,7 @@
     "MONITOR_SERIES": "KXTESLADELIVERYBY,KXAMZN,KXSPACEXCOUNT,KXSPACEXSTARSHIP,KXREACTOR,KXMEASLES,KXFLDENGUE,KXIPOANTHROPIC,KXIPOBREX",
     // cron writes only when "true" (requires sql/002 applied on tkmln)
     "ENGINE_ENABLED": "true",
-    // Newsroom: AUTOMATIC publication of VALIDATED movers + resolution reports after each 15-minute engine cycle
+    // Newsroom: AUTOMATIC publication of VALIDATED movers + resolution reports, checked every 5 minutes against the latest core run
     // (owner 2026-10-04). Kill switch: set NEWSROOM_AUTO_PUBLISH to anything but "true". Manual admin route kept for emergencies.
     "NEWSROOM_AUTO_PUBLISH": "true",
     // HOT lane on the one-minute wake-up: exact-station ASOS observations for active weather windows (immutable source

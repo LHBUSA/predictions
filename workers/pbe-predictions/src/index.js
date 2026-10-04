@@ -107,7 +107,7 @@ export default {
         .then((r) => console.log(JSON.stringify({ core_run: { ...r, counts: r.counts } }))).catch((e) => console.error('core lane failed', e.stack || e.message)));
       return;
     }
-    // NEWSROOM lane (~15 min): consumes the latest SUCCESSFUL core run; never triggers an engine run.
+    // NEWSROOM lane (every 5 min): consumes the latest SUCCESSFUL core run; never triggers an engine run.
     const work = async () => {
       const store = storeFor(env);
       let cycleAt = scheduledAt; let engineCompletedAt = null; let engineOk = false;

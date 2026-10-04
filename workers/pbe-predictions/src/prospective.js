@@ -1,7 +1,7 @@
 // Prospective record for the FROZEN decision candidate (owner 2026-10-04), counted from the SYSTEM OF RECORD:
 // pred_decisions (sql/006), one immutable row per contract for the predeclared unit (FINAL_PRE_RESOLUTION designated
 // forecast captured at/after frozen_at, decided as of its capture time). Rows were written at designation time;
-// /admin/decisions/verify proves each one reproduces from the pinned policy. Raw 15-minute reforecasts never count.
+// /admin/decisions/verify proves each one reproduces from the pinned policy. Raw engine-cadence reforecasts never count.
 // 100 resolved calls = diagnostic only; 300 on >= 30 distinct resolution dates = owner promotion review.
 import { DECISION_POLICY, policyHash } from '../../../src/engine/decision.js';
 

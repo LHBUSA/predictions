@@ -1,4 +1,4 @@
-// The automated newsroom step of the 15-minute engine cron (owner 2026-10-04): runCycle -> runNewsroom -> validate ->
+// The automated newsroom step (5-minute NEWSROOM cron, after the 2-minute core engine) (owner 2026-10-04): runCycle -> runNewsroom -> validate ->
 // publish eligible stories -> refresh the Insights read cache (desk, RSS and news sitemap read the same cache).
 // Kill switch: NEWSROOM_AUTO_PUBLISH (anything but "true" = detect only, publish nothing).
 import { runNewsroom } from './engine.js';

@@ -137,3 +137,13 @@ test('timing attribution: per-dependency latency + slowest request, never the qu
   assert.equal(k.timing.phase_ms.series_and_inputs, 5); assert.equal(k.external_requests, 1);
   assert.doesNotMatch(JSON.stringify(k), /SECRET/);
 });
+
+test('cadence (owner 2026-10-04): core every 2 min, newsroom every 5 min (offset :01), UI never hard-codes it', async () => {
+  const { CORE_CADENCE_MIN, NEWSROOM_MAX_CORE_AGE_MIN } = await import('../workers/pbe-predictions/src/engine-runs.js');
+  assert.equal(CRONS.CORE, '*/2 * * * *'); assert.equal(CORE_CADENCE_MIN, 2);
+  const mins = CRONS.NEWSROOM.split(' ')[0].split(',').map(Number);
+  assert.deepEqual(mins, Array.from({ length: 12 }, (_, i) => i * 5 + 1));
+  assert.equal(NEWSROOM_MAX_CORE_AGE_MIN, 10);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.ok(!/every \d+ min/i.test(html), 'cadence copy comes from /api/summary engine.cadence_minutes only');
+});

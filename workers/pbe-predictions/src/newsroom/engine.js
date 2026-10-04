@@ -1,5 +1,5 @@
 // Automated Newsroom engine: detect → evidence → generate → validate. Nothing here writes: publication of VALIDATED
-// stories happens in publish.js autoPublish (15-minute cron, NEWSROOM_AUTO_PUBLISH) or the manual admin route.
+// stories happens in publish.js autoPublish (5-minute NEWSROOM cron, NEWSROOM_AUTO_PUBLISH) or the manual admin route.
 //   CANDIDATE → EVIDENCE_READY → GENERATED → VALIDATED → (PUBLISHED, not in V1 dry-run)   or   HELD(reason)
 import { PUBLIC_STATES, FAMILIES, CATEGORY_LABEL } from '../../../../src/engine/registry.js';
 import { loadEventPacket } from '../insights/packet.js';

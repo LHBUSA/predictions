@@ -1,17 +1,18 @@
 // Engine run ledger + scheduler lanes (owner 2026-10-04, Predictions Phases 2-3; sql/011).
 // Three lanes dispatched by cron IDENTITY so their responsibilities cannot drift back together:
 //   FAST     '* * * * *'  HOT weather lane, intraday weather, BTC SHADOW (unchanged)
-//   CORE     CORE_CRON    core engine runCycle only (no newsroom call)
-//   NEWSROOM newsroom only, consuming the latest SUCCESSFUL core run (never triggers another engine run)
+//   CORE     '*/2 * * * *'  core engine runCycle only (no newsroom call)
+//   NEWSROOM every 5 min at :01/:06/... (offset from the top of the hour; separate lane + lease from core), consuming the latest SUCCESSFUL core run (never triggers another engine run)
 // Every core/newsroom run claims an atomic DB lease (pred_engine_claim): a tick that cannot claim records
 // SKIPPED_OVERLAP and stops, so two core engines never run concurrently. Transitions are append-only.
-export const CRONS = Object.freeze({ FAST: '* * * * *', CORE: '*/15 * * * *', NEWSROOM: '7,22,37,52 * * * *' });
+export const CRONS = Object.freeze({ FAST: '* * * * *', CORE: '*/2 * * * *', NEWSROOM: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *' });
 export const CORE_CADENCE_MIN = cadenceMinutes(CRONS.CORE);
 // > Cloudflare's 15-min cron WALL-time cap (+60 s margin): a live invocation can never outlive its lease. (CPU for
 // sub-hourly crons is 30 s; the lease does not address CPU.) A hard-killed run frees the lane after 16 min and is then
 // closed by an appended ABANDONED transition (sql/012).
 export const LEASE_TTL_S = Object.freeze({ core: 960, newsroom: 960 });
-export const NEWSROOM_MAX_CORE_AGE_MIN = 30;
+// newsroom refuses core state older than 5 core intervals (10 min at the 2-minute cadence; never below 10)
+export const NEWSROOM_MAX_CORE_AGE_MIN = Math.max(10, CORE_CADENCE_MIN * 5);
 
 export function cadenceMinutes(cron) {
   const m = /^\*\/(\d+) /.exec(cron); if (m) return Number(m[1]);

@@ -1,4 +1,4 @@
-// AUTOMATED NEWSROOM (owner 2026-10-04): the 15-minute cron publishes VALIDATED movers and resolution reports by
+// AUTOMATED NEWSROOM (owner 2026-10-04): the 5-minute NEWSROOM cron publishes VALIDATED movers and resolution reports by
 // itself. Proves: publication without an admin request, append-only chain, idempotency across cron runs and under a
 // concurrent cycle, HELD / anomaly never published, desk cap, kill switch, and that a RESOLUTION_REPORT publishes
 // and is served by the read path (rebuilt deterministically with its frozen family count).

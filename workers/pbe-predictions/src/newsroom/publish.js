@@ -1,5 +1,5 @@
 // Newsroom persistence (sql/003 + sql/005) and the published read path.
-// AUTOMATIC PUBLICATION (owner 2026-10-04): the 15-minute engine cron runs the newsroom after the engine cycle and
+// AUTOMATIC PUBLICATION (owner 2026-10-04): the 5-minute NEWSROOM cron runs the newsroom on the latest completed engine cycle and
 // publishes every VALIDATED FORECAST_MOVER / RESOLUTION_REPORT (autoPublish below, kill switch NEWSROOM_AUTO_PUBLISH).
 // The anomaly lane and HELD stories are never published. The admin route is an emergency/manual tool only.
 // Publication is deterministic (story id = hash of its trigger), append-only (DB triggers), idempotent (story_id PK,
