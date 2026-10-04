@@ -58,6 +58,21 @@ export function obsSummary(rows, win) {
   return { n_obs: rows.length, n_temp: nTemp, obs_max_f: obsMax, obs_max_at: maxAt, current_f: cur, measurable: meas, measurable_straddle_only: meas && !measInWindow, trace, last_valid_at: lastValid };
 }
 
+// METAR 6-hour maximum groups (max6_f) among usable rows, counted only if the whole period [valid - 6 h, valid] lies
+// inside the window (maxtemp-intraday 2.1.0).
+export function obsMax6(rows, win) {
+  const s = toMs(win.start); const e = toMs(win.end);
+  let m = null; let at = null; let n = 0;
+  for (const r of rows) {
+    if (!Number.isFinite(r.max6_f)) continue;
+    const v = toMs(r.valid_at);
+    if (v - 6 * H < s || v >= e) continue;
+    n += 1;
+    if (m === null || r.max6_f > m) { m = r.max6_f; at = r.valid_at; }
+  }
+  return { max6_f: m, max6_at: at, n };
+}
+
 // Runs usable at `now`: published (cycle + 5 h) and <= 24 h old. runs: [{runtime, rows, ...}] any order.
 export function usableRuns(runs, now, maxAgeH = GUIDANCE_MAX_AGE_H) {
   const n = toMs(now);

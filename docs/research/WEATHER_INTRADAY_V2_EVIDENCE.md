@@ -213,3 +213,123 @@ node --max-old-space-size=3000 scripts/research/intraday/train-eval.mjs   # ~2 m
 node scripts/research/intraday/engine-parity.mjs CLIPHL 25
 node --test test/weather-intraday.test.js
 ```
+
+---
+
+# maxtemp-intraday 2.1.0: METAR 6-hour maximum groups (2026-10-04)
+
+**State: RESEARCH.** Artifact: `src/weather/artifacts/temp-intraday-v2.1.json`. The v2.0 artifact and code path are
+unchanged. The engine selects the version per call with `forecastIntraday(..., { tempModelVersion: '2.1.0' })`; the
+default stays `'2.0.0'`.
+
+## Why 2.1.0 exists
+
+Philadelphia on 2026-10-04 exposed a gap in v2.0's input:
+
+- The 11:54Z KPHL METAR carried `10178`, a 6-hour maximum of 17.8°C = 64.04°F covering 05:54-11:54Z.
+- Every hourly `tmpf` value stayed at or below 62.96°F.
+- v2.0 saw M = 63. The true observed high was at least 64.
+
+## Input added
+
+- **Source:** the METAR remarks group `1snTTT` (tenths °C).
+  - IEM `asos.py` has no `max_tmpf_6hr` CSV column: it silently returns `tmpf` instead. So the raw METAR
+    (`data=metar`, routine reports) was pulled and decoded with `parseMetarSixHour`
+    (`scripts/research/intraday/fetch-asos-max6.mjs`): 160k groups at 31 stations.
+- **Attribution:** the group belongs to the METAR valid time.
+- **When it counts:** only if `valid_at − 6 h ≥ window start` and `valid_at < window end`.
+- **Availability:** `valid_at + 10 min`.
+- **Model input:** M = round(max(hourly/special tmpf, usable 6-h max)). Everything else is identical to v2.0: same cases,
+  same features, same candidate set, same split, same bootstrap.
+  - Cases: `augment-max6.mjs`, giving `cases-v21.csv`. The 6-h max is usable in 267,954 of 465,587 cases.
+  - Fit and evaluation: `train-eval-v21.mjs`.
+- **Selection:** on validation, A5 plus the pooled below-max block (α = 100) was chosen again. Exact-degree log loss is
+  1.630, against 1.790 for the same structure in v2.0.
+
+The 6-hour **minimum** was decoded too (`min6_f` in the scratch files) but is not used. It cannot raise or lower the
+daily max.
+
+## Holdout (2025-07..2026-09, 155,430 cases; 95% date-cluster bootstrap)
+
+| Metric | v2.1 | v2.0 | v1.1 pre-window | Persistence (M with 6-h max) | Climatology-of-remaining |
+|---|---:|---:|---:|---:|---:|
+| 2°F-bucket Brier | **0.0729** | 0.0814 (Δ +0.0085 [0.0082, 0.0088]) | 0.1071 (Δ +0.0342 [0.0336, 0.0349]) | 0.1784 (Δ +0.1055 [0.1038, 0.1069]) | 0.1319 (Δ +0.0590 [0.0574, 0.0606]) |
+| Bucket log loss | **0.2372** | 0.2608 (Δ +0.0235 [0.0227, 0.0244]) | 0.3485 (Δ +0.1113 [0.1091, 0.1137]) | 0.8459 (Δ +0.6087 [0.6012, 0.6154]) | 0.4375 (Δ +0.2003 [0.1944, 0.2060]) |
+| Exact-degree log loss | **1.562** | 1.729 (Δ +0.167 [0.163, 0.172]) | 2.275 | 3.281 | 2.682 |
+
+The gate passes against all four baselines, including v2.0, on both scoring rules.
+
+### By hour bucket (Brier)
+
+| Hour bucket | v2.1 | v2.0 | v1.1 | Persistence | v2.0 − v2.1 |
+|---|---:|---:|---:|---:|---|
+| 02-06 LST | 0.1031 | 0.1031 | 0.1071 | 0.2642 | 0 (identical) |
+| 08-12 LST | 0.1001 | 0.1001 | 0.1071 | 0.2576 | 0.0000 [−0.0001, 0.0001] |
+| 14-16 LST | 0.0672 | 0.0692 | 0.1071 | 0.1555 | +0.0020 [0.0017, 0.0023] |
+| 18-22 LST | **0.0194** | 0.0491 | 0.1071 | 0.0287 | +0.0298 [0.0289, 0.0307] |
+
+- **Before midday, v2.1 equals v2.0.** Few in-window 6-h groups exist yet, and every table cell is hour-specific.
+- **Group × hour cells vs v2.0:** 14 of 24 cells are not significantly different (all morning) and none is worse.
+- **Only significantly-worse cell anywhere:** desert_mountain × 18-22 LST against persistence, Brier −0.00075
+  [−0.00135, −0.00018].
+- **At the 22 LST cutoff** (training), CLI − round(max incl. 6-h groups) = 0 in 94.7% of cases, against 39% with
+  hourly obs alone.
+- **Calibration** (holdout buckets): within about 0.02 in every decile. Mean p 0.969 against 0.967 observed in the
+  90-100% bin.
+
+**Engine parity (2.1.0):** `engine-parity-v21.mjs` gives temp max |diff| = 0 on 275 cases (CLIPHL) and 165 cases
+(CLIDEN).
+
+## Engine contract for 2.1.0
+
+- **Required field:** every observation row must carry `max6_f: number|null`. If it is absent, the engine returns
+  `INCOMPLETE_OBSERVATIONS`, because feeding the table an hourly-only max would be miscalibrated.
+- **`parseNwsObservations`:**
+  - Reads `max6_f` from `properties.rawMessage`.
+  - Drops api.weather.gov's 5-minute readings by default (`metarOnly`). Those readings are whole-°C values without a
+    `precipitationLastHour` key, and the models were calibrated on METARs only.
+- **`parseIemAsosCsv`:** reads a `max6_f` column or a raw `metar` column.
+
+## Case replay: KXHIGHPHIL-26OCT04
+
+Run with `scripts/research/intraday/phl-case-2026-10-04.mjs`. Inputs:
+
+- `now` = 18:03Z (13:03 LST, calibration hour 12).
+- Live api.weather.gov METARs through 17:53Z: 28 reports, last one at 17:28Z.
+- Hourly max 62.96°F, current 60.98°F, 6-h max 64.04°F at 11:54Z.
+- The 05:54Z group (66.92°F) was correctly ignored: its period starts 23:54Z, before the window.
+- NBM 12Z day max 67°F.
+
+| Bucket | v2.0 | v2.1 |
+|---|---:|---:|
+| ≤63 | 8% | 1% (raw 0.0000) |
+| 64-65 | 21% | **34%** |
+| 66-67 | 37% | 31% |
+| 68-69 | 26% | 27% |
+| 70-71 | 8% | 8% |
+| ≥72 | 1% | 1% |
+
+**v2.1 fixes the observed max but stays far from the market's 97% on 64-65.** The 6-h group removes the ≤63 mass. What
+remains is a calibrated statement: when the NBM high is 67, M is 64 and it is 13 LST, the final CLI high historically
+rose to 66 or more about 65% of the time.
+
+The market is effectively betting that the 12Z NBM high is wrong on a rainy, 61°F afternoon. The model has no input that
+could tell it that:
+
+- no precipitation or cloud state
+- no hourly guidance trajectory
+- no newer NBM run, since the IEM latest NBS is still 12Z with TXN 67
+
+Sensitivity (v2.1 table, M = 64, D = 61), P(64-65):
+
+| Calibration hour | Guidance 67 | Guidance 65 | Guidance 64 |
+|---|---:|---:|---:|
+| 12 | 0.34 | 0.57 | 0.68 |
+| 14 | 0.52 | — | 0.74 |
+| 16 | 0.81 | — | — |
+
+Candidates for a future version, each requiring its own holdout:
+
+- current-weather and precipitation state
+- the NBM hourly temperature path for the rest of the day
+- finer calibration hours

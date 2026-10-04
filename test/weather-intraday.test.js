@@ -216,3 +216,70 @@ test('artifacts: separate generation, state exported from validation, bound samp
   assert.deepEqual([WEATHER_MODELS.PRECIP_ANY.version, WEATHER_MODELS.MAX_TEMP_BUCKET.version], ['1.0.0', '1.0.0']);
   assert.equal(publishableIntraday(0.0004), 0.01); assert.equal(publishableIntraday(0.9996), 0.99); assert.equal(publishableIntraday(0.374), 0.37);
 });
+
+// ---------------- maxtemp-intraday 2.1.0 (METAR 6-hour maximum groups) ----------------
+import { parseMetarSixHour } from '../src/weather/intraday/observations.js';
+import { INTRADAY_TEMP_MODELS } from '../src/weather/intraday/engine.js';
+import temp21 from '../src/weather/artifacts/temp-intraday-v2.1.json' with { type: 'json' };
+
+const withMax6 = (rows, byValid = {}) => rows.map((r) => ({ ...r, max6_f: byValid[r.valid_at] ?? null }));
+
+test('2.1.0: METAR 1snTTT/2snTTT decoding', () => {
+  assert.deepEqual(parseMetarSixHour('KPHL 041154Z 00000KT 10SM 18/12 A3029 RMK AO2 SLP257 T01780122 10178 20161 53005'), { max6_f: 64.04, min6_f: 60.98 });
+  assert.deepEqual(parseMetarSixHour('KMSP 041154Z RMK AO2 11006 21022'), { max6_f: 30.92, min6_f: 28.04 });
+  assert.deepEqual(parseMetarSixHour('KPHL 041254Z 10SM 18/12 RMK AO2 T01780122'), { max6_f: null, min6_f: null });
+  assert.deepEqual(parseMetarSixHour('KPHL 041254Z 10178 10SM'), { max6_f: null, min6_f: null }); // only after RMK
+});
+
+test('2.1.0: a 6-h max counts only when its whole period is inside the window; it raises the observed max', async () => {
+  const c = await contract(nyHigh, '-B63.5');
+  const nbm = nbmRun('KNYC', undefined, 66);
+  const base = obsSeries('KNYC', 15, (k) => (k < 6 ? 62.96 : 61)); // hourly max 62.96
+  const opts = { now: AFTERNOON, tempModelVersion: '2.1.0' };
+  const none = forecastIntraday(c, { obs: withMax6(base), nbm }, opts);
+  // 05:51Z report: its 6-h period starts 23:51Z, before the 05:00Z window start -> ignored
+  const outside = forecastIntraday(c, { obs: withMax6(base, { '2026-10-04T05:51:00.000Z': 66.92 }), nbm }, opts);
+  // 11:51Z report: period 05:51-11:51Z inside the window -> counted
+  const inside = forecastIntraday(c, { obs: withMax6(base, { '2026-10-04T11:51:00.000Z': 64.04 }), nbm }, opts);
+  assert.equal(none.status, 'OK');
+  assert.deepEqual(none.model, INTRADAY_TEMP_MODELS['2.1.0']);
+  assert.equal(outside.features.obs_max_so_far_int_f, 63); assert.equal(outside.rawProbability, none.rawProbability);
+  assert.equal(inside.features.obs_max_so_far_int_f, 64); assert.equal(inside.features.obs_max6_so_far_f, 64.04);
+  assert.notEqual(inside.inputHash, none.inputHash);
+  const lt64 = await contract(nyHigh, '-T63'); // high < 63... (cap 63): impossible once 64 is in hand
+  assert.ok(forecastIntraday(lt64, { obs: withMax6(base, { '2026-10-04T11:51:00.000Z': 64.04 }), nbm }, opts).rawProbability < 0.005);
+  // a 6-h max published after now is not used
+  const late = withMax6(obsSeries('KNYC', 16, () => 61), { '2026-10-04T20:51:00.000Z': 70 });
+  assert.equal(forecastIntraday(c, { obs: late, nbm }, opts).features.obs_max6_so_far_f, null);
+});
+
+test('2.1.0 requires max6_f on rows; 2.0.0 (default) ignores it and is unchanged', async () => {
+  const c = await contract(nyHigh, '-B63.5');
+  const nbm = nbmRun('KNYC', undefined, 66);
+  const base = obsSeries('KNYC', 15, () => 61);
+  assert.equal(forecastIntraday(c, { obs: base, nbm }, { now: AFTERNOON, tempModelVersion: '2.1.0' }).status, 'INCOMPLETE_OBSERVATIONS');
+  const v20a = forecastIntraday(c, { obs: base, nbm }, { now: AFTERNOON });
+  const v20b = forecastIntraday(c, { obs: withMax6(base, { '2026-10-04T11:51:00.000Z': 70 }), nbm }, { now: AFTERNOON });
+  assert.equal(v20a.model.version, '2.0.0');
+  assert.equal(v20a.rawProbability, v20b.rawProbability); assert.equal(v20a.inputHash, v20b.inputHash);
+  assert.throws(() => forecastIntraday(c, { obs: base, nbm }, { now: AFTERNOON, tempModelVersion: '9.9.9' }), RangeError);
+});
+
+test('2.1.0 artifact: separate file, gate includes v2.0, state from validation', () => {
+  assert.equal(temp21.version, '2.1.0');
+  assert.deepEqual(Object.keys(temp21.holdout.gate).sort(), ['climatology_remaining', 'intraday_v20', 'persistence', 'prewindow_v11']);
+  assert.equal(temp21.state, Object.values(temp21.holdout.gate).every(Boolean) ? 'RESEARCH' : 'SHADOW');
+  assert.equal(INTRADAY_TEMP_MODELS['2.1.0'].state, temp21.state);
+  assert.equal(tempArt.version, '2.0.0'); // v2.0 artifact untouched
+});
+
+test('NWS parser: 5-minute readings dropped (METARs only); 6-h max read from rawMessage', () => {
+  const body = { features: [
+    { properties: { stationId: 'KPHL', timestamp: '2026-10-04T11:50:00+00:00', temperature: { unitCode: 'wmoUnit:degC', value: 18 } } },
+    { properties: { stationId: 'KPHL', timestamp: '2026-10-04T11:54:00+00:00', rawMessage: 'KPHL 041154Z 00000KT 10SM 17/12 A3029 RMK AO2 SLP257 T01720122 10178 20161', temperature: { unitCode: 'wmoUnit:degC', value: 17.2 }, precipitationLastHour: { unitCode: 'wmoUnit:mm', value: null } } },
+  ] };
+  const rows = parseNwsObservations(body);
+  assert.equal(rows.length, 1);
+  assert.deepEqual([rows[0].tmpf, rows[0].max6_f], [62.96, 64.04]);
+  assert.equal(parseNwsObservations(body, { metarOnly: false }).length, 2);
+});

@@ -11,11 +11,12 @@ import { assertMarketFree } from '../../../src/engine/leakage.js';
 import { weatherSources } from './cycle.js';
 
 const LAG_MS = 10 * 60000; // research publication-lag floor
+export const TEMP_MODEL_VERSION = '2.1.0';
 const latestBy = (rows, key, time) => { const m = new Map(); for (const r of rows) { const k = r[key]; if (!m.has(k) || m.get(k)[time] < r[time]) m.set(k, r); } return m; };
 
 export function engineObservations(rows, icao) {
   return rows.filter((r) => r.data?.metar && r.data.temp_f !== null && r.data.temp_f !== undefined)
-    .map((r) => ({ station: icao, valid_at: new Date(r.observed_at).toISOString(), available_at: new Date(Math.max(Date.parse(r.available_at), Date.parse(r.observed_at) + LAG_MS)).toISOString(), tmpf: r.data.temp_f, p01i: r.data.precip_hour_in ?? null, trace: false }))
+    .map((r) => ({ station: icao, valid_at: new Date(r.observed_at).toISOString(), available_at: new Date(Math.max(Date.parse(r.available_at), Date.parse(r.observed_at) + LAG_MS)).toISOString(), tmpf: r.data.temp_f, p01i: r.data.precip_hour_in ?? null, max6_f: r.data.max6_f ?? null, trace: false }))
     .sort((a, b) => a.valid_at.localeCompare(b.valid_at));
 }
 
@@ -36,7 +37,8 @@ export async function intradayForStation(store, st, { now, fetchImpl = globalThi
   const features = []; const forecasts = [];
   for (const c of contracts) {
     out.considered += 1;
-    const r = forecastIntraday(c, { obs, nbm: src.nbm, mos: src.mos }, { now });
+    // max temp: v2.1.0 (adds the official METAR 6-hour maximum group; validated RESEARCH); rain: v2.0.0
+    const r = forecastIntraday(c, { obs, nbm: src.nbm, mos: src.mos }, { now, tempModelVersion: TEMP_MODEL_VERSION });
     if (r.status !== 'OK') { out.skipped[r.status] = (out.skipped[r.status] || 0) + 1; continue; }
     const last = prior.find((p) => p.contract_id === c.contract_id && p.model_id === r.model.id);
     if (last?.explanation?.input_hash === r.inputHash) { out.unchanged += 1; continue; } // same inputs -> write nothing
