@@ -171,3 +171,15 @@ test('activation invariant: a pre-activation decision stays unofficial forever; 
 test('policyHash = the pinned frozen hash (one definition shared by tests and the decision ledger)', async () => {
   assert.equal(await policyHash(), FROZEN_SHA256);
 });
+
+test('evidence hash covers facts only: driver labels/display wording never change it; a fact change does', async () => {
+  const forecast = { forecast_id: 'f1', contract_id: 'c1', model_id: 'pbe-weather-maxtemp', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.3, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's1', features_sha256: 'a', provenance: [], explanation: {} };
+  const snapshot = { snapshot_id: 's1', cutoff_at: '2026-10-05T05:00:00Z', features: { nbm_max_temp_guidance_f: 69, guidance_error_table: 'temp-nbm-v1.1:CLIPHL:le30h:station:n=1820' } };
+  const { packet, sha256 } = await buildEvidencePacket({ event: { event_id: 'E' }, contract: { contract_id: 'c1' }, forecast, snapshot });
+  const { factualCore } = await import('../src/engine/evidence.js');
+  const { createHash } = await import('node:crypto');
+  const reworded = { ...packet, drivers: packet.drivers.map((d) => ({ ...d, label: `${d.label} (renamed)`, display: 'x' })) };
+  assert.equal(createHash('sha256').update(canonicalJson(factualCore(reworded))).digest('hex'), sha256);
+  const changed = await buildEvidencePacket({ event: { event_id: 'E' }, contract: { contract_id: 'c1' }, forecast, snapshot: { ...snapshot, features: { ...snapshot.features, nbm_max_temp_guidance_f: 70 } } });
+  assert.notEqual(changed.sha256, sha256);
+});

@@ -11,6 +11,14 @@ export const EVIDENCE_SCHEMA = 'pbe-evidence/1';
 const pctOf = (v) => (v === null || v === undefined ? null : Math.round(Number(v) * 100));
 const num = (v, d = 2) => (v === null || v === undefined || Number.isNaN(Number(v)) ? null : +Number(v).toFixed(d));
 
+// 'temp-nbm-v1.1:CLIPHL:le30h:station:n=1820' -> 'lead <=30 h · this station · 1,820 past days' (display only)
+function guidanceTable(v) {
+  const [, , bucket, source, n] = String(v).split(':');
+  const lead = /^le(\d+)h$/.exec(bucket || '')?.[1];
+  const count = Number(String(n || '').replace('n=', ''));
+  return [[lead ? `lead ≤${lead} h` : bucket, source === 'station' ? 'this station' : source ? `${source} table` : null, Number.isFinite(count) && count ? `${count.toLocaleString('en-US')} past days` : null].filter(Boolean).join(' · '), ''];
+}
+
 // Material factual drivers per model family: stored feature name -> public label + display. Order = materiality.
 // Only MODEL INPUTS appear here (context-only evidence such as the NWS gridpoint forecast is listed separately).
 export const DRIVER_SPECS = Object.freeze({
@@ -24,7 +32,7 @@ export const DRIVER_SPECS = Object.freeze({
     { feature: 'nbm_max_temp_guidance_f', label: 'National Blend of Models high', show: (v) => [v, '°F'], source: /National Blend/ },
     { feature: 'mos_max_temp_guidance_f', label: 'GFS MOS guidance high', show: (v) => [v, '°F'], source: /GFS MOS/ },
     { feature: 'nbm_max_temp_spread_f', label: 'Blend spread (uncertainty in the guidance)', show: (v) => [v, '°F'], source: /National Blend/ },
-    { feature: 'guidance_error_table', label: 'Station guidance-error table (past reported minus guidance)', show: (v) => [String(v).split(':').slice(2).join(' · '), ''], source: /GFS MOS/ },
+    { feature: 'guidance_error_table', label: 'Station guidance-error history (reported minus guidance)', show: guidanceTable, source: /GFS MOS/ },
     { feature: 'run_lead_hours', label: 'Guidance lead time to the climate day', show: (v) => [num(v, 0), ' h'], source: /GFS MOS/ },
   ],
   'pbe-rates-path': [
@@ -131,7 +139,13 @@ export async function buildEvidencePacket({ event, contract, forecast, snapshot,
     limitations,
     integrity,
   };
-  return { packet, sha256: await sha256(canonicalJson(packet)) };
+  return { packet, sha256: await sha256(canonicalJson(factualCore(packet))) };
+}
+
+// The evidence hash covers FACTS only (stored values, sources, times, ids, integrity), never presentation: driver labels
+// and display strings are excluded so wording fixes can never change a stored evidence hash (pred_decisions).
+export function factualCore(packet) {
+  return { ...packet, drivers: packet.drivers.map((d) => ({ feature: d.feature, value: d.value, source: d.source })) };
 }
 
 // Deterministic one-line summary built ONLY from packet drivers (no free text, no LLM).
