@@ -23,16 +23,22 @@ export function laneFor(cron) {
 
 // Counting wrappers: Supabase requests/writes (store fetch) and market-service requests (service binding).
 export function countingFetch(base = globalThis.fetch) {
-  const c = { requests: 0, writes: 0, errors: 0, rate_limited: 0 };
+  const c = { requests: 0, writes: 0, errors: 0, rate_limited: 0, ms_total: 0, ms_max: 0, slowest: null };
   const f = async (input, init) => {
     c.requests += 1; if (init?.method && init.method !== 'GET') c.writes += 1;
-    try { const r = await base(input, init); if (!r.ok) { c.errors += 1; if (r.status === 429) c.rate_limited += 1; } return r; } catch (e) { c.errors += 1; throw e; }
+    const t = Date.now();
+    try { const r = await base(input, init); if (!r.ok) { c.errors += 1; if (r.status === 429) c.rate_limited += 1; } return r; } catch (e) { c.errors += 1; throw e; } finally {
+      const d = Date.now() - t; c.ms_total += d; if (d > c.ms_max) { c.ms_max = d; c.slowest = hostPath(input); }
+    }
   };
   return { fetch: f, counts: c };
 }
 export function countingBinding(binding) {
-  const c = { requests: 0, errors: 0, rate_limited: 0 };
-  return { binding: { fetch: async (...a) => { c.requests += 1; const r = await binding.fetch(...a); if (!r.ok) { c.errors += 1; if (r.status === 429) c.rate_limited += 1; } return r; } }, counts: c };
+  const c = { requests: 0, errors: 0, rate_limited: 0, ms_total: 0, ms_max: 0, slowest: null };
+  return { binding: { fetch: async (...a) => { c.requests += 1; const t = Date.now(); try { const r = await binding.fetch(...a); if (!r.ok) { c.errors += 1; if (r.status === 429) c.rate_limited += 1; } return r; } finally { const d = Date.now() - t; c.ms_total += d; if (d > c.ms_max) { c.ms_max = d; c.slowest = hostPath(a[0]); } } } }, counts: c };
+}
+// host + path only (never query strings: they can carry keys)
+function hostPath(input) { try { const u = new URL(String(input?.url ?? input)); return `${u.host}${u.pathname}`.slice(0, 120); } catch { return null; }
 }
 
 async function rpc(store, fn, args) {
@@ -88,7 +94,7 @@ export async function closeAbandoned(store, lane, runId, prior, detectedAt) {
   return orphans.map((o) => o.run_id);
 }
 
-export function coreCounts(summary, supa, mkt) {
+export function coreCounts(summary, supa, mkt, ext = null) {
   const s = summary || {};
   const errs = s.errors || [];
   return {
@@ -97,6 +103,11 @@ export function coreCounts(summary, supa, mkt) {
     errors: errs.length, market_backoff_errors: errs.filter((e) => /backoff/i.test(JSON.stringify(e))).length,
     market_requests: mkt?.requests ?? null, market_http_errors: mkt?.errors ?? null, market_rate_limited: mkt?.rate_limited ?? null,
     supabase_requests: supa?.requests ?? null, supabase_writes: supa?.writes ?? null, supabase_http_errors: supa?.errors ?? null, supabase_rate_limited: supa?.rate_limited ?? null,
+    external_requests: ext?.requests ?? null, external_http_errors: ext?.errors ?? null,
+    // wall-time attribution (diagnostic): summed request latency per dependency, slowest single request, phase walls
+    timing: { phase_ms: s.phase_ms || null, market_ms: mkt?.ms_total ?? null, market_max_ms: mkt?.ms_max ?? null, market_slowest: mkt?.slowest ?? null,
+      supabase_ms: supa?.ms_total ?? null, supabase_max_ms: supa?.ms_max ?? null, supabase_slowest: supa?.slowest ?? null,
+      external_ms: ext?.ms_total ?? null, external_max_ms: ext?.ms_max ?? null, external_slowest: ext?.slowest ?? null },
   };
 }
 

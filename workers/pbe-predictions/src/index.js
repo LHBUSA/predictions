@@ -98,10 +98,10 @@ export default {
     if (lane === 'core') {
       // CORE lane: runCycle only (never the newsroom), under the atomic lease + run ledger (sql/011, ENGINE_RUNS).
       const work = async () => {
-        const supa = countingFetch(); const mk = countingBinding(env.MARKETS);
-        const r = await runCycle(env, { store: storeFor(env, supa.fetch), markets: new MarketsService({ binding: mk.binding, token: env.MARKETS_READ_TOKEN }) });
+        const supa = countingFetch(); const mk = countingBinding(env.MARKETS); const ext = countingFetch();
+        const r = await runCycle(env, { store: storeFor(env, supa.fetch), markets: new MarketsService({ binding: mk.binding, token: env.MARKETS_READ_TOKEN }), fetchImpl: ext.fetch });
         console.log(JSON.stringify({ cycle: r.summary }));
-        return { counts: coreCounts(r.summary, supa.counts, mk.counts) };
+        return { counts: coreCounts(r.summary, supa.counts, mk.counts, ext.counts) };
       };
       ctx.waitUntil((ledger ? runLane({ store: storeFor(env), lane, cron: event.cron, scheduledAt, workerVersion, work }) : work())
         .then((r) => console.log(JSON.stringify({ core_run: { ...r, counts: r.counts } }))).catch((e) => console.error('core lane failed', e.stack || e.message)));

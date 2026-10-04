@@ -163,6 +163,8 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   const nowMs = Date.parse(now);
   const summary = { now, dry_run: dryRun, series: {}, events: 0, contracts: { NORMALIZED: 0, UNMODELABLE: 0, HOLD_RESOLUTION_AMBIGUOUS: 0, UNSUPPORTED_DOMAIN: 0 }, venue_snapshots: 0, forecasts: 0, forecast_skips: {}, skipped: {}, designations: 0, resolutions: 0, scores: 0, errors: [] };
   const writes = { events: [], contracts: [], venue: [], observations: [], features: [], forecasts: [] };
+  // wall-time per phase (diagnostic only; measured with Date.now around awaited I/O)
+  const tPhase = Date.now(); const phase = (k, t) => { summary.phase_ms[k] = Date.now() - t; return Date.now(); }; summary.phase_ms = {};
   const seriesList = [env.WEATHER_SERIES, env.MACRO_SERIES, env.RATES_SERIES, env.MONITOR_SERIES].filter(Boolean).join(',').split(',').map((s) => s.trim()).filter(Boolean);
   const stationSources = new Map();
   let fredSources = null;
@@ -245,6 +247,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
       if (e instanceof MarketsBackoffError) break;
     }
   }
+  let tp = phase('series_and_inputs', tPhase);
   for (const s of stationSources.values()) if (s.observations) writes.observations.push(...s.observations.map(observationRow));
   if (fredSources?.observations) writes.observations.push(...fredSources.observations.map(observationRow));
   if (treasurySources?.observations) writes.observations.push(...treasurySources.observations.map(observationRow));
@@ -260,6 +263,7 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
     const keep = new Set(writes.forecasts.map((f) => f.feature_snapshot_id));
     writes.features = writes.features.filter((f) => keep.has(f.snapshot_id));
   }
+  tp = phase('forecast_dedupe_read', tp);
   summary.venue_snapshots = writes.venue.length;
   summary.forecasts = writes.forecasts.length;
   summary.observations = writes.observations.length;
@@ -278,9 +282,11 @@ export async function runCycle(env, { store, markets = null, fetchImpl = globalT
   await store.insertObservations(writes.observations);
   await store.insertFeatureRows(writes.features);
   await store.insertForecastRows(writes.forecasts);
+  tp = phase('ledger_writes', tp);
 
   const post = await designateResolveScore(env, { store, mkt, fetchImpl, now });
   Object.assign(summary, post);
+  tp = phase('designate_resolve_score', tp);
   // Diagnostic record of skipped publications (expected input unavailable -> skip, never substitute).
   // Persisted once sql/003 is applied and NEWSROOM_DB=true; always present in the logged cycle summary.
   if (env.NEWSROOM_DB === 'true' && Object.keys(summary.skipped).length) {

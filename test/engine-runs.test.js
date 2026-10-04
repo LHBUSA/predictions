@@ -127,3 +127,13 @@ test('lease TTL exceeds the Cloudflare cron wall-time cap (15 min) with margin',
   const { LEASE_TTL_S } = await import('../workers/pbe-predictions/src/engine-runs.js');
   assert.ok(LEASE_TTL_S.core > 900 && LEASE_TTL_S.newsroom > 900);
 });
+
+test('timing attribution: per-dependency latency + slowest request, never the query string', async () => {
+  const c = countingFetch(async () => { await new Promise((r) => setTimeout(r, 15)); return { ok: true, status: 200 }; });
+  await c.fetch('https://api.weather.gov/stations/KPHL/observations?key=SECRET');
+  assert.ok(c.counts.ms_total >= 10 && c.counts.ms_max >= 10);
+  assert.equal(c.counts.slowest, 'api.weather.gov/stations/KPHL/observations');
+  const k = coreCounts({ phase_ms: { series_and_inputs: 5 } }, c.counts, null, c.counts);
+  assert.equal(k.timing.phase_ms.series_and_inputs, 5); assert.equal(k.external_requests, 1);
+  assert.doesNotMatch(JSON.stringify(k), /SECRET/);
+});
