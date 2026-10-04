@@ -31,6 +31,23 @@ test('footer: Predictions, all 10 sports, network, trust, and the All Access lin
   assert.doesNotMatch(f, /11 sports|eleven sports/i);
 });
 
+test('footer trust boundary: subdomain shell keeps About Terms Legal Support only; main-site editorial people stay off Predictions', () => {
+  const f = siteFooter();
+  for (const href of ['https://propbetedge.ai/about','https://propbetedge.ai/terms','https://propbetedge.ai/legal','https://propbetedge.ai/support'])
+    assert.ok(f.includes(`href="${href}"`), href);
+  for (const forbidden of [
+    'https://propbetedge.ai/media',
+    'https://propbetedge.ai/authors',
+    'https://propbetedge.ai/authors/justin-erickson',
+    'https://propbetedge.ai/authors/propbetedge-editorial-team',
+    'https://propbetedge.ai/authors/ty-whitney',
+    'https://propbetedge.ai/authors/erik-schwartz',
+    'https://propbetedge.ai/editorial-standards',
+  ]) assert.ok(!f.includes(forbidden), forbidden);
+  for (const label of ['Editorial Team','Justin Erickson','PropBetEdge Editorial Team','Ty Whitney','Erik Schwartz','Editorial Standards'])
+    assert.ok(!f.includes(label), label);
+});
+
 function sampleArticle() {
   const contract = { contract_id: 'C1', market_id: 'M1', outcome_label: 'Boston', normalization_status: 'NORMALIZED', resolution_authority: 'NWS', resolution_dataset: 'CLI', verification_dataset: 'CLI', measurement_definition: 'rain', rounding_rule: '', exceptions: [], rules_primary: 'rule' };
   const snap = (id, t, pbe) => ({ id, t, pbe, pbe_raw: pbe / 100, market: 30, model: 'pbe-weather-precip@1.1.0', model_id: 'pbe-weather-precip', version: '1.1.0', state: 'RESEARCH', cutoff: t, sha: 'x', feature_snapshot_id: `fs-${id}`, evidence: [], provenance: [], roles: [] });
