@@ -30,6 +30,15 @@ const CSS = `
 .mv-related .mv-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:4px;background:#f1ecfa;color:#4b3a8c;margin-right:6px}
 .mv-related small{display:block;color:var(--muted,#6b7c8f)}
 .mv-chart svg{width:100%;height:auto;display:block}
+.mv-rail{margin:0 0 14px;padding:12px 14px;border:1px solid #e3dcf3;border-radius:10px;background:#faf8ff}
+.mv-rail-h{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;color:#4b3a8c;margin-bottom:8px}
+.mv-rail-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
+.mv-rail-i{flex:0 0 auto;min-width:220px;max-width:320px;display:grid;gap:3px;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #ebe6f7;color:#1c2733;text-decoration:none}
+.mv-rail-i:hover{border-color:#6b4fbb}
+.mv-rail-t{font-weight:600;font-size:13.5px;line-height:1.3}
+.mv-rail-v{font-size:12px;color:#55606d}
+.mv-rail-v b{color:#4b3a8c}
+@media (max-width:640px){.mv-rail-i{min-width:200px}}
 .mv-chart .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12.5px;color:var(--muted,#6b7c8f)}
 .mv-chart .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
 @media (max-width:640px){.mv-markets strong{font-size:12.5px}.mv-sub{font-size:12px}}
@@ -39,10 +48,12 @@ function style() { if (document.getElementById('mv-style')) return; const s = do
 // ---------------------------------------------------------------------------------------------------------
 // Homepage desk
 const bySlugMarket = new Map(); // `${slug}|${market_id}` -> contract
+let deskEvents = [];
 async function loadDesk() {
   const r = await fetch(`${API}/v1/market-desk?domain=nonsports`, { headers: { accept: 'application/json' } });
   if (!r.ok) throw new Error(`desk ${r.status}`);
   const d = await r.json();
+  deskEvents = d.events || [];
   for (const e of d.events || []) {
     const slug = (e.destination?.url || '').split('/events/')[1];
     if (!slug) continue;
@@ -155,6 +166,26 @@ async function eventRelated(panel) {
   return true;
 }
 
+// Homepage discovery: every event the desk carries with a current Polymarket market gets a compact cue above the desk
+// list (title + venue relationship), linking to its event page where the full multi-venue panel lives. Independent of
+// the free desk sample, so a Polymarket event is never reachable only by a deep URL. Nothing current -> no rail.
+const REL_TAG = { EXACT_MATCH: 'Exact market', COMPARABLE_EXCEPT_EXCEPTIONS: 'Comparable market', RULE_MISMATCH: 'Related market · rules differ', UNVERIFIED: 'Related market · rules not verified', VENUE_ONLY: 'Prediction market' };
+function venueRail() {
+  if (document.getElementById('mv-rail')) return;
+  const list = document.getElementById('desk-list');
+  if (!list) return;
+  const items = [];
+  for (const e of deskEvents) {
+    const pm = (e.contracts || []).flatMap((c) => [...(c.venues || []), ...(c.related || []), ...(c.listed || [])]).filter((v) => v.venue === 'polymarket' && v.freshness && v.freshness !== 'stale');
+    const url = e.destination?.url ? new URL(e.destination.url).pathname : null;
+    if (!pm.length || !url) continue;
+    const best = ['EXACT_MATCH', 'COMPARABLE_EXCEPT_EXCEPTIONS', 'RULE_MISMATCH', 'UNVERIFIED', 'VENUE_ONLY'].find((m) => pm.some((v) => v.match === m));
+    items.push(`<a class="mv-rail-i" href="${esc(url)}"><span class="mv-rail-t">${esc(e.title || '')}</span><span class="mv-rail-v"><b>Polymarket</b> · ${esc(REL_TAG[best] || 'Prediction market')} · ${pm.length} contract${pm.length === 1 ? '' : 's'}</span></a>`);
+  }
+  if (!items.length) return;
+  list.insertAdjacentHTML('beforebegin', `<div class="mv-rail" id="mv-rail" aria-label="Also on Polymarket"><span class="mv-rail-h">ALSO ON POLYMARKET</span><div class="mv-rail-row">${items.slice(0, 6).join('')}</div></div>`);
+}
+
 // ---------------------------------------------------------------------------------------------------------
 style();
 const panel = document.getElementById('mv-chart-panel');
@@ -164,5 +195,5 @@ if (panel) {
     if (r.some((x) => x.value === true)) panel.hidden = false;
   });
 }
-export const ready = panel ? Promise.resolve() : loadDesk().catch((e) => console.warn('mv desk', e));
+export const ready = panel ? Promise.resolve() : loadDesk().then(venueRail).catch((e) => console.warn('mv desk', e));
 window.PBE_MV = { decorate, order, addModes, handles: (m) => m in MODES };
