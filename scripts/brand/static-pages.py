@@ -15,7 +15,7 @@ def ld(title, desc, path):
     graph = [ORG, SITE_NODE, page]
     if path == '/models/':
         page["mainEntity"] = {"@id": f"{SITE}/models/#dataset"}
-        graph.append({"@type": "Dataset", "@id": f"{SITE}/models/#dataset", "name": "PropBetEdge Predictions model registry", "description": "Every PropBetEdge Predictions model family with its state, live forecast counts, resolved sample, calibration status and known limitations.", "url": f"{SITE}/models/", "creator": {"@id": ORG_ID}, "isAccessibleForFree": True, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{SITE}/api/models"}]})
+        graph.append({"@type": "Dataset", "@id": f"{SITE}/models/#dataset", "name": "PropBetEdge Predictions model registry", "description": "Every PropBetEdge Predictions model family with its state, forecast snapshot counts, resolved sample, calibration status and known limitations.", "url": f"{SITE}/models/", "creator": {"@id": ORG_ID}, "isAccessibleForFree": True, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{SITE}/api/models"}]})
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace('<', '\\u003c')
 
 CRUMB = {'/models/': 'Models', '/methodology/': 'Methodology'}
@@ -29,7 +29,7 @@ def head(title, desc, path):
 <meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions"><meta property="og:title" content="{title}"><meta property="og:description" content="{desc}">
 <meta property="og:url" content="https://predictions.propbetedge.ai{path}"><meta property="og:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{title}"><meta name="twitter:description" content="{desc}"><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261004w2">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261004w3">
 <script type="application/ld+json">{ld(title, desc, path)}</script>
 </head><body>
 {SHELL['header'][{'/models/': 'models', '/methodology/': 'methodology'}.get(path, 'none')]}
@@ -45,7 +45,7 @@ fetch('/api/models').then(r=>r.json()).then(m=>{document.getElementById('fams').
 fetch('/api/queue').then(r=>r.json()).then(q=>{const rows=Object.entries(q.counts).filter(([k])=>!/NORMALIZED$/.test(k)).sort((a,b)=>b[1]-a[1]);document.getElementById('queue').innerHTML=rows.length?rows.map(([k,n])=>`<tr><td>${esc(k.replace(/:/g,' · '))}</td><td class="num">${n}</td></tr>`).join(''):'<tr><td colspan="2" class="note">Every tracked contract is normalized.</td></tr>'});
 </script>'''
 
-models = head('Model Registry & 60-Day Research Board | PropBetEdge Predictions', 'Every PropBetEdge Predictions model family, its state (monitoring, shadow, research, validated), live forecast counts, resolved sample, calibration status and known limitations.', '/models/') + '''
+models = head('Model Registry & 60-Day Research Board | PropBetEdge Predictions', 'Every PropBetEdge Predictions model family, its state (monitoring, shadow, research, validated), forecast snapshot counts, resolved sample, calibration status and known limitations.', '/models/') + '''
 <main class="wrap section">
 <span class="overline">60-DAY RESEARCH BOARD</span><h1 style="font-size:34px;letter-spacing:-.03em;margin:8px 0 6px">Model families</h1>
 <p class="note" style="font-size:14px;max-width:820px">States: MONITORING (market shown, no model) → BACKTESTING → SHADOW (forecasts stored, never published) → RESEARCH (published, not validated) → VALIDATED → OFFICIAL. Skill metrics appear only once a family has enough resolved forecasts; until then the sample is reported as insufficient.</p>

@@ -3,6 +3,8 @@ const API = '/api';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+// Visible model-vs-market gaps always carry their unit (percentage POINTS, never a % return or an accuracy figure).
+const pts = (n) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${Math.abs(n)} pts`;
 const ago = (iso) => { if (!iso) return '—'; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
 const until = (iso) => { const m = Math.round((Date.parse(iso) - Date.now()) / 60000); if (m < 0) return 'closed'; if (m < 60) return `${m} min`; if (m < 1440) return `${Math.round(m / 60)} h`; return `${Math.round(m / 1440)} d`; };
 const BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-official', MARKET_MONITORING: 'b-monitoring', MONITORING: 'b-monitoring', SHADOW: 'b-shadow', BACKTESTING: 'b-backtesting' };
@@ -80,7 +82,7 @@ function divCell(h) {
   if (st.note) return `<div class="cell"><span>Div.</span><strong class="null-state">${esc(st.note)}</strong></div>`;
   const d = st.pts;
   const words = Math.abs(d) <= 2 ? 'PBE and market agree' : `PBE ${Math.abs(d)} points ${d > 0 ? 'above' : 'below'} market`;
-  return `<div class="cell"><span>Div.</span><strong class="num div-heat ${heat(d)} ${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}" title="${esc(words)}"><b aria-hidden="true">${sign(d)}</b><i class="sr-only">${esc(words)}</i></strong></div>`;
+  return `<div class="cell"><span>Div.</span><strong class="num div-heat ${heat(d)} ${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}" title="${esc(words)}"><b aria-hidden="true">${pts(d)}</b><i class="sr-only">${esc(words)}</i></strong></div>`;
 }
 const venueLine = (h) => {
   const k = h.venues?.kalshi; const p = h.venues?.polymarket;
@@ -137,8 +139,11 @@ function stats(s) {
 function tape() {
   const items = events.filter((e) => e.headline && e.headline.pbe_pct !== null).sort((a, b) => b.max_abs_divergence - a.max_abs_divergence).slice(0, 18);
   if (!items.length) { $('tape').parentElement.hidden = true; return; }
-  const html = items.map((e) => { const h = e.headline; return `<a href="${esc(e.url)}"><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${h.pbe_pct}%</b> · MKT <b class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</b>${h.divergence_pts !== null ? ` · <span class="num ${h.divergence_pts >= 0 ? 'pos' : 'neg'}">${sign(h.divergence_pts)}</span>` : ''}</a>`; }).join('');
-  $('tape').innerHTML = html + html; // duplicated for a seamless loop
+  // ONE semantic track + ONE inert visual clone (the seamless loop): the clone is aria-hidden, inert and out of the tab
+  // order, so screen readers, text extraction and crawlers see each item once. Reduced motion: no loop, no clone.
+  const item = (e, clone) => { const h = e.headline; return `<a href="${esc(e.url)}"${clone ? ' aria-hidden="true" tabindex="-1" inert data-tape-clone' : ''}><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${h.pbe_pct}%</b> · MKT <b class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</b>${h.divergence_pts !== null ? ` · <span class="num ${h.divergence_pts >= 0 ? 'pos' : 'neg'}">${pts(h.divergence_pts)}</span>` : ''}</a>`; };
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('tape').innerHTML = items.map((e) => item(e, false)).join('') + (still ? '' : items.map((e) => item(e, true)).join(''));
 }
 
 function shortTitle(e) { return e.title.replace(/^(Highest temperature in|Where will it rain on|How (high|low) will the)\s*/i, '').replace(/\?$/, '').slice(0, 48); }
@@ -149,7 +154,7 @@ function featured() {
   $('featured').innerHTML = top.map((e) => { const h = e.headline; return `<a class="card feat" href="${esc(e.url)}">
     <div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>closes in ${until(e.close_time)}</span></div>
     <h3>${esc(e.title)}</h3><div class="outcome">Outcome: <b>${esc(h.label)}</b> · ${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div>
-    <div class="trio"><div><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div><span>Market</span><strong class="num">${h.market_pct}%</strong></div><div><span>Divergence</span><strong class="num ${dcls(h.divergence_pts)}">${sign(h.divergence_pts)}</strong></div></div>
+    <div class="trio"><div><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div><span>Market</span><strong class="num">${h.market_pct}%</strong></div><div><span>Divergence</span><strong class="num ${dcls(h.divergence_pts)}">${pts(h.divergence_pts)}</strong></div></div>
     ${miniDist(e)}</a>`; }).join('');
 }
 
@@ -199,7 +204,7 @@ function trackRecord(t) {
   const b = g('FINAL_PRE_RESOLUTION', 'brier'); const l = g('FINAL_PRE_RESOLUTION', 'log_loss');
   const enough = t.resolved_contracts >= t.min_for_claims;
   $('tr').innerHTML = `
-    <div class="stat"><span>Resolved forecasts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored' : 'first settlements pending'}</small></div>
+    <div class="stat"><span>Resolved contracts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored' : 'first settlements pending'}</small></div>
     <div class="stat"><span>Brier (final pre-resolution)</span><strong class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${b ? `market ${b.market_mean?.toFixed(3) ?? '—'} · n=${b.n}${enough ? '' : ` (needs ${t.min_for_claims})`}` : 'lower is better'}</small></div>
     <div class="stat"><span>Log loss</span><strong class="num">${l && enough ? l.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${l ? `market ${l.market_mean?.toFixed(3) ?? '—'}` : 'lower is better'}</small></div>
     <div class="stat"><span>Calibration</span><strong>${enough ? 'Measurable' : 'Pending'}</strong><small>${enough ? 'see the research board' : `claims start at ${t.min_for_claims} resolved`}</small></div>`;
