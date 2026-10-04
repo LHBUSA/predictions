@@ -132,14 +132,26 @@ function stats(s) {
   $('s-modeled').textContent = s.modeled_contracts.toLocaleString();
   $('s-monitor').textContent = s.monitoring_contracts.toLocaleString();
   $('s-scored').textContent = s.resolved_scored.toLocaleString(); $('s-scored-sub').textContent = s.resolved_scored ? 'contracts with stored scores' : 'first settlements pending';
-  $('s-cycle').dataset.ago = s.last_engine_cycle || ''; $('s-cycle').textContent = ago(s.last_engine_cycle); $('s-cycle-sub').textContent = s.last_engine_cycle ? new Date(s.last_engine_cycle).toISOString().slice(11, 16) + ' UTC · every 15 min' : '';
+  // Engine heartbeat (pred_engine_runs, goodl-97 sql/011): last_engine_cycle = completed_at of the latest SUCCESSFUL core
+  // run; the cadence shown is the scheduler's own engine.cadence_minutes (never a constant in copy).
+  const eng = s.engine || null;
+  const cad = eng && Number.isFinite(eng.cadence_minutes) ? eng.cadence_minutes : null;
+  $('s-cycle').dataset.ago = s.last_engine_cycle || '';
+  $('s-cycle').textContent = s.last_engine_cycle ? ago(s.last_engine_cycle) : '—';
+  $('s-cycle-sub').textContent = s.last_engine_cycle
+    ? `${new Date(s.last_engine_cycle).toISOString().slice(11, 16)} UTC${cad ? ` · core every ${cad} min` : ''}`
+    : eng ? 'awaiting the first recorded cycle' : '';
   $('s-models').textContent = String(s.models_live); $('s-models-sub').textContent = `live research · ${s.models_shadow} shadow (not published)`;
-  const stale = s.last_engine_cycle && Date.now() - Date.parse(s.last_engine_cycle) > 45 * 60000;
+  // healthy / running -> the page's own live wording; delayed / failed -> said plainly. No heartbeat block (ledger
+  // unreadable) -> the previous age rule.
+  const engState = eng?.state || null;
+  const stale = engState ? engState === 'delayed' || engState === 'failed' : !!(s.last_engine_cycle && Date.now() - Date.parse(s.last_engine_cycle) > 45 * 60000);
+  const staleText = engState === 'failed' ? 'Engine cycle failed' : 'Engine delayed';
   const dot = $('live-dot'); const txt = $('live-text');
   if (dot && txt) {
     if (!('liveText' in dot.dataset)) dot.dataset.liveText = txt.textContent; // the page's own healthy wording
     dot.style.background = stale ? 'var(--neg-bg)' : ''; dot.style.color = stale ? 'var(--neg)' : '';
-    txt.textContent = stale ? 'Engine delayed' : dot.dataset.liveText;
+    txt.textContent = stale ? staleText : dot.dataset.liveText;
   }
 }
 
