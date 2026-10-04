@@ -5,6 +5,10 @@ import NET from '../../../brand/network.json' with { type: 'json' };
 
 export const NETWORK = NET;
 export const ACCESS_V = '20261004a';
+export const THEME_V = '20261004t1';
+// applied in <head> before first paint (no flash); light = no attribute (default)
+export const THEME_BOOT = `<script>try{var t=localStorage.getItem('pbe-theme');if(t==='dark'||t==='system')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>`;
+const THEME_BTN = `<button type="button" class="theme-btn" data-theme-toggle aria-label="Theme: Light. Switch to Dark" title="Theme: Light (click for Dark)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span class="theme-label">Light</span></button>`;
 const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ext = 'target="_blank" rel="noopener"';
 
@@ -17,13 +21,15 @@ ${BRAND}
 <nav class="nav" aria-label="Predictions">${productLinks(current)}</nav>
 <div class="top-right">
 <span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>
+${THEME_BTN}
 <a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="free" aria-label="Membership"><span class="mem-state">FREE</span><span class="mem-action">Sign in</span></a>
 <a class="net-link" href="${NET.brand.url}" data-pbe-placement="predictions_header_network"><span class="net-long">PropBetEdge Network</span><span class="net-short">Network</span> <span aria-hidden="true">↗</span></a>
 <a class="aa-pill" href="${NET.all_access.url}" data-pbe-placement="predictions_header_all_access" aria-label="PropBetEdge All Access, ${e(NET.all_access.price)}">${e(NET.all_access.label)} · ${e(NET.all_access.price)}</a>
 </div></div>
 <nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}<a class="subnav-net" href="${NET.brand.url}">PropBetEdge ↗</a></div></nav>
 </header>
-<script src="/access.js?v=${ACCESS_V}" defer></script>`;
+<script src="/access.js?v=${ACCESS_V}" defer></script>
+<script src="/theme.js?v=${THEME_V}" defer></script>`;
 }
 
 export function siteFooter() {
