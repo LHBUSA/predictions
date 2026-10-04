@@ -6,6 +6,8 @@ import { decide, decisionInput } from '../../../src/engine/decision.js';
 import { venueBlock, kalshiQuote, polymarketQuote, brier, logLoss, NO_OBSERVATION, semantics, divergence, freshness } from '../../../src/engine/venues.js';
 import { polymarketForContracts, coverageFromTicks } from './venue-data.js';
 import { loadStationObservations, liveForOutcome } from './live-state.js';
+import { weatherIntel } from './weather-intel.js';
+import { CLI_STATIONS as STATIONS } from '../../../src/weather/stations.js';
 
 // Per designation: PBE (stored score) vs Kalshi vs Polymarket at the SAME designated forecast timestamp. A venue
 // is scored only when comparable and observed at or before that timestamp; otherwise its reason is recorded.
@@ -258,6 +260,7 @@ export async function eventRecord(store, slug, { now = new Date().toISOString(),
       venues: { kalshi, polymarket },
       call,
       live: liveForOutcome(c, call, obsByIcao, now),
+      intel: c.station_id ? weatherIntel({ outcome: { live: liveForOutcome(c, call, obsByIcao, now) }, contract: c, forecasts: fs, featById, obsRows: obsByIcao.get(STATIONS[c.station_id]?.icao) || [], market: kalshi?.current ? { ...kalshi.current, path: kalshi.path } : null, now }) : null,
       yes_condition: c.yes_condition, threshold_low: c.threshold_low, threshold_high: c.threshold_high, comparator: c.comparator,
       evidence: lf?.explanation?.evidence ?? [], provenance: lf?.provenance ?? [], data_cutoff_at: lf?.data_cutoff_at ?? null, tier: lf?.explanation?.model_tier ?? null,
       history: fs.map((f, i) => {

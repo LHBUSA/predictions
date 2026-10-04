@@ -620,3 +620,50 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .ev-item{grid-template-columns:minmax(0,1fr) auto}
 .ev-item>div{min-width:0;overflow-wrap:anywhere}
 .ev-item strong{max-width:46vw;white-space:normal;text-align:right;overflow-wrap:anywhere}
+/* Live Weather Intelligence (weather-blocks.js) */
+.wx-now{margin:8px 0 2px;font-size:18px}
+.wx-sub{margin:0 0 8px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.wx-sub b{color:var(--ink)}
+.wx-disagree{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;background:var(--panel-2)}
+.wx-disagree p{margin:4px 0}.wx-tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--amber)}
+.wx-why h3,.wx-timeline h3{margin:12px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.wx-why ul{list-style:none;margin:0;padding:0}
+.wx-why li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:13.5px}
+.wx-why li small{grid-column:1/-1;color:var(--muted);font-size:12px}
+.wx-timeline ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);padding-left:12px}
+.wx-timeline li{position:relative;padding:4px 0 6px;font-size:13px}
+.wx-timeline li::before{content:'';position:absolute;left:-17px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.wx-timeline li:first-child::before{background:var(--mkt)}
+.wx-timeline time{display:inline-block;min-width:76px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wx-timeline small{display:block;color:var(--muted);margin-left:76px;overflow-wrap:anywhere}
+.wx-chart{margin:10px 0 0}.wx-chart svg{width:100%;height:auto;display:block}
+.wx-chart figcaption{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-top:4px}
+.wx-chart figcaption i{display:inline-block;width:14px;height:0;margin-right:5px;vertical-align:middle;border-top:2.5px solid var(--blue)}
+.wx-chart .k-mkt{border-top:2px dashed var(--mkt)}.wx-chart .k-temp{border-top:2px dotted var(--amber)}
+.wxc-grid{stroke:var(--line-2)}.wxc-ax{font-size:11px;fill:var(--faint)}
+.wxc-pbe{fill:none;stroke:var(--blue);stroke-width:2.5}.wxc-dot{fill:var(--blue)}.wxc-pre{fill:var(--panel);stroke:var(--mkt);stroke-width:2}
+.wxc-mkt{fill:none;stroke:var(--mkt);stroke-width:2;stroke-dasharray:5 4}
+.wxc-temp{fill:none;stroke:var(--amber);stroke-width:1.6;stroke-dasharray:2 3;opacity:.8}
+/* ATMOSPHERE: follows the latest OBSERVATION (never the PBE probability). Transform/opacity only. */
+.ev-head.has-atmo{position:relative;isolation:isolate;padding:14px 16px;border-radius:var(--r);overflow:hidden;margin-bottom:12px;background:var(--panel)}
+.wx-atmo{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.wx-atmo i{position:absolute;inset:-40% -10%;display:block;will-change:transform,opacity}
+.wx-rain{background:linear-gradient(180deg,rgba(70,96,128,.16),rgba(70,96,128,.05))}
+.wx-rain .wx-l1,.wx-storm .wx-l1{background:repeating-linear-gradient(105deg,transparent 0 11px,rgba(120,150,190,.22) 11px 12px);animation:wx-fall 1.1s linear infinite}
+.wx-rain .wx-l2,.wx-storm .wx-l2{background:repeating-linear-gradient(105deg,transparent 0 23px,rgba(120,150,190,.14) 23px 24px);animation:wx-fall 1.7s linear infinite}
+.wx-storm{background:linear-gradient(180deg,rgba(28,36,52,.32),rgba(28,36,52,.12))}
+.wx-snow{background:linear-gradient(180deg,rgba(210,222,238,.28),rgba(210,222,238,.06))}
+.wx-snow .wx-l1{background-image:radial-gradient(circle,rgba(255,255,255,.9) 1.6px,transparent 2px);background-size:46px 46px;animation:wx-drift 9s linear infinite}
+.wx-snow .wx-l2{background-image:radial-gradient(circle,rgba(255,255,255,.7) 1.1px,transparent 1.6px);background-size:29px 29px;animation:wx-drift 14s linear infinite}
+.wx-clear-day .wx-l1{inset:-60% -30% auto auto;width:70%;height:180%;background:radial-gradient(circle at 70% 30%,rgba(255,196,92,.28),transparent 55%);animation:wx-bloom 9s ease-in-out infinite alternate}
+.wx-clear-night{background:linear-gradient(180deg,rgba(40,60,110,.10),transparent)}
+.wx-cloudy{background:linear-gradient(180deg,rgba(140,155,175,.18),rgba(140,155,175,.04))}
+.wx-cloudy .wx-l1{background:radial-gradient(ellipse at 30% 20%,rgba(160,175,195,.18),transparent 60%);animation:wx-pan 28s ease-in-out infinite alternate}
+.wx-fog .wx-l1{background:linear-gradient(90deg,transparent,rgba(190,200,212,.24),transparent);animation:wx-pan 22s ease-in-out infinite alternate}
+.wx-fog{background:rgba(190,200,212,.12)}
+.wx-stale,.wx-none{display:none}
+@keyframes wx-fall{from{transform:translate3d(0,-12%,0)}to{transform:translate3d(-3%,12%,0)}}
+@keyframes wx-drift{from{transform:translate3d(0,-10%,0)}to{transform:translate3d(4%,10%,0)}}
+@keyframes wx-bloom{from{opacity:.55;transform:scale(1)}to{opacity:1;transform:scale(1.08)}}
+@keyframes wx-pan{from{transform:translate3d(-4%,0,0)}to{transform:translate3d(4%,0,0)}}
+@media (prefers-reduced-motion:reduce){.wx-atmo i{animation:none!important}}

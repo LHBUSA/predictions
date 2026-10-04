@@ -21,6 +21,7 @@
         const el = document.querySelector(`[data-live-region="${k}"]`);
         if (el && el.innerHTML !== html) { el.innerHTML = html; el.dataset.updated = d.at; }
       }
+      if (d.atmosphere) { const a = document.querySelector('[data-atmo]'); if (a) a.className = `wx-atmo wx-${d.atmosphere}`; }
       tickAgo();
       const stamp = document.querySelector('[data-live-stamp]');
       if (stamp && d.at) { stamp.dataset.ago = d.at; stamp.textContent = ago(d.at); }

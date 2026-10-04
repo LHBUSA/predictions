@@ -9,10 +9,11 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261004l3';
+export const ASSET_V = '20261004w1';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
-export const LIVE_V = '20261004l3';
+import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
+export const LIVE_V = '20261004w1';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
 const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
@@ -178,13 +179,13 @@ ${(c.exceptions || []).length ? `<dt>Exceptions</dt><dd>${(c.exceptions || []).m
   const citation = `PropBetEdge Predictions. "${e.title}" forecast record${rec.model ? `, ${rec.model.id} (${rec.model.state.toLowerCase()})` : ''}. ${canonical} (retrieved ${new Date().toISOString().slice(0, 10)}).`;
   const body = `<main class="wrap" data-live-src="/api/live/event/${esc(e.slug)}">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="https://propbetedge.ai/">PropBetEdge</a> › <a href="/">Predictions</a> › <a href="/?category=${encodeURIComponent(e.category)}#desk">${esc(e.category_label)}</a> › ${esc(e.venue_event_id)}</nav>
-<header class="ev-head"><div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
+<header class="ev-head${h?.intel ? ' has-atmo' : ''}">${h?.intel ? atmosphereLayer(h.intel.atmosphere) : ''}<div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
 <h1>${esc(e.title)}</h1>
 ${shareBar(canonical, e.title)}
 <div class="ev-meta"><span>${h?.live?.pbe_frozen ? 'Pre-window PBE forecast (frozen)' : 'Latest PBE forecast'}: <b class="num">${utc(e.latest_forecast_at)}</b></span><span>Latest market observation: <b class="num">${utc(e.latest_market_at)}</b>${stale ? ' <span class="stale">· stale</span>' : ''}</span><span>Closes ${utc(e.close_time)}</span><span>${rec.outcomes.length} outcome${rec.outcomes.length > 1 ? 's' : ''}</span></div></header>
 <div class="ev-grid"><div>
 <div data-live-region="call">${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}</div>
-<div data-live-region="station">${stationBlock(h)}</div>
+<div data-live-region="station">${h?.intel ? liveWeatherBlock(h) : stationBlock(h)}</div>
 <div data-live-region="market">${marketView(h)}</div>
 <section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
 ${premiumModule(rec)}

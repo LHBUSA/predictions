@@ -9,6 +9,7 @@ import { newsroomCycle } from './newsroom/auto.js';
 import { runHotLane } from './hot-lane.js';
 import { intradayForStation } from './intraday-live.js';
 import { callBlock, stationBlock, marketView } from './record-blocks.js';
+import { liveWeatherBlock } from './weather-blocks.js';
 import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
@@ -240,7 +241,7 @@ export default {
         const full = await eventRecord(store, slug);
         if (!full) return json({ error: 'not_found' }, 404);
         const rec = publicEventView(full); const h = headlineOutcome(rec);
-        return json({ at: rec.generated_at, regions: { call: h?.call ? callBlock(h) : null, station: stationBlock(h), market: marketView(h) } }, 200, 'public, max-age=15');
+        return json({ at: rec.generated_at, atmosphere: h?.intel?.atmosphere ?? null, regions: { call: h?.call ? callBlock(h) : null, station: h?.intel ? liveWeatherBlock(h) : stationBlock(h), market: marketView(h) } }, 200, 'public, max-age=15');
       }
       if (p.startsWith('/v1/contract/')) {
         const rec = await contractRecord(store, decodeURIComponent(p.slice('/v1/contract/'.length)));
