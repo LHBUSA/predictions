@@ -6,6 +6,7 @@ import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
 import { newsroomCycle } from './newsroom/auto.js';
+import { CRONS, laneFor, runLane, countingFetch, countingBinding, coreCounts, NEWSROOM_MAX_CORE_AGE_MIN } from './engine-runs.js';
 import { runHotLane } from './hot-lane.js';
 import { intradayForStation } from './intraday-live.js';
 import { callBlock, stationBlock, marketView } from './record-blocks.js';
@@ -72,8 +73,8 @@ async function requireAllAccess(req, env) {
   return { ok: false, res: privateJson({ ...ALL_ACCESS_REQUIRED, authenticated: m.authenticated, membership: { state: m.membership.state, label: m.membership.label } }, m.authenticated ? 403 : 401) };
 }
 
-export const BTC_SHADOW_CRON = '* * * * *';
-const storeFor = (env) => new EngineStore({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY });
+export const BTC_SHADOW_CRON = CRONS.FAST;
+const storeFor = (env, fetchImpl) => new EngineStore({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY, ...(fetchImpl ? { fetchImpl } : {}) });
 
 export default {
   async scheduled(event, env, ctx) {
@@ -89,15 +90,37 @@ export default {
       return;
     }
     if (env.ENGINE_ENABLED !== 'true') return;
-    // 15-minute engine cycle, THEN the automated newsroom (detect -> validate -> publish VALIDATED movers/resolution
-    // reports; NEWSROOM_AUTO_PUBLISH kill switch). The newsroom runs once the engine has finished, success or not.
-    const cycleAt = new Date(event.scheduledTime || Date.now()).toISOString();
-    const store = storeFor(env);
-    ctx.waitUntil((async () => {
-      let engineOk = true;
-      try { const r = await runCycle(env, { store }); console.log(JSON.stringify({ cycle: r.summary })); } catch (e) { engineOk = false; console.error('cycle failed', e.stack || e.message); }
-      try { console.log(JSON.stringify({ newsroom: await newsroomCycle(env, store, { cycleAt, engineCompletedAt: new Date().toISOString(), engineOk }) })); } catch (e) { console.error('newsroom failed', e.stack || e.message); }
-    })());
+    const lane = laneFor(event.cron);
+    if (!lane || lane === 'fast') { console.error(JSON.stringify({ unknown_cron: event.cron })); return; }
+    const scheduledAt = new Date(event.scheduledTime || Date.now()).toISOString();
+    const workerVersion = env.CF_VERSION_METADATA?.id ?? null;
+    const ledger = env.ENGINE_RUNS === 'true';
+    if (lane === 'core') {
+      // CORE lane: runCycle only (never the newsroom), under the atomic lease + run ledger (sql/011, ENGINE_RUNS).
+      const work = async () => {
+        const supa = countingFetch(); const mk = countingBinding(env.MARKETS);
+        const r = await runCycle(env, { store: storeFor(env, supa.fetch), markets: new MarketsService({ binding: mk.binding, token: env.MARKETS_READ_TOKEN }) });
+        console.log(JSON.stringify({ cycle: r.summary }));
+        return { counts: coreCounts(r.summary, supa.counts, mk.counts) };
+      };
+      ctx.waitUntil((ledger ? runLane({ store: storeFor(env), lane, cron: event.cron, scheduledAt, workerVersion, work }) : work())
+        .then((r) => console.log(JSON.stringify({ core_run: { ...r, counts: r.counts } }))).catch((e) => console.error('core lane failed', e.stack || e.message)));
+      return;
+    }
+    // NEWSROOM lane (~15 min): consumes the latest SUCCESSFUL core run; never triggers an engine run.
+    const work = async () => {
+      const store = storeFor(env);
+      let cycleAt = scheduledAt; let engineCompletedAt = null; let engineOk = false;
+      if (ledger) {
+        const ok = (await store.select('pred_engine_runs', { lane: 'eq.core', transition: 'eq.COMPLETED', select: 'scheduled_at,at' }, { limit: 1, order: 'transition_id.desc' }))[0];
+        if (ok && Date.parse(scheduledAt) - Date.parse(ok.at) <= NEWSROOM_MAX_CORE_AGE_MIN * 60000) { cycleAt = ok.scheduled_at; engineCompletedAt = ok.at; engineOk = true; }
+      } else { engineOk = true; engineCompletedAt = scheduledAt; }
+      const r = await newsroomCycle(env, store, { cycleAt, engineCompletedAt, engineOk });
+      console.log(JSON.stringify({ newsroom: r }));
+      return { counts: { engine_ok: engineOk, core_completed_at: engineCompletedAt, published: r?.published?.length ?? r?.publish?.published ?? null } };
+    };
+    ctx.waitUntil((ledger ? runLane({ store: storeFor(env), lane, cron: event.cron, scheduledAt, workerVersion, work }) : work())
+      .then((r) => console.log(JSON.stringify({ newsroom_run: r }))).catch((e) => console.error('newsroom lane failed', e.stack || e.message)));
   },
 
   async fetch(req, env, ctx) {

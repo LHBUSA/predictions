@@ -8,7 +8,10 @@
   "observability": { "enabled": true },
   // social cards: bundled Inter fonts + card background as binary Data modules (src/og.js)
   "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
-  "triggers": { "crons": ["*/15 * * * *", "* * * * *"] },
+  // Lanes dispatched by cron identity (src/engine-runs.js CRONS; test/engine-runs.test.js keeps these in sync):
+  // "* * * * *" FAST (hot lane, intraday, BTC SHADOW) · "*/15 * * * *" CORE engine · "7,22,37,52 * * * *" NEWSROOM
+  "triggers": { "crons": ["*/15 * * * *", "* * * * *", "7,22,37,52 * * * *"] },
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Canonical market layer: every Kalshi read goes through propsports-markets (signed, shared backoff).
   "services": [{ "binding": "MARKETS", "service": "propsports-markets" }, { "binding": "AUTH", "service": "propbetedge-auth-magic" }],
   // AUTH: network membership authority (GET /membership?product=predictions); Predictions is All-Access-only
@@ -37,6 +40,8 @@
     "NEWSROOM_DB": "true",
     // decision ledger: write pred_decisions rows at designation time (sql/006 applied 2026-10-04, ledger 20261004140000)
     "DECISIONS_DB": "true",
+    // sql/011 run ledger + atomic core/newsroom lease (Phases 2-3). Anything but "true" = run lanes without lease/heartbeat.
+    "ENGINE_RUNS": "true",
     "CRYPTO_SHADOW": "true",
     "CRYPTO_SETTLEMENTS": "true"
   }

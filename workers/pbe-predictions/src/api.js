@@ -7,6 +7,7 @@ import { venueBlock, kalshiQuote, polymarketQuote, brier, logLoss, NO_OBSERVATIO
 import { polymarketForContracts, coverageFromTicks } from './venue-data.js';
 import { loadStationObservations, liveForOutcome } from './live-state.js';
 import { weatherIntel } from './weather-intel.js';
+import { engineHealth } from './engine-runs.js';
 import { CLI_STATIONS as STATIONS } from '../../../src/weather/stations.js';
 
 // Per designation: PBE (stored score) vs Kalshi vs Polymarket at the SAME designated forecast timestamp. A venue
@@ -167,12 +168,14 @@ export async function trackRecord(store) {
 export async function summary(store, { now = new Date().toISOString() } = {}) {
   const d = await desk(store, { now });
   const outcomes = d.events.flatMap((e) => e.outcomes);
-  const lastCycle = (await store.select('pred_events', { select: 'updated_at' }, { limit: 1, order: 'updated_at.desc' }))[0]?.updated_at ?? null;
+  // last_engine_cycle = latest SUCCESSFUL core run (sql/011 run ledger); pred_events.updated_at only before 011 exists.
+  let engine = null; try { engine = await engineHealth(store, { now }); } catch { engine = null; }
+  const lastCycle = engine ? engine.last_success?.completed_at ?? null : (await store.select('pred_events', { select: 'updated_at' }, { limit: 1, order: 'updated_at.desc' }))[0]?.updated_at ?? null;
   const tr = await trackRecord(store);
   const byCategory = {};
   for (const e of d.events) { const k = e.category; byCategory[k] ||= { label: e.category_label, events: 0, contracts: 0, modeled: 0 }; byCategory[k].events += 1; byCategory[k].contracts += e.outcomes_total; byCategory[k].modeled += e.outcomes_modeled; }
   return {
-    generated_at: now, last_engine_cycle: lastCycle,
+    generated_at: now, last_engine_cycle: lastCycle, engine,
     live_events: d.events.length, live_contracts: outcomes.length, modeled_contracts: outcomes.filter((o) => o.pbe_pct !== null).length,
     monitoring_contracts: outcomes.filter((o) => o.pbe_pct === null).length, resolved_scored: tr.resolved_contracts,
     models_live: FAMILIES.filter((f) => PUBLIC_STATES.includes(f.state)).length, models_shadow: FAMILIES.filter((f) => f.state === 'SHADOW').length,

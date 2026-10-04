@@ -163,7 +163,7 @@ test('cron isolation: the 1-minute cron never runs the engine cycle; off unless 
   assert.match(shadow, /return;\s*\}\s*$/);
   assert.ok(!/runCycle/.test(shadow));
   const cfg = readFileSync(new URL('../workers/pbe-predictions/wrangler.jsonc', import.meta.url), 'utf8');
-  assert.match(cfg, /"crons": \["\*\/15 \* \* \* \*", "\* \* \* \* \*"\]/);
+  assert.match(cfg, /"crons": \[[^\]]*"\* \* \* \* \*"[^\]]*\]/); // 1-minute cron pinned; the other lanes are pinned in test/engine-runs.test.js
   assert.equal(windowOpenFor(OPEN + 899), OPEN);
 });
 
