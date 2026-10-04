@@ -131,3 +131,12 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
   registry for coverage. No further visual work unless production exposes a defect.
 - Rollback of images only: `npx wrangler versions deploy <pre-image version>@100%` is NOT recommended (it would also drop
   later BTC work); instead revert 89cb6fa's images.js/render.js and redeploy from main.
+
+## Freshness pass (2026-10-04) — live layer
+- Releases: 0961cdc0 (bfdd9fa hot lane + live event pages) -> fe8e9d7e (0bf4af9 Insights LIVE UPDATE) -> 06459033
+  (86a5f93 polish) -> e4d81325 (f731e54 intraday wiring + UI, INTRADAY_LIVE=false). Each was deployed on top of the
+  then-current BTC release from workers-27 (CRYPTO_SHADOW/CRYPTO_SETTLEMENTS unchanged).
+- Kill switches (no code rollback needed): HOT_LANE (station observations), INTRADAY_LIVE (intraday forecasts).
+  Stored observations / intraday rows are append-only and stay.
+- Worker rollback before the live layer: 8df28a94 (BTC e00b9b6). Keep both crons (that version routes the one-minute cron
+  to BTC only).
