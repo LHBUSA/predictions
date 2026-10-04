@@ -80,7 +80,7 @@ export async function desk(store, { now = new Date().toISOString(), venues = fal
     out.push({
       slug: e.slug, url: `/events/${e.slug}`, title: e.canonical_question, category: e.category, category_label: CATEGORY_LABEL[e.category] || e.category,
       state: modeled.length ? (modeled[0].model_state || 'RESEARCH') : 'MARKET_MONITORING', model_family: modeled.length ? e.model_family : null,
-      close_time: e.close_time, kind: distributionKind(e, cs), outcomes_total: outcomes.length, outcomes_modeled: modeled.length,
+      close_time: e.close_time, resolves_at: cs.reduce((a, c) => (c.observation_end && (!a || c.observation_end > a) ? c.observation_end : a), null) || e.close_time, kind: distributionKind(e, cs), outcomes_total: outcomes.length, outcomes_modeled: modeled.length,
       max_abs_divergence: modeled.reduce((m, o) => (o.divergence_pts === null ? m : Math.max(m, Math.abs(o.divergence_pts))), -1),
       headline, outcomes: outcomes.slice(0, 40).map((o) => ({ label: o.label, market_id: o.market_id, pbe_pct: o.pbe_pct, market_pct: o.market_pct, divergence_pts: o.divergence_pts })), updated_at: e.updated_at, kalshi_url: outcomes.find((o) => o.kalshi_url)?.kalshi_url ?? null,
     });
@@ -91,17 +91,50 @@ export async function desk(store, { now = new Date().toISOString(), venues = fal
 
 // Desk rows (V4): strongest factual driver of the headline forecast (frozen feature snapshot) and BOTH venues
 // independently for the headline outcome. Venue values never touch the PBE number or the ranking.
+const SPARK_MS = 24 * 3600000; const KALSHI_GAP_MS = 45 * 60000; const MOVE_WINDOW_MS = 3 * 3600000; const MOVE_PTS = 3;
 async function enrichDesk(store, s, out, now) {
   const heads = out.map((e) => e.headline).filter(Boolean);
   const fids = heads.map((h) => s.forecasts.get(h.contract_id)?.feature_snapshot_id).filter(Boolean);
   const snaps = fids.length ? await store.selectIn('pred_feature_snapshots', { select: 'snapshot_id,features' }, 'snapshot_id', fids, { chunkSize: 20 }).catch(() => []) : [];
   const snapById = new Map(snaps.map((x) => [x.snapshot_id, x.features]));
   const pm = await polymarketForContracts(store, [...new Set(heads.map((h) => h.market_id))], null, { since: ago(now, 7 * 86400000), coverage: false }).catch(() => ({ byTicker: new Map() }));
+  // WHY (source ledger of the headline forecast) + 24 h stored paths for the sparkline. Stored observations only.
+  const headF = heads.map((h) => s.forecasts.get(h.contract_id)).filter(Boolean);
+  const headCids = heads.map((h) => h.contract_id);
+  const since24 = ago(now, SPARK_MS);
+  const [prov, fHist, fBefore, kHist] = headCids.length ? await Promise.all([
+    store.selectIn('pred_forecasts', { select: 'forecast_id,provenance' }, 'forecast_id', headF.map((f) => f.forecast_id), { chunkSize: 60 }).catch(() => []),
+    store.selectIn('pred_forecasts', { select: 'contract_id,captured_at,probability,model_state', captured_at: `gte.${since24}` }, 'contract_id', headCids).catch(() => []),
+    store.selectIn('pred_forecasts', { select: 'contract_id,captured_at,probability,model_state', captured_at: `lt.${since24}` }, 'contract_id', headCids, { order: 'captured_at.desc' }).catch(() => []),
+    store.selectIn('pred_venue_snapshots', { select: 'contract_id,captured_at,probability', captured_at: `gte.${since24}` }, 'contract_id', headCids).catch(() => []),
+  ]) : [[], [], [], []];
+  const provById = new Map(prov.map((x) => [x.forecast_id, x.provenance || []]));
   for (const e of out) {
     const h = e.headline; if (!h) continue;
     const f = s.forecasts.get(h.contract_id);
-    const d = f ? driversFor(f.model_id, snapById.get(f.feature_snapshot_id) || {})[0] : null;
+    const drivers = f ? driversFor(f.model_id, snapById.get(f.feature_snapshot_id) || {}, provById.get(f.forecast_id) || []) : [];
+    const d = drivers[0] || null;
     h.driver = d ? { label: d.label, display: d.display, unit: d.unit } : null;
+    if (f && h.pbe_pct !== null) {
+      const srcs = provById.get(f.forecast_id) || [];
+      h.why = { model: `${f.model_id}@${f.model_version}`, model_state: f.model_state, confidence: f.confidence, published_at: f.captured_at, data_cutoff_at: f.data_cutoff_at,
+        drivers: drivers.map((x) => ({ label: x.label, display: x.display, unit: x.unit, source: x.source?.name ?? null, available_at: x.source?.available_at ?? null })),
+        sources: srcs.map((x) => ({ name: x.source, provider: x.provider ?? null, role: x.role ?? null, available_at: x.available_at ?? null, issued_at: x.updated_at ?? null })),
+        record_url: `${e.url}#facts-h` };
+    }
+    // sparkline: PBE = each stored public forecast (held until replaced; the value current at window start is carried
+    // from its own capture); Kalshi = each stored observation, broken where no observation was stored for > 45 min
+    const fh = fHist.filter((x) => x.contract_id === h.contract_id && isPublic(x)).sort((a, b) => a.captured_at.localeCompare(b.captured_at));
+    const carried = fBefore.filter((x) => x.contract_id === h.contract_id && isPublic(x)).sort((a, b) => b.captured_at.localeCompare(a.captured_at))[0];
+    const kh = kHist.filter((x) => x.contract_id === h.contract_id && x.probability !== null).sort((a, b) => a.captured_at.localeCompare(b.captured_at));
+    if (fh.length + kh.length >= 2) {
+      h.spark = { from: since24, to: now, gap_ms: KALSHI_GAP_MS,
+        pbe: [...(carried ? [{ t: carried.captured_at, v: pct(carried.probability), carried: true }] : []), ...fh.map((x) => ({ t: x.captured_at, v: pct(x.probability) }))],
+        kalshi: kh.map((x) => ({ t: x.captured_at, v: pct(x.probability) })) };
+      // market moving: stored Kalshi mid now vs the latest stored observation at or before 3 h ago
+      const lastK = kh.at(-1); const thenK = kh.filter((x) => Date.parse(x.captured_at) <= Date.parse(now) - MOVE_WINDOW_MS).at(-1);
+      if (lastK && thenK) { const mv = pct(lastK.probability) - pct(thenK.probability); h.market_move = { pts: mv, since: thenK.captured_at, moving: Math.abs(mv) >= MOVE_PTS }; }
+    }
     h.evidence_age_h = h.data_cutoff_at ? +((Date.parse(now) - Date.parse(h.data_cutoff_at)) / 3600000).toFixed(1) : null;
     const k = h.market_pct === null ? null : { mid_pct: h.market_pct, observed_at: h.market_observed_at, freshness: freshness(h.market_observed_at, now)?.label ?? null, url: h.kalshi_url, divergence: h.pbe_pct === null ? null : divergence(h.pbe_pct, h.market_pct * 100) };
     const v = pm.byTicker.get(h.market_id);
