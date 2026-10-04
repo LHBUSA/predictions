@@ -129,7 +129,7 @@ async function main() {
   if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
   // Multi-venue desk (no URL flag): loaded after the desk is on screen so a slow venue read never delays it;
   // the desk re-renders once with venue lines. Polymarket appears only when the shared Worker returns it.
-  if (d.status === 'fulfilled') import('./multivenue.js?v=20261004mv2').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e));
+  if (d.status === 'fulfilled') import('./multivenue.js?v=20261004mv3').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e));
   else { $('desk-list').innerHTML = '<div class="card empty-honest">The live desk could not be loaded right now. Stored records are unaffected; try again shortly.</div>'; fail('desk', d.reason); }
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);

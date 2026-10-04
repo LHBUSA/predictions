@@ -19,14 +19,14 @@ test('event page: one HIDDEN panel (chart + related box) + module; the rest of t
   const on = renderEvent(rec, { multiVenue: true });
   assert.match(on, /<section class="card panel" id="mv-chart-panel" hidden data-event="PBE-KXFEDDECISION-26OCT" data-market="KXFEDDECISION-26OCT-[A-Z0-9]+">/);
   assert.match(on, /<div class="mv-chart"><\/div><div class="mv-related-box" hidden><\/div><\/section>/);
-  assert.match(on, /<script type="module" src="\/multivenue\.js\?v=20261004mv2"><\/script>/);
+  assert.match(on, /<script type="module" src="\/multivenue\.js\?v=20261004mv3"><\/script>/);
   assert.equal(on.replace(/<section class="card panel" id="mv-chart-panel"[\s\S]*?<\/script>/, ''), renderEvent(rec));
 });
 
 test('homepage: the module loads on the normal URL, after the desk renders; every hook is optional', () => {
   const home = src('../home.js');
   assert.ok(!/get\('mv'\)/.test(home), 'no ?mv gate left');
-  assert.match(home, /if \(d\.status === 'fulfilled'\) import\('\.\/multivenue\.js\?v=20261004mv2'\)\.then\(\(m\) => m\.ready\)\.then\(\(\) => \{ window\.PBE_MV\?\.addModes\(events\); desk\(\); \}\)/);
+  assert.match(home, /if \(d\.status === 'fulfilled'\) import\('\.\/multivenue\.js\?v=20261004mv3'\)\.then\(\(m\) => m\.ready\)\.then\(\(\) => \{ window\.PBE_MV\?\.addModes\(events\); desk\(\); \}\)/);
   // the desk renders before the venue module is awaited (a slow venue read never blocks the page)
   assert.ok(home.indexOf("tape(); featured(); cats(); desk();") < home.indexOf("import('./multivenue.js"));
   for (const hook of home.match(/window\.PBE_MV[^;]*/g)) assert.match(hook, /window\.PBE_MV\?\./, hook);

@@ -54,7 +54,9 @@ const contractFor = (e) => (e.headline?.market_id ? bySlugMarket.get(`${slugOf(e
 // multi-venue only: >= 2 qualifying venue quotes (EXACT or COMPARABLE) with an aligned comparison.
 const multi = (e) => { const c = contractFor(e); return c && c.venues.length >= 2 && c.comparison ? c : null; };
 const VENUE_KEYS = Object.keys(VENUE);
-const pctOf = (q) => (q.mid_bp != null ? `${pts(q.mid_bp)}%` : q.bid_bp != null && q.ask_bp != null ? `${pts(q.bid_bp)}–${pts(q.ask_bp)}%` : null);
+// A real price below 0.5% / above 99.5% never reads as a certain 0% / 100%.
+const pct = (bp) => (bp > 0 && bp < 50 ? '<1%' : bp < 10000 && bp > 9950 ? '>99%' : `${pts(bp)}%`);
+const pctOf = (q) => (q.mid_bp != null ? pct(q.mid_bp) : q.bid_bp != null && q.ask_bp != null ? `${pts(q.bid_bp)}–${pts(q.ask_bp)}%` : null);
 // Related markets (RULE_MISMATCH / UNVERIFIED): a known venue with a native, non-stale price; one per venue market.
 function relatedOf(c) {
   const seen = new Set();
