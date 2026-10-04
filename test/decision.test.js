@@ -172,14 +172,34 @@ test('policyHash = the pinned frozen hash (one definition shared by tests and th
   assert.equal(await policyHash(), FROZEN_SHA256);
 });
 
-test('evidence hash covers facts only: driver labels/display wording never change it; a fact change does', async () => {
-  const forecast = { forecast_id: 'f1', contract_id: 'c1', model_id: 'pbe-weather-maxtemp', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.3, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's1', features_sha256: 'a', provenance: [], explanation: {} };
+test('evidence hash contract: wording never moves it (driver labels, context prose, limitation prose, question); facts do', async () => {
+  const prov = [{ source: 'NWS National Blend of Models (NBS) station guidance', provider: 'NOAA/NWS', role: 'model input', available_at: '2026-10-05T05:00:00Z', run: '2026-10-05T00:00:00Z' }];
+  const forecast = { forecast_id: 'f1', contract_id: 'c1', model_id: 'pbe-weather-maxtemp', model_version: '1.1.0', model_state: 'RESEARCH', probability: 0.3, confidence: 'HIGH', captured_at: '2026-10-05T05:30:00Z', data_cutoff_at: '2026-10-05T05:00:00Z', feature_snapshot_id: 's1', features_sha256: 'a', provenance: prov,
+    explanation: { evidence: [{ label: 'National Blend of Models high', value: 69, unit: '°F', detail: 'NBM 00Z run; blend spread ±2°F' }] } };
   const snapshot = { snapshot_id: 's1', cutoff_at: '2026-10-05T05:00:00Z', features: { nbm_max_temp_guidance_f: 69, guidance_error_table: 'temp-nbm-v1.1:CLIPHL:le30h:station:n=1820' } };
-  const { packet, sha256 } = await buildEvidencePacket({ event: { event_id: 'E' }, contract: { contract_id: 'c1' }, forecast, snapshot });
+  const base = { event: { event_id: 'E', canonical_question: 'Highest temperature in Philadelphia?' }, contract: { contract_id: 'c1', rules_sha256: 'r1' }, forecast, snapshot, limitations: ['Pre-window only'] };
+  const { sha256 } = await buildEvidencePacket(base);
+  const h = async (o) => (await buildEvidencePacket({ ...base, ...o })).sha256;
   const { factualCore } = await import('../src/engine/evidence.js');
   const { createHash } = await import('node:crypto');
-  const reworded = { ...packet, drivers: packet.drivers.map((d) => ({ ...d, label: `${d.label} (renamed)`, display: 'x' })) };
-  assert.equal(createHash('sha256').update(canonicalJson(factualCore(reworded))).digest('hex'), sha256);
-  const changed = await buildEvidencePacket({ event: { event_id: 'E' }, contract: { contract_id: 'c1' }, forecast, snapshot: { ...snapshot, features: { ...snapshot.features, nbm_max_temp_guidance_f: 70 } } });
-  assert.notEqual(changed.sha256, sha256);
+  const { packet } = await buildEvidencePacket(base);
+  // wording only -> same hash
+  const relabeled = { ...packet, drivers: packet.drivers.map((d) => ({ ...d, label: `${d.label} (renamed)`, display: 'x', unit: '?' })) };
+  assert.equal(createHash('sha256').update(canonicalJson(factualCore(relabeled))).digest('hex'), sha256, 'driver labels');
+  assert.equal(await h({ forecast: { ...forecast, explanation: { evidence: [{ label: 'NBM day high', value: 69, unit: 'F', detail: 'reworded detail' }] } } }), sha256, 'context display wording');
+  assert.equal(await h({ limitations: ['Forecasts are published only before the climate day opens (reworded)'] }), sha256, 'limitation prose');
+  assert.equal(await h({ event: { event_id: 'E', canonical_question: 'Philadelphia high temperature (venue retitled)?' } }), sha256, 'mutable registry question');
+  // facts -> different hash
+  assert.notEqual(await h({ snapshot: { ...snapshot, features: { ...snapshot.features, nbm_max_temp_guidance_f: 70 } } }), sha256, 'feature value');
+  assert.notEqual(await h({ forecast: { ...forecast, probability: 0.31 } }), sha256, 'probability');
+  assert.notEqual(await h({ forecast: { ...forecast, provenance: [{ ...prov[0], provider: 'NOAA/NWS (other)' }] } }), sha256, 'source');
+  assert.notEqual(await h({ forecast: { ...forecast, provenance: [{ ...prov[0], available_at: '2026-10-05T04:00:00Z' }] } }), sha256, 'source availability time');
+  assert.notEqual(await h({ forecast: { ...forecast, data_cutoff_at: '2026-10-05T04:30:00Z' }, snapshot: { ...snapshot, cutoff_at: '2026-10-05T04:30:00Z' } }), sha256, 'data cutoff');
+  assert.notEqual(await h({ contract: { contract_id: 'c1', rules_sha256: 'r2' } }), sha256, 'contract rules hash');
+  // FROZEN hash contract: field list + golden hash of this fixture. Changing either = a new evidence schema.
+  const { EVIDENCE_HASH_EXCLUDED, EVIDENCE_SCHEMA } = await import('../src/engine/evidence.js');
+  assert.deepEqual([...EVIDENCE_HASH_EXCLUDED], ['context', 'limitations', 'question']);
+  assert.equal(EVIDENCE_SCHEMA, 'pbe-evidence/1');
+  assert.equal(sha256, GOLDEN_EVIDENCE_SHA256, `evidence hash contract changed (${sha256})`);
 });
+const GOLDEN_EVIDENCE_SHA256 = '2f697fff3c4a056eea9c532c407a9c69d657e1d1aa6f0c84bf09bd18a4b79280';

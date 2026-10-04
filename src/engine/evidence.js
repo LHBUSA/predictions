@@ -142,10 +142,19 @@ export async function buildEvidencePacket({ event, contract, forecast, snapshot,
   return { packet, sha256: await sha256(canonicalJson(factualCore(packet))) };
 }
 
-// The evidence hash covers FACTS only (stored values, sources, times, ids, integrity), never presentation: driver labels
-// and display strings are excluded so wording fixes can never change a stored evidence hash (pred_decisions).
+// EVIDENCE HASH CONTRACT (frozen 2026-10-04, owner): the hash covers FACTS only, never presentation or mutable text.
+// Included: canonical ids, contract semantics + rules hash (immutable contract row), model/version/state/tier,
+// probability, confidence, data cutoff, publication time, feature snapshot id + features_sha256 + the stored feature
+// values, the stored source ledger (immutable forecast provenance: provider, role, availability/run times, urls),
+// source observation keys, integrity result, and each driver's feature/value/source.
+// Excluded: driver label/display/unit (code wording), `context` (display evidence: labels + prose details),
+// `limitations` (registry prose) and `question` (pred_events.canonical_question lives in the MUTABLE registry).
+// A wording-only change can therefore never alter a stored evidence hash. Changing this contract = a new schema.
+export const EVIDENCE_HASH_EXCLUDED = Object.freeze(['context', 'limitations', 'question']);
 export function factualCore(packet) {
-  return { ...packet, drivers: packet.drivers.map((d) => ({ feature: d.feature, value: d.value, source: d.source })) };
+  const core = { ...packet, drivers: packet.drivers.map((d) => ({ feature: d.feature, value: d.value, source: d.source })) };
+  for (const k of EVIDENCE_HASH_EXCLUDED) delete core[k];
+  return core;
 }
 
 // Deterministic one-line summary built ONLY from packet drivers (no free text, no LLM).
