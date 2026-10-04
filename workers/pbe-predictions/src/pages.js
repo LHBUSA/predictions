@@ -111,7 +111,9 @@ export function eventDescription(rec) {
 
 export function headlineOutcome(rec) {
   const m = rec.outcomes.filter((o) => o.pbe_pct !== null);
-  return [...m].filter((o) => o.divergence_pts !== null).sort((a, b) => Math.abs(b.divergence_pts) - Math.abs(a.divergence_pts))[0] || m[0] || rec.outcomes[0] || null;
+  // monitoring-only events: the outcome the market prices highest (never an unquoted outcome when a quoted one exists)
+  const quoted = [...rec.outcomes].filter((o) => o.market_pct !== null && o.market_pct !== undefined).sort((a, b) => b.market_pct - a.market_pct)[0];
+  return [...m].filter((o) => o.divergence_pts !== null).sort((a, b) => Math.abs(b.divergence_pts) - Math.abs(a.divergence_pts))[0] || m[0] || quoted || rec.outcomes[0] || null;
 }
 
 export function eventOgImage(rec) {

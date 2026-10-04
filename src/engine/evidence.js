@@ -137,5 +137,6 @@ export async function buildEvidencePacket({ event, contract, forecast, snapshot,
 // Deterministic one-line summary built ONLY from packet drivers (no free text, no LLM).
 export function driverSentence(packet) {
   const d = packet.drivers.slice(0, 3).map((x) => `${x.label} ${x.display}${x.unit}`);
-  return d.length ? `${d.join('; ')}. Data cutoff ${packet.data_cutoff_at}.` : null;
+  const cut = packet.data_cutoff_at ? `${new Date(packet.data_cutoff_at).toISOString().slice(0, 16).replace('T', ' ')} UTC` : null;
+  return d.length ? `${d.join('; ')}.${cut ? ` Data cutoff ${cut}.` : ''}` : null;
 }

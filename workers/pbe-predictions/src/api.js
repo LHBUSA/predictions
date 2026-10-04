@@ -211,7 +211,7 @@ export async function eventRecord(store, slug, { now = new Date().toISOString(),
     const resOutcome = res ? (String(res.venue_result).toLowerCase() === 'yes' ? 1 : String(res.venue_result).toLowerCase() === 'no' ? 0 : null) : null;
     const kalshi = venueBlock({ venue: 'kalshi', quotes: ms.map(kalshiQuote), state: 'DEFINING_VENUE', marketId: c.market_id, url: lm?.raw?.kalshi_url ?? ms.find((m) => m.raw?.kalshi_url)?.raw?.kalshi_url ?? null, rulesSha256: c.rules_sha256 ?? null, closeTime: c.close_time, forecasts: checkpoints, now, resolution: resOutcome === null ? null : { value_pct: resOutcome * 100, settled_at: res.venue_settled_at || res.resolved_at } });
     const pmv = pm.byTicker.get(c.market_id);
-    const polymarket = pmv ? venueBlock({ venue: 'polymarket', quotes: pmv.rows.map(polymarketQuote), state: pmv.state, family: pmv.family, reasons: pmv.reasons, marketId: pmv.market_id, url: pmv.url, rulesSha256: pmv.rules_sha256, coverageFrom: pmv.coverage_from, coverageAt: pmCoverage, closeTime: c.close_time, forecasts: checkpoints, now }) : null;
+    const polymarket = pmv ? venueBlock({ venue: 'polymarket', quotes: pmv.rows.map(polymarketQuote), state: pmv.state, family: pmv.family, reasons: pmv.reasons, marketId: pmv.market_id, url: pmv.url, rulesSha256: pmv.rules_sha256, coverageFrom: pmv.coverage_from, coverageAt: pmCoverage, lastCheckedAt: pm.ticks.length ? new Date(pm.ticks.at(-1)).toISOString() : null, closeTime: c.close_time, forecasts: checkpoints, now }) : null;
     let call = null;
     if (lf) {
       const { packet, sha256 } = await buildEvidencePacket({ event: e, contract: c, forecast: lf, snapshot: featById.get(lf.feature_snapshot_id) || null, limitations: famRow?.limitations ?? [] });

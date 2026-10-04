@@ -68,7 +68,9 @@ const checkpoint = (q) => (q ? { observed_at: q.observed_at, mid_bp: q.mid_bp, m
 
 // One venue block for one contract.
 // forecasts: PBE public forecasts for the contract (ascending), each {forecast_id, captured_at, probability, roles[]}.
-export function venueBlock({ venue, quotes, state, family = null, reasons = [], marketId, url = null, rulesSha256 = null, coverageFrom = null, coverageAt = null, closeTime = null, forecasts = [], now, resolution = null }) {
+// lastCheckedAt: latest observer read of this venue (change-only storage: an unchanged price writes no new row, so
+// the quote is current as of the last read, not as of its row time).
+export function venueBlock({ venue, quotes, state, family = null, reasons = [], marketId, url = null, rulesSha256 = null, coverageFrom = null, coverageAt = null, lastCheckedAt = null, closeTime = null, forecasts = [], now, resolution = null }) {
   const qs = [...quotes].sort((a, b) => t(a.observed_at) - t(b.observed_at));
   const sem = semantics(state, family);
   if (sem.display === 'omit') return null;
@@ -83,7 +85,8 @@ export function venueBlock({ venue, quotes, state, family = null, reasons = [], 
     return { forecast_id: f.forecast_id, pbe_at: f.captured_at, roles: f.roles || [], pbe_pct: pbe, benchmark: { ...checkpoint(q), observation_age_s: Math.round((t(f.captured_at) - t(q.observed_at)) / 1000) }, divergence: div };
   });
   const latestF = forecasts.at(-1) || null;
-  const current = last ? { ...checkpoint(last), freshness: freshness(last.observed_at, now), state: last.state } : null;
+  const checked = lastCheckedAt && last && t(lastCheckedAt) >= t(last.observed_at) ? lastCheckedAt : null;
+  const current = last ? { ...checkpoint(last), freshness: freshness(checked || last.observed_at, now), checked_at: checked, state: last.state } : null;
   return {
     venue, venue_label: VENUE_LABEL[venue] || venue, market_id: marketId, url, rules_sha256: rulesSha256,
     semantic_class: state, comparable: sem.comparable, display: sem.display, display_label: sem.label, reasons,

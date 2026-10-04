@@ -102,3 +102,12 @@ test('Free / All Access: public venue blocks keep checkpoints, drop the full pat
   const official = { ...rec, outcomes: [{ ...rec.outcomes[0], call: { ...rec.outcomes[0].call, decision: { state: 'CALL', official: true } } }] };
   assert.equal(publicEventView(official).outcomes[0].call.decision.state, 'CALL');
 });
+
+test('change-only storage: an unchanged quote is current as of the last observer read, not its row time', () => {
+  const b = venueBlock({ venue: 'polymarket', quotes, state: 'RULE_MISMATCH', marketId: 'pm1', forecasts, now: NOW, lastCheckedAt: '2026-10-04T13:04:00Z' });
+  assert.equal(b.current.observed_at, '2026-10-04T13:00:00Z');
+  assert.equal(b.current.checked_at, '2026-10-04T13:04:00Z');
+  assert.equal(b.current.freshness.label, 'live');
+  const old = venueBlock({ venue: 'polymarket', quotes, state: 'RULE_MISMATCH', marketId: 'pm1', forecasts, now: NOW, lastCheckedAt: '2026-10-04T12:00:00Z' });
+  assert.equal(old.current.checked_at, null, 'a read older than the row is ignored');
+});

@@ -46,7 +46,7 @@ ${context ? `<details class="snap"><summary>Context evidence (${p.context.length
 function venueRow(v) {
   const cur = v.current;
   const price = cur?.mid_pct !== null && cur?.mid_pct !== undefined ? pctTxt(cur.mid_pct) : '—';
-  const quote = cur ? `${cur.bid_pct !== null && cur.ask_pct !== null ? `bid ${cur.bid_pct} / ask ${cur.ask_pct} · ` : cur.mid_pct === null ? 'no two-sided quote · ' : ''}observed ${utc(cur.observed_at)}${cur.freshness ? ` · ${cur.freshness.label}` : ''}` : 'no stored observation';
+  const quote = cur ? `${cur.bid_pct !== null && cur.ask_pct !== null ? `bid ${cur.bid_pct} / ask ${cur.ask_pct} · ` : cur.mid_pct === null ? 'no two-sided quote · ' : ''}${cur.checked_at && cur.checked_at !== cur.observed_at ? `unchanged since ${utc(cur.observed_at)} · checked ${utc(cur.checked_at)}` : `observed ${utc(cur.observed_at)}`}${cur.freshness ? ` · ${cur.freshness.label}` : ''}` : 'no stored observation';
   const tag = v.comparable ? (v.semantic_class === 'EXACT_MATCH' ? '<span class="v4-tag ok">Exact match</span>' : '') : `<span class="v4-tag rel">${esc(v.display === 'native_price_unverified' ? 'UNVERIFIED · NOT COMPARED' : 'RELATED MARKET · RULES DIFFER')}</span>`;
   return `<li class="v4-vrow"><span class="v4-vname">${esc(v.venue_label)}</span><strong class="num">${price}</strong><span class="v4-vmeta">${tag}${esc(quote)}${!v.comparable && v.reasons?.length ? `<small>${esc(reasons(v.reasons))}</small>` : ''}</span>${v.url ? `<a class="v4-out" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="${esc(v.venue_label)} market">↗</a>` : '<span></span>'}</li>`;
 }
