@@ -88,6 +88,9 @@ test('anonymous event HTML contains the public record and the All Access preview
   assert.match(html, /<b class="num">4<\/b> immutable PBE snapshots/);
   assert.match(html, /10 sports \+ PropBetEdge Predictions · \$29\/month/);
   assert.match(html, /<script src="\/access\.js\?v=/);
+  const ds = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap((m) => JSON.parse(m[1])['@graph'] || []).find((n) => n['@type'] === 'Dataset');
+  assert.equal(ds.isAccessibleForFree, true, 'everything on the page is free');
+  assert.match(ds.conditionsOfAccess, /All Access/); assert.match(ds.description, /scoring checkpoints/);
 });
 
 test('free desk = largest headline gaps (capped) with honest totals; the full scanner is All Access', () => {
