@@ -43,6 +43,8 @@ test('timeline: redundant rain rows written before Phase A collapse; temp rows e
   const rev = legitimateRevisions(t, featById);
   assert.equal(rev.length, 2);
   assert.deepEqual(rev[1].cause, ['Current temperature 62.1°F → 61.5°F']);
+  const t3 = [row('u1', '2026-10-04T18:33:33Z', 0.25, { obs_max_so_far_f: 64, current_temp_f: 62.1, calibration_hour_lst: 12, obs_count: 25 }, 'pbe-weather-maxtemp-intraday', null), row('u2', '2026-10-04T19:03:33Z', 0.45, { obs_max_so_far_f: 64, current_temp_f: 62.1, calibration_hour_lst: 14, obs_count: 26 }, 'pbe-weather-maxtemp-intraday', null)];
+  assert.deepEqual(legitimateRevisions(t3, featById)[1].cause, ['Model time step (calibration hour 12 → 14 LST)', 'New station report (25 → 26 reports)']);
 });
 
 test('weather intel: separate truths, explicit market disagreement, no edge language, deterministic why', () => {

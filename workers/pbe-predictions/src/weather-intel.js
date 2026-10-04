@@ -65,7 +65,12 @@ export function legitimateRevisions(rows, featById) {
     if (key === prevKey) continue;
     const cause = [];
     if (prevFeat) for (const k of ['obs_max_so_far_f', 'current_temp_f', 'guidance_max_temp_f', 'measurable_precip_observed']) if (k in feats && JSON.stringify(feats[k]) !== JSON.stringify(prevFeat[k])) cause.push(`${featureLabel[k]} ${fmtF(k, prevFeat[k])} → ${fmtF(k, feats[k])}`);
-    if (prevFeat && !cause.length) cause.push(ps && ps.lst_hour_bucket !== null ? 'Hourly model step (local standard hour)' : 'New report at the station');
+    if (prevFeat && !cause.length) {
+      if ('calibration_hour_lst' in feats && feats.calibration_hour_lst !== prevFeat.calibration_hour_lst) cause.push(`Model time step (calibration hour ${prevFeat.calibration_hour_lst} → ${feats.calibration_hour_lst} LST)`);
+      if ('obs_count' in feats && feats.obs_count !== prevFeat.obs_count) cause.push(`New station report (${prevFeat.obs_count} → ${feats.obs_count} reports)`);
+      if (ps && ps.lst_hour_bucket !== null && !cause.length) cause.push('Hourly model step (local standard hour)');
+      if (!cause.length) cause.push('Inputs changed (see the stored evidence)');
+    }
     out.push({ forecast_id: f.forecast_id, t: f.captured_at, pct: Math.round(Number(f.probability) * 100), model: `${f.model_id}@${f.model_version}`, state: f.model_state, cause: prevFeat ? cause : ['First live intraday forecast'], features: feats });
     prevKey = key; prevFeat = feats;
   }
