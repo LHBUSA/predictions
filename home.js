@@ -6,11 +6,13 @@ const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
 // Visible model-vs-market gaps always carry their unit (percentage POINTS, never a % return or an accuracy figure).
 const pts = (n) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${Math.abs(n)} pts`;
 const ago = (iso) => { if (!iso) return '—'; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
+const agoEl = (iso) => `<span data-ago="${esc(iso || '')}">${ago(iso)}</span>`;
+const untilEl = (iso) => `<span data-until="${esc(iso || '')}">${until(iso)}</span>`;
 const until = (iso) => { const m = Math.round((Date.parse(iso) - Date.now()) / 60000); if (m < 0) return 'closed'; if (m < 60) return `${m} min`; if (m < 1440) return `${Math.round(m / 60)} h`; return `${Math.round(m / 1440)} d`; };
 const BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-official', MARKET_MONITORING: 'b-monitoring', MONITORING: 'b-monitoring', SHADOW: 'b-shadow', BACKTESTING: 'b-backtesting' };
 const badge = (s) => `<span class="badge ${BADGE[s] || 'b-monitoring'}">${esc(s === 'MARKET_MONITORING' ? 'Market monitoring' : s)}</span>`;
 const dcls = (d) => (d > 0 ? 'dpos' : d < 0 ? 'dneg' : '');
-const getJSON = async (p) => { const r = await fetch(`${API}/${p}`); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
+const getJSON = async (p) => { const r = await fetch(`${API}/${p}`, { cache: 'no-store' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
 let deskAccess = { tier: 'free' };
 // All Access: the full divergence scanner (every market, search, sort). Free: the largest headline gaps.
 function applyAccess() {
@@ -130,10 +132,15 @@ function stats(s) {
   $('s-modeled').textContent = s.modeled_contracts.toLocaleString();
   $('s-monitor').textContent = s.monitoring_contracts.toLocaleString();
   $('s-scored').textContent = s.resolved_scored.toLocaleString(); $('s-scored-sub').textContent = s.resolved_scored ? 'contracts with stored scores' : 'first settlements pending';
-  $('s-cycle').textContent = ago(s.last_engine_cycle); $('s-cycle-sub').textContent = s.last_engine_cycle ? new Date(s.last_engine_cycle).toISOString().slice(11, 16) + ' UTC · every 15 min' : '';
+  $('s-cycle').dataset.ago = s.last_engine_cycle || ''; $('s-cycle').textContent = ago(s.last_engine_cycle); $('s-cycle-sub').textContent = s.last_engine_cycle ? new Date(s.last_engine_cycle).toISOString().slice(11, 16) + ' UTC · every 15 min' : '';
   $('s-models').textContent = String(s.models_live); $('s-models-sub').textContent = `live research · ${s.models_shadow} shadow (not published)`;
   const stale = s.last_engine_cycle && Date.now() - Date.parse(s.last_engine_cycle) > 45 * 60000;
-  if (stale) { $('live-dot').style.background = 'var(--neg-bg)'; $('live-dot').style.color = 'var(--neg)'; $('live-text').textContent = 'Engine delayed'; }
+  const dot = $('live-dot'); const txt = $('live-text');
+  if (dot && txt) {
+    if (!('liveText' in dot.dataset)) dot.dataset.liveText = txt.textContent; // the page's own healthy wording
+    dot.style.background = stale ? 'var(--neg-bg)' : ''; dot.style.color = stale ? 'var(--neg)' : '';
+    txt.textContent = stale ? 'Engine delayed' : dot.dataset.liveText;
+  }
 }
 
 function tape() {
@@ -152,7 +159,7 @@ function featured() {
   const top = events.filter((e) => e.headline?.divergence_pts !== null && e.headline?.pbe_pct !== null).sort((a, b) => Math.abs(b.headline.divergence_pts) - Math.abs(a.headline.divergence_pts)).slice(0, 3);
   if (!top.length) { $('featured').closest('.section').hidden = true; return; }
   $('featured').innerHTML = top.map((e) => { const h = e.headline; return `<a class="card feat" href="${esc(e.url)}">
-    <div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>closes in ${until(e.close_time)}</span></div>
+    <div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>closes in ${untilEl(e.close_time)}</span></div>
     <h3>${esc(e.title)}</h3><div class="outcome">Outcome: <b>${esc(h.label)}</b> · ${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div>
     <div class="trio"><div><span>PBE</span><strong class="num">${h.pbe_pct}%</strong></div><div><span>Market</span><strong class="num">${h.market_pct}%</strong></div><div><span>Divergence</span><strong class="num ${dcls(h.divergence_pts)}">${pts(h.divergence_pts)}</strong></div></div>
     ${miniDist(e)}</a>`; }).join('');
@@ -175,6 +182,7 @@ function cats() {
 }
 
 function desk() {
+  const openWhy = new Set([...document.querySelectorAll('#desk-list .row-wrap')].filter((w) => w.querySelector('details.why-row')?.open).map((w) => w.querySelector('a.row')?.getAttribute('href')));
   const q = state.q.trim().toLowerCase();
   let rows = events.filter((e) => (state.cat === 'ALL' || e.category === state.cat) && (state.view === 'ALL' || VIEWS[state.view]?.test(e)) && (!q || `${e.title} ${e.category_label} ${e.outcomes.map((o) => o.label).join(' ')}`.toLowerCase().includes(q)));
   if (state.sort === 'div') rows.sort((a, b) => b.max_abs_divergence - a.max_abs_divergence || Date.parse(a.close_time) - Date.parse(b.close_time));
@@ -185,12 +193,13 @@ function desk() {
   $('desk-list').innerHTML = rows.map((e) => { const h = e.headline || {}; const modeled = h.pbe_pct !== null && h.pbe_pct !== undefined; const m = marketState(e, h);
     const mkt = `<div class="cell"><span>Market</span><strong class="${m.value ? 'num' : 'null-state'}">${esc(m.value || m.note)}</strong>${m.value && m.note ? `<small class="null-note">${esc(m.note)}</small>` : ''}</div>`;
     return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
-      <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${modeled && h.confidence ? `<span>${esc(h.confidence.toLowerCase())} data quality</span>` : ''}${modeled ? `<span>${ago(h.published_at)}</span>` : ''}</div>
+      <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${modeled && h.confidence ? `<span>${esc(h.confidence.toLowerCase())} data quality</span>` : ''}${modeled ? `<span>${agoEl(h.published_at)}</span>` : ''}</div>
       <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${spark(h)}</div>
       <div class="cells">${modeled
         ? `<div class="cell"><span>PBE</span><strong class="num">${pctTxt(h.pbe_pct)}</strong></div>${mkt}${divCell(h)}`
         : `<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>${mkt}<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>`}</div>
-      <div class="when"><b>${until(e.close_time)}</b>to close</div></a>${modeled ? whyPanel(e, h) : ''}</div>`; }).join('');
+      <div class="when"><b>${untilEl(e.close_time)}</b>to close</div></a>${modeled ? whyPanel(e, h) : ''}</div>`; }).join('');
+  if (openWhy.size) for (const w of document.querySelectorAll('#desk-list .row-wrap')) if (openWhy.has(w.querySelector('a.row')?.getAttribute('href'))) { const d = w.querySelector('details.why-row'); if (d) d.open = true; }
   window.PBE_MV?.decorate(rows);
 }
 
@@ -216,6 +225,63 @@ function registry(m) {
 
 function fail(where, e) { console.error(where, e); }
 
+// ---- LIVE REFRESH (owner P4 2026-10-04): no reloads. While the tab is visible: summary + desk every 60 s, calendar
+// every 2 min, track record + models every 5 min (or at once when the summary's scored count moves). Hidden tab: no
+// network at all; on return, everything due is fetched immediately. One timer, one visibility listener, at most one
+// in-flight request per dataset; a dataset re-renders only when its payload changed (no tape restart, no CLS).
+// An entitled reader stays on the All Access desk: a refresh never downgrades to the free payload.
+const LIVE_MS = { summary: 60e3, desk: 60e3, calendar: 120e3, track: 300e3, models: 300e3 };
+const live = { last: {}, inflight: new Set(), sig: {}, requests: 0, timer: null, listener: false };
+const entitled = () => deskAccess.tier === 'all_access' || !!window.PBE_MEMBERSHIP?.entitled;
+async function pull(name) {
+  if (document.hidden || live.inflight.has(name)) return;
+  live.inflight.add(name); live.last[name] = Date.now(); live.requests += 1;
+  try {
+    if (name === 'desk') {
+      const premium = entitled();
+      const r = premium ? await fetch(`${API}/premium/desk`, { credentials: 'same-origin', cache: 'no-store' }) : null;
+      const body = premium ? (r && r.ok ? await r.text() : null) : await fetch(`${API}/desk`, { cache: 'no-store' }).then((x) => (x.ok ? x.text() : null));
+      if (!body || body === live.sig.desk) return; // unchanged (or a failed premium read: keep what is on screen)
+      const d = JSON.parse(body); live.sig.desk = body;
+      events = d.events; deskAccess = d.access || (premium ? { tier: 'all_access' } : { tier: 'free' });
+      const tapeSig = JSON.stringify(events.filter((e) => e.headline && e.headline.pbe_pct !== null).map((e) => [e.url, e.headline.pbe_pct, e.headline.market_pct, e.headline.divergence_pts]));
+      if (tapeSig !== live.sig.tape) { live.sig.tape = tapeSig; tape(); }
+      featured(); cats(); views(); desk(); applyAccess();
+      return;
+    }
+    const path = { summary: 'summary', calendar: 'calendar', track: 'track-record', models: 'models' }[name];
+    const r = await fetch(`${API}/${path}`, { cache: 'no-store' });
+    if (!r.ok) return;
+    const body = await r.text();
+    if (body === live.sig[name]) return;
+    live.sig[name] = body;
+    const v = JSON.parse(body);
+    if (name === 'summary') {
+      const scoredMoved = live.scored !== undefined && v.resolved_scored !== live.scored;
+      live.scored = v.resolved_scored; stats(v);
+      if (scoredMoved) { live.last.track = 0; live.last.models = 0; } // newly resolved/scored state -> refresh now
+    } else if (name === 'calendar') calendar(v);
+    else if (name === 'track') trackRecord(v);
+    else if (name === 'models') registry(v);
+  } catch (e) { fail(`live ${name}`, e); } finally { live.inflight.delete(name); }
+}
+function tickAges() {
+  for (const el of document.querySelectorAll('[data-ago]')) if (el.dataset.ago) el.textContent = ago(el.dataset.ago);
+  for (const el of document.querySelectorAll('[data-until]')) if (el.dataset.until) el.textContent = until(el.dataset.until);
+}
+function liveTick() {
+  if (document.hidden) return; // paused: zero requests while hidden
+  const now = Date.now();
+  for (const [name, ms] of Object.entries(LIVE_MS)) if (now - (live.last[name] || 0) >= ms) pull(name);
+  tickAges();
+}
+function startLive(seeded) {
+  Object.assign(live.last, seeded);
+  if (live.timer === null) live.timer = setInterval(liveTick, 10e3); // one timer for the page's lifetime
+  if (!live.listener) { live.listener = true; document.addEventListener('visibilitychange', () => { if (!document.hidden) liveTick(); }); }
+}
+window.PBE_LIVE = { stats: () => ({ requests: live.requests, inflight: [...live.inflight], timer: live.timer !== null, listener: live.listener, last: { ...live.last } }) };
+
 async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
@@ -230,5 +296,9 @@ async function main() {
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);
   if (m.status === 'fulfilled') registry(m.value);
+  if (s.status === 'fulfilled') live.scored = s.value.resolved_scored;
+  if (d.status === 'fulfilled') live.sig.tape = JSON.stringify(events.filter((e) => e.headline && e.headline.pbe_pct !== null).map((e) => [e.url, e.headline.pbe_pct, e.headline.market_pct, e.headline.divergence_pts]));
+  const t0 = Date.now();
+  startLive({ summary: t0, desk: t0, calendar: t0, track: t0, models: t0 });
 }
 main();
