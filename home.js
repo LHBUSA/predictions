@@ -136,11 +136,13 @@ function stats(s) {
   // run; the cadence shown is the scheduler's own engine.cadence_minutes (never a constant in copy).
   const eng = s.engine || null;
   const cad = eng && Number.isFinite(eng.cadence_minutes) ? eng.cadence_minutes : null;
+  // No-empty-state rule: with no successful recorded run yet, the engine card is not rendered at all (no
+  // "not yet" placeholder); it appears with the first completed core run.
+  const cycleCard = $('s-cycle').closest?.('.stat');
+  if (cycleCard) cycleCard.hidden = !s.last_engine_cycle;
   $('s-cycle').dataset.ago = s.last_engine_cycle || '';
-  $('s-cycle').textContent = s.last_engine_cycle ? ago(s.last_engine_cycle) : '—';
-  $('s-cycle-sub').textContent = s.last_engine_cycle
-    ? `${new Date(s.last_engine_cycle).toISOString().slice(11, 16)} UTC${cad ? ` · core every ${cad} min` : ''}`
-    : eng ? 'awaiting the first recorded cycle' : '';
+  $('s-cycle').textContent = s.last_engine_cycle ? ago(s.last_engine_cycle) : '';
+  $('s-cycle-sub').textContent = s.last_engine_cycle ? `${new Date(s.last_engine_cycle).toISOString().slice(11, 16)} UTC${cad ? ` · core every ${cad} min` : ''}` : '';
   $('s-models').textContent = String(s.models_live); $('s-models-sub').textContent = `live research · ${s.models_shadow} shadow (not published)`;
   // healthy / running -> the page's own live wording; delayed / failed -> said plainly. No heartbeat block (ledger
   // unreadable) -> the previous age rule.

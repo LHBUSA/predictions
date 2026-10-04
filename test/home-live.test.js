@@ -132,14 +132,15 @@ test('relative ages are rendered with data attributes so they tick between netwo
 test('engine card reads the heartbeat: cadence from engine.cadence_minutes, state from engine.state, honest before the first run', () => {
   const run = (summary) => {
     const nodes = {};
-    const el = (id) => (nodes[id] ||= { id, textContent: '', innerHTML: '', dataset: {}, style: {}, hidden: false, parentElement: { hidden: false }, querySelectorAll: () => [], closest: () => ({ hidden: false }), addEventListener() {} });
+    const card = { hidden: false };
+    const el = (id) => (nodes[id] ||= { id, textContent: '', innerHTML: '', dataset: {}, style: {}, hidden: false, parentElement: { hidden: false }, querySelectorAll: () => [], closest: () => card, addEventListener() {} });
     nodes['live-text'] = { textContent: 'Live engine' };
     const doc = { hidden: false, getElementById: el, querySelector: () => null, querySelectorAll: () => [], addEventListener() {}, documentElement: { dataset: {} }, body: { classList: { toggle() {} } } };
     const ctx = { window: { matchMedia: () => ({ matches: true }), addEventListener() {} }, document: doc, fetch: () => new Promise(() => {}), console: { error() {} }, setTimeout() {}, clearTimeout() {}, setInterval: () => 1, clearInterval() {}, localStorage: { getItem: () => null, setItem() {} }, location: { search: '', hash: '' }, URLSearchParams, Intl, Date, Math, Promise, JSON };
     vm.createContext(ctx);
     vm.runInContext(`${home}\n;globalThis.__stats = stats;`, ctx);
     ctx.__stats({ live_contracts: 1, live_events: 1, by_category: {}, modeled_contracts: 1, monitoring_contracts: 0, resolved_scored: 0, models_live: 1, models_shadow: 0, ...summary });
-    return { cycle: nodes['s-cycle'].textContent, sub: nodes['s-cycle-sub'].textContent, live: nodes['live-text'].textContent };
+    return { cycle: nodes['s-cycle'].textContent, sub: nodes['s-cycle-sub'].textContent, live: nodes['live-text'].textContent, cardHidden: card.hidden };
   };
   const now = new Date().toISOString();
   assert.deepEqual(run({ last_engine_cycle: now, engine: { state: 'healthy', cadence_minutes: 15 } }).sub, `${now.slice(11, 16)} UTC · core every 15 min`);
@@ -148,6 +149,8 @@ test('engine card reads the heartbeat: cadence from engine.cadence_minutes, stat
   assert.equal(run({ last_engine_cycle: now, engine: { state: 'delayed', cadence_minutes: 2 } }).live, 'Engine delayed');
   assert.equal(run({ last_engine_cycle: now, engine: { state: 'failed', cadence_minutes: 2 } }).live, 'Engine cycle failed');
   const first = run({ last_engine_cycle: null, engine: { state: 'delayed', cadence_minutes: 15, last_success: null } });
-  assert.deepEqual([first.cycle, first.sub], ['—', 'awaiting the first recorded cycle']);
+  assert.deepEqual([first.cycle, first.sub, first.cardHidden], ['', '', true], 'no empty-state card before the first recorded run');
+  assert.equal(run({ last_engine_cycle: now, engine: { state: 'healthy', cadence_minutes: 15 } }).cardHidden, false);
+  assert.ok(!home.includes('awaiting the first recorded cycle'));
   assert.ok(!/every 15 min/.test(home.replace(/\/\/.*$/gm, '')), 'no hard-coded cadence copy');
 });
