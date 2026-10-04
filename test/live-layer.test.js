@@ -79,3 +79,9 @@ test('one-minute cron: hot lane is independent of the BTC gate, has its own catc
   assert.match(oneMin, /runHotLane\([\s\S]*?\.catch\(/);
   assert.ok(!/runCycle/.test(oneMin));
 });
+
+test('intraday models never take pre-window designations (designation/1) — static guard in the cycle', () => {
+  const src = readFileSync(new URL('../workers/pbe-predictions/src/cycle.js', import.meta.url), 'utf8');
+  const loop = src.slice(src.indexOf('for (const [modelId, list] of byModel)'), src.indexOf('dueDesignations({'));
+  assert.match(loop, /if \(\/-intraday\$\/\.test\(modelId\)\) continue;/);
+});

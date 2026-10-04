@@ -65,7 +65,7 @@ async function cachedJson(fetchImpl, url, init, ttl) {
 }
 
 // Domain-source capture for one station, cached at the edge (MOS 30 min, NWS grid 60 min).
-async function weatherSources(st, { fetchImpl, now }) {
+export async function weatherSources(st, { fetchImpl, now }) {
   const cachingFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 1800, cacheEverything: true } });
   const mos = await fetchUsableRun({ icao: st.icao, now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT });
   if (!mos.runtime) throw new Error(`no usable GFS MOS run for ${st.icao}`);
@@ -376,6 +376,8 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
     const byModel = new Map();
     for (const f of fs) { if (!byModel.has(f.model_id)) byModel.set(f.model_id, []); byModel.get(f.model_id).push(f); }
     for (const [modelId, list] of byModel) {
+      // intraday models (designation-intraday/1, separate scoring) never take pre-window designations or scores
+      if (/-intraday$/.test(modelId)) continue;
       const existing = designations.filter((d) => d.contract_id === c.contract_id && d.model_id === modelId);
       for (const d of dueDesignations({ contract: c, forecasts: list, existing, now, resolvedAt })) {
         newDes.push({ contract_id: c.contract_id, model_id: modelId, designation: d.designation, forecast_id: d.forecast.forecast_id, rule_version: DESIGNATION_RULES, reference_time: d.reference_time, detail: { captured_at: d.forecast.captured_at, scoring_reference: new Date(scoringReference(c, resolvedAt)).toISOString() } });
