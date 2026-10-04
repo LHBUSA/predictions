@@ -9,6 +9,31 @@ import { CLI_STATIONS } from '../../../src/weather/stations.js';
 import { sha256Hex } from '../../../src/engine/contracts.js';
 import { assertMarketFree } from '../../../src/engine/leakage.js';
 import { weatherSources } from './cycle.js';
+import { canonicalJson } from '../../../src/engine/evidence.js';
+
+// THREE STATES (Phase A, owner 2026-10-04) — never one hash with three meanings:
+//   source state     = the exact-station observations the model can use + the guidance runs it actually used
+//                      (source_state_hash; audit only)
+//   predictive state = only what can legitimately change the forecast (predictive_input_hash; DECIDES whether a new
+//                      immutable forecast row is written)
+//   presentation     = wall clock / "x min ago" / freshness labels — can never by itself manufacture a forecast row.
+// Rain (precip-intraday 2.0.0): continuous clock-derived inputs (hours into window, hours remaining, remaining PoP) and
+// the raw report count are replaced by the model's discrete local-standard-hour bucket — and only on the branch that
+// uses time (logistic). On the measured_bound branch time cannot move the forecast, so the bucket is not part of it.
+// Temperature (maxtemp-intraday 2.1.0): unchanged, its existing inputHash semantics (byte-identical behaviour).
+export const RAIN_MODEL_ID = 'pbe-weather-precip-intraday';
+const RAIN_CONTINUOUS_TIME = Object.freeze(['obs_count', 'hours_into_window_lst', 'hours_remaining', 'remaining_pop']);
+export function predictiveState(modelId, features, provenance, branch) {
+  if (modelId !== RAIN_MODEL_ID) return null;
+  const f = { ...(features || {}) };
+  const hourBucket = Math.floor(Number(f.hours_into_window_lst));
+  for (const k of RAIN_CONTINUOUS_TIME) delete f[k];
+  const runs = (provenance || []).filter((p) => /model input/i.test(p.role || '') && p.run).map((p) => p.run).sort();
+  return { model: modelId, branch: branch ?? null, features: f, guidance_runs: runs, lst_hour_bucket: branch === 'measured_bound' ? null : hourBucket };
+}
+export const predictiveHash = async (state) => (state ? sha256Hex(canonicalJson(state)) : null);
+export const sourceStateHash = (c, obsUsed, provenance) => sha256Hex(canonicalJson({ contract: c.contract_id, obs: obsUsed.map((o) => [o.valid_at, o.tmpf, o.p01i, o.max6_f ?? null]),
+  guidance: (provenance || []).filter((p) => /model input/i.test(p.role || '') && p.run).map((p) => p.run).sort() }));
 
 const LAG_MS = 10 * 60000; // research publication-lag floor
 export const TEMP_MODEL_VERSION = '2.1.0';
@@ -32,7 +57,14 @@ export async function intradayForStation(store, st, { now, fetchImpl = globalThi
   if (!src) { spend(4); src = await weatherSources(station, { fetchImpl, now }); }
   const cids = contracts.map((c) => c.contract_id);
   const modelIds = [...new Set(Object.values(INTRADAY_MODELS).map((m) => m.id))];
-  spend(); const prior = await store.selectIn('pred_forecasts', { select: 'contract_id,model_id,captured_at,explanation', model_id: `in.(${modelIds.join(',')})` }, 'contract_id', cids, { order: 'captured_at.desc' });
+  spend(); const prior = await store.selectIn('pred_forecasts', { select: 'contract_id,model_id,captured_at,explanation,provenance,feature_snapshot_id', model_id: `in.(${modelIds.join(',')})` }, 'contract_id', cids, { order: 'captured_at.desc' });
+  // predictive state of the latest prior RAIN row (recomputed from its stored features when the row predates Phase A)
+  const lastRain = []; const seenRain = new Set(); // newest prior rain row per contract (prior is newest-first)
+  for (const p of prior) if (p.model_id === RAIN_MODEL_ID && !seenRain.has(p.contract_id)) { seenRain.add(p.contract_id); lastRain.push(p); }
+  const needFeat = lastRain.filter((p) => !p.explanation?.predictive_input_hash).map((p) => p.feature_snapshot_id).filter(Boolean);
+  if (needFeat.length) spend();
+  const priorFeat = needFeat.length ? new Map((await store.selectIn('pred_feature_snapshots', { select: 'snapshot_id,features' }, 'snapshot_id', needFeat)).map((x) => [x.snapshot_id, x.features])) : new Map();
+  const priorPredictive = async (p) => p.explanation?.predictive_input_hash ?? predictiveHash(predictiveState(p.model_id, priorFeat.get(p.feature_snapshot_id), p.provenance, p.explanation?.branch));
   spend(); const venue = latestBy((await store.selectIn('pred_venue_snapshots', { select: 'contract_id,snapshot_key,probability,captured_at', captured_at: `lte.${now}` }, 'contract_id', cids)), 'contract_id', 'captured_at');
   const features = []; const forecasts = [];
   for (const c of contracts) {
@@ -41,7 +73,13 @@ export async function intradayForStation(store, st, { now, fetchImpl = globalThi
     const r = forecastIntraday(c, { obs, nbm: src.nbm, mos: src.mos }, { now, tempModelVersion: TEMP_MODEL_VERSION });
     if (r.status !== 'OK') { out.skipped[r.status] = (out.skipped[r.status] || 0) + 1; continue; }
     const last = prior.find((p) => p.contract_id === c.contract_id && p.model_id === r.model.id);
-    if (last?.explanation?.input_hash === r.inputHash) { out.unchanged += 1; continue; } // same inputs -> write nothing
+    const pState = predictiveState(r.model.id, r.features, r.provenance, r.explanation?.branch);
+    const pHash = await predictiveHash(pState);
+    if (pState) { // rain: write only when the PREDICTIVE state changed
+      if (last && (await priorPredictive(last)) === pHash) { out.unchanged += 1; continue; }
+    } else if (last?.explanation?.input_hash === r.inputHash) { out.unchanged += 1; continue; } // temp: unchanged semantics
+    const obsUsed = obs.filter((o) => Date.parse(o.available_at) <= Date.parse(now) && o.valid_at >= c.observation_start && o.valid_at < c.observation_end);
+    const sHash = await sourceStateHash(c, obsUsed, r.provenance);
     assertMarketFree(r.features);
     const featuresSha = await sha256Hex(JSON.stringify({ model: r.model, features: r.features }));
     const recordId = `${c.contract_id}|${r.model.id}@${r.model.version}|${featuresSha.slice(0, 16)}|${now}`;
@@ -55,7 +93,7 @@ export async function intradayForStation(store, st, { now, fetchImpl = globalThi
       feature_snapshot_id: snapshotId, record_type: 'live', contract_id: c.contract_id, market_id: c.market_id,
       market_probability: v?.probability ?? null, market_snapshot_key: v?.snapshot_key ?? null, market_observed_at: v?.captured_at ?? null,
       data_cutoff_at: r.dataCutoffAt, model_state: r.model.state, confidence: r.confidence, features_sha256: featuresSha,
-      provenance: r.provenance, explanation: { ...r.explanation, evidence: r.evidence, raw_probability: r.rawProbability, input_hash: r.inputHash, lane: 'hot-intraday' },
+      provenance: r.provenance, explanation: { ...r.explanation, evidence: r.evidence, raw_probability: r.rawProbability, input_hash: r.inputHash, predictive_input_hash: pHash ?? r.inputHash, source_state_hash: sHash, predictive_state: pState, lane: 'hot-intraday' },
       metadata: { domain: c.domain, category: c.detail?.category ?? null, event_type: c.event_type, station_id: c.station_id, observation_start: c.observation_start, intraday: true },
     });
   }
