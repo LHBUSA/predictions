@@ -616,3 +616,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .ix-live-grid small{display:block;font-size:11px;color:#a9bccf;margin-top:2px}
 .ix-live-updates{margin:10px 0 0;padding-left:18px;color:#c9d6e6;font-size:12.5px}
 .ix-live-updates li{margin:4px 0}.ix-live-updates small{display:block;color:#8fa5bd}
+/* long factual values (e.g. guidance-error history) wrap instead of overflowing at phone width */
+.ev-item{grid-template-columns:minmax(0,1fr) auto}
+.ev-item>div{min-width:0;overflow-wrap:anywhere}
+.ev-item strong{max-width:46vw;white-space:normal;text-align:right;overflow-wrap:anywhere}
