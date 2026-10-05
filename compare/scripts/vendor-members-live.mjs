@@ -1,6 +1,6 @@
 // Deterministic vendoring of the Members live-score adapters into Compare.
 //   source  test/fixtures/members-59de9d2/live.js.txt  (byte copy of LHBUSA/members api/live.js @ 59de9d2)
-//   output  lib/scores/adapters.js
+//   output  api/_lib/scores/adapters.js
 // Run: node compare/scripts/vendor-members-live.mjs [--check]
 // The drift test (test/scores.test.js) re-runs transform() and requires a byte-identical output, so the vendored
 // adapters can only change by re-pinning the fixture + re-running this script.
@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 export const MEMBERS_COMMIT = '59de9d2';
 export const MEMBERS_LIVE_SHA256 = '9307be0b2efa0b05de9d6cc00c96e27ad14e26d6576c580fb0e35ccac83da292';
 const FIXTURE = new URL('../test/fixtures/members-59de9d2/live.js.txt', import.meta.url);
-const OUTPUT = new URL('../lib/scores/adapters.js', import.meta.url);
+const OUTPUT = new URL('../api/_lib/scores/adapters.js', import.meta.url);
 
 function replaceOnce(s, from, to, label) {
   const n = s.split(from).length - 1;
@@ -64,7 +64,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '
   const out = transform(readFileSync(FIXTURE, 'utf8'));
   if (process.argv.includes('--check')) {
     const cur = readFileSync(OUTPUT, 'utf8');
-    if (cur !== out) { console.error('lib/scores/adapters.js is out of date: re-run vendor-members-live.mjs'); process.exit(1); }
+    if (cur !== out) { console.error('api/_lib/scores/adapters.js is out of date: re-run vendor-members-live.mjs'); process.exit(1); }
     console.log('adapters.js matches the pinned transform');
-  } else { writeFileSync(OUTPUT, out); console.log(`wrote lib/scores/adapters.js from Members ${MEMBERS_COMMIT}`); }
+  } else { writeFileSync(OUTPUT, out); console.log(`wrote api/_lib/scores/adapters.js from Members ${MEMBERS_COMMIT}`); }
 }

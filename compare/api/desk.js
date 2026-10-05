@@ -1,5 +1,5 @@
-import { requireAllAccess, send } from '../lib/access.js';
-import { loadLanes, parseScope } from '../lib/desk.js';
+import { requireAllAccess, send } from './_lib/access.js';
+import { loadLanes, parseScope } from './_lib/desk.js';
 
 // GET /api/desk?scope=sports|nonsports|<sport>
 // 200 with per-lane states (a lane may be not_connected / unavailable while others are ok);

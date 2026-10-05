@@ -10,7 +10,7 @@ Rollback point before V1 repair: `dpl_2M7jzWJQJGWAn3qyH9ohNUvD8MPj` (578eba5).
 | `/api/desk?scope=sports\|nonsports\|<sport>` | propsports-markets `/v1/market-desk` (one read per lane) | per-lane state `ok` / `not_connected` (404) / `unavailable`; `limit=50` = upstream cap, `capped` flag, no paging contract exists |
 | `/api/event?sport=&event=` | `/v1/market-intelligence/event/:sport/:id` + `/v1/market-desk?sport=&event=` | stored Kalshi change rows, book, volume, OI + Polymarket stored points |
 | `/api/series?event=&market=` | `/v1/market-desk/series` | prediction markets only (sports ids reach pred_* tables and 404) |
-| `/api/live?sports=` | sport score sources via `lib/scores/adapters.js` (vendored Members @ 59de9d2) | one entitlement decision; 10 s per-instance memo; regenerate with `node compare/scripts/vendor-members-live.mjs` (drift test enforces) |
+| `/api/live?sports=` | sport score sources via `api/_lib/scores/adapters.js` (vendored Members @ 59de9d2) | one entitlement decision; 10 s per-instance memo; regenerate with `node compare/scripts/vendor-members-live.mjs` (drift test enforces) |
 
 Protected routes: anonymous 401 · signed in without All Access 403 · authority unreachable 503 + Retry-After.
 

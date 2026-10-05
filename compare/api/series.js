@@ -1,4 +1,4 @@
-import { requireAllAccess, send, upstreamJson } from '../lib/access.js';
+import { requireAllAccess, send, upstreamJson } from './_lib/access.js';
 
 // Prediction-market (non-sports) stored series. Sports games use /api/event (composed stored observations).
 const UPSTREAM = 'https://propsports-markets.sales-fd3.workers.dev/v1/market-desk/series';

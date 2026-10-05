@@ -2,9 +2,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { verdict, sessionCookie, membership } from '../lib/access.js';
-import { laneResult, laneUrl, parseScope, DESK_PAGE_LIMIT, SPORT_LANES } from '../lib/desk.js';
-import { composeEvent } from '../lib/event.js';
+import { verdict, sessionCookie, membership } from '../api/_lib/access.js';
+import { laneResult, laneUrl, parseScope, DESK_PAGE_LIMIT, SPORT_LANES } from '../api/_lib/desk.js';
+import { composeEvent } from '../api/_lib/event.js';
 
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8'));
 

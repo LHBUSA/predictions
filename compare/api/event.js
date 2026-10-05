@@ -1,6 +1,6 @@
-import { requireAllAccess, send } from '../lib/access.js';
-import { SPORT_LANES } from '../lib/desk.js';
-import { loadEvent } from '../lib/event.js';
+import { requireAllAccess, send } from './_lib/access.js';
+import { SPORT_LANES } from './_lib/desk.js';
+import { loadEvent } from './_lib/event.js';
 
 // GET /api/event?sport=<sport>&event=<canonical id>: one game's stored Kalshi + Polymarket observations.
 export default async function handler(req, res) {

@@ -1,8 +1,8 @@
-import { requireAllAccess, send } from '../lib/access.js';
-import { loadBoard, SPORTS } from '../lib/scores/adapters.js';
+import { requireAllAccess, send } from './_lib/access.js';
+import { loadBoard, SPORTS } from './_lib/scores/adapters.js';
 
 // GET /api/live?sports=nfl,nba (empty = all). Compare's requireAllAccess is the ONE entitlement decision; the
-// score adapters (vendored from Members @ 59de9d2, see lib/scores/adapters.js) run here directly: no second
+// score adapters (vendored from Members @ 59de9d2, see api/_lib/scores/adapters.js) run here directly: no second
 // membership check, no proxy hop. Score data is not member-specific, so a short per-instance memo (after the
 // entitlement check) keeps member polling from multiplying reads against the sport sites.
 const MEMO_MS = 10e3;

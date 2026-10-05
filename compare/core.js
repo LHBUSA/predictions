@@ -80,7 +80,7 @@ export function normalizeContract(c) {
   const priced = [k, p, ...related, ...listed].filter((x) => x && x.mid_bp != null);
   const pbe = c.pbe && num(c.pbe.probability) != null ? { probability: num(c.pbe.probability), state: c.pbe.state || null, issued_at: c.pbe.issued_at || null, model: c.pbe.model || null, selection: c.pbe.selection || null } : null;
   return {
-    id: c.canonical_contract_id || c.label, label: c.label || null, role: c.role || null,
+    id: c.canonical_contract_id || c.label, label: c.label || null, role: c.role || null, media: c.media || null,
     kalshi: k, polymarket: p, related, listed, comparison: cmp, badge, note,
     gap_pts: gap, gap_rel_pct: gap != null && k?.mid_bp != null && p?.mid_bp != null ? (gap * 100) / ((k.mid_bp + p.mid_bp) / 200) : null,
     pbe, pbe_vs_venues: cmp?.pbe_vs_venues_pts || null, pbe_position: cmp?.pbe_position || null,
@@ -125,7 +125,7 @@ export function normalizeEvent(e, index = new Map()) {
   const badges = [...new Set(contracts.map((c) => c.badge))];
   return {
     key: `${e.sport || 'nonsports'}:${e.canonical_event_id}`, sport: e.sport || null, lane: e.lane || e.sport || 'nonsports',
-    canonical_event_id: String(e.canonical_event_id), title: e.title || e.question || 'Market', start_at: e.start_at || e.close_time || null,
+    canonical_event_id: String(e.canonical_event_id), title: (e.title && e.title !== 'Market' ? e.title : null) || e.question || (contracts.length === 2 && contracts.every((c) => c.label) ? `${contracts[0].label} v ${contracts[1].label}` : 'Market'), start_at: e.start_at || e.close_time || null,
     destination: e.destination?.url || null, contracts, join, status, tier, best_gap: best?.gap_pts ?? null, best,
     badge: badges.includes('COMPARABLE') ? 'COMPARABLE' : badges.includes('RULE_MISMATCH') ? 'RULE_MISMATCH' : badges.includes('WITHDRAWN') ? 'WITHDRAWN' : 'SINGLE_VENUE',
     badge_note: contracts.some((c) => c.comparison) ? null : contracts.some((c) => c.note === 'NOT_ALIGNED') ? 'NOT_ALIGNED' : null,
@@ -233,4 +233,65 @@ export function boardEmpty({ desk, viewKey, events, scope, liveItems = [] }) {
   if (viewKey === 'pbe') return { code: 'no_pbe', text: 'No active PBE calls in this scope right now.' };
   if (viewKey === 'top') return { code: 'no_active', text: 'Every lane answered: no active markets in this scope right now.' };
   return { code: 'zero', text: 'Every lane answered with zero markets for this scope.' };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Participant media. Deterministic URLs from ids/abbreviations the desk already carries; the score feed's own
+// logo wins when the game is linked. UFC photos arrive server-side (contract.media.photo). F1/soccer/golf have
+// no comparison lane; F1 team marks are held as trademarks. Anything missing renders as initials, never a
+// recreated logo.
+const ESPN_ALIAS = {
+  nba: { UTA: 'utah', GSW: 'gs', NYK: 'ny', SAS: 'sa', NOP: 'no', WAS: 'wsh', PHO: 'phx', BRK: 'bkn' },
+  nfl: { WAS: 'wsh', JAC: 'jax', LA: 'lar' },
+  wnba: { LVA: 'lv', NYL: 'ny', GSV: 'gs', CON: 'conn', WAS: 'wsh', PHO: 'phx' }
+};
+// Some venue-neutral contracts carry a team NAME instead of a code (Polymarket-only listings).
+const NAME_CODE = {
+  nhl: { DUCKS: 'ANA', BRUINS: 'BOS', SABRES: 'BUF', FLAMES: 'CGY', HURRICANES: 'CAR', BLACKHAWKS: 'CHI', AVALANCHE: 'COL', BLUEJACKETS: 'CBJ', STARS: 'DAL', REDWINGS: 'DET', OILERS: 'EDM', PANTHERS: 'FLA', KINGS: 'LAK', WILD: 'MIN', CANADIENS: 'MTL', PREDATORS: 'NSH', DEVILS: 'NJD', ISLANDERS: 'NYI', RANGERS: 'NYR', SENATORS: 'OTT', FLYERS: 'PHI', PENGUINS: 'PIT', SHARKS: 'SJS', KRAKEN: 'SEA', BLUES: 'STL', LIGHTNING: 'TBL', MAPLELEAFS: 'TOR', MAMMOTH: 'UTA', CANUCKS: 'VAN', GOLDENKNIGHTS: 'VGK', CAPITALS: 'WSH', JETS: 'WPG' },
+  wnba: { ATLANTADREAM: 'ATL', CHICAGOSKY: 'CHI', CONNECTICUTSUN: 'CONN', DALLASWINGS: 'DAL', GOLDENSTATEVALKYRIES: 'GS', INDIANAFEVER: 'IND', LASVEGASACES: 'LV', LOSANGELESSPARKS: 'LA', MINNESOTALYNX: 'MIN', NEWYORKLIBERTY: 'NY', PHOENIXMERCURY: 'PHX', SEATTLESTORM: 'SEA', WASHINGTONMYSTICS: 'WSH', TORONTOTEMPO: 'TOR', PORTLANDFIRE: 'POR' }
+};
+export function participantMedia(sport, contract, linkedSide = null) {
+  const label = String(contract?.label || '').trim();
+  const id = (String(contract?.id || contract?.canonical_contract_id || '').match(/\|team:([^|]+)$/) || [])[1] || null;
+  const initials = label.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 3).toUpperCase() || '?';
+  const raw = label.replace(/[^A-Za-z]/g, '').toUpperCase();
+  const abbr = NAME_CODE[sport]?.[raw] || raw;
+  const espn = (lg) => `https://a.espncdn.com/i/teamlogos/${lg}/500/scoreboard/${(ESPN_ALIAS[lg]?.[abbr] || abbr).toLowerCase()}.png`;
+  let src = null, kind = 'logo';
+  if (sport === 'nfl' || sport === 'nba') src = linkedSide?.logo || (abbr ? espn(sport) : null);
+  else if (sport === 'wnba') src = linkedSide?.logo || (abbr ? `https://a.espncdn.com/i/teamlogos/wnba/500/${(ESPN_ALIAS.wnba[abbr] || abbr).toLowerCase()}.png` : null);
+  else if (sport === 'nhl') src = abbr ? `https://assets.nhle.com/logos/nhl/svg/${abbr}_dark.svg` : null;
+  else if (sport === 'mlb') src = id && /^\d+$/.test(id) ? `https://www.mlbstatic.com/team-logos/team-cap-on-dark/${id}.svg` : linkedSide?.logo || null;
+  else if (sport === 'tennis') { kind = 'photo'; src = id && /^[0-9a-f-]{36}$/.test(id) ? `https://tennis-api.propbetedge.ai/media/players/${id}/portrait.webp` : null; }
+  else if (sport === 'ufc') { kind = 'photo'; src = contract?.media?.photo || null; }
+  return { kind, src, initials, alt: label };
+}
+
+// Date buckets for hub tabs (viewer's local day). Live wins over any date.
+export const WHEN = [
+  { key: 'live', label: 'LIVE' }, { key: 'today', label: 'TODAY' }, { key: 'tomorrow', label: 'TOMORROW' },
+  { key: 'week', label: 'THIS WEEK' }, { key: 'later', label: 'LATER' }, { key: 'all', label: 'ALL DATES' }
+];
+export function whenOf(e, now = Date.now()) {
+  if (e.live) return 'live';
+  const t = Date.parse(e.start_at || '');
+  if (!Number.isFinite(t)) return 'later';
+  const day = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const diff = Math.round((day(t) - day(now)) / 86400e3);
+  if (diff <= 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  if (diff <= 7) return 'week';
+  return 'later';
+}
+export const inWhen = (e, key, now = Date.now()) => key === 'all' || whenOf(e, now) === key;
+
+export function hubStats(events) {
+  const active = events.filter((e) => e.active);
+  return {
+    events: events.length, active: active.length, live: events.filter((e) => e.live).length,
+    comparable: active.filter((e) => e.badge === 'COMPARABLE' && e.best_gap != null).length,
+    mismatch: active.filter((e) => e.badge === 'RULE_MISMATCH').length,
+    pbe: events.filter((e) => e.has_pbe).length,
+    best: active.reduce((m, e) => (e.best_gap != null && e.best_gap > (m?.best_gap ?? -1) ? e : m), null)
+  };
 }

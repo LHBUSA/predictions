@@ -4,6 +4,7 @@
 //   not_connected  upstream 404 (no comparison lane for this sport yet: soccer / golf / f1 on 2026-10-05)
 //   unavailable    anything else (5xx, timeout, bad JSON)
 import { MARKET_DESK_URL, upstreamJson } from './access.js';
+import { enrichUfc } from './media.js';
 
 export const SPORT_LANES = ['nfl', 'nba', 'nhl', 'mlb', 'wnba', 'tennis', 'ufc', 'soccer', 'golf', 'f1'];
 // Upstream contract: limit = events, capped at 50 (propsports-markets index.js). No offset/cursor exists, so
@@ -33,6 +34,8 @@ export function laneResult(lane, r) {
 
 export async function loadLanes(lanes, opts = {}) {
   const results = await Promise.all(lanes.map(async (lane) => laneResult(lane, await upstreamJson(laneUrl(lane), opts))));
+  const ufc = results.find((x) => x.lane.lane === 'ufc' && x.lane.state === 'ok');
+  if (ufc && !opts.noMedia) await enrichUfc(ufc.events, opts.media || {});
   return {
     contract: 'compare-desk/1',
     upstream_contract: results.find((x) => x.contract)?.contract || null,
