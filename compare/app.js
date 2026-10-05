@@ -14,12 +14,11 @@ const rowId=c=>'m-'+btoa(unescape(encodeURIComponent(keyFor(c)))).replace(/[^a-z
 const currentSport=()=>SPORTS.has($('#scope').value)?$('#scope').value:null;
 
 async function member(){const r=await fetch('/api/membership',{credentials:'include',cache:'no-store'});return r.json()}
-function clearTimers(){window.clearTimeout(marketTimer);window.clearTimeout(scoreTimer);marketTimer=scoreTimer=0}
-function schedule(){
-  clearTimers();
-  marketTimer=window.setTimeout(()=>{void loadMarkets(true)},document.hidden?120000:60000);
-  if(currentSport()) scoreTimer=window.setTimeout(()=>{void loadScores(true)},document.hidden?60000:15000);
-}
+function clearMarketTimer(){window.clearTimeout(marketTimer);marketTimer=0}
+function clearScoreTimer(){window.clearTimeout(scoreTimer);scoreTimer=0}
+function clearTimers(){clearMarketTimer();clearScoreTimer()}
+function scheduleMarket(){clearMarketTimer();marketTimer=window.setTimeout(()=>{void loadMarkets(true)},document.hidden?120000:60000)}
+function scheduleScore(){clearScoreTimer();if(currentSport())scoreTimer=window.setTimeout(()=>{void loadScores(true)},document.hidden?60000:15000)}
 function normalizeTitle(s){return String(s||'').toLowerCase().replace(/(vs|v|at)/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
 function liveFor(c){
   const id=String(c.canonical_event_id||'');
@@ -43,7 +42,7 @@ async function loadMarkets(fromTimer=false){
     const v=$('#scope').value,u=v==='nonsports'?'/api/desk?domain=nonsports&limit=200':'/api/desk?sport='+encodeURIComponent(v)+'&limit=200';
     const r=await fetch(u,{credentials:'include',cache:'no-store'});
     if(r.ok){const d=await r.json();all=(d.events||[]).flatMap(e=>(e.contracts||[]).map(c=>({...c,canonical_event_id:c.canonical_event_id||e.canonical_event_id||e.id||'',event_title:e.title||e.label||e.question||'',destination:e.destination,start_at:e.start_at||e.close_time||null})));render()}
-  }finally{loadingMarkets=false;if(fromTimer)schedule()}
+  }finally{loadingMarkets=false;if(fromTimer)scheduleMarket()}
 }
 async function loadScores(fromTimer=false){
   const sport=currentSport();if(!sport){liveItems=[];renderLiveRail();return}
@@ -51,9 +50,9 @@ async function loadScores(fromTimer=false){
   try{
     const r=await fetch('/api/live?sport='+encodeURIComponent(sport),{credentials:'include',cache:'no-store'});
     if(r.ok){const d=await r.json();liveItems=d.items||[];render();renderLiveRail(d)}
-  }finally{loadingScores=false;if(fromTimer)schedule()}
+  }finally{loadingScores=false;if(fromTimer)scheduleScore()}
 }
-async function refreshAll(){clearTimers();await Promise.all([loadMarkets(false),loadScores(false)]);schedule()}
+async function refreshAll(){clearTimers();await Promise.all([loadMarkets(false),loadScores(false)]);scheduleMarket();scheduleScore()}
 
 function renderLiveRail(board){
   const rail=$('#live-rail'),box=$('#live-games'),live=liveItems.filter(x=>x.status==='live');
@@ -92,6 +91,6 @@ async function init(){
 $('#scope').addEventListener('change',()=>{view=currentSport()?'live':'gaps';document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));void refreshAll()});
 $('#sort').addEventListener('change',render);$('#q').addEventListener('input',render);
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{view=button.dataset.view;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));render()}));
-document.addEventListener('visibilitychange',()=>{clearTimers();if(!document.hidden)void refreshAll();else schedule()});
+document.addEventListener('visibilitychange',()=>{clearTimers();if(!document.hidden)void refreshAll();else{scheduleMarket();scheduleScore()}});
 window.addEventListener('pagehide',clearTimers,{once:true});
 init();
