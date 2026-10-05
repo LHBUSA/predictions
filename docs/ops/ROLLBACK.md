@@ -166,3 +166,4 @@ No migration. prediction-decision-v1 is DRAFT: decisions are served only at `/ad
     (restores '*/15' + '7,22,37,52' and the matching CRONS), then `git checkout main -- workers/pbe-predictions`.
   - full pre-change: same with `e190964` (Worker was `bbc9a2f4`).
 - Fallback cadence (owner rule): if 2 min fails the safety gate, 3 min ('*/3'), never 15 without owner approval.
+- Before ANY cron change read `docs/ops/CRON_MIGRATION.md` (propagation delay, overlap-then-retire, code-only releases via `wrangler versions upload/deploy`).
