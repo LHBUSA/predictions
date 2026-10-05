@@ -1,86 +1,79 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PropBetEdge Compare</title>
-  <meta name="description" content="All Access live market intelligence: scores, PropBetEdge, Kalshi and Polymarket on one screen.">
-  <link rel="stylesheet" href="/style.css">
+  <meta name="description" content="All Access market comparison: live game state, Kalshi, Polymarket and PropBetEdge on one screen, with honest freshness and rule differences.">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="https://propbetedge.ai/logo/pbe-mark-80.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=20261005c4">
 </head>
 <body>
-<header>
-  <div class="wrap top">
-    <a class="brand" href="https://propbetedge.ai">PROP BET EDGE <span>COMPARE</span></a>
-    <nav>
-      <a href="https://members.propbetedge.ai">Command Center</a>
-      <a href="https://predictions.propbetedge.ai">Predictions</a>
-      <button id="acct" type="button">Account</button>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="/" aria-label="PropBetEdge Compare home">
+      <img src="https://propbetedge.ai/logo/pbe-mark-80.png" alt="" width="34" height="34">
+      <span><b>PROP BET EDGE</b><small>COMPARE</small></span>
+    </a>
+    <nav class="top-nav" aria-label="PropBetEdge">
+      <a class="hide-sm" href="https://members.propbetedge.ai/">Command Center</a>
+      <a class="hide-sm" href="https://predictions.propbetedge.ai/">Predictions</a>
+      <a id="acct" class="chip" href="https://members.propbetedge.ai/" data-state="loading">Account</a>
     </nav>
   </div>
 </header>
-<main class="wrap">
-  <section class="hero">
-    <div>
-      <p class="eyebrow">ALL ACCESS · LIVE SCORES + LIVE MARKETS</p>
-      <h1>Watch the game and the market move together.</h1>
-      <p>Live score state, PropBetEdge probability, Kalshi, Polymarket and observed market movement on one normalized screen.</p>
-    </div>
-    <div class="hero-card">
-      <strong id="live-count">—</strong>
-      <span>comparable contracts loaded</span>
-      <small id="heartbeat">Waiting for live feed…</small>
-    </div>
+
+<main class="wrap" id="main">
+  <section class="strip" aria-label="Comparison views and scope">
+    <div class="views" role="tablist" aria-label="View" id="views"></div>
+    <div class="scopes" id="scopes" role="group" aria-label="Scope"></div>
   </section>
 
-  <section id="gate" class="gate">
-    <h2>All Access required</h2>
-    <p>Compare is part of PropBetEdge All Access.</p>
-    <a href="https://propbetedge.ai/pro">Get All Access</a>
+  <section class="health" aria-live="polite">
+    <div class="health-line"><span class="dot" id="hb-dot" data-level="info"></span><span id="hb">Checking access…</span></div>
+    <div class="lanes" id="lanes"></div>
   </section>
 
-  <section id="app" hidden>
-    <section id="live-rail" class="live-rail" hidden>
-      <div class="rail-head">
-        <div><span class="pulse"></span><b>LIVE COVERAGE</b><small id="live-source">Score feed checking…</small></div>
-        <a href="https://members.propbetedge.ai/#command">OPEN COMMAND CENTER ↗</a>
+  <div id="notices" class="notices" role="status" aria-live="polite"></div>
+
+  <section id="gate" class="gate" hidden>
+    <div class="gate-copy">
+      <p class="eyebrow">PROPBETEDGE ALL ACCESS</p>
+      <h1 id="gate-title">One screen for the game, Kalshi, Polymarket and PropBetEdge.</h1>
+      <p id="gate-text">Compare lines up venue prices on the same contract, shows how far apart they are, how fresh each quote is, and where the settlement rules differ. It is part of All Access.</p>
+      <div class="gate-actions" id="gate-actions"></div>
+    </div>
+    <div class="gate-demo" aria-hidden="true">
+      <div class="demo-card">
+        <div class="demo-head"><span>NBA · TONIGHT</span><span class="badge b-comparable">COMPARABLE</span></div>
+        <div class="demo-title">AWAY @ HOME</div>
+        <div class="demo-row"><span>Kalshi</span><i style="--w:61%"></i><b>••¢</b></div>
+        <div class="demo-row"><span>Polymarket</span><i style="--w:58%"></i><b>••¢</b></div>
+        <div class="demo-row"><span>PBE</span><i class="pbe" style="--w:66%"></i><b>••%</b></div>
+        <div class="demo-foot">Spread •.•¢ · observed ••s ago</div>
       </div>
-      <div id="live-games" class="live-games"></div>
-    </section>
-
-    <div class="view-tabs" role="group" aria-label="Comparison view">
-      <button data-view="live" aria-pressed="false">LIVE NOW</button>
-      <button data-view="gaps" aria-pressed="true">TOP GAPS</button>
-      <button data-view="outside" aria-pressed="false">PBE OUTSIDE BOTH</button>
-      <button data-view="all" aria-pressed="false">ALL MARKETS</button>
     </div>
+  </section>
 
-    <div class="controls">
-      <select id="scope" aria-label="Market scope">
-        <option value="nonsports">Prediction Markets</option>
-        <option value="nfl">NFL</option>
-        <option value="nba">NBA</option>
-        <option value="nhl">NHL</option>
-        <option value="mlb">MLB</option>
-        <option value="wnba">WNBA</option>
-      </select>
-      <select id="sort" aria-label="Sort comparisons">
-        <option value="gap">Largest market gap</option>
-        <option value="pbe">Largest PBE divergence</option>
-        <option value="fresh">Freshest observations</option>
-      </select>
-      <input id="q" placeholder="Search markets" aria-label="Search markets">
-    </div>
+  <section id="live" class="live" hidden aria-label="Live now">
+    <div class="sec-head"><h2><span class="pulse"></span>LIVE NOW</h2><small id="live-meta"></small></div>
+    <div id="live-cards" class="live-cards"></div>
+  </section>
 
-    <div class="summary">
-      <div><span>Live games</span><strong id="livegames">—</strong></div>
-      <div><span>Comparable now</span><strong id="exact">—</strong></div>
-      <div><span>PBE outside both</span><strong id="outside">—</strong></div>
-      <div><span>Largest venue gap</span><strong id="maxgap">—</strong></div>
-    </div>
-
-    <div id="rows" class="rows"></div>
+  <section id="board" class="board" hidden aria-label="Markets">
+    <div class="sec-head"><h2 id="board-title">TOP SPREADS</h2><small id="board-meta"></small></div>
+    <div id="cards" class="cards"></div>
   </section>
 </main>
-<script type="module" src="/app.js"></script>
+
+<footer class="foot wrap">
+  <p>Venue numbers are PropBetEdge timestamped observations of public venue reads, not live order books. A spread is shown only between contracts whose settlement rules were approved as comparable. Nothing here is investment advice.</p>
+</footer>
+<script type="module" src="/app.js?v=20261005c4"></script>
 </body>
 </html>
