@@ -255,3 +255,26 @@ button:disabled{cursor:default}
   .dc-v{grid-template-columns:1fr 1fr}.dv b{font-size:20px}
   .mv{font-size:10.5px}.mv th,.mv td{padding:4px 3px}
 }
+
+/* ---------- mid gap vs top-of-book cross (kept visually distinct) ---------- */
+.xc{font:700 8.5px/1.2 var(--mono)!important;letter-spacing:.06em;color:var(--faint);border:1px dashed var(--line-2);border-radius:4px;padding:1px 4px;margin-top:2px;white-space:nowrap}
+.xc.on{color:var(--up);border:1px solid rgba(111,212,161,.55);background:rgba(111,212,161,.08)}
+.dm{display:grid;grid-template-columns:1fr 1.25fr;gap:8px;margin-top:8px}
+.dm>span{display:grid;gap:3px;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--ink-2)}
+.dm small{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--faint)}
+.dm b{font:700 16px/1.1 var(--mono)}
+.dm em{font-style:normal;font-size:10.5px;color:var(--muted)}
+.dm em.fine{font-size:9.5px;color:var(--faint)}
+.dm .dm-mid b{color:var(--paper)}
+.dm .dm-x{border-style:dashed;border-color:rgba(111,212,161,.35)}
+.dm .dm-x b{color:var(--muted)}.dm .dm-x b.pos{color:var(--up)}
+.dm-off{grid-template-columns:1fr}.dm-off b{color:var(--faint)}
+.why-ok summary{color:var(--muted)}
+.wts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.wt{display:grid;gap:4px;align-content:start;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--ink)}
+.wt-h{display:flex;gap:6px;align-items:center;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+.wt-h img{border-radius:3px}
+.wt-l{font-size:11.5px;color:var(--muted);padding-left:8px;border-left:2px solid var(--line)}
+.wt-l.d{color:var(--paper);border-left-color:var(--warn)}
+.wt-l.u{color:var(--faint);font-style:italic}
+@media (max-width:560px){.dm{grid-template-columns:1fr}.wts{grid-template-columns:1fr}}
