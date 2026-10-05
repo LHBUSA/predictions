@@ -294,3 +294,4 @@ button:disabled{cursor:default}
 .dist-bar .s0{background:rgba(232,227,217,.22)}.dist-bar .s1{background:rgba(232,227,217,.08)}.dist-bar .s2{background:rgba(208,163,90,.28)}
 .dist-none{font-size:11px;color:var(--faint)}
 .keydiff{margin:8px 0;padding:8px 10px;border-left:3px solid var(--warn);background:rgba(224,180,90,.08);border-radius:6px;font-size:12.5px;font-weight:700;color:var(--paper)}
+.field{margin:12px 0}.ft{width:100%;border-collapse:collapse;font-size:13px}.ft th,.ft td{padding:6px 8px;border-bottom:1px solid var(--line)}.ft thead th{font-size:11px;letter-spacing:.06em;color:var(--muted);text-align:left}.ft tbody th{font-weight:600;text-align:left}.ft-g{display:flex;align-items:center;gap:8px}.ft .num{text-align:right;font-family:var(--mono,ui-monospace,monospace);white-space:nowrap}.ft a{color:var(--muted);text-decoration:none}

@@ -212,15 +212,16 @@ function distribution(e) {
   };
   return `<section class="dists" aria-label="Three-outcome price distribution per venue"><p class="small">${esc(names.join(' · '))}: each venue's own three prices. ${e.badge === 'COMPARABLE' ? '' : 'Rules differ: shown side by side, never compared.'}</p>${bar('kalshi', 'Kalshi')}${bar('polymarket', 'Polymarket')}</section>`;
 }
+const fieldChip = (e) => (e.field ? `<span class="tw" title="Tournament winner: one market per golfer. Top golfers by venue price shown; open for the full field.">FIELD · ${e.field.n}</span>` : '');
 function tile(e) {
-  const rows = e.contracts.slice(0, 3).map((c) => {
+  const rows = e.contracts.slice(0, e.field ? 5 : 3).map((c) => {
     const p = pmFor(c), rel = !c.polymarket && !!p;
-    return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${gapCell(c)}</div>`;
+    return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${e.field ? '<span></span>' : gapCell(c)}</div>`;
   }).join('');
   return `<button type="button" class="tile tier-${e.tier}${e.live ? ' is-live' : ''}${isOpen(e) ? ' is-open' : ''}" data-open="${esc(e.key)}" aria-label="${esc(`${e.title}: open details`)}">
-    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
+    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}${fieldChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
     <span class="tt">${esc(e.title)}</span>
-    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span></span>${rows}</span>
+    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}${e.field ? '<span></span>' : '<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span>'}</span>${rows}</span>
     <span class="tf">${e.three_way ? `${e.has_pbe ? pbeLine(e) : ''}${bookLine(e)}` : pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
   </button>`;
 }
@@ -355,7 +356,7 @@ function renderHub(box) {
   const hs = hubStats(evs);
   const lane = (S.desk?.lanes || [])[0];
   let html = `<header class="hub-head"><div><p class="eyebrow">${k === 'nonsports' ? 'PREDICTION MARKETS' : 'SPORT HUB'}</p><h1>${esc(LABEL[k])}</h1></div>
-    <div class="stats">${k !== 'nonsports' ? stat('LIVE', hs.live, hs.live ? 'live' : '') : ''}${stat('ACTIVE', hs.active)}${stat('COMPARABLE', hs.comparable)}${stat('RULES DIFFER', hs.mismatch)}${stat('BIGGEST MID GAP', hs.best ? `${hs.best.best_gap.toFixed(1)}¢` : '—', 'gold')}${stat('TOP-OF-BOOK CROSSES', hs.crosses)}</div></header>`;
+    <div class="stats">${k !== 'nonsports' ? stat('LIVE', hs.live, hs.live ? 'live' : '') : ''}${stat('ACTIVE', hs.active)}${stat('COMPARABLE', hs.comparable)}${stat('RULES DIFFER', hs.mismatch)}${k === 'golf' ? '' : `${stat('BIGGEST MID GAP', hs.best ? `${hs.best.best_gap.toFixed(1)}¢` : '—', 'gold')}${stat('TOP-OF-BOOK CROSSES', hs.crosses)}`}</div></header>`;
   if (lane?.state === 'not_connected') { box.innerHTML = html + `<div class="empty"><b>${esc(boardEmpty({ desk: S.desk, viewKey: S.view, events: [] })?.text || 'Not connected yet.')}</b>${upcomingHint()}</div>`; return; }
   const viewList = evs.filter(VIEWS[S.view].filter);
   const whenTabs = k === 'nonsports' ? '' : `<div class="when" role="tablist" aria-label="Date">${WHEN.map((w) => { const n = viewList.filter((e) => inWhen(e, w.key)).length; return `<button type="button" role="tab" data-when="${w.key}" aria-selected="${S.when === w.key}"${!n && w.key !== 'all' ? ' disabled' : ''}>${w.label}<em>${n}</em></button>`; }).join('')}</div>`;
@@ -456,6 +457,13 @@ function drawerContract(e, c) {
     <div class="dc-pbe">${c.pbe ? `<b>PBE ${fmtPct(c.pbe.probability)}</b><small>${esc((c.pbe.state || '').replace(/_/g, ' ').toLowerCase())}${c.pbe.issued_at ? ` · issued ${esc(timeOf(c.pbe.issued_at))}` : ''}${c.pbe_vs_venues ? ` · vs venues ${c.pbe_vs_venues.map((x) => (x > 0 ? '+' : '') + x.toFixed(1)).join(' / ')} pts` : ''}</small>` : '<small>No active PBE call</small>'}</div>
   </div>`;
 }
+// Field events: one compact row per golfer (each venue at its own price); never a shared spread.
+function fieldTable(e) {
+  const cell = (v, rel) => (v && v.mid_bp != null ? `<td class="num">${fmtCents(v.yes_bp)}${v.market_url ? ` <a href="${esc(v.market_url)}" rel="noopener" target="_blank" aria-label="Open on ${rel ? 'Polymarket' : 'Kalshi'}">↗</a>` : ''}</td>` : '<td class="num muted">—</td>');
+  const rows = e.contracts.map((c) => { const p = pmFor(c); return `<tr><th><span class="ft-g">${avatar(e, c, 'sm')}<span>${esc(c.label || '—')}</span></span></th>${cell(c.kalshi, false)}${cell(p, true)}</tr>`; }).join('');
+  return `<section class="field" aria-label="Field"><p class="small">${esc(`${e.field.n} golfers`)} · YES price on each venue. Settlement rules differ, so the two prices are shown side by side and never compared.</p>
+    <table class="ft"><thead><tr><th>Golfer</th><th class="num"><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12"> Kalshi</th><th class="num"><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12"> Polymarket</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+}
 function metricsBox(c) {
   if (c.badge !== 'COMPARABLE') return `<div class="dm dm-off"><span><small>SHARED SPREAD</small><b>Not compared</b><em>${esc(c.badge === 'RULE_MISMATCH' ? 'Settlement rules differ: each venue is shown at its own price only.' : c.badge === 'WITHDRAWN' ? BADGES.WITHDRAWN : BADGES.SINGLE_VENUE)}</em></span></div>`;
   if (c.gap_pts == null) return `<div class="dm dm-off"><span><small>SHARED SPREAD</small><b>Not aligned</b><em>${esc(BADGES.NOT_ALIGNED)}</em></span></div>`;
@@ -478,10 +486,10 @@ function renderDrawer() {
   $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}<span class="flex"></span>${badgeFor(e)}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
     <div class="drawer-body" id="drawer-body"><h2>${esc(e.title)}</h2>
       ${distribution(e)}
-      ${e.contracts.map((c) => drawerContract(e, c)).join('')}
+      ${e.field ? `${whyDiffer(e)}${fieldTable(e)}` : e.contracts.map((c) => drawerContract(e, c)).join('')}
       <div class="acts">${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}<a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a></div>
-      <section class="dsec">${movesPanel(e)}</section>
-      ${whyDiffer(e)}
+      ${e.field ? '' : `<section class="dsec">${movesPanel(e)}</section>`}
+      ${e.field ? '' : whyDiffer(e)}
       <p class="small muted">${esc(S.detail.get(e.key)?.at ? `History read ${ageText(new Date(S.detail.get(e.key).at).toISOString())}` : '')}</p>
     </div>`;
   $('#drawer-body').scrollTop = keepScroll;
