@@ -42,7 +42,7 @@ function previewRow(e) {
   return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
       <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}</div>
       <h3>${esc(e.title)}</h3><div class="sub">${h.label ? `Market favorite: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div></div>
-      <div class="cells">${modeled ? `<div class="cell"><span>PBE</span><strong class="num">${LOCKED}</strong></div>` : '<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>'}<div class="cell"><span>Market</span><strong class="${mkt ? 'num' : 'null-state'}">${esc(mkt || 'Awaiting market')}</strong></div>${modeled ? `<div class="cell"><span>Div.</span><strong class="num">${LOCKED_PTS}</strong></div>` : '<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>'}</div>
+      <div class="cells">${modeled ? `<div class="cell"><span>PBE</span><strong class="num">${LOCKED}</strong><small class="lock-note">All Access</small></div>` : '<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>'}<div class="cell"><span>Market</span><strong class="${mkt ? 'num' : 'null-state'}">${esc(mkt || 'Awaiting market')}</strong></div>${modeled ? `<div class="cell"><span>Div.</span><strong class="num">${LOCKED_PTS}</strong><small class="lock-note">All Access</small></div>` : '<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>'}</div>
       <div class="when"><b>${untilEl(e.close_time)}</b>to close</div></a></div>`;
 }
 function renderDesk(d) {

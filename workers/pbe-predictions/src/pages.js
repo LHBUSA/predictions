@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261005aa2';
+export const ASSET_V = '20261005aa3';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
