@@ -61,7 +61,29 @@ npx wrangler versions deploy b98f1aed-8417-4c06-880b-21ded196f92d@100% --config 
   to hasPart, /pro, footer, header, About, search. Revert those two commits to roll back; Stripe identity untouched.
 - sql/005 applied (20261003235900). Rollback file: sql/005_newsroom_transition_graph_ROLLBACK.sql (restores the 003 guard).
 
-## Free / All Access boundary (2026-10-04)
+## All Access product contract (2026-10-05) — supersedes the Free / All Access boundary below
+
+Owner decision: Predictions is a premium product included with PropBetEdge All Access ($29/month). No free tier.
+Gated (401 anonymous / 403 signed in without All Access / 503 entitlement unverifiable; private, no-store, no payload):
+`/v1/desk`, `/v1/event/*`, `/v1/contract/*`, `/v1/live/event/*`, `/v1/premium/*` (incl. new `/v1/premium/event-page/<slug>`).
+Public: event page shell (premium.js `publicEventShell`, whitelist), `/v1/summary`, `/v1/calendar`, `/v1/models`,
+`/v1/track-record` (aggregates), `/v1/queue`, `/v1/membership`, methodology, models, Insights (newsroom, unchanged).
+
+| Layer | Live | Roll back to | How |
+|---|---|---|---|
+| auth-magic (propbetedge-workers 1afaaff) | v2.8 `17dd5d53` (`reason: entitlement_unavailable` on product surfaces when the All Access ledger is unreadable) | v2.7 `84506059` | `npx wrangler versions deploy 84506059-9c9b-4c03-a3bd-ab9ef623d05a@100% -y` in workers/propbetedge-auth-magic |
+| pbe-predictions Worker (main 399a0cb) | `34586ac7` | `97539ec8` (431ba2a) | `npx wrangler versions deploy 97539ec8-a1be-408e-b8b5-7345b9b06011@100% --config workers/pbe-predictions/wrangler.jsonc -y` (code-only; crons unchanged) |
+| Vercel static (index.html, access.js, home.js, live.js, site.css, models/, methodology/ ?v=20261005aa1) | build of 399a0cb | the previous production deployment (7813c76) | Vercel instant rollback |
+
+Roll back the Worker and Vercel TOGETHER. Old static + new Worker: the old homepage calls `/api/desk` anonymously
+(now 401) and shows "desk could not be loaded". New static + old Worker: the old `/v1/membership` answers state
+`free` / label `FREE`, which the new header would print. Rolling back auth alone is harmless (a ledger outage shows
+"Upgrade" instead of "Access Check"; still fail closed).
+NOTE: 399a0cb's Worker deploy also shipped 7813c76 (consent tags on Worker-rendered pages), which had been committed
+to main but not deployed. Rolling the Worker back to 97539ec8 removes consent tags from event pages again.
+QA: `node scripts/qa/access-qa.mjs --local|--prod` (5 states x 6 widths x home + event).
+
+## Free / All Access boundary (2026-10-04) (SUPERSEDED 2026-10-05)
 
 | Layer | Live | Roll back to | How |
 |---|---|---|---|

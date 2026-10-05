@@ -113,7 +113,9 @@ async function visit(state, width, path) {
 }
 
 try {
-  for (const path of ['/', `/events/${slug}`]) for (const state of Object.keys(STATES)) for (const w of WIDTHS) await visit(state, w, path);
+  // production: member data needs a real member session, so headless prod covers the non-entitled states only
+  const states = PROD ? ['anonymous', 'signed_in', 'unverified'] : Object.keys(STATES);
+  for (const path of ['/', `/events/${slug}`]) for (const state of states) for (const w of WIDTHS) await visit(state, w, path);
 } finally { await browser.close(); if (server) await new Promise((r) => server.server.close(r)); }
 writeFileSync(join(OUT, 'report.json'), JSON.stringify({ mode: PROD ? 'prod' : 'local', slug, rows, failures }, null, 1));
 console.log(rows.map((r) => `${r.tag.padEnd(28)} acct=${r.acct} chip="${r.chip}" pill=${r.pillVisible} gate=${r.gateVisible} cta="${r.gateCta}" desk=${r.deskRows} intel=${r.intel} ovf=${r.overflow} cls=${r.cls.toFixed(3)}`).join('\n'));
