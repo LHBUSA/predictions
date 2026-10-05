@@ -121,7 +121,7 @@ function mount() {
     life.poller('scores', { run: loadLive, interval: () => (S.events.some((e) => e.live) || (S.live?.live_count > 0) ? SCORE_LIVE_MS : SCORE_IDLE_MS) }).start();
   }
 }
-function unmount() { life.stopAll(); S.mounted = false; }
+function unmount() { life.stopAll(); stopMarquee(); S.mounted = false; }
 window.addEventListener('pagehide', unmount);
 // Back/forward-cache restore (e.g. returning from Command Center): pollers were stopped on pagehide; remount once.
 window.addEventListener('pageshow', (ev) => { if (ev.persisted && S.memberState === 'entitled' && !S.mounted) { readUrl(); mount(); } });
@@ -318,11 +318,49 @@ function renderLive() {
   sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
   if (sec.hidden) return;
   $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
-  $('#live-cards').innerHTML = linked.map(liveCard).join('') + unlinked.slice(0, 8).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
+  const cards = linked.map(liveCard).concat(unlinked.slice(0, 8).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     <span class="lc-score">${x.score?.away ? `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>` : `<span>${esc(x.title)}</span>`}</span>
-    <small class="lc-age">${esc(['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED')}</small></a>`).join('');
+    <small class="lc-age">${esc(['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED')}</small></a>`));
+  liveRail(cards);
 }
+
+// Live rail: more than MARQUEE_MIN games -> a slow continuous scroll (owner 2026-10-05), never a scrollbar.
+// The cards are rendered twice (the copy is aria-hidden and out of the tab order) and moved by an offset that
+// survives the 15-60 s re-renders, so new scores never make the rail jump. Pauses on hover / keyboard focus;
+// reduced-motion users get a static rail they can swipe (scrollbar still hidden).
+const MARQUEE_MIN = 6, MARQUEE_PX_S = 26;
+const mq = { raf: 0, x: 0, last: 0, paused: false, bound: false };
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+function liveRail(cards) {
+  const box = $('#live-cards');
+  if (!mq.bound) {
+    mq.bound = true;
+    const pause = (v) => () => { mq.paused = v; };
+    box.addEventListener('pointerenter', pause(true)); box.addEventListener('pointerleave', pause(false));
+    box.addEventListener('focusin', pause(true)); box.addEventListener('focusout', pause(false));
+  }
+  const on = cards.length >= MARQUEE_MIN && !reducedMotion();
+  box.classList.toggle('marquee', on);
+  if (!on) { stopMarquee(); box.innerHTML = cards.join(''); return; }
+  const copy = cards.map((h) => h.replace(/^<(a|button)\b/, '<$1 tabindex="-1" aria-hidden="true" data-copy'));
+  box.innerHTML = `<div class="lc-track">${cards.join('')}${copy.join('')}</div>`;
+  box.dataset.n = String(cards.length);
+  if (!mq.raf) { mq.last = 0; mq.raf = requestAnimationFrame(stepMarquee); } else stepMarquee.apply_(); // keep offset
+}
+function stepMarquee(t) {
+  const box = $('#live-cards'), track = box?.querySelector('.lc-track');
+  if (!track) { mq.raf = 0; return; }
+  const dt = mq.last ? Math.min(100, t - mq.last) / 1000 : 0;
+  mq.last = t;
+  const first = track.children[Number(box.dataset.n) || 0];
+  const loop = first ? first.offsetLeft - track.children[0].offsetLeft : 0;
+  if (!mq.paused && loop > 0) { mq.x += dt * MARQUEE_PX_S; if (mq.x >= loop) mq.x -= loop; }
+  track.style.transform = `translate3d(${-mq.x.toFixed(1)}px,0,0)`;
+  mq.raf = requestAnimationFrame(stepMarquee);
+}
+stepMarquee.apply_ = () => { const track = $('#live-cards .lc-track'); if (track) track.style.transform = `translate3d(${-mq.x.toFixed(1)}px,0,0)`; };
+function stopMarquee() { if (mq.raf) cancelAnimationFrame(mq.raf); mq.raf = 0; mq.last = 0; }
 
 // ---------------------------------------------------------------------------------------------------------
 // Overview hub (ALL SPORTS) and sport hubs
