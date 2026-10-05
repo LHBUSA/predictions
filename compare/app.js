@@ -318,7 +318,7 @@ function renderLive() {
   sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
   if (sec.hidden) return;
   $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
-  const cards = linked.map(liveCard).concat(unlinked.slice(0, 8).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
+  const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     <span class="lc-score">${x.score?.away ? `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>` : `<span>${esc(x.title)}</span>`}</span>
     <small class="lc-age">${esc(['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED')}</small></a>`));
