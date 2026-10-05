@@ -147,3 +147,13 @@ test('cadence (owner 2026-10-04): core every 2 min, newsroom every 5 min (offset
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.ok(!/every \d+ min/i.test(html), 'cadence copy comes from /api/summary engine.cadence_minutes only');
 });
+
+test('failure attribution: failing requests recorded as status + host/path (bounded, no query string)', async () => {
+  const c = countingFetch(async (u) => ({ ok: !String(u).includes('bad'), status: String(u).includes('bad') ? 503 : 200 }));
+  for (let i = 0; i < 10; i++) await c.fetch(`https://api.weather.gov/bad/${i}?key=SECRET`);
+  await c.fetch('https://api.weather.gov/good');
+  assert.equal(c.counts.errors, 10); assert.equal(c.counts.failures.length, 8);
+  assert.equal(c.counts.failures[0], '503 api.weather.gov/bad/0');
+  assert.ok(!c.counts.failures.join().includes('SECRET'));
+  assert.deepEqual(coreCounts({}, c.counts, null, c.counts).external_failures.length, 8);
+});
