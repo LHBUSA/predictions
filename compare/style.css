@@ -164,7 +164,7 @@ button:disabled{cursor:default}
 
 /* ---------- live rail ---------- */
 .live{margin-top:6px}
-.live-cards{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(280px,320px);gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.live-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;overflow:visible;padding-bottom:6px}
 .lc{display:grid;gap:7px;text-align:left;width:100%;padding:12px;border:1px solid rgba(111,212,161,.32);border-radius:var(--r);background:linear-gradient(180deg,rgba(111,212,161,.07),var(--ink-2) 55%);min-height:150px;align-content:start}
 .lc:hover{border-color:rgba(111,212,161,.6)}
 .lc-h{display:flex;justify-content:space-between;align-items:center}
@@ -249,7 +249,7 @@ button:disabled{cursor:default}
   .px{padding:4px 6px}.px b{font-size:13px}
   .stat{min-width:0;flex:1 1 30%;padding:7px 9px}.stat b{font-size:17px}
   .hub-head{padding:10px 0 12px}
-  .live-cards{grid-auto-columns:minmax(260px,88%)}
+  .live-cards{grid-template-columns:1fr}
   .drawer-in{width:100%;border-left:0;top:auto;height:92dvh;border-radius:16px 16px 0 0;animation:rise .2s ease-out}
   @keyframes rise{from{transform:translateY(30px);opacity:.6}}
   .dc-v{grid-template-columns:1fr 1fr}.dv b{font-size:20px}
