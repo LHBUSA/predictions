@@ -11,7 +11,9 @@ export const SPORT_KEYS = SPORTS.map((s) => s.key);
 // Score <-> market joins are ID-ONLY. These sports' market canonical_event_id is the same provider id the
 // score feed publishes (ESPN event id for NFL/NBA, MLB gamePk, NHL gamePk), proven 2026-10-05.
 // Every other sport is UNMATCHED until a deterministic crosswalk exists (UFC: desk = bouts, feed = cards).
-export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'mlb', 'nhl']);
+// Soccer (2026-10-05): market canonical_event_id and the score feed's source_id are both the soccer-api match UUID
+// (proven: a matched canonical id appears verbatim in the soccer score feed).
+export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'mlb', 'nhl', 'soccer']);
 
 export const BADGES = {
   COMPARABLE: 'Both venues list this outcome and their settlement rules were approved as comparable. The gap is a real price difference on the same question.',
@@ -77,9 +79,9 @@ export function topOfBookCross(k, p) {
 }
 
 // rule-terms/1 -> display lines. Only parsed facts; unknown vocabulary -> 'Not confidently parsed'.
-const TOPIC_LABEL = { postponement: 'Postponed', cancellation: 'Cancelled', tie: 'Tie', walkover: 'Walkover', retirement: 'Retirement / default', no_result: 'No result', no_contest: 'No contest', not_scored: 'Not scored' };
-const COND_LABEL = { postponed: '', starts_within_48h: 'starts within 48h', not_started_within_48h: 'not started within 48h', resumes_within_2w: 'resumes within 2 weeks', beyond_2w: 'beyond 2 weeks', no_makeup: 'no make-up game', cancelled_or_not_started_within_48h: 'or not started within 48h', cancelled_or_beyond_48h: 'or moved beyond 48h', not_played: 'not played', cancelled_or_beyond_2w: 'or moved beyond 2 weeks', draw: 'draw', or_cancelled_before_start: 'or cancelled before the start', no_winner_within_14d: 'no winner within 14 days' };
-const TREAT_LABEL = { open_until_completed: { kalshi: 'remains open, official final result', polymarket: 'remains open until completed' }, split_50_50: { kalshi: '$0.50 each', polymarket: 'resolves 50-50' }, fair_price: 'resolves at a fair price', last_fair_price: 'resolves at the last fair price', advancing_player: 'advancing player wins' };
+const TOPIC_LABEL = { postponement: 'Postponed', cancellation: 'Cancelled', tie: 'Tie', walkover: 'Walkover', retirement: 'Retirement / default', no_result: 'No result', no_contest: 'No contest', not_scored: 'Not scored', data_source: 'Result source' };
+const COND_LABEL = { postponed: '', starts_within_48h: 'starts within 48h', not_started_within_48h: 'not started within 48h', resumes_within_2w: 'resumes within 2 weeks', beyond_2w: 'beyond 2 weeks', no_makeup: 'no make-up game', cancelled_or_not_started_within_48h: 'or not started within 48h', cancelled_or_beyond_48h: 'or moved beyond 48h', not_played: 'not played', cancelled_or_beyond_2w: 'or moved beyond 2 weeks', draw: 'draw', or_cancelled_before_start: 'or cancelled before the start', no_winner_within_14d: 'no winner within 14 days', no_data_within_24h: 'no official data within 24h', fallback: 'official data unavailable', rescheduled_beyond_48h: 'rescheduled more than 48h away', rescheduled_beyond_2w: 'rescheduled more than 2 weeks away' };
+const TREAT_LABEL = { open_until_completed: { kalshi: 'remains open, official final result', polymarket: 'remains open until completed' }, split_50_50: { kalshi: '$0.50 each', polymarket: 'resolves 50-50' }, fair_price: 'resolves at a fair price', last_fair_price: 'resolves at the last fair price', advancing_player: 'advancing player wins', settles_as_draw: 'settles as a draw (team markets No, draw Yes)', split_50_50_or_draw: 'resolves 50-50, or Draw', consensus_allowed: 'credible-reporting consensus may be used' };
 export const TERM_TOPICS = Object.keys(TOPIC_LABEL);
 export function termLine(t, venue) {
   const topic = TOPIC_LABEL[t?.topic], tr = TREAT_LABEL[t?.treatment];
@@ -103,6 +105,15 @@ export function ruleTermsView(rt) {
     out[venue] = { lines, unknown };
   }
   out.differs = rt.differs || null;
+  return out;
+}
+// Soccer's material settlement difference, stated plainly (owner 2026-10-05): only from parsed terms, never inferred.
+export function keyDifferences(rt) {
+  if (!rt) return [];
+  const t = (venue, topic) => (rt[venue]?.terms || []).filter((x) => x.topic === topic);
+  const out = [];
+  const pc = t('polymarket', 'cancellation'), kc = t('kalshi', 'cancellation');
+  if (pc.some((x) => x.treatment === 'settles_as_draw') && kc.some((x) => x.treatment === 'fair_price')) out.push('Cancelled: Polymarket → Draw; Kalshi → fair price.');
   return out;
 }
 export function ruleTermsSummary(rt) {
@@ -183,11 +194,23 @@ export function normalizeEvent(e, index = new Map()) {
     destination: e.destination?.url || null, contracts, join, status, tier, best_gap: best?.gap_pts ?? null, best,
     badge: badges.includes('COMPARABLE') ? 'COMPARABLE' : badges.includes('RULE_MISMATCH') ? 'RULE_MISMATCH' : badges.includes('WITHDRAWN') ? 'WITHDRAWN' : 'SINGLE_VENUE',
     badge_note: contracts.some((c) => c.comparison) ? null : contracts.some((c) => c.note === 'NOT_ALIGNED') ? 'NOT_ALIGNED' : null,
+    three_way: e.sport === 'soccer' && contracts.some((c) => c.role === 'draw') ? { book: bookSums(contracts) } : null,
     has_pbe: contracts.some((c) => c.pbe), active: anyPriced && status !== 'final' && !withdrawn,
     live: status === 'live', freshest_at: contracts.map((c) => c.freshest_at).filter(Boolean).sort().at(-1) || null
   };
 }
 
+// 3-way book sum per venue: the three outcome YES mids added up (each venue's own price, incl. a rule-mismatch
+// related quote). Only when all three outcomes are priced on that venue; otherwise null. Not a probability.
+export function bookSums(contracts) {
+  const pick = (c, venue) => (venue === 'kalshi' ? c.kalshi : c.polymarket || c.related.find((r) => r.venue === 'polymarket') || c.listed.find((x) => x?.venue === 'polymarket'));
+  const out = {};
+  for (const venue of ['kalshi', 'polymarket']) {
+    const mids = ['home', 'draw', 'away'].map((role) => pick(contracts.find((c) => c.role === role) || {}, venue)?.mid_bp ?? null);
+    out[venue] = mids.every((m) => m != null) ? { sum_bp: mids.reduce((a, b) => a + b, 0), mids_bp: mids } : null;
+  }
+  return out;
+}
 export function rankEvents(events) {
   return [...events].sort((a, b) => a.tier - b.tier
     || (b.best_gap ?? -1) - (a.best_gap ?? -1)
@@ -319,6 +342,7 @@ export function participantMedia(sport, contract, linkedSide = null) {
   else if (sport === 'mlb') src = id && /^\d+$/.test(id) ? `https://www.mlbstatic.com/team-logos/team-cap-on-dark/${id}.svg` : linkedSide?.logo || null;
   else if (sport === 'tennis') { kind = 'photo'; src = id && /^[0-9a-f-]{36}$/.test(id) ? `https://tennis-api.propbetedge.ai/media/players/${id}/portrait.webp` : null; }
   else if (sport === 'ufc') { kind = 'photo'; src = contract?.media?.photo || null; }
+  else if (sport === 'soccer') { if (contract?.role === 'draw') return { kind: 'draw', src: null, initials: '=', alt: 'Draw' }; src = contract?.media?.logo || linkedSide?.logo || null; }
   return { kind, src, initials, alt: label };
 }
 

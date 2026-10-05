@@ -41,7 +41,7 @@ test('join: UFC is UNMATCHED (bouts vs cards), never joined', () => {
   const fake = scoreIndex([{ sport: 'ufc', source_id: ufc[0].canonical_event_id, status: 'live', title: ufc[0].title }]);
   const j = joinScore(ufc[0], fake);
   assert.equal(j.state, 'UNMATCHED', 'even an accidental id equality is not trusted for UFC');
-  assert.deepEqual([...ID_JOIN_SPORTS].sort(), ['mlb', 'nba', 'nfl', 'nhl']);
+  assert.deepEqual([...ID_JOIN_SPORTS].sort(), ['mlb', 'nba', 'nfl', 'nhl', 'soccer'], 'soccer added 2026-10-05: market and score feed share the soccer-api match UUID (test/soccer.test.js)');
 });
 
 test('badges from real payloads: NBA COMPARABLE, NFL future RULE_MISMATCH, NFL past WITHDRAWN', () => {
