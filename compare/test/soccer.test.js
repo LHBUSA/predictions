@@ -63,3 +63,11 @@ test('soccer settlement vocabulary renders as plain facts', () => {
   const v = ruleTermsView({ version: 'rule-terms/1', differs: ['postponement'], kalshi: { complete: true, terms: [{ topic: 'postponement', condition: 'rescheduled_beyond_48h', treatment: 'fair_price' }] }, polymarket: { complete: true, terms: [{ topic: 'postponement', condition: 'postponed', treatment: 'open_until_completed' }] } });
   assert.ok(!v.kalshi.lines.some((l) => /no clause/.test(l.text)), 'a two-topic clause is never reported as a missing postponement rule');
 });
+
+test('key difference: "Cancelled: Polymarket → Draw; Kalshi → fair price." only when both terms are parsed', async () => {
+  const { keyDifferences } = await import('../core.js');
+  const rt = { version: 'rule-terms/1', differs: ['cancellation'], kalshi: { complete: true, terms: [{ topic: 'cancellation', condition: 'cancelled_or_beyond_48h', treatment: 'fair_price' }] }, polymarket: { complete: true, terms: [{ topic: 'cancellation', condition: 'no_makeup', treatment: 'settles_as_draw' }] } };
+  assert.deepEqual(keyDifferences(rt), ['Cancelled: Polymarket → Draw; Kalshi → fair price.']);
+  assert.deepEqual(keyDifferences({ ...rt, kalshi: { complete: false, terms: [] } }), [], 'never inferred');
+  assert.deepEqual(keyDifferences(null), []);
+});

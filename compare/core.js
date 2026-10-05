@@ -107,6 +107,15 @@ export function ruleTermsView(rt) {
   out.differs = rt.differs || null;
   return out;
 }
+// Soccer's material settlement difference, stated plainly (owner 2026-10-05): only from parsed terms, never inferred.
+export function keyDifferences(rt) {
+  if (!rt) return [];
+  const t = (venue, topic) => (rt[venue]?.terms || []).filter((x) => x.topic === topic);
+  const out = [];
+  const pc = t('polymarket', 'cancellation'), kc = t('kalshi', 'cancellation');
+  if (pc.some((x) => x.treatment === 'settles_as_draw') && kc.some((x) => x.treatment === 'fair_price')) out.push('Cancelled: Polymarket → Draw; Kalshi → fair price.');
+  return out;
+}
 export function ruleTermsSummary(rt) {
   const v = ruleTermsView(rt);
   if (!v || !v.differs?.length) return null;

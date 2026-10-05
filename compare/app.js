@@ -5,7 +5,7 @@
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
-  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -175,7 +175,8 @@ function gapCell(c) {
   return `<span class="gap none"><b>—</b><small>${c.note === 'NOT_ALIGNED' ? 'not aligned' : c.badge === 'SINGLE_VENUE' ? 'one venue' : 'not compared'}</small></span>`;
 }
 function badgeFor(e) {
-  const tip = e.badge === 'RULE_MISMATCH' ? (e.contracts.map((c) => ruleTermsSummary(c.rule_terms)).find(Boolean) || BADGES.RULE_MISMATCH) : BADGES[e.badge] || '';
+  const disc = e.contracts.map((c) => c.comparison?.disclosure || c.polymarket?.disclosure).find(Boolean);
+  const tip = e.badge === 'RULE_MISMATCH' ? (e.contracts.map((c) => ruleTermsSummary(c.rule_terms)).find(Boolean) || BADGES.RULE_MISMATCH) : e.badge === 'COMPARABLE' && disc ? `${BADGES.COMPARABLE} ${disc}` : BADGES[e.badge] || '';
   return `<span class="badge b-${e.badge.toLowerCase().replace('_', '-')}" title="${esc(tip)}">${esc(e.badge.replace('_', ' '))}${e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : ''}</span>`;
 }
 function freshLine(e) {
@@ -421,8 +422,10 @@ function whyDiffer(e) {
   }
   const head = mismatch
     ? `<p class="small">${esc(e.contracts.flatMap((x) => x.related)[0]?.reason || 'Settlement rules differ between venues.')}. Highlighted lines differ; prices are shown side by side and never compared.</p>`
-    : '<p class="small">Approved comparable contract: the outcome is identical; only the highlighted edge cases settle differently (owner-approved exception). The comparison is withdrawn if the game is not played as scheduled.</p>';
-  return `<details class="why${mismatch ? '' : ' why-ok'}"${mismatch ? ' open' : ''}><summary>${mismatch ? 'Why these differ' : 'Settlement terms'}</summary>${head}${termsBlock(c.rule_terms)}${notes.join('')}<p class="small muted">Only clauses parsed from each venue's published rules are shown.</p></details>`;
+    : `<p class="small">${esc(e.contracts.map((x) => x.comparison?.disclosure || x.polymarket?.disclosure).find(Boolean) || 'Approved comparable contract: the outcome is identical; only the highlighted edge cases settle differently (owner-approved exception).')} The comparison is withdrawn if the game is not played as scheduled.</p>`;
+  const keys = keyDifferences(c.rule_terms);
+  const keyHtml = keys.length ? `<p class="keydiff">${keys.map(esc).join('<br>')}</p>` : '';
+  return `<details class="why${mismatch ? '' : ' why-ok'}"${mismatch || keys.length ? ' open' : ''}><summary>${mismatch ? 'Why these differ' : 'Settlement terms'}</summary>${head}${keyHtml}${termsBlock(c.rule_terms)}${notes.join('')}<p class="small muted">Only clauses parsed from each venue's published rules are shown.</p></details>`;
 }
 function movesPanel(e) {
   const d = S.detail.get(e.key);
