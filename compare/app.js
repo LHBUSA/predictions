@@ -1,7 +1,10 @@
-// PropBetEdge Compare — member surface. Data truth lives in core.js; lifecycle in poller.js.
+// PropBetEdge Compare — member surface (hubs). Data truth lives in core.js; lifecycle in poller.js.
+//   ALL SPORTS  = overview hub: live rail, biggest spreads, one section per sport (top tiles + OPEN HUB)
+//   <sport>     = sport hub: stats, date tabs, view chips, paged tile grid
+//   any tile    = detail drawer (board stays put; ?open=<key>, back/forward closes it)
 import {
-  SPORTS, SPORT_KEYS, BADGES, VIEWS, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
-  moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty
+  SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
+  moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -9,16 +12,18 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const PRO = 'https://propbetedge.ai/pro';
 const MEMBERS = 'https://members.propbetedge.ai/';
-const MARKET_MS = 60e3, SCORE_LIVE_MS = 15e3, SCORE_IDLE_MS = 60e3;
-const SCOPES = [{ key: 'sports', label: 'ALL SPORTS' }, ...SPORTS.map((s) => ({ key: s.key, label: s.label.toUpperCase() })), { key: 'nonsports', label: 'PREDICTION MARKETS' }];
+const MARKET_MS = 60e3, SCORE_LIVE_MS = 15e3, SCORE_IDLE_MS = 60e3, PAGE = 12;
+const SCOPES = [{ key: 'sports', label: 'ALL SPORTS' }, ...SPORTS.map((s) => ({ key: s.key, label: s.label.toUpperCase() })), { key: 'nonsports', label: 'PREDICTIONS' }];
+const LABEL = Object.fromEntries(SCOPES.map((s) => [s.key, s.label]));
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+const VENUE = { kalshi: { name: 'Kalshi', icon: '/assets/kalshi.png' }, polymarket: { name: 'Polymarket', icon: '/assets/polymarket.png' } };
 
 const life = createLifecycle({ doc: document });
 window.__compareLedger = life.ledger;
 
 const S = {
-  scope: 'sports', view: 'top', expanded: new Set(), focusMarket: '',
+  scope: 'sports', view: 'top', when: 'all', page: 1, open: '', focusMarket: '',
   member: null, memberState: 'loading',
   desk: null, deskStatus: 'loading', deskAt: 0,
   live: null, liveStatus: null, liveAt: 0,
@@ -26,28 +31,31 @@ const S = {
 };
 
 // ---------------------------------------------------------------------------------------------------------
-// URL state (back/forward safe). Legacy deep links (?scope=nhl&event=<id>&market=<contract id>) still open.
+// URL state (back/forward safe). Legacy links (?scope=nhl&event=<id>&market=<contract id>, ?open=a,b) still open.
 function readUrl() {
   const q = new URLSearchParams(location.search);
   const scope = (q.get('scope') || 'sports').toLowerCase();
   S.scope = SCOPES.some((s) => s.key === scope) ? scope : 'sports';
   S.view = VIEWS[q.get('view')] ? q.get('view') : 'top';
-  S.expanded = new Set((q.get('open') || '').split(',').filter(Boolean));
+  S.when = WHEN.some((w) => w.key === q.get('when')) ? q.get('when') : 'all';
+  S.page = Math.max(1, Math.min(50, Number(q.get('page')) || 1));
   const ev = q.get('event');
-  if (ev) S.expanded.add(`*:${ev}`); // legacy link: any sport, this canonical event id
+  S.open = (q.get('open') || '').split(',')[0] || (ev ? `*:${ev}` : '');
   S.focusMarket = q.get('market') || '';
-  if (ev && S.view === 'top') S.view = 'all';
 }
 function writeUrl(push = true) {
   const q = new URLSearchParams();
   if (S.scope !== 'sports') q.set('scope', S.scope);
   if (S.view !== 'top') q.set('view', S.view);
-  if (S.expanded.size) q.set('open', [...S.expanded].join(','));
+  if (S.when !== 'all') q.set('when', S.when);
+  if (S.page > 1) q.set('page', String(S.page));
+  if (S.open) q.set('open', S.open);
   const url = `${location.pathname}${q.toString() ? `?${q}` : ''}`;
   if (url === `${location.pathname}${location.search}`) return;
   history[push ? 'pushState' : 'replaceState']({ compare: 1 }, '', url);
 }
-const isExpanded = (e) => S.expanded.has(e.key) || S.expanded.has(`*:${e.canonical_event_id}`);
+const isOpen = (e) => !!S.open && (S.open === e.key || S.open === `*:${e.canonical_event_id}`);
+const openEvent = () => S.events.find(isOpen) || null;
 
 // ---------------------------------------------------------------------------------------------------------
 async function getJson(url, signal) {
@@ -72,7 +80,8 @@ async function loadDesk(signal) {
   if (r.body?.lanes) { S.desk = r.body; S.deskAt = Date.now(); }
   else if (r.status === 401 || r.status === 403) { S.desk = null; S.memberState = r.status === 401 ? 'anonymous' : 'forbidden'; render(); unmount(); return; }
   rebuild();
-  await refreshDetails(signal);
+  const e = openEvent();
+  if (e) await loadDetail(e, signal);
   render();
 }
 async function loadLive(signal) {
@@ -95,10 +104,6 @@ async function loadDetail(e, signal) {
   }
   S.detail.set(e.key, { loading: false, status: r.status, body: r.body, at: Date.now() });
 }
-async function refreshDetails(signal) {
-  const open = S.events.filter(isExpanded).slice(0, 4);
-  await Promise.all(open.map((e) => loadDetail(e, signal)));
-}
 
 function rebuild() {
   const idx = scoreIndex(S.live?.items || []);
@@ -107,40 +112,91 @@ function rebuild() {
 
 // ---------------------------------------------------------------------------------------------------------
 // Lifecycle: mount = (re)start both pollers for the current scope; unmount = stop everything.
-let markets = null, scores = null;
 function mount() {
   unmount();
   S.mounted = true;
-  markets = life.poller('markets', { run: loadDesk, interval: () => MARKET_MS });
-  markets.start();
+  life.poller('markets', { run: loadDesk, interval: () => MARKET_MS }).start();
   if (scopeLiveSports().length) {
-    scores = life.poller('scores', { run: loadLive, interval: () => (S.events.some((e) => e.live) || (S.live?.live_count > 0) ? SCORE_LIVE_MS : SCORE_IDLE_MS) });
-    scores.start();
+    life.poller('scores', { run: loadLive, interval: () => (S.events.some((e) => e.live) || (S.live?.live_count > 0) ? SCORE_LIVE_MS : SCORE_IDLE_MS) }).start();
   }
 }
-function unmount() { life.stopAll(); markets = scores = null; S.mounted = false; }
+function unmount() { life.stopAll(); S.mounted = false; }
 window.addEventListener('pagehide', unmount);
 // Back/forward-cache restore (e.g. returning from Command Center): pollers were stopped on pagehide; remount once.
 window.addEventListener('pageshow', (ev) => { if (ev.persisted && S.memberState === 'entitled' && !S.mounted) { readUrl(); mount(); } });
 
 // ---------------------------------------------------------------------------------------------------------
-// Rendering
+// Small render helpers
 const timeOf = (iso) => { const t = Date.parse(iso || ''); if (!Number.isFinite(t)) return ''; const d = new Date(t); return (new Date().toDateString() === d.toDateString() ? 'Today ' : `${dayFmt.format(d)} · `) + timeFmt.format(d); };
-const badge = (code, extra = '') => `<span class="badge b-${code.toLowerCase().replace('_', '-')}" title="${esc(BADGES[code] || '')}" tabindex="0">${esc(code.replace('_', ' '))}${extra}</span>`;
+const badge = (code, extra = '') => `<span class="badge b-${code.toLowerCase().replace('_', '-')}" title="${esc(BADGES[code] || '')}">${esc(code.replace('_', ' '))}${extra}</span>`;
+const venueHead = (v) => `<span class="vh" title="${VENUE[v].name} YES price"><img src="${VENUE[v].icon}" alt="" width="14" height="14">${v === 'polymarket' ? 'POLY' : 'KALSHI'}</span>`;
+function sideFor(e, c) {
+  const s = e.join.score?.score;
+  if (!s) return null;
+  if (c.role === 'away' || c.role === 'home') return s[c.role] || null;
+  return [s.away, s.home].find((x) => x && String(x.abbr).toUpperCase() === String(c.label).toUpperCase()) || null;
+}
+function avatar(e, c, size = 'md') {
+  const m = participantMedia(e.sport, c, sideFor(e, c));
+  const inner = m.src ? `<img src="${esc(m.src)}" alt="" loading="lazy" decoding="async" data-initials="${esc(m.initials)}">` : `<i>${esc(m.initials)}</i>`;
+  return `<span class="av av-${m.kind} av-${size}" aria-hidden="true">${inner}</span>`;
+}
+// A broken logo/photo becomes initials (one capture listener for every image, registered once).
+document.addEventListener('error', (ev) => {
+  const img = ev.target;
+  if (img?.tagName === 'IMG' && img.dataset.initials !== undefined) { const i = document.createElement('i'); i.textContent = img.dataset.initials; img.replaceWith(i); }
+}, true);
 
-function renderChrome() {
-  $('#views').innerHTML = Object.entries(VIEWS).map(([k, v]) => {
-    const n = S.events.filter(v.filter).length;
-    return `<button role="tab" type="button" data-view="${k}" aria-selected="${S.view === k}">${esc(v.label)}${S.desk ? `<i>${n}</i>` : ''}</button>`;
-  }).join('');
-  const laneState = new Map((S.desk?.lanes || []).map((l) => [l.lane, l.state]));
-  $('#scopes').innerHTML = SCOPES.map((s) => {
-    const st = laneState.get(s.key);
-    const off = st === 'not_connected';
-    return `<button type="button" data-scope="${s.key}" aria-pressed="${S.scope === s.key}" class="${off ? 'off' : ''}" title="${off ? 'Comparison lane not connected yet' : ''}">${esc(s.label)}${off ? '<small>not connected</small>' : ''}</button>`;
-  }).join('');
+function statusChip(e) {
+  const s = e.join.score;
+  if (e.join.state === 'UNMATCHED') return `<span class="join" title="${esc(e.join.reason || BADGES.UNMATCHED)}">SCORE UNMATCHED</span>`;
+  if (s?.status === 'live') return `<span class="st st-live"><i></i>${esc(s.detail || s.status_label || 'LIVE')}</span>`;
+  if (s?.status === 'final') return `<span class="st">${esc(s.status_label || 'FINAL')}</span>`;
+  if (s && ['suspended', 'delayed', 'postponed'].includes(s.status)) return `<span class="st st-warn">${esc(s.status_label || s.status.toUpperCase())}</span>`;
+  return `<span class="when">${esc(timeOf(e.start_at))}</span>`;
+}
+const scoreOf = (e, c) => { const side = sideFor(e, c); const st = e.join.score?.status; return side && (st === 'live' || st === 'final') && side.score != null ? `<b class="pts">${esc(side.score)}</b>` : ''; };
+const pmFor = (c) => c.polymarket || c.related.find((r) => r.venue === 'polymarket') || c.listed.find((x) => x?.venue === 'polymarket') || null;
+function px(v, { rel = false, small = false } = {}) {
+  if (!v || v.mid_bp == null) return `<span class="px px-none">—</span>`;
+  const cls = ['px', rel ? 'px-rel' : '', v.freshness === 'stale' ? 'px-stale' : ''].join(' ');
+  return `<span class="${cls}" title="${esc(`${rel ? 'Rules differ: not compared. ' : ''}YES ${fmtCents(v.yes_bp)} · NO ${fmtCents(v.no_bp)}${v.bid_bp != null ? ` · bid/ask ${fmtCents(v.bid_bp)}–${fmtCents(v.ask_bp)}` : ''} · observed ${ageText(v.observed_at) || '?'}`)}"><b>${fmtCents(v.yes_bp)}</b>${small ? '' : `<small>NO ${fmtCents(v.no_bp)}</small>`}</span>`;
+}
+function gapCell(c) {
+  if (c.gap_pts != null) return `<span class="gap${c.gap_pts >= 5 ? ' hot' : c.gap_pts >= 2 ? ' warm' : ''}"><b>${c.gap_pts.toFixed(1)}¢</b><small>${c.gap_rel_pct != null ? `${c.gap_rel_pct.toFixed(1)}%` : ''}</small></span>`;
+  return `<span class="gap none"><b>—</b><small>${c.note === 'NOT_ALIGNED' ? 'not aligned' : c.badge === 'SINGLE_VENUE' ? 'one venue' : 'not compared'}</small></span>`;
+}
+function freshLine(e) {
+  const ages = [];
+  const k = e.contracts.map((c) => c.kalshi?.observed_at).filter(Boolean).sort().at(-1);
+  const p = e.contracts.map((c) => pmFor(c)?.observed_at).filter(Boolean).sort().at(-1);
+  if (k) ages.push(`K ${ageText(k)}`);
+  if (p) ages.push(`P ${ageText(p)}`);
+  return ages.join(' · ');
+}
+function pbeLine(e) {
+  const c = e.contracts.find((x) => x.pbe);
+  return c ? `<span class="pbe-chip" title="PropBetEdge probability (${esc((c.pbe.state || '').toLowerCase())})">PBE ${esc(c.label)} ${fmtPct(c.pbe.probability)}</span>` : '<span class="pbe-none">No active PBE call</span>';
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// Tile (compact market card, Kalshi-style grid). Whole tile opens the drawer.
+function tile(e) {
+  const rows = e.contracts.slice(0, 3).map((c) => {
+    const p = pmFor(c), rel = !c.polymarket && !!p;
+    return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${gapCell(c)}</div>`;
+  }).join('');
+  return `<button type="button" class="tile tier-${e.tier}${e.live ? ' is-live' : ''}${isOpen(e) ? ' is-open' : ''}" data-open="${esc(e.key)}" aria-label="${esc(`${e.title}: open details`)}">
+    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badge(e.badge, e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : '')}</span>
+    <span class="tt">${esc(e.title)}</span>
+    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}<span class="vh">SPREAD</span></span>${rows}</span>
+    <span class="tf">${pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
+  </button>`;
+}
+const tiles = (list) => `<div class="tiles">${list.map(tile).join('')}</div>`;
+
+// ---------------------------------------------------------------------------------------------------------
+// Chrome: account chip, hub nav, health, notices, gate
 function renderAccount() {
   const a = $('#acct'), st = S.memberState, mm = S.member?.membership || {};
   a.dataset.state = st;
@@ -151,36 +207,37 @@ function renderAccount() {
   const [t, h] = map[st] || map.loading;
   a.textContent = t; a.href = h;
 }
-
-function renderHealth() {
-  const dot = $('#hb-dot'), hb = $('#hb');
-  const st = S.memberState;
-  if (st !== 'entitled') { $('#lanes').innerHTML = ''; }
-  if (st === 'loading') { hb.textContent = 'Checking access…'; dot.dataset.level = 'info'; return; }
-  if (st !== 'entitled') { hb.textContent = st === 'unverified' || st === 'network_error' ? 'Access could not be verified · retrying' : 'All Access required'; dot.dataset.level = st === 'unverified' ? 'warn' : 'auth'; return; }
-  const parts = [];
-  parts.push(S.deskAt ? `Markets read ${ageText(new Date(S.deskAt).toISOString())} · every 60s` : 'Loading markets…');
-  if (scopeLiveSports().length) parts.push(S.liveAt ? `Scores read ${ageText(new Date(S.liveAt).toISOString())} · every ${S.events.some((e) => e.live) ? 15 : 60}s` : (S.liveStatus && S.liveStatus !== 200 ? 'Score feed unavailable' : 'Loading scores…'));
-  if (document.hidden) parts.push('paused while this tab is hidden');
-  hb.textContent = parts.join('  ·  ');
-  const bad = (S.desk?.lanes || []).some((l) => l.state === 'unavailable') || (S.liveStatus && S.liveStatus !== 200);
-  dot.dataset.level = bad ? 'warn' : 'ok';
-  const src = new Map((S.live?.sources || []).map((s) => [s.key, s]));
-  $('#lanes').innerHTML = (S.desk?.lanes || []).map((l) => {
-    const s = src.get(l.lane);
-    const mk = l.state === 'ok' ? `${l.events}${l.capped ? '+' : ''} events` : l.state === 'not_connected' ? 'not connected' : 'unavailable';
-    const sc = !s ? '' : s.state === 'ok' ? ` · scores ${s.count}` : ' · scores down';
-    return `<span class="lane l-${l.state}${s && s.state !== 'ok' ? ' l-score-down' : ''}" title="${esc(`${l.lane.toUpperCase()} market lane: ${l.state}${l.upstream_status ? ` (HTTP ${l.upstream_status})` : ''}${s ? `; score feed ${s.state}${s.error ? ` (${s.error})` : ''}` : ''}`)}"><b>${esc(l.lane === 'nonsports' ? 'PREDICTION' : l.lane.toUpperCase())}</b>${esc(mk + sc)}</span>`;
+function renderNav() {
+  const lane = new Map((S.desk?.lanes || []).map((l) => [l.lane, l]));
+  const counts = new Map();
+  if (S.scope === 'sports') for (const e of S.events) if (e.active) counts.set(e.sport, (counts.get(e.sport) || 0) + 1);
+  $('#hubs').innerHTML = SCOPES.map((s) => {
+    const l = lane.get(s.key), off = l?.state === 'not_connected';
+    const n = s.key === 'sports' ? S.events.filter((e) => e.active).length : counts.get(s.key);
+    const live = s.key !== 'sports' && S.events.some((e) => e.sport === s.key && e.live);
+    return `<button type="button" role="tab" data-scope="${s.key}" aria-selected="${S.scope === s.key}" class="${off ? 'off' : ''}"${off ? ' title="Comparison lane not connected yet"' : ''}>${live ? '<i class="dot-live"></i>' : ''}${esc(s.label)}${n ? `<em>${n}</em>` : off ? '<small>SOON</small>' : ''}</button>`;
   }).join('');
 }
-
-function renderNotices() {
-  const list = S.memberState === 'entitled'
-    ? screenNotices({ desk: S.desk, deskStatus: S.deskStatus, live: S.live, liveStatus: S.liveStatus, scope: S.scope, events: S.events })
-    : [];
-  $('#notices').innerHTML = list.map((n) => `<div class="notice n-${n.level}" data-code="${esc(n.code)}">${esc(n.text)}</div>`).join('');
+function renderHealth() {
+  const dot = $('#hb-dot'), hb = $('#hb'), st = S.memberState;
+  if (st === 'loading') { hb.textContent = 'Checking access…'; dot.dataset.level = 'info'; return; }
+  if (st !== 'entitled') { hb.textContent = st === 'unverified' || st === 'network_error' ? 'Access could not be verified · retrying' : 'All Access required'; dot.dataset.level = st === 'unverified' ? 'warn' : 'auth'; return; }
+  const parts = [S.deskAt ? `Markets read ${ageText(new Date(S.deskAt).toISOString())} · every 60s` : 'Loading markets…'];
+  if (scopeLiveSports().length) {
+    const src = S.live?.sources || [], okN = src.filter((x) => x.state === 'ok').length;
+    if (S.liveStatus && S.liveStatus !== 200) parts.push('Score feed unavailable');
+    else if (!S.liveAt) parts.push('Loading scores…');
+    else if (src.length && !okN) parts.push('Score sources unavailable');
+    else parts.push(`Scores read ${ageText(new Date(S.liveAt).toISOString())} · every ${S.events.some((e) => e.live) ? 15 : 60}s${okN < src.length ? ` · ${src.length - okN} of ${src.length} sources down` : ''}`);
+  }
+  if (document.hidden) parts.push('paused while hidden');
+  hb.textContent = parts.join('  ·  ');
+  dot.dataset.level = (S.desk?.lanes || []).some((l) => l.state === 'unavailable') || (S.liveStatus && S.liveStatus !== 200) || (S.live?.sources || []).some((x) => x.state !== 'ok') ? 'warn' : 'ok';
 }
-
+function renderNotices() {
+  const list = S.memberState === 'entitled' ? screenNotices({ desk: S.desk, deskStatus: S.deskStatus, live: S.live, liveStatus: S.liveStatus, scope: S.scope, events: S.events }) : [];
+  $('#notices').innerHTML = list.filter((n) => n.code !== 'loading').map((n) => `<div class="notice n-${n.level}" data-code="${esc(n.code)}">${esc(n.text)}</div>`).join('');
+}
 function renderGate() {
   const g = $('#gate'), st = S.memberState;
   const show = st !== 'entitled' && st !== 'loading';
@@ -202,232 +259,222 @@ function renderGate() {
   }
 }
 
-function priceCell(v, { muted = false, tag = '' } = {}) {
-  if (!v || v.mid_bp == null) return `<div class="px px-none"><span class="px-v">—</span><small>${v ? 'no two-sided quote' : 'not listed'}</small></div>`;
-  const stale = v.freshness === 'stale';
-  return `<div class="px${muted ? ' px-muted' : ''}${stale ? ' px-stale' : ''}">
-    <div class="px-top"><span class="px-v">${fmtCents(v.yes_bp)}</span><span class="px-no">NO ${fmtCents(v.no_bp)}</span>${tag}</div>
-    <div class="bar"><i style="width:${Math.max(0, Math.min(100, v.yes_bp / 100))}%"></i></div>
-    <small>${v.bid_bp != null && v.ask_bp != null ? `${fmtCents(v.bid_bp)}–${fmtCents(v.ask_bp)} · ` : ''}${esc(ageText(v.observed_at) || '')}${stale ? ' · STALE' : v.freshness === 'delayed' ? ' · delayed' : ''}</small>
-  </div>`;
-}
-
-function contractRow(c) {
-  const k = c.kalshi;
-  const pmRel = c.related.find((r) => r.venue === 'polymarket');
-  const p = c.polymarket || c.listed.find((x) => x?.venue === 'polymarket') || null;
-  const pCell = p ? priceCell(p) : pmRel ? priceCell(pmRel, { muted: true, tag: `<span class="mini">${pmRel.withdrawn ? 'WITHDRAWN' : 'RULES DIFFER'}</span>` }) : priceCell(null);
-  const kCell = k ? priceCell(k) : (c.related.find((r) => r.venue === 'kalshi') ? priceCell(c.related.find((r) => r.venue === 'kalshi'), { muted: true }) : priceCell(null));
-  let spread;
-  if (c.gap_pts != null) spread = `<div class="sp${c.gap_pts >= 5 ? ' sp-hot' : c.gap_pts >= 2 ? ' sp-warm' : ''}"><b>${c.gap_pts.toFixed(1)}¢</b><small>${c.gap_rel_pct != null ? `${c.gap_rel_pct.toFixed(1)}% rel.` : ''}</small></div>`;
-  else spread = `<div class="sp sp-none"><b>—</b><small>${c.note === 'NOT_ALIGNED' ? 'not aligned' : c.badge === 'SINGLE_VENUE' ? 'one venue' : 'not compared'}</small></div>`;
-  const pbe = c.pbe
-    ? `<div class="pbe"><b>${fmtPct(c.pbe.probability)}</b><small>${esc(c.pbe.state === 'FROZEN_AT_LOCK' ? 'frozen at lock' : (c.pbe.state || '').toLowerCase())}${c.pbe.issued_at ? ` · ${esc(timeFmt.format(new Date(c.pbe.issued_at)))}` : ''}</small></div>`
-    : '<div class="pbe pbe-none"><small>No active PBE call</small></div>';
-  return `<div class="ct${S.focusMarket && S.focusMarket === c.id ? ' ct-focus' : ''}">
-    <div class="ct-label"><b>${esc(c.label || '—')}</b>${c.note === 'EXACT' ? '<small>exact rules</small>' : ''}</div>
-    ${kCell}${pCell}${spread}${pbe}
-  </div>`;
-}
-
-function scoreBlock(e) {
+// ---------------------------------------------------------------------------------------------------------
+// Live rail (any scope with live games)
+function liveCard(e) {
   const s = e.join.score;
-  if (e.join.state === 'UNMATCHED') return `<span class="join j-unmatched" title="${esc(e.join.reason || BADGES.UNMATCHED)}" tabindex="0">SCORE UNMATCHED</span>`;
-  if (!s || (s.status !== 'live' && s.status !== 'final' && !['suspended', 'delayed', 'postponed'].includes(s.status))) return '';
-  const st = s.status === 'live' ? `<span class="st st-live">● ${esc(s.detail || s.status_label || 'LIVE')}</span>` : s.status === 'final' ? `<span class="st">${esc(s.status_label || 'FINAL')}</span>` : `<span class="st">${esc(s.status_label || '')}</span>`;
-  const sc = s.score?.away && s.score?.home && (s.status === 'live' || s.status === 'final')
-    ? `<span class="sc"><span>${esc(s.score.away.abbr)} <b>${esc(s.score.away.score ?? '—')}</b></span><span>${esc(s.score.home.abbr)} <b>${esc(s.score.home.score ?? '—')}</b></span></span>` : '';
-  return `${sc}${st}<span class="upd">${esc(ageText(s.updated_at || S.live?.generated_at) ? `score ${ageText(s.updated_at || S.live?.generated_at)}` : '')}</span>`;
+  const lines = e.contracts.slice(0, 2).map((c) => {
+    const k = c.kalshi, p = pmFor(c), rel = !c.polymarket && !!p;
+    return `<span class="lc-row">${avatar(e, c, 'sm')}<b>${esc(c.label)}</b>${scoreOf(e, c)}
+      <span class="lc-bar k"><i style="width:${k?.mid_bp != null ? k.mid_bp / 100 : 0}%"></i><em><img src="${VENUE.kalshi.icon}" alt="" width="10" height="10">${fmtCents(k?.mid_bp)}</em></span>
+      <span class="lc-bar p${rel ? ' rel' : ''}"><i style="width:${p?.mid_bp != null ? p.mid_bp / 100 : 0}%"></i><em><img src="${VENUE.polymarket.icon}" alt="" width="10" height="10">${fmtCents(p?.mid_bp)}${rel ? '*' : ''}</em></span>
+      <span class="lc-gap">${c.gap_pts != null ? `${c.gap_pts.toFixed(1)}¢` : '—'}</span></span>`;
+  }).join('');
+  const rel = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket'));
+  return `<button type="button" class="lc" data-open="${esc(e.key)}">
+    <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
+    ${lines}${rel ? '<small class="lc-rel">* Polymarket rules differ · not compared</small>' : ''}
+    <small class="lc-age">${esc(['score ' + (ageText(s?.updated_at || S.live?.generated_at) || ''), freshLine(e)].filter(Boolean).join(' · '))}</small>
+  </button>`;
+}
+function renderLive() {
+  const sec = $('#live');
+  const linked = S.events.filter((e) => e.live);
+  const liveItems = (S.live?.items || []).filter((x) => x.status === 'live');
+  const ids = new Set(linked.map((e) => `${e.sport}:${e.canonical_event_id}`));
+  const unlinked = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
+  sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
+  if (sec.hidden) return;
+  $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
+  $('#live-cards').innerHTML = linked.map(liveCard).join('') + unlinked.slice(0, 8).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
+    <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
+    <span class="lc-score">${x.score?.away ? `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>` : `<span>${esc(x.title)}</span>`}</span>
+    <small class="lc-age">${esc(['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED')}</small></a>`).join('');
 }
 
-function deepLink(e) {
-  const u = new URL('https://compare.propbetedge.ai/');
-  if (S.scope !== 'sports') u.searchParams.set('scope', S.scope);
-  u.searchParams.set('open', e.key);
-  return u.toString();
-}
-function actions(e) {
-  const k = e.contracts.map((c) => c.kalshi?.market_url).find(Boolean);
-  const p = e.contracts.map((c) => c.polymarket?.market_url || c.related.find((r) => r.venue === 'polymarket')?.market_url).find(Boolean);
-  const cast = e.join.score?.pbecast_url || e.join.score?.href || e.destination;
-  const cmd = new URL(MEMBERS); cmd.searchParams.set('add', deepLink(e)); cmd.searchParams.set('title', `${e.title} · Compare`);
-  return `<div class="acts">
-    <button type="button" class="act" data-expand="${esc(e.key)}" aria-expanded="${isExpanded(e)}">${isExpanded(e) ? 'CLOSE' : 'MOVES & RULES'}</button>
-    ${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}
-    <a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a>
-    ${k ? `<a class="act ext" href="${esc(k)}" target="_blank" rel="noopener nofollow">KALSHI ↗</a>` : ''}
-    ${p ? `<a class="act ext" href="${esc(p)}" target="_blank" rel="noopener nofollow">POLYMARKET ↗</a>` : ''}
-  </div>`;
+// ---------------------------------------------------------------------------------------------------------
+// Overview hub (ALL SPORTS) and sport hubs
+function skeleton(n = 6) { return `<div class="tiles">${Array.from({ length: n }, () => '<span class="tile skel" aria-hidden="true"></span>').join('')}</div>`; }
+function stat(label, value, cls = '') { return `<span class="stat ${cls}"><small>${esc(label)}</small><b>${value}</b></span>`; }
+
+function renderOverview(box) {
+  const active = S.events.filter((e) => e.active);
+  const top = active.filter((e) => e.best_gap != null).slice(0, 6);
+  const st = hubStats(S.events);
+  let html = `<header class="hub-head"><div><p class="eyebrow">ALL SPORTS</p><h1>Market command center</h1></div>
+    <div class="stats">${stat('LIVE', st.live, st.live ? 'live' : '')}${stat('ACTIVE MARKETS', st.active)}${stat('COMPARABLE', st.comparable)}${stat('RULES DIFFER', st.mismatch)}${stat('BIGGEST SPREAD', st.best ? `${st.best.best_gap.toFixed(1)}¢` : '—', 'gold')}</div></header>`;
+  html += `<section class="sec"><div class="sec-head"><h2>BIGGEST SPREADS NOW</h2><small>valid Kalshi ↔ Polymarket spreads, aligned within 120 s</small></div>${top.length ? tiles(top) : '<div class="empty"><b>No aligned comparable spreads right now.</b></div>'}</section>`;
+  const pbe = S.events.filter((e) => e.has_pbe && e.active).slice(0, 3);
+  if (pbe.length) html += `<section class="sec"><div class="sec-head"><h2>PBE CALLS</h2><small>PropBetEdge probability next to both venues</small></div>${tiles(pbe)}</section>`;
+  const order = SPORTS.map((s) => s.key).map((k) => ({ k, list: active.filter((e) => e.sport === k) })).filter((x) => x.list.length).sort((a, b) => b.list.length - a.list.length);
+  for (const { k, list } of order) {
+    const hs = hubStats(S.events.filter((e) => e.sport === k));
+    html += `<section class="sec sport-sec"><div class="sec-head"><h2>${esc(LABEL[k])}</h2><small>${hs.active} active · ${hs.comparable} comparable${hs.live ? ` · ${hs.live} live` : ''}${hs.best ? ` · top ${hs.best.best_gap.toFixed(1)}¢` : ''}</small><span class="flex"></span><button type="button" class="act" data-scope="${k}">OPEN ${esc(LABEL[k])} HUB →</button></div>${tiles(list.slice(0, 4))}</section>`;
+  }
+  const off = (S.desk?.lanes || []).filter((l) => l.state === 'not_connected').map((l) => LABEL[l.lane] || l.lane.toUpperCase());
+  if (off.length) html += `<section class="sec"><div class="soon"><b>NOT CONNECTED YET</b><span>${off.map(esc).join(' · ')}</span><small>No Kalshi ↔ Polymarket comparison lane exists for these sports yet. Their live scores still appear in the live rail.</small></div></section>`;
+  box.innerHTML = html;
 }
 
+function renderHub(box) {
+  const k = S.scope;
+  const evs = S.events;
+  const hs = hubStats(evs);
+  const lane = (S.desk?.lanes || [])[0];
+  let html = `<header class="hub-head"><div><p class="eyebrow">${k === 'nonsports' ? 'PREDICTION MARKETS' : 'SPORT HUB'}</p><h1>${esc(LABEL[k])}</h1></div>
+    <div class="stats">${k !== 'nonsports' ? stat('LIVE', hs.live, hs.live ? 'live' : '') : ''}${stat('ACTIVE', hs.active)}${stat('COMPARABLE', hs.comparable)}${stat('RULES DIFFER', hs.mismatch)}${stat('BIGGEST SPREAD', hs.best ? `${hs.best.best_gap.toFixed(1)}¢` : '—', 'gold')}</div></header>`;
+  if (lane?.state === 'not_connected') { box.innerHTML = html + `<div class="empty"><b>${esc(boardEmpty({ desk: S.desk, viewKey: S.view, events: [] })?.text || 'Not connected yet.')}</b>${upcomingHint()}</div>`; return; }
+  const viewList = evs.filter(VIEWS[S.view].filter);
+  const whenTabs = k === 'nonsports' ? '' : `<div class="when" role="tablist" aria-label="Date">${WHEN.map((w) => { const n = viewList.filter((e) => inWhen(e, w.key)).length; return `<button type="button" role="tab" data-when="${w.key}" aria-selected="${S.when === w.key}"${!n && w.key !== 'all' ? ' disabled' : ''}>${w.label}<em>${n}</em></button>`; }).join('')}</div>`;
+  const chips = `<div class="chips">${Object.entries(VIEWS).filter(([v]) => v !== 'live').map(([v, d]) => `<button type="button" data-view="${v}" aria-pressed="${S.view === v}">${esc(d.label)}<em>${evs.filter(d.filter).length}</em></button>`).join('')}</div>`;
+  const rows = viewList.filter((e) => inWhen(e, S.when));
+  const shown = rows.slice(0, S.page * PAGE);
+  html += `<div class="hub-bar">${whenTabs}${chips}</div>`;
+  if (!rows.length) {
+    const empty = boardEmpty({ desk: S.desk, viewKey: S.when === 'live' ? 'live' : S.view, events: rows, scope: S.scope, liveItems: S.live?.items || [] });
+    html += `<div class="empty${empty?.failure ? ' empty-fail' : ''}"><b>${esc(empty?.text || 'Nothing in this view.')}</b>${!empty?.failure && (S.view !== 'all' || S.when !== 'all') ? '<button type="button" class="act" data-reset>SHOW ALL MARKETS</button>' : ''}${upcomingHint()}</div>`;
+  } else {
+    html += tiles(shown);
+    html += `<div class="more"><small>${shown.length} of ${rows.length} · ranked by valid Kalshi ↔ Polymarket spread; stale, final and unmatched last${lane?.capped ? ` · first ${S.desk.page_limit} events from the upstream desk` : ''}</small>${rows.length > shown.length ? `<button type="button" class="act" data-more>SHOW ${Math.min(PAGE, rows.length - shown.length)} MORE</button>` : ''}</div>`;
+  }
+  box.innerHTML = html;
+}
+function upcomingHint() {
+  const up = (S.live?.items || []).filter((x) => x.status === 'scheduled' && (S.scope === 'sports' || x.sport === S.scope)).slice(0, 6);
+  return up.length ? `<div class="next"><small>NEXT GAMES</small>${up.map((x) => `<span>${esc(x.sport.toUpperCase())} ${esc(x.title)} · ${esc(timeOf(x.starts_at))}</span>`).join('')}</div>` : '';
+}
+
+function renderBoard() {
+  const box = $('#board');
+  box.hidden = S.memberState !== 'entitled';
+  if (box.hidden) return;
+  const scoresPending = scopeLiveSports().length && S.liveStatus === null;
+  if (!S.desk || scoresPending) {
+    box.innerHTML = S.deskStatus === 'loading' || (S.desk && scoresPending) ? skeleton() : '<div class="empty empty-fail"><b>The market desk did not answer. See the status above; retrying automatically.</b></div>';
+    return;
+  }
+  const allDown = (S.desk.lanes || []).length && S.desk.lanes.every((l) => l.state === 'unavailable');
+  if (allDown) { box.innerHTML = `<div class="empty empty-fail"><b>${esc(boardEmpty({ desk: S.desk, viewKey: 'top', events: [] }).text)}</b>${upcomingHint()}</div>`; return; }
+  if (S.scope === 'sports') renderOverview(box); else renderHub(box);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Drawer (detail)
 function spark(series, now) {
   const all = series.flatMap((s) => s.points.map((p) => [Date.parse(p.t), p.v])).filter(([t]) => t >= now - 86400e3);
   if (all.length < 2) return '';
   const t0 = Math.max(now - 86400e3, Math.min(...all.map((p) => p[0]))), t1 = now;
   const vs = all.map((p) => p[1]); const lo = Math.max(0, Math.min(...vs) - 300), hi = Math.min(10000, Math.max(...vs) + 300);
-  const W = 1200, H = 150, x = (t) => 8 + ((t - t0) / Math.max(1, t1 - t0)) * (W - 16), y = (v) => 8 + (1 - (v - lo) / Math.max(1, hi - lo)) * (H - 28);
+  const W = 1200, H = 150, x = (t) => 8 + ((t - t0) / Math.max(1, t1 - t0)) * (W - 16), y = (v) => 8 + (1 - (v - lo) / Math.max(1, hi - lo)) * (H - 16);
   const path = (pts) => { const ps = pts.filter(([t]) => t >= t0); if (!ps.length) return ''; return ps.map(([t, v], i) => `${i ? 'H' + x(t).toFixed(1) + ' V' : 'M' + x(t).toFixed(1) + ','}${y(v).toFixed(1)}`).join(' ') + ` H${x(t1).toFixed(1)}`; };
   const lines = series.map((s) => `<path d="${path(s.points.map((p) => [Date.parse(p.t), p.v]).sort((a, b) => a[0] - b[0]))}" class="ln ln-${s.key}"/>`).join('');
   return `<figure class="spark-fig"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="spark" role="img" aria-label="Stored observations, last 24 hours, ${(lo / 100).toFixed(0)} to ${(hi / 100).toFixed(0)} cents">${lines}</svg>
     <figcaption><span>${esc(timeOf(new Date(t0).toISOString()))}</span><span>range ${(lo / 100).toFixed(0)}–${(hi / 100).toFixed(0)}¢</span><span>now</span></figcaption></figure>`;
 }
-
 function whyDiffer(e) {
   const items = [];
   for (const c of e.contracts) {
     if (c.comparison?.disclosure) items.push(`<li><b>${esc(c.label)}</b>: compared as <em>${esc(c.comparison.match_class === 'EXACT_MATCH' ? 'exact match' : 'comparable')}</em>. ${esc(c.comparison.disclosure)}.</li>`);
     for (const r of c.related) {
       const codes = (r.reasons || []).map((x) => reasonText(x)).filter(Boolean);
-      items.push(`<li><b>${esc(c.label)}</b> · ${esc(r.venue)} ${r.title ? `“${esc(r.title)}”` : ''}: <em>${esc((r.match || '').replace(/_/g, ' ').toLowerCase())}</em>. ${esc(r.reason || '')}${codes.length ? `<ul>${codes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}${r.summary ? `<p class="small">${esc(typeof r.summary === 'string' ? r.summary : JSON.stringify(r.summary))}</p>` : ''}</li>`);
+      items.push(`<li><b>${esc(c.label)}</b> · ${esc(r.venue)} ${r.title ? `“${esc(r.title)}”` : ''}: <em>${esc((r.match || '').replace(/_/g, ' ').toLowerCase())}</em>. ${esc(r.reason || '')}${codes.length ? `<ul>${codes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}</li>`);
     }
     if (c.note === 'NOT_ALIGNED') items.push(`<li><b>${esc(c.label)}</b>: ${esc(BADGES.NOT_ALIGNED)}</li>`);
   }
   if (!items.length) items.push(`<li>${esc(e.badge === 'SINGLE_VENUE' ? BADGES.SINGLE_VENUE : 'Both venues are compared under approved rules with no recorded exceptions.')}</li>`);
-  return `<details class="why"${e.badge !== 'COMPARABLE' ? ' open' : ''}><summary>Why these differ</summary><ul>${items.join('')}</ul><p class="small">Badges: ${['COMPARABLE', 'RULE_MISMATCH', 'WITHDRAWN', 'SINGLE_VENUE', 'UNMATCHED'].map((b) => `<b>${b.replace('_', ' ')}</b> ${esc(BADGES[b])}`).join(' ')}</p></details>`;
+  return `<details class="why"${e.badge !== 'COMPARABLE' ? ' open' : ''}><summary>Why these differ</summary><ul>${items.join('')}</ul></details>`;
 }
-
-function detailPanel(e) {
+function movesPanel(e) {
   const d = S.detail.get(e.key);
-  if (!d || (d.loading && !d.body)) return '<div class="detail"><p class="muted">Loading stored observations…</p></div>';
+  if (!d || (d.loading && !d.body)) return '<p class="muted">Loading stored observations…</p>';
   const now = Date.now();
-  let body = '';
+  const table = (rows) => `<table class="mv"><thead><tr><th></th>${WINDOWS.map((w) => `<th>${w.key}</th>`).join('')}</tr></thead><tbody>${rows.map(([name, pts]) => { const m = moves(pts, now); return `<tr><th>${name}</th>${WINDOWS.map((w) => `<td class="${m[w.key]?.delta_bp > 0 ? 'up' : m[w.key]?.delta_bp < 0 ? 'dn' : ''}">${pts?.length ? esc(fmtMove(m[w.key]).replace('Not enough observations', '—')) : '—'}</td>`).join('')}</tr>`; }).join('')}</tbody></table>`;
   if (e.sport) {
-    if (d.status !== 200 || !d.body) body = `<p class="muted">Observed history is unavailable right now (HTTP ${d.status || 'network'}). Prices above remain current.</p>`;
-    else {
-      const rows = d.body.contracts.map((c) => {
-        const km = moves(c.kalshi?.points, now), pm = moves(c.polymarket?.points, now);
-        const vol = c.kalshi ? [c.kalshi.volume_24h != null ? `24h vol ${Math.round(c.kalshi.volume_24h).toLocaleString()}` : null, c.kalshi.open_interest != null ? `OI ${Math.round(c.kalshi.open_interest).toLocaleString()}` : null].filter(Boolean).join(' · ') : '';
-        return `<div class="mv-block"><h4>${esc(c.label)}</h4>
-          <table class="mv"><thead><tr><th></th>${WINDOWS.map((w) => `<th>${w.key}</th>`).join('')}</tr></thead><tbody>
-          <tr><th>Kalshi</th>${WINDOWS.map((w) => `<td class="${km[w.key]?.delta_bp > 0 ? 'up' : km[w.key]?.delta_bp < 0 ? 'dn' : ''}">${c.kalshi?.points?.length ? esc(fmtMove(km[w.key]).replace('Not enough observations', '—')) : '—'}</td>`).join('')}</tr>
-          <tr><th>Polymarket</th>${WINDOWS.map((w) => `<td class="${pm[w.key]?.delta_bp > 0 ? 'up' : pm[w.key]?.delta_bp < 0 ? 'dn' : ''}">${c.polymarket?.points?.length ? esc(fmtMove(pm[w.key]).replace('Not enough observations', '—')) : '—'}</td>`).join('')}</tr>
-          </tbody></table>
-          ${vol ? `<p class="small">Kalshi ${esc(vol)}</p>` : ''}
-          ${spark([{ key: 'k', points: c.kalshi?.points || [] }, { key: 'p', points: c.polymarket?.points || [] }], now)}
-        </div>`;
-      }).join('');
-      body = `${rows}<p class="small legend"><i class="lg lg-k"></i>Kalshi <i class="lg lg-p"></i>Polymarket · Stored observations only, drawn as steps (a value holds until the next stored change). “—” = not enough observations for that window, never zero.</p>`;
-    }
-  } else if (d.status === 200 && d.body?.series) {
-    const sers = d.body.series.map((s) => ({ key: s.source === 'kalshi' ? 'k' : s.source === 'polymarket' ? 'p' : 'b', label: s.label, points: (s.segments || []).flat().map((p) => ({ t: p.t, v: p.v })) }));
-    body = `<table class="mv"><thead><tr><th></th>${WINDOWS.map((w) => `<th>${w.key}</th>`).join('')}</tr></thead><tbody>${sers.map((s) => { const m = moves(s.points, now); return `<tr><th>${esc(s.label)}</th>${WINDOWS.map((w) => `<td>${esc(fmtMove(m[w.key]).replace('Not enough observations', '—'))}</td>`).join('')}</tr>`; }).join('')}</tbody></table>${spark(sers, now)}`;
-  } else body = `<p class="muted">${d.status === 404 ? 'No stored observation series for this contract yet.' : `Observed history is unavailable right now (HTTP ${d.status || 'network'}).`}</p>`;
-  return `<div class="detail">${body}${whyDiffer(e)}<p class="small muted">History read ${esc(ageText(new Date(d.at).toISOString()) || '')}.</p></div>`;
-}
-
-function card(e) {
-  return `<article class="card tier-${e.tier}${e.live ? ' is-live' : ''}" id="ev-${esc(e.key.replace(/[^a-zA-Z0-9]/g, '-'))}">
-    <header class="card-h">
-      <span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>
-      <span class="when">${esc(e.status === 'live' ? '' : timeOf(e.start_at))}</span>
-      ${scoreBlock(e)}
-      <span class="sp-flex"></span>
-      ${badge(e.badge, e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : '')}
-    </header>
-    <h3>${esc(e.title)}</h3>
-    <div class="ct ct-head" aria-hidden="true"><span></span><span>KALSHI · YES</span><span>POLYMARKET · YES</span><span>SPREAD</span><span>PBE</span></div>
-    ${e.contracts.map(contractRow).join('')}
-    ${actions(e)}
-    ${isExpanded(e) ? detailPanel(e) : ''}
-  </article>`;
-}
-
-function liveCard(e) {
-  const s = e.join.score;
-  const lines = e.contracts.slice(0, 2).map((c) => {
-    const k = c.kalshi, rel = !c.polymarket && c.related.find((r) => r.venue === 'polymarket'), p = c.polymarket || rel;
-    return `<div class="lc-row"><b>${esc(c.label)}</b>
-      <span class="lc-bar k"><i style="width:${k?.mid_bp != null ? k.mid_bp / 100 : 0}%"></i><em>K ${fmtCents(k?.mid_bp)}</em></span>
-      <span class="lc-bar p${rel ? ' rel' : ''}"${rel ? ` title="${esc(BADGES.RULE_MISMATCH)}"` : ''}><i style="width:${p?.mid_bp != null ? p.mid_bp / 100 : 0}%"></i><em>P ${fmtCents(p?.mid_bp)}${rel ? '*' : ''}</em></span>
-      <span class="lc-gap">${c.gap_pts != null ? `${c.gap_pts.toFixed(1)}¢` : '—'}</span></div>`;
-  }).join('');
-  const relNote = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket')) ? '<small class="lc-rel">* Polymarket rules differ · not compared</small>' : '';
-  return `<button type="button" class="lc" data-jump="${esc(e.key)}">
-    <div class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live">● ${esc(s?.detail || s?.status_label || 'LIVE')}</span></div>
-    <div class="lc-score"><span>${esc(s?.score?.away?.abbr || '')}</span><b>${esc(s?.score?.away?.score ?? '—')}</b><span>${esc(s?.score?.home?.abbr || '')}</span><b>${esc(s?.score?.home?.score ?? '—')}</b></div>
-    ${lines}${relNote}
-    <small>${esc(['score ' + (ageText(s?.updated_at || S.live?.generated_at) || ''), e.freshest_at ? 'market ' + ageText(e.freshest_at) : ''].filter(Boolean).join(' · '))}</small>
-  </button>`;
-}
-
-function renderLive() {
-  const sec = $('#live');
-  const linked = S.events.filter((e) => e.live);
-  const liveItems = (S.live?.items || []).filter((x) => x.status === 'live');
-  const linkedIds = new Set(linked.map((e) => `${e.sport}:${e.canonical_event_id}`));
-  const unlinked = liveItems.filter((x) => !linkedIds.has(`${x.sport}:${x.source_id}`));
-  sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
-  if (sec.hidden) return;
-  $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
-  $('#live-cards').innerHTML = linked.map(liveCard).join('') + unlinked.slice(0, 8).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
-    <div class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live">● ${esc(x.detail || x.status_label || 'LIVE')}</span></div>
-    <div class="lc-score">${x.score?.away ? `<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b><span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>` : `<span>${esc(x.title)}</span>`}</div>
-    <small>${esc(ID_NOTE(x))}</small></a>`).join('');
-}
-const ID_NOTE = (x) => (['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED');
-
-function renderBoard() {
-  const sec = $('#board');
-  sec.hidden = S.memberState !== 'entitled';
-  if (sec.hidden) return;
-  const v = VIEWS[S.view];
-  $('#board-title').textContent = v.label;
-  const rows = S.events.filter(v.filter);
-  const box = $('#cards');
-  // Hold the skeleton until the first score answer (or failure) too, so the LIVE rail never pushes the board.
-  const scoresPending = scopeLiveSports().length && S.liveStatus === null;
-  if (!S.desk || scoresPending) {
-    box.innerHTML = S.deskStatus === 'loading' || (S.desk && scoresPending) ?Array.from({ length: 4 }, () => '<div class="card skel" aria-hidden="true"></div>').join('') : '<div class="empty">The market desk did not answer. See the status above; retrying automatically.</div>';
-    $('#board-meta').textContent = '';
-    return;
+    if (d.status !== 200 || !d.body) return `<p class="muted">Observed history is unavailable right now (HTTP ${d.status || 'network'}). Prices above remain current.</p>`;
+    return d.body.contracts.map((c) => {
+      const vol = c.kalshi ? [c.kalshi.volume_24h != null ? `24h volume ${Math.round(c.kalshi.volume_24h).toLocaleString()}` : null, c.kalshi.open_interest != null ? `open interest ${Math.round(c.kalshi.open_interest).toLocaleString()}` : null].filter(Boolean).join(' · ') : '';
+      return `<div class="mv-block"><h4>${esc(c.label)} · 24H OBSERVED MOVE</h4>${table([[`<img src="${VENUE.kalshi.icon}" alt="" width="12" height="12"> Kalshi`, c.kalshi?.points], [`<img src="${VENUE.polymarket.icon}" alt="" width="12" height="12"> Polymarket`, c.polymarket?.points]])}${vol ? `<p class="small">Kalshi ${esc(vol)}</p>` : ''}${spark([{ key: 'k', points: c.kalshi?.points || [] }, { key: 'p', points: c.polymarket?.points || [] }], now)}</div>`;
+    }).join('') + '<p class="small legend"><i class="lg lg-k"></i>Kalshi <i class="lg lg-p"></i>Polymarket · Stored observations only, drawn as steps. “—” = not enough observations for that window, never zero.</p>';
   }
-  const empty = boardEmpty({ desk: S.desk, viewKey: S.view, events: rows, scope: S.scope, liveItems: S.live?.items || [] });
-  $('#board-meta').textContent = `${rows.length} event${rows.length === 1 ? '' : 's'} · ranked by valid Kalshi ↔ Polymarket spread; stale, final and unmatched demoted`;
-  box.innerHTML = rows.length ? rows.map(card).join('') : `<div class="empty${empty?.failure ? ' empty-fail' : ''}"><b>${esc(empty?.text || 'Nothing in this view.')}</b>${S.view !== 'all' && !empty?.failure && empty?.code !== 'not_connected' ? '<button type="button" class="act" data-view="all">SHOW ALL MARKETS</button>' : ''}${upcomingHint()}</div>`;
+  if (d.status === 200 && d.body?.series) {
+    const sers = d.body.series.map((s) => ({ key: s.source === 'kalshi' ? 'k' : s.source === 'polymarket' ? 'p' : 'b', label: s.label, points: (s.segments || []).flat().map((p) => ({ t: p.t, v: p.v })) }));
+    return table(sers.map((s) => [esc(s.label), s.points])) + spark(sers, now);
+  }
+  return `<p class="muted">${d.status === 404 ? 'No stored observation series for this contract yet.' : `Observed history is unavailable right now (HTTP ${d.status || 'network'}).`}</p>`;
 }
-function upcomingHint() {
-  const up = (S.live?.items || []).filter((x) => x.status === 'scheduled').slice(0, 6);
-  return up.length ? `<div class="next"><small>NEXT GAMES</small>${up.map((x) => `<span>${esc(x.sport.toUpperCase())} ${esc(x.title)} · ${esc(timeOf(x.starts_at))}</span>`).join('')}</div>` : '';
+function deepLink(e) { const u = new URL('https://compare.propbetedge.ai/'); if (S.scope !== 'sports') u.searchParams.set('scope', S.scope); u.searchParams.set('open', e.key); return u.toString(); }
+function drawerContract(e, c) {
+  const p = pmFor(c), rel = !c.polymarket && !!p;
+  const venue = (name, v, isRel) => `<div class="dv"><span class="dv-h"><img src="${VENUE[name].icon}" alt="" width="16" height="16">${VENUE[name].name}${isRel ? '<span class="mini">RULES DIFFER</span>' : ''}</span>${v && v.mid_bp != null ? `<b>${fmtCents(v.yes_bp)}</b><span class="dv-no">NO ${fmtCents(v.no_bp)}</span><div class="bar ${name}"><i style="width:${v.yes_bp / 100}%"></i></div><small>${v.bid_bp != null ? `bid/ask ${fmtCents(v.bid_bp)}–${fmtCents(v.ask_bp)} · ` : ''}observed ${esc(ageText(v.observed_at) || '?')}${v.freshness === 'stale' ? ' · STALE' : v.freshness === 'delayed' ? ' · delayed' : ''}</small>${v.market_url ? `<a class="ext" href="${esc(v.market_url)}" target="_blank" rel="noopener nofollow">Open on ${VENUE[name].name} ↗</a>` : ''}` : '<b class="none">—</b><small>not listed</small>'}</div>`;
+  return `<div class="dc${S.focusMarket === c.id ? ' focus' : ''}">
+    <div class="dc-h">${avatar(e, c, 'lg')}<div><b>${esc(c.label)}</b>${scoreOf(e, c)}</div><span class="flex"></span>${gapCell(c)}</div>
+    <div class="dc-v">${venue('kalshi', c.kalshi, false)}${venue('polymarket', p, rel)}</div>
+    <div class="dc-pbe">${c.pbe ? `<b>PBE ${fmtPct(c.pbe.probability)}</b><small>${esc((c.pbe.state || '').replace(/_/g, ' ').toLowerCase())}${c.pbe.issued_at ? ` · issued ${esc(timeOf(c.pbe.issued_at))}` : ''}${c.pbe_vs_venues ? ` · vs venues ${c.pbe_vs_venues.map((x) => (x > 0 ? '+' : '') + x.toFixed(1)).join(' / ')} pts` : ''}</small>` : '<small>No active PBE call</small>'}</div>
+  </div>`;
+}
+function renderDrawer() {
+  const dr = $('#drawer'), e = S.memberState === 'entitled' ? openEvent() : null;
+  dr.hidden = !e;
+  document.body.classList.toggle('drawer-open', !!e);
+  if (!e) return;
+  const cast = e.join.score?.pbecast_url || e.join.score?.href || e.destination;
+  const cmd = new URL(MEMBERS); cmd.searchParams.set('add', deepLink(e)); cmd.searchParams.set('title', `${e.title} · Compare`);
+  const keepScroll = $('#drawer-body')?.scrollTop || 0;
+  $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badge(e.badge, e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : '')}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
+    <div class="drawer-body" id="drawer-body"><h2>${esc(e.title)}</h2>
+      ${e.contracts.map((c) => drawerContract(e, c)).join('')}
+      <div class="acts">${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}<a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a></div>
+      <section class="dsec">${movesPanel(e)}</section>
+      ${whyDiffer(e)}
+      <p class="small muted">${esc(S.detail.get(e.key)?.at ? `History read ${ageText(new Date(S.detail.get(e.key).at).toISOString())}` : '')}</p>
+    </div>`;
+  $('#drawer-body').scrollTop = keepScroll;
 }
 
 function render() {
-  renderAccount(); renderChrome(); renderHealth(); renderNotices(); renderGate(); renderLive(); renderBoard();
+  renderAccount(); renderNav(); renderHealth(); renderNotices(); renderGate(); renderLive(); renderBoard(); renderDrawer();
 }
 
 // ---------------------------------------------------------------------------------------------------------
 // Events (delegated once; never re-bound per render)
+function setScope(k) {
+  if (S.scope === k) return;
+  S.scope = k; S.view = 'top'; S.when = 'all'; S.page = 1; S.open = '';
+  S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.deskAt = S.liveAt = 0; S.events = [];
+  writeUrl(); render(); mount(); window.scrollTo({ top: 0 });
+}
+function openDrawer(key) {
+  const e = S.events.find((x) => x.key === key);
+  if (!e) return;
+  S.open = key; writeUrl(); render();
+  loadDetail(e).then(render, () => {});
+  setTimeout(() => $('#drawer [data-close]')?.focus(), 0);
+}
+function closeDrawer() { if (!S.open) return; S.open = ''; writeUrl(); render(); }
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-view],[data-scope],[data-expand],[data-jump],[data-retry],#acct');
+  const t = ev.target.closest('[data-scope],[data-view],[data-when],[data-open],[data-close],[data-more],[data-reset],[data-retry],#acct,#drawer-bg');
   if (!t) return;
   if (t.matches('#acct') && (S.memberState === 'unverified' || S.memberState === 'network_error')) { ev.preventDefault(); boot(); return; }
-  if (t.dataset.retry !== undefined && t.matches('[data-retry]')) { boot(); return; }
-  if (t.dataset.view) { S.view = t.dataset.view; writeUrl(); render(); return; }
-  if (t.dataset.scope) { if (S.scope === t.dataset.scope) return; S.scope = t.dataset.scope; S.view = 'top'; S.expanded.clear(); S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.deskAt = S.liveAt = 0; S.events = []; writeUrl(); render(); mount(); return; }
-  if (t.dataset.expand) {
-    const key = t.dataset.expand;
-    const e = S.events.find((x) => x.key === key);
-    if (!e) return;
-    if (isExpanded(e)) { S.expanded.delete(key); S.expanded.delete(`*:${e.canonical_event_id}`); render(); writeUrl(); return; }
-    S.expanded.add(key); writeUrl(); render();
-    loadDetail(e).then(render, () => {});
-    return;
-  }
-  if (t.dataset.jump) {
-    const e = S.events.find((x) => x.key === t.dataset.jump);
-    if (!e) return;
-    if (!VIEWS[S.view].filter(e)) S.view = 'live';
-    S.expanded.add(e.key); writeUrl(); render(); loadDetail(e).then(render, () => {});
-    requestAnimationFrame(() => document.getElementById(`ev-${e.key.replace(/[^a-zA-Z0-9]/g, '-')}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-  }
+  if (t.matches('[data-retry]')) { boot(); return; }
+  if (t.matches('#drawer-bg') || t.matches('[data-close]')) { closeDrawer(); return; }
+  if (t.dataset.scope) { setScope(t.dataset.scope); return; }
+  if (t.dataset.view) { S.view = t.dataset.view; S.page = 1; writeUrl(); render(); return; }
+  if (t.dataset.when) { S.when = t.dataset.when; S.page = 1; writeUrl(); render(); return; }
+  if (t.matches('[data-more]')) { S.page += 1; writeUrl(false); render(); return; }
+  if (t.matches('[data-reset]')) { S.view = 'all'; S.when = 'all'; S.page = 1; writeUrl(); render(); return; }
+  if (t.dataset.open) { openDrawer(t.dataset.open); }
 });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && S.open) closeDrawer(); });
 window.addEventListener('popstate', () => {
   const prevScope = S.scope;
   readUrl();
   if (S.memberState !== 'entitled') { render(); return; }
-  if (S.scope !== prevScope) { S.desk = null; S.live = null; S.deskStatus = 'loading'; S.events = []; render(); mount(); }
-  else { render(); refreshDetails().then(render, () => {}); }
+  if (S.scope !== prevScope) { S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.events = []; render(); mount(); return; }
+  render();
+  const e = openEvent();
+  if (e && !S.detail.get(e.key)) loadDetail(e).then(render, () => {});
 });
-// Health line ages tick without network: one render per 15 s while visible (no fetch).
+// Health ages tick without network: one renderHealth per 15 s while visible (no fetch).
 let ageTimer = 0;
 function ageTick() { clearTimeout(ageTimer); if (document.hidden) return; ageTimer = setTimeout(() => { renderHealth(); ageTick(); }, 15e3); }
 document.addEventListener('visibilitychange', () => { renderHealth(); ageTick(); });

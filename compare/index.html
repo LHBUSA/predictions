@@ -10,8 +10,9 @@
   <link rel="icon" href="https://propbetedge.ai/logo/pbe-mark-80.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261005c4">
+  <link rel="preconnect" href="https://a.espncdn.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=20261005h1">
 </head>
 <body>
 <header class="top">
@@ -20,23 +21,19 @@
       <img src="https://propbetedge.ai/logo/pbe-mark-80.png" alt="" width="34" height="34">
       <span><b>PROP BET EDGE</b><small>COMPARE</small></span>
     </a>
+    <span class="venues" aria-label="Venues compared"><img src="/assets/kalshi.png" alt="Kalshi" width="18" height="18"><i>↔</i><img src="/assets/polymarket.png" alt="Polymarket" width="18" height="18"><i>+</i><b>PBE</b></span>
     <nav class="top-nav" aria-label="PropBetEdge">
       <a class="hide-sm" href="https://members.propbetedge.ai/">Command Center</a>
       <a class="hide-sm" href="https://predictions.propbetedge.ai/">Predictions</a>
       <a id="acct" class="chip" href="https://members.propbetedge.ai/" data-state="loading">Account</a>
     </nav>
   </div>
+  <div class="hubnav"><div class="wrap"><div class="hubs" id="hubs" role="tablist" aria-label="Hubs"></div></div></div>
 </header>
 
 <main class="wrap" id="main">
-  <section class="strip" aria-label="Comparison views and scope">
-    <div class="views" role="tablist" aria-label="View" id="views"></div>
-    <div class="scopes" id="scopes" role="group" aria-label="Scope"></div>
-  </section>
-
   <section class="health" aria-live="polite">
     <div class="health-line"><span class="dot" id="hb-dot" data-level="info"></span><span id="hb">Checking access…</span></div>
-    <div class="lanes" id="lanes"></div>
   </section>
 
   <div id="notices" class="notices" role="status" aria-live="polite"></div>
@@ -49,13 +46,13 @@
       <div class="gate-actions" id="gate-actions"></div>
     </div>
     <div class="gate-demo" aria-hidden="true">
-      <div class="demo-card">
-        <div class="demo-head"><span>NBA · TONIGHT</span><span class="badge b-comparable">COMPARABLE</span></div>
-        <div class="demo-title">AWAY @ HOME</div>
-        <div class="demo-row"><span>Kalshi</span><i style="--w:61%"></i><b>••¢</b></div>
-        <div class="demo-row"><span>Polymarket</span><i style="--w:58%"></i><b>••¢</b></div>
-        <div class="demo-row"><span>PBE</span><i class="pbe" style="--w:66%"></i><b>••%</b></div>
-        <div class="demo-foot">Spread •.•¢ · observed ••s ago</div>
+      <div class="tile demo">
+        <span class="th"><span class="sport">NBA</span><span class="when">Tonight</span><span class="flex"></span><span class="badge b-comparable">COMPARABLE</span></span>
+        <span class="tt">AWAY @ HOME</span>
+        <span class="tg"><span class="tr thd"><span></span><span class="vh"><img src="/assets/kalshi.png" alt="" width="14" height="14">KALSHI</span><span class="vh"><img src="/assets/polymarket.png" alt="" width="14" height="14">POLY</span><span class="vh">SPREAD</span></span>
+          <span class="tr"><span class="who"><span class="av av-md"><i>A</i></span><span class="nm">AWAY</span></span><span class="px blur"><b>••¢</b></span><span class="px blur"><b>••¢</b></span><span class="gap blur"><b>•.•¢</b></span></span>
+          <span class="tr"><span class="who"><span class="av av-md"><i>H</i></span><span class="nm">HOME</span></span><span class="px blur"><b>••¢</b></span><span class="px blur"><b>••¢</b></span><span class="gap blur"><b>•.•¢</b></span></span></span>
+        <span class="tf"><span class="pbe-chip blur">PBE ••%</span><span class="flex"></span><span class="age">K ••s · P ••s</span></span>
       </div>
     </div>
   </section>
@@ -65,15 +62,17 @@
     <div id="live-cards" class="live-cards"></div>
   </section>
 
-  <section id="board" class="board" hidden aria-label="Markets">
-    <div class="sec-head"><h2 id="board-title">TOP SPREADS</h2><small id="board-meta"></small></div>
-    <div id="cards" class="cards"></div>
-  </section>
+  <section id="board" class="board" hidden aria-label="Markets"></section>
 </main>
 
+<div id="drawer" class="drawer" hidden role="dialog" aria-modal="true" aria-label="Market details">
+  <div class="drawer-bg" id="drawer-bg"></div>
+  <div class="drawer-in" id="drawer-in"></div>
+</div>
+
 <footer class="foot wrap">
-  <p>Venue numbers are PropBetEdge timestamped observations of public venue reads, not live order books. A spread is shown only between contracts whose settlement rules were approved as comparable. Nothing here is investment advice.</p>
+  <p>Venue numbers are PropBetEdge timestamped observations of public venue reads, not live order books. A spread is shown only between contracts whose settlement rules were approved as comparable. Kalshi and Polymarket marks identify the venues; PropBetEdge is not affiliated with either. Nothing here is investment advice.</p>
 </footer>
-<script type="module" src="/app.js?v=20261005c4"></script>
+<script type="module" src="/app.js?v=20261005h1"></script>
 </body>
 </html>
