@@ -24,6 +24,9 @@ import { writeDecisions } from './decision-ledger.js';
 export const USER_AGENT = 'PropBetEdgePredictions/1.0 (+https://predictions.propbetedge.ai; data@propbetedge.ai)';
 const bpToProb = (bp) => (bp === null || bp === undefined ? null : bp / 10000);
 const hourBucket = (iso) => iso.slice(0, 13);
+// Edge-cache successes only. Plain cacheTtl + cacheEverything also pins error responses for the TTL: two NWS 403s
+// (PHX gridpoint, CLL points) replayed on every run 2026-10-04/05 while the same URLs returned 200 from the origin.
+const edge = (ttl) => ({ cacheTtlByStatus: { '200-299': ttl, '300-599': 0 }, cacheEverything: true });
 // bounded I/O fan-out for the core cycle (wall time was the serial sum of ~300 awaited requests)
 const MARKET_CONCURRENCY = 4; const SOURCE_CONCURRENCY = 6; const DB_CONCURRENCY = 6;
 
@@ -61,19 +64,19 @@ function venueRow(n, contractId, eventId, lifecycle) {
 }
 
 async function cachedJson(fetchImpl, url, init, ttl) {
-  const res = await fetchImpl(url, { ...init, cf: { cacheTtl: ttl, cacheEverything: true } });
+  const res = await fetchImpl(url, { ...init, cf: edge(ttl) });
   if (!res.ok) throw new Error(`${url} -> ${res.status}`);
   return res.json();
 }
 
 // Domain-source capture for one station, cached at the edge (MOS 30 min, NWS grid 60 min).
 export async function weatherSources(st, { fetchImpl, now }) {
-  const cachingFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 1800, cacheEverything: true } });
+  const cachingFetch = (url, init) => fetchImpl(url, { ...init, cf: edge(1800) });
   // the three sources are independent: fetched together (wall time = slowest, not the sum); same error semantics and
   // observation order as the former sequential capture (MOS required, grid optional, NBM failure holds the station)
   const [mosR, gridR, nbmR] = await Promise.allSettled([
     fetchUsableRun({ icao: st.icao, now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT }),
-    fetchGridpoint({ lat: st.lat, lon: st.lon }, { fetchImpl: (u, i) => fetchImpl(u, { ...i, cf: { cacheTtl: 3600, cacheEverything: true } }), userAgent: USER_AGENT }),
+    fetchGridpoint({ lat: st.lat, lon: st.lon }, { fetchImpl: (u, i) => fetchImpl(u, { ...i, cf: edge(3600) }), userAgent: USER_AGENT }),
     fetchUsableRun({ icao: st.icao, model: 'NBS', now }, { fetchImpl: cachingFetch, userAgent: USER_AGENT }),
   ]);
   if (mosR.status === 'rejected') throw mosR.reason;
@@ -141,7 +144,7 @@ async function treasuryInputs({ fetchImpl, now }) {
   const rows = [];
   // both years fetched together (the current-year CSV alone has taken 18-19 s on an edge-cache miss)
   const fetched = await Promise.all(urls.map(async (url) => {
-    const res = await fetchImpl(url, { headers: { accept: 'text/csv', 'user-agent': USER_AGENT }, cf: { cacheTtl: 1800, cacheEverything: true } });
+    const res = await fetchImpl(url, { headers: { accept: 'text/csv', 'user-agent': USER_AGENT }, cf: edge(1800) });
     return { res, text: await res.text() };
   }));
   for (const { res, text } of fetched) {
@@ -159,7 +162,7 @@ async function treasuryInputs({ fetchImpl, now }) {
 // Official macro inputs (FRED public CSV; daily H.15 never revised; context series = latest vintage at capture).
 async function fredInputs({ fetchImpl, now }) {
   const since = new Date(Date.parse(now) - 500 * 86400000).toISOString().slice(0, 10);
-  const cached = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtl: 3600, cacheEverything: true } });
+  const cached = (url, init) => fetchImpl(url, { ...init, cf: edge(3600) });
   const fred = await fetchFredSeries([...FED_INPUT_SERIES, ...FED_CONTEXT_SERIES], { fetchImpl: cached, userAgent: USER_AGENT, since });
   const observations = []; const observationKeys = {};
   for (const [id, s] of Object.entries(fred)) {
