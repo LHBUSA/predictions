@@ -57,8 +57,8 @@ test('visible divergence carries its unit: −78 pts / +45 pts / 0 pts (field an
 test('hero + track record + registry name what they count; sources unchanged', () => {
   assert.match(home, /\$\('s-modeled'\)\.textContent = s\.modeled_contracts\.toLocaleString\(\);/);
   assert.match(home, /\$\('s-monitor'\)\.textContent = s\.monitoring_contracts\.toLocaleString\(\);/);
-  assert.ok(index.includes('<small>contracts with a public PBE probability</small>') && !index.includes('research-stage forecasts'));
-  assert.ok(index.includes('<small>tracked contracts without a public PBE model</small>') && !index.includes('market shown, no PBE number'));
+  assert.ok(index.includes('<small>contracts with a PBE probability</small>') && !index.includes('research-stage forecasts'));
+  assert.ok(index.includes('<small>tracked contracts without a PBE model</small>') && !index.includes('market shown, no PBE number'));
   assert.ok(home.includes('<span>Resolved contracts</span>') && !home.includes('Resolved forecasts'));
   assert.match(home, /\$\{t\.resolved_contracts \?/);
   assert.ok(index.includes('<th>Forecast snapshots</th>') && !index.includes('<th>Live forecasts</th>'));

@@ -1,4 +1,8 @@
 // Homepage: renders only stored values from /api (pbe-predictions Worker). No illustrative numbers.
+// Predictions is a premium product included with PropBetEdge All Access (no free tier). Public: the product shell,
+// engine/aggregate stats (summary), calendar, aggregate track record and model registry. All Access / owner: the
+// intelligence desk (/api/desk is gated server-side: 401/403/503 with no payload otherwise), tape and featured
+// divergences. Anonymous readers never request the desk.
 const API = '/api';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -13,26 +17,36 @@ const BADGE = { RESEARCH: 'b-research', VALIDATED: 'b-validated', OFFICIAL: 'b-o
 const badge = (s) => `<span class="badge ${BADGE[s] || 'b-monitoring'}">${esc(s === 'MARKET_MONITORING' ? 'Market monitoring' : s)}</span>`;
 const dcls = (d) => (d > 0 ? 'dpos' : d < 0 ? 'dneg' : '');
 const getJSON = async (p) => { const r = await fetch(`${API}/${p}`, { cache: 'no-store' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
-let deskAccess = { tier: 'free' };
-// All Access: the full divergence scanner (every market, search, sort). Free: the largest headline gaps.
-function applyAccess() {
-  const free = deskAccess.tier !== 'all_access';
-  for (const id of ['q', 'sort']) { const el = $(id); if (el) { el.hidden = free; const lab = document.querySelector(`label[for="${id}"]`); if (lab) lab.hidden = free; } }
-  let lock = $('desk-lock');
-  if (free && deskAccess.total_events > (deskAccess.shown || 0)) {
-    if (!lock) { lock = document.createElement('div'); lock.id = 'desk-lock'; lock.className = 'card prem prem-desk'; $('desk-list').after(lock); }
-    lock.innerHTML = `<span class="prem-kicker">ALL ACCESS</span><p>Showing the ${deskAccess.shown} largest model-vs-market gaps of <b class="num">${deskAccess.total_events}</b> live events (${deskAccess.total_contracts.toLocaleString()} contracts). The full divergence scanner — every market, search and sorting — is part of All Access.</p><a class="aa-pill" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_desk_unlock">10 sports + PropBetEdge Predictions · $29/month</a> <a class="prem-signin" href="#" data-pbe-signin>Already a member? Sign in</a>`;
-  } else if (lock) lock.remove();
+// All Access / owner only (access.js resolves membership; the server enforces it). The gate stays for everyone else.
+let member = false;
+let mvLoaded = false;
+function unlock() {
+  const show = (id, on) => { const el = $(id); if (el) el.hidden = !on; };
+  show('desk-gate', false); show('desk-controls', true); show('hero-member-cta', true);
 }
-async function loadPremiumDesk() {
+function renderDesk(d) {
+  events = d.events;
+  live.sig.tape = JSON.stringify(events.filter((e) => e.headline && e.headline.pbe_pct !== null).map((e) => [e.url, e.headline.pbe_pct, e.headline.market_pct, e.headline.divergence_pts]));
+  tape(); featured(); cats(); views(); desk();
+  // Multi-venue desk: loaded after the desk is on screen so a slow venue read never delays it.
+  if (!mvLoaded) { mvLoaded = true; import('./multivenue.js?v=20261004mv4').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e)); }
+}
+async function loadDesk() {
   try {
-    const r = await fetch(`${API}/premium/desk`, { credentials: 'same-origin', cache: 'no-store' });
-    if (!r.ok) return;
-    const d = await r.json(); events = d.events; deskAccess = d.access || { tier: 'all_access' };
-    cats(); views(); desk(); applyAccess();
-  } catch { /* stays on the free desk */ }
+    const r = await fetch(`${API}/desk`, { credentials: 'same-origin', cache: 'no-store' });
+    if (!r.ok) return false; // 401/403/503: the gate stays (access.js paints the right action)
+    const body = await r.text(); live.sig.desk = body;
+    unlock(); renderDesk(JSON.parse(body)); live.last.desk = Date.now();
+    return true;
+  } catch (e) { fail('desk', e); return false; }
 }
-document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled) loadPremiumDesk(); });
+function onMembership(m) {
+  if (!m?.entitled || member) return;
+  member = true;
+  $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
+  loadDesk().then((ok) => { if (!ok) { member = false; $('desk-list').innerHTML = ''; } });
+}
+document.addEventListener('pbe:membership', (ev) => onMembership(ev.detail));
 
 let events = [];
 const state = { cat: new URLSearchParams(location.search).get('category') || 'ALL', q: '', sort: 'div', view: 'ALL' };
@@ -159,7 +173,8 @@ function stats(s) {
 
 function tape() {
   const items = events.filter((e) => e.headline && e.headline.pbe_pct !== null).sort((a, b) => b.max_abs_divergence - a.max_abs_divergence).slice(0, 18);
-  if (!items.length) { $('tape').parentElement.hidden = true; return; }
+  $('tape').parentElement.hidden = !items.length;
+  if (!items.length) return;
   // ONE semantic track + ONE inert visual clone (the seamless loop): the clone is aria-hidden, inert and out of the tab
   // order, so screen readers, text extraction and crawlers see each item once. Reduced motion: no loop, no clone.
   const item = (e, clone) => { const h = e.headline; return `<a href="${esc(e.url)}"${clone ? ' aria-hidden="true" tabindex="-1" inert data-tape-clone' : ''}><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${h.pbe_pct}%</b> · MKT <b class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</b>${h.divergence_pts !== null ? ` · <span class="num ${h.divergence_pts >= 0 ? 'pos' : 'neg'}">${pts(h.divergence_pts)}</span>` : ''}</a>`; };
@@ -171,7 +186,8 @@ function shortTitle(e) { return e.title.replace(/^(Highest temperature in|Where 
 
 function featured() {
   const top = events.filter((e) => e.headline?.divergence_pts !== null && e.headline?.pbe_pct !== null).sort((a, b) => Math.abs(b.headline.divergence_pts) - Math.abs(a.headline.divergence_pts)).slice(0, 3);
-  if (!top.length) { $('featured').closest('.section').hidden = true; return; }
+  $('featured').closest('.section').hidden = !top.length;
+  if (!top.length) return;
   $('featured').innerHTML = top.map((e) => { const h = e.headline; return `<a class="card feat" href="${esc(e.url)}">
     <div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>closes in ${untilEl(e.close_time)}</span></div>
     <h3>${esc(e.title)}</h3><div class="outcome">Outcome: <b>${esc(h.label)}</b> · ${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div>
@@ -243,24 +259,23 @@ function fail(where, e) { console.error(where, e); }
 // every 2 min, track record + models every 5 min (or at once when the summary's scored count moves). Hidden tab: no
 // network at all; on return, everything due is fetched immediately. One timer, one visibility listener, at most one
 // in-flight request per dataset; a dataset re-renders only when its payload changed (no tape restart, no CLS).
-// An entitled reader stays on the All Access desk: a refresh never downgrades to the free payload.
+// The desk refreshes only for members; a failed read keeps what is on screen (never a downgrade, never a free payload).
 const LIVE_MS = { summary: 60e3, desk: 60e3, calendar: 120e3, track: 300e3, models: 300e3 };
 const live = { last: {}, inflight: new Set(), sig: {}, requests: 0, timer: null, listener: false };
-const entitled = () => deskAccess.tier === 'all_access' || !!window.PBE_MEMBERSHIP?.entitled;
 async function pull(name) {
   if (document.hidden || live.inflight.has(name)) return;
+  if (name === 'desk' && !member) return;
   live.inflight.add(name); live.last[name] = Date.now(); live.requests += 1;
   try {
     if (name === 'desk') {
-      const premium = entitled();
-      const r = premium ? await fetch(`${API}/premium/desk`, { credentials: 'same-origin', cache: 'no-store' }) : null;
-      const body = premium ? (r && r.ok ? await r.text() : null) : await fetch(`${API}/desk`, { cache: 'no-store' }).then((x) => (x.ok ? x.text() : null));
-      if (!body || body === live.sig.desk) return; // unchanged (or a failed premium read: keep what is on screen)
+      const r = await fetch(`${API}/desk`, { credentials: 'same-origin', cache: 'no-store' });
+      const body = r.ok ? await r.text() : null;
+      if (!body || body === live.sig.desk) return; // unchanged, or a failed read: keep what is on screen
       const d = JSON.parse(body); live.sig.desk = body;
-      events = d.events; deskAccess = d.access || (premium ? { tier: 'all_access' } : { tier: 'free' });
+      events = d.events;
       const tapeSig = JSON.stringify(events.filter((e) => e.headline && e.headline.pbe_pct !== null).map((e) => [e.url, e.headline.pbe_pct, e.headline.market_pct, e.headline.divergence_pts]));
       if (tapeSig !== live.sig.tape) { live.sig.tape = tapeSig; tape(); }
-      featured(); cats(); views(); desk(); applyAccess();
+      featured(); cats(); views(); desk();
       return;
     }
     const path = { summary: 'summary', calendar: 'calendar', track: 'track-record', models: 'models' }[name];
@@ -299,20 +314,14 @@ window.PBE_LIVE = { stats: () => ({ requests: live.requests, inflight: [...live.
 async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
-  $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
-  const [s, d, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('desk'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
+  if (window.PBE_MEMBERSHIP) onMembership(window.PBE_MEMBERSHIP); // access.js may have resolved first
+  const [s, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
-  if (d.status === 'fulfilled') { events = d.value.events; deskAccess = d.value.access || { tier: 'free' }; tape(); featured(); cats(); views(); desk(); applyAccess(); if (window.PBE_MEMBERSHIP?.entitled) loadPremiumDesk(); }
-  // Multi-venue desk (no URL flag): loaded after the desk is on screen so a slow venue read never delays it;
-  // the desk re-renders once with venue lines. Polymarket appears only when the shared Worker returns it.
-  if (d.status === 'fulfilled') import('./multivenue.js?v=20261004mv4').then((m) => m.ready).then(() => { window.PBE_MV?.addModes(events); desk(); }).catch((e) => fail('multi-venue', e));
-  else { $('desk-list').innerHTML = '<div class="card empty-honest">The live desk could not be loaded right now. Stored records are unaffected; try again shortly.</div>'; fail('desk', d.reason); }
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);
   if (m.status === 'fulfilled') registry(m.value);
   if (s.status === 'fulfilled') live.scored = s.value.resolved_scored;
-  if (d.status === 'fulfilled') live.sig.tape = JSON.stringify(events.filter((e) => e.headline && e.headline.pbe_pct !== null).map((e) => [e.url, e.headline.pbe_pct, e.headline.market_pct, e.headline.divergence_pts]));
   const t0 = Date.now();
-  startLive({ summary: t0, desk: t0, calendar: t0, track: t0, models: t0 });
+  startLive({ summary: t0, desk: live.last.desk || t0, calendar: t0, track: t0, models: t0 });
 }
 main();

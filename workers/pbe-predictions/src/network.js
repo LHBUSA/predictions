@@ -4,7 +4,7 @@
 import NET from '../../../brand/network.json' with { type: 'json' };
 
 export const NETWORK = NET;
-export const ACCESS_V = '20261004a';
+export const ACCESS_V = '20261005aa1';
 export const THEME_V = '20261004t1';
 // applied in <head> before first paint (no flash); light = no attribute (default)
 export const THEME_BOOT = `<script>try{var t=localStorage.getItem('pbe-theme');if(t==='dark'||t==='system')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>`;
@@ -22,9 +22,9 @@ ${BRAND}
 <div class="top-right">
 <span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>
 ${THEME_BTN}
-<a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="free" aria-label="Membership"><span class="mem-state">FREE</span><span class="mem-action">Sign in</span></a>
 <a class="net-link" href="${NET.brand.url}" data-pbe-placement="predictions_header_network"><span class="net-long">PropBetEdge Network</span><span class="net-short">Network</span> <span aria-hidden="true">↗</span></a>
-<a class="aa-pill" href="${NET.all_access.url}" data-pbe-placement="predictions_header_all_access" aria-label="PropBetEdge All Access, ${e(NET.all_access.price)}">${e(NET.all_access.label)} · ${e(NET.all_access.price)}</a>
+<a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="loading" aria-label="Account"><span class="mem-state">Account</span></a>
+<a class="aa-pill" href="${NET.all_access.url}" data-acct-cta data-pbe-placement="predictions_header_all_access" aria-label="Get PropBetEdge All Access, $29/month">Get All Access</a>
 </div></div>
 <nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}<a class="subnav-net" href="${NET.brand.url}">PropBetEdge ↗</a></div></nav>
 </header>

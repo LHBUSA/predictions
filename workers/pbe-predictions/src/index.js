@@ -15,10 +15,10 @@ import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
-import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome } from './pages.js';
+import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome, eventIntel } from './pages.js';
 import { renderPng } from './og.js';
 import { predictionsMembership, PRIVATE_HEADERS } from './membership.js';
-import { publicEventView, premiumEventView, eventCsv, publicDesk, ALL_ACCESS_REQUIRED } from './premium.js';
+import { publicEventShell, premiumEventView, eventCsv, ALL_ACCESS_REQUIRED, ENTITLEMENT_UNAVAILABLE } from './premium.js';
 import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
@@ -66,11 +66,15 @@ async function cachedPng(req, ctx, render, opts = {}) {
 }
 
 // Member-only and identity responses: private, no-store, Vary: Cookie (never in a shared cache).
-const privateJson = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...PRIVATE_HEADERS } });
+const privateJson = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...PRIVATE_HEADERS, ...extra } });
+// The ONE server-side gate for Predictions intelligence (All Access or owner). Not entitled -> no payload:
+// anonymous 401, signed in without All Access 403, entitlement unverifiable 503 (retry; never treated as unsubscribed).
 async function requireAllAccess(req, env) {
   const m = await predictionsMembership(req, env);
   if (m.membership.entitled) return { ok: true, m };
-  return { ok: false, res: privateJson({ ...ALL_ACCESS_REQUIRED, authenticated: m.authenticated, membership: { state: m.membership.state, label: m.membership.label } }, m.authenticated ? 403 : 401) };
+  const membership = { state: m.membership.state, label: m.membership.label };
+  if (m.membership.state === 'unverified') return { ok: false, res: privateJson({ ...ENTITLEMENT_UNAVAILABLE, membership }, 503, { 'retry-after': '5' }) };
+  return { ok: false, res: privateJson({ ...ALL_ACCESS_REQUIRED, authenticated: m.authenticated, membership }, m.authenticated ? 403 : 401) };
 }
 
 export const BTC_SHADOW_CRON = CRONS.FAST;
@@ -227,10 +231,18 @@ export default {
       const store = storeFor(env);
       if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
       if (p === '/v1/summary') return json(await summary(store));
-      if (p === '/v1/desk') return json(publicDesk(await desk(store, { venues: true })));
-      // Membership + All Access (Predictions is an All-Access-only product surface; network authority decides)
+      // Membership + All Access. Predictions is a premium product included with All Access: every route below that
+      // carries a PBE probability, market comparison, evidence or history is behind requireAllAccess + privateJson.
       if (p === '/v1/membership') { const m = await predictionsMembership(req, env); return privateJson({ authenticated: m.authenticated, membership: m.membership }); }
-      if (p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
+      if (p === '/v1/desk' || p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
+      if (p.startsWith('/v1/premium/event-page/')) {
+        const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
+        const slug = decodeURIComponent(p.slice('/v1/premium/event-page/'.length));
+        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return privateJson({ error: 'not_found' }, 404);
+        const full = await eventRecord(store, slug);
+        if (!full) return privateJson({ error: 'not_found' }, 404);
+        return privateJson({ at: full.generated_at, ...eventIntel(premiumEventView(full), { multiVenue: true }) });
+      }
       if (p.startsWith('/v1/premium/event/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const rest = decodeURIComponent(p.slice('/v1/premium/event/'.length));
@@ -247,8 +259,9 @@ export default {
       if (p === '/v1/queue') return json(await queue(store));
       if (p === '/v1/track-record') return json(await trackRecord(store));
       if (p.startsWith('/v1/event/')) {
+        const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
-        return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
+        return rec ? privateJson(premiumEventView(rec)) : privateJson({ error: 'not_found' }, 404);
       }
       // Live LIVE UPDATE layer of an Insights article (published evidence never changes; only this region refreshes).
       if (p.startsWith('/v1/live/insight/')) {
@@ -259,26 +272,27 @@ export default {
       }
       // Live regions of an event page (re-rendered by the SAME server functions; the page swaps them in place while visible).
       if (p.startsWith('/v1/live/event/')) {
+        const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const slug = decodeURIComponent(p.slice('/v1/live/event/'.length));
-        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return json({ error: 'not_found' }, 404);
+        if (!/^[a-z0-9-]{3,140}$/.test(slug)) return privateJson({ error: 'not_found' }, 404);
         const full = await eventRecord(store, slug);
-        if (!full) return json({ error: 'not_found' }, 404);
-        const rec = publicEventView(full); const h = headlineOutcome(rec);
-        return json({ at: rec.generated_at, atmosphere: h?.intel?.atmosphere ?? null, regions: { call: h?.call ? callBlock(h) : null, station: h?.intel ? liveWeatherBlock(h) : stationBlock(h), market: marketView(h) } }, 200, 'public, max-age=15');
+        if (!full) return privateJson({ error: 'not_found' }, 404);
+        const rec = premiumEventView(full); const h = headlineOutcome(rec);
+        return privateJson({ at: rec.generated_at, atmosphere: h?.intel?.atmosphere ?? null, regions: { call: h?.call ? callBlock(h) : null, station: h?.intel ? liveWeatherBlock(h) : stationBlock(h), market: marketView(h) } });
       }
       if (p.startsWith('/v1/contract/')) {
+        const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const rec = await contractRecord(store, decodeURIComponent(p.slice('/v1/contract/'.length)));
-        return rec ? json(publicEventView(rec)) : json({ error: 'not_found' }, 404);
+        return rec ? privateJson(premiumEventView(rec)) : privateJson({ error: 'not_found' }, 404);
       }
       // server-rendered pages (Vercel rewrites predictions.propbetedge.ai/events/:slug, /record, /sitemap.xml here)
       if (p.startsWith('/pages/events/')) {
         const slug = decodeURIComponent(p.slice('/pages/events/'.length));
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return html(renderNotFound(`/events/${slug}`), 404);
         const full = await eventRecord(store, slug);
-        const rec = full ? publicEventView(full) : null; // public SSR never carries the member archive
-        // Multi-venue panel on every event page (?mv=1 canary removed 2026-10-04): hidden until a second venue has
-        // stored observations or a related venue market exists; the shared Worker's kill switch governs both.
-        return rec ? html(renderEvent(rec, { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })), multiVenue: true })) : html(renderNotFound(`/events/${slug}`), 404);
+        // public SSR = the whitelisted product shell (no PBE, market comparison, evidence or history; never keyed on
+        // cookies). Members load the intelligence from /v1/premium/event-page/<slug> (incl. the multi-venue panel).
+        return full ? html(renderEvent(publicEventShell(full), { stories: (await storiesForEvent(store, slug)).map((s) => ({ slug: s.slug, title: s.link_title, family_label: s.family_label, published_at: s.published_at })) })) : html(renderNotFound(`/events/${slug}`), 404);
       }
       // Social cards (Vercel rewrites /og/events/* and /og/insights/* here)
       if (p.startsWith('/og/events/') && p.endsWith('.png')) {
@@ -286,7 +300,7 @@ export default {
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return json({ error: 'not_found' }, 404);
         const rec = await eventRecord(store, slug);
         if (!rec) return json({ error: 'not_found' }, 404);
-        return cachedPng(req, ctx, () => eventCard(rec, headlineOutcome(rec)));
+        return cachedPng(req, ctx, () => eventCard(publicEventShell(rec)));
       }
       if (p.startsWith('/og/insights/') && p.endsWith('.png')) {
         const item = await storyForSlug(store, decodeURIComponent(p.slice('/og/insights/'.length, -4)));
@@ -328,7 +342,7 @@ export default {
         return ref ? new Response(null, { status: 301, headers: { location: `${SITE}/events/${ref.slug}#${encodeURIComponent(ref.market_id)}`, 'cache-control': 'public, max-age=3600' } }) : html(renderNotFound('/record/'), 404);
       }
       if (p === '/sitemap.xml') return new Response(sitemapXml(await sitemapEntries(store), (await publishedStories(store)).map((i) => ({ slug: i.story.slug, vertical: i.story.vertical, published_at: i.story.published_at }))), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=900, no-transform', vary: 'Accept-Encoding' } });
-      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/desk', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/event/:slug', '/v1/contract/:contract_id'] }, 404);
+      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/membership'], all_access: ['/v1/desk', '/v1/event/:slug', '/v1/contract/:contract_id', '/v1/live/event/:slug', '/v1/premium/*'] }, 404);
     } catch (e) {
       console.error(e.stack || e.message);
       return json({ error: 'internal_error', message: e.message }, 500, 'no-store');

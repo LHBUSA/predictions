@@ -77,24 +77,19 @@ ${tiles}
 </svg>`;
 }
 
-const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const utc = (iso) => `${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+const day = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-// Event card from the canonical event record (pages.js headlineOutcome). Monitoring events show the market only.
-export function eventCard(rec, h) {
-  const e = rec.event;
-  const modeled = h && h.pbe_pct !== null;
-  const stats = [];
-  if (modeled) stats.push({ label: 'PBE model', value: `${h.pbe_pct}%`, tone: 'pbe' });
-  if (h && h.market_pct !== null) stats.push({ label: 'Market', value: `${h.market_pct}%`, tone: 'market', sub: 'Kalshi mid' });
-  if (modeled && h.divergence_pts !== null) stats.push({ label: 'Divergence', value: `${sign(h.divergence_pts)} pts`, tone: h.divergence_pts > 0 ? 'pos' : h.divergence_pts < 0 ? 'neg' : 'neutral' });
-  const asOf = [h?.published_at, h?.market_observed_at].filter(Boolean).sort().at(-1) || e.date_modified;
+// Public event card from the public shell (premium.js publicEventShell): Predictions is an All Access product, so the
+// card carries no PBE probability, market price or divergence — only what the public page shows.
+export function eventCard(shell) {
+  const e = shell.event;
   return cardSvg({
     eyebrow: e.category_label.toUpperCase(),
-    badge: modeled ? `${h.model_state || 'RESEARCH'} MODEL` : 'MARKET MONITORING · NO PBE MODEL',
+    badge: shell.modeled ? 'PBE FORECAST · ALL ACCESS' : 'MARKET MONITORING · ALL ACCESS',
     title: e.title,
-    subtitle: h ? `Outcome: ${h.label}` : null,
-    stats,
-    footer: `As of ${utc(asOf)}${modeled ? ` · ${h.model}` : ''}`,
+    subtitle: 'Independent probability. Auditable decisions.',
+    stats: [{ label: 'Outcomes', value: String(shell.outcomes.length), tone: 'neutral' }, { label: 'Closes', value: day(e.close_time), tone: 'neutral', sub: utc(e.close_time) }, { label: 'All Access', value: '$29/mo', tone: 'pbe' }],
+    footer: 'Included with PropBetEdge All Access',
   });
 }

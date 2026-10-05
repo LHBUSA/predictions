@@ -1,6 +1,7 @@
 // Homepage live refresh (owner P4 2026-10-04): no reloads; summary + desk 60 s, calendar 2 min, track/models 5 min;
 // zero network while hidden + immediate catch-up on return; one timer + one visibility listener for the page's life;
-// no overlapping fetches; an entitled reader never falls back to the free desk; unchanged payloads do not re-render.
+// no overlapping fetches; the desk is All Access only (anonymous readers never request it; a member is never
+// downgraded by a failed read); unchanged payloads do not re-render.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -8,7 +9,7 @@ import vm from 'node:vm';
 
 const home = readFileSync(new URL('../home.js', import.meta.url), 'utf8');
 
-function boot({ entitled = false, deskBody = null } = {}) {
+function boot({ entitled = false, deskBody = null, deskStatus = 200 } = {}) {
   const nodes = {};
   const el = (id) => (id === 'desk-lock' && !nodes[id] ? null : nodes[id] ||= { id, remove() {}, innerHTML: '', textContent: '', hidden: false, dataset: {}, style: {}, parentElement: { hidden: false }, querySelectorAll: () => [], querySelector: () => null, addEventListener() {}, closest: () => ({ hidden: false }), after() {}, classList: { toggle() {}, add() {}, remove() {} } });
   const listeners = {};
@@ -17,12 +18,13 @@ function boot({ entitled = false, deskBody = null } = {}) {
   let pending = null;
   const summary = { live_contracts: 1, live_events: 1, by_category: { WEATHER: 1 }, modeled_contracts: 1, monitoring_contracts: 0, resolved_scored: 0, last_engine_cycle: new Date().toISOString(), models_live: 1, models_shadow: 0 };
   const desk = deskBody || { events: [{ url: '/events/a', title: 'A?', category: 'WEATHER', category_label: 'Weather', close_time: new Date(Date.now() + 3600e3).toISOString(), outcomes: [], outcomes_modeled: 1, outcomes_total: 1, max_abs_divergence: 5, state: 'RESEARCH', headline: { label: 'x', pbe_pct: 50, market_pct: 45, divergence_pts: 5, published_at: new Date().toISOString() } }], access: entitled ? { tier: 'all_access' } : { tier: 'free', total_events: 1, shown: 1 } };
-  const bodies = { 'summary': summary, 'desk': desk, 'premium/desk': { ...desk, access: { tier: 'all_access' } }, 'calendar': { events: [] }, 'track-record': { resolved_contracts: 0, min_for_claims: 30, groups: [] }, 'models': { families: [] } };
+  const bodies = { 'summary': summary, 'desk': { ...desk, access: { tier: 'all_access' } }, 'calendar': { events: [] }, 'track-record': { resolved_contracts: 0, min_for_claims: 30, groups: [] }, 'models': { families: [] } };
   const fetch = (url, init = {}) => {
     const path = String(url).replace(/^\/api\//, '').replace(/\?.*$/, '');
     calls.push({ path, init });
     if (pending && path === pending.path) return pending.promise;
     const b = bodies[path];
+    if (path === 'desk' && deskStatus !== 200) return Promise.resolve({ ok: false, status: deskStatus, json: async () => ({}), text: async () => '{}' });
     return Promise.resolve({ ok: !!b, status: b ? 200 : 404, json: async () => b, text: async () => JSON.stringify(b) });
   };
   const doc = { hidden: false, getElementById: el, querySelector: () => null, querySelectorAll: () => [], addEventListener: (t, f) => { (listeners[t] ||= []).push(f); }, documentElement: { dataset: {} }, body: { classList: { toggle() {} } }, createElement: () => el('x') };
@@ -34,7 +36,7 @@ function boot({ entitled = false, deskBody = null } = {}) {
   ctx.window.document = doc;
   vm.createContext(ctx);
   const src = home.replace(/import\('\.\/multivenue\.js[^)]*\)/, 'Promise.reject(new Error("no mv in test"))');
-  vm.runInContext(`${src}\n;globalThis.__live = live; globalThis.__tick = liveTick; globalThis.__pull = pull; globalThis.__events = () => events; globalThis.__access = () => deskAccess;`, ctx);
+  vm.runInContext(`${src}\n;globalThis.__live = live; globalThis.__tick = liveTick; globalThis.__pull = pull; globalThis.__events = () => events; globalThis.__member = () => member;`, ctx);
   return { ctx, calls, intervals, listeners, doc, nodes, setPending: (p) => { pending = p; } };
 }
 const flush = () => new Promise((r) => setImmediate(r));
@@ -51,7 +53,7 @@ test('first load seeds the lifecycle: one timer, one visibility listener, no imm
 });
 
 test('due datasets refresh on their cadence (summary/desk 60 s, calendar 120 s, track/models 300 s), all with no-store', async () => {
-  const t = boot();
+  const t = boot({ entitled: true });
   await flush(); await flush();
   const L = t.ctx.__live;
   const back = (ms) => { for (const k of Object.keys(L.last)) L.last[k] -= ms; };
@@ -68,7 +70,7 @@ test('due datasets refresh on their cadence (summary/desk 60 s, calendar 120 s, 
 });
 
 test('hidden tab: zero requests; returning to the tab catches up immediately; repeated visibility changes add no timers', async () => {
-  const t = boot();
+  const t = boot({ entitled: true });
   await flush(); await flush();
   const L = t.ctx.__live;
   t.doc.hidden = true;
@@ -98,22 +100,43 @@ test('no overlapping fetch for a dataset while one is in flight', async () => {
   await flush();
 });
 
-test('entitled reader: desk refresh reads only /premium/desk and a failed premium read keeps the All Access desk', async () => {
+test('anonymous reader: the desk is never requested (first load, cadence, catch-up); the gate stays', async () => {
+  const t = boot();
+  await flush(); await flush();
+  assert.ok(!t.calls.some((c) => c.path === 'desk' || c.path.startsWith('premium')), 'no desk on first load');
+  const L = t.ctx.__live;
+  for (const k of Object.keys(L.last)) L.last[k] -= 10 * 60e3;
+  t.ctx.__tick(); await flush(); await flush();
+  assert.deepEqual(t.calls.map((c) => c.path).sort(), ['calendar', 'models', 'summary', 'summary', 'track-record', 'calendar', 'models', 'track-record'].sort());
+  assert.equal(t.ctx.__member(), false);
+  assert.equal(t.nodes['desk-gate']?.hidden ?? false, false, 'gate still shown');
+});
+
+test('member: desk reads /desk with credentials, unlocks the desk, and a failed read keeps what is on screen', async () => {
   const t = boot({ entitled: true });
   await flush(); await flush();
+  assert.equal(t.ctx.__member(), true);
+  assert.equal(t.nodes['desk-gate'].hidden, true, 'gate replaced'); assert.equal(t.nodes['desk-controls'].hidden, false);
   t.calls.length = 0;
+  t.ctx.__live.sig.desk = 'old';
   await t.ctx.__pull('desk');
-  assert.deepEqual(t.calls.map((c) => c.path), ['premium/desk']);
+  assert.deepEqual(t.calls.map((c) => c.path), ['desk']);
   assert.equal(t.calls[0].init.credentials, 'same-origin');
-  assert.equal(t.ctx.__access().tier, 'all_access');
-  t.setPending({ path: 'premium/desk', promise: Promise.resolve({ ok: false, status: 503, text: async () => '' }) });
+  assert.equal(t.ctx.__events().length, 1);
+  t.setPending({ path: 'desk', promise: Promise.resolve({ ok: false, status: 503, text: async () => '' }) });
   await t.ctx.__pull('desk');
-  assert.equal(t.ctx.__access().tier, 'all_access', 'never downgraded to the free desk');
-  assert.ok(!t.calls.some((c) => c.path === 'desk'));
+  assert.equal(t.ctx.__events().length, 1, 'never downgraded by a failed read');
+});
+
+test('a member whose desk read is refused (403/503) keeps the gate', async () => {
+  const t = boot({ entitled: true, deskStatus: 403 });
+  await flush(); await flush();
+  assert.equal(t.ctx.__member(), false);
+  assert.notEqual(t.nodes['desk-gate']?.hidden, true);
 });
 
 test('an unchanged payload does not re-render (no tape restart, no layout shift)', async () => {
-  const t = boot();
+  const t = boot({ entitled: true });
   await flush(); await flush();
   await t.ctx.__pull('desk'); // first refresh records the signature
   t.nodes.tape.innerHTML = 'SENTINEL'; t.nodes['desk-list'].innerHTML = 'SENTINEL';

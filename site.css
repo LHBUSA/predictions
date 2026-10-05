@@ -402,6 +402,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .subnav{display:none}
 @media (max-width:1280px){.top-right .live-dot{display:none}}
 @media (max-width:1100px){.nav a{padding:7px 8px;font-size:13.5px}.topbar .wrap{gap:14px}}
+@media (max-width:1180px){.net-long{display:none}.net-short{display:inline}}
 @media (max-width:900px){
   .net-long{display:none}.net-short{display:inline}
   .subnav{display:block;border-top:1px solid var(--line-2);background:rgba(255,255,255,.96)}
@@ -439,13 +440,22 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .net-module .aa-pill{white-space:normal;line-height:1.35;text-align:left;max-width:100%}
 
 /* ---------- membership chip, sign-in, All Access modules ---------- */
-.mem-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);text-decoration:none!important;white-space:nowrap}
-.mem-chip .mem-state{letter-spacing:.08em}
-.mem-chip .mem-action{color:var(--blue);font-weight:750}
-.mem-chip .mem-action:empty{display:none}
-.mem-chip[data-state=all_access],.mem-chip[data-state=owner]{border-color:#c99a1e;background:#fff7e0;color:#6b4e00}
+.mem-chip{display:inline-flex;align-items:center;justify-content:center;min-width:68px;font-size:13px;font-weight:750;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--navy);text-decoration:none!important;white-space:nowrap}
+.mem-chip:hover{border-color:var(--blue-2)}
+.mem-chip[data-state=loading]{color:var(--muted)}
+.mem-chip[data-state=signed_in]{border-color:#c99a1e;color:#6b4e00}
+.mem-chip[data-state=unverified]{border-style:dashed;color:var(--ink-2)}
+.mem-chip[data-state=all_access],.mem-chip[data-state=owner]{font-size:12px;font-weight:800;letter-spacing:.08em;border-color:#c99a1e;background:#fff7e0;color:#6b4e00}
 .subnav-net{display:none!important}
-@media (max-width:480px){.top-right .net-link{display:none}.subnav-net{display:inline-flex!important}.mem-chip .mem-action{display:none}}
+@media (max-width:480px){.top-right .net-link{display:none}.subnav-net{display:inline-flex!important}.mem-chip{min-width:0;padding:6px 10px;font-size:12px}}
+/* Account-dependent actions: invisible (space kept, no shift) until access.js resolves the reader's state; never a
+   purchase CTA for All Access / owner, and none while entitlement is being re-checked. */
+html:not([data-acct]) [data-acct-cta],html:not([data-acct]) [data-gate-cta]{visibility:hidden}
+html[data-acct=signed_in] [data-acct-cta],html[data-acct=unverified] [data-acct-cta],html[data-acct=all_access] [data-acct-cta],html[data-acct=owner] [data-acct-cta]{display:none}
+html[data-acct=all_access] [data-gate-cta],html[data-acct=owner] [data-gate-cta]{display:none}
+html:not([data-acct]) [data-purchase-cta]{visibility:hidden}
+html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-purchase-cta],html[data-acct=owner] [data-purchase-cta]{display:none}
+#hero-member-cta[hidden],#desk-controls[hidden],#desk-gate[hidden],.tape[hidden],.section[hidden]{display:none!important}
 .prem{position:relative;border:1px solid #e3c766;background:linear-gradient(180deg,#fffdf6,#fff)}
 .prem-kicker{display:inline-block;font-size:10.5px;letter-spacing:.16em;font-weight:850;color:#8a6a10}
 .prem h2{margin:6px 0 6px}
@@ -455,8 +465,22 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 .prem-signin{font-size:13px;font-weight:700}
 .prem-active{font-size:12px;letter-spacing:.08em;font-weight:850;color:#8a6a10;margin:0 0 8px}
 .prem-body h3{font-size:15px;margin:10px 0 6px}
-.prem-desk{margin-top:12px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.prem-desk p{margin:0;flex:1 1 100%}
+.gate{padding:22px 24px}
+.gate h2{font-size:22px;letter-spacing:-.01em;margin:8px 0 10px}
+.gate-list{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 22px;font-size:14.5px;color:var(--ink-2)}
+.gate-list li{position:relative;padding-left:22px}
+.gate-list li::before{content:"";position:absolute;left:2px;top:.45em;width:9px;height:5px;border-left:2px solid #b8860b;border-bottom:2px solid #b8860b;transform:rotate(-45deg)}
+.gate-price{margin:0 0 14px;font-size:15px;color:var(--ink)}
+.gate-cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.gate-cta .cta-primary{background:linear-gradient(135deg,#f6d77a,#d4af37 55%,#c99a1e);color:#3b2a05;border:1px solid #c99a1e;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 6px 18px rgba(212,175,55,.3)}
+.gate-cta .cta-primary:hover{filter:brightness(1.05);background:linear-gradient(135deg,#f6d77a,#d4af37 55%,#c99a1e)}
+.gate-cta .cta-secondary{border:1px solid var(--line);color:var(--navy);background:var(--panel)}
+.gate-cta .cta-secondary:hover{background:var(--blue-bg)}
+.gate-retry{margin:0;font-size:14px;color:var(--ink-2)}
+.gate-retry button{margin-left:6px;font:inherit;font-weight:750;color:var(--blue);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.prem-lock .gate-cta{flex:1 1 100%}
+.hero-membership{margin:14px 0 0;font-size:14px;font-weight:700;color:#e9c46a;letter-spacing:.01em}
+@media (max-width:640px){.gate{padding:18px 16px}.gate h2{font-size:19px}.gate-list{grid-template-columns:1fr}}
 .signin-dialog{border:0;border-radius:16px;padding:0;max-width:min(440px,calc(100% - 32px));box-shadow:0 24px 60px rgba(5,15,31,.35)}
 .signin-dialog::backdrop{background:rgba(2,10,22,.55)}
 .signin-form{padding:22px;display:grid;gap:10px}
@@ -541,6 +565,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 :root[data-theme="dark"] .row:hover{border-color:#355074}
 :root[data-theme="dark"] .mem-chip[data-state=all_access],:root[data-theme="dark"] .mem-chip[data-state=owner]{background:#2a2312;color:#e9c46a;border-color:#8a6a10}
 :root[data-theme="dark"] .prem{background:linear-gradient(180deg,#1a1a12,var(--panel));border-color:#6b5520}
+:root[data-theme="dark"] .mem-chip[data-state=signed_in]{color:#e9c46a;border-color:#8a6a10}
 :root[data-theme="dark"] .ix-dbar{background:#18273a}
 :root[data-theme="dark"] .ix-update{background:#0f2a22;border-color:#24604a}
 :root[data-theme="dark"] .ix-ring{background:var(--panel)!important}
@@ -563,6 +588,7 @@ p a,dd a,small a,.note a,.legend a,.kpi a,.ev-meta a,.crumbs a,.section-head a{t
 :root[data-theme="system"] .row:hover{border-color:#355074}
 :root[data-theme="system"] .mem-chip[data-state=all_access],:root[data-theme="system"] .mem-chip[data-state=owner]{background:#2a2312;color:#e9c46a;border-color:#8a6a10}
 :root[data-theme="system"] .prem{background:linear-gradient(180deg,#1a1a12,var(--panel));border-color:#6b5520}
+:root[data-theme="system"] .mem-chip[data-state=signed_in]{color:#e9c46a;border-color:#8a6a10}
 :root[data-theme="system"] .ix-dbar{background:#18273a}
 :root[data-theme="system"] .ix-update{background:#0f2a22;border-color:#24604a}
 :root[data-theme="system"] .ix-ring{background:var(--panel)!important}

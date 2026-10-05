@@ -2,10 +2,12 @@
 // contract never breaks the record; a non-official decision never renders as a PBE call.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderEvent } from '../workers/pbe-predictions/src/pages.js';
+import { eventIntel } from '../workers/pbe-predictions/src/pages.js';
+// member intelligence (served only via /v1/premium/event-page); the public page carries none of it
+const renderEvent = (rec) => { const x = eventIntel(rec); return x.main + x.aside; };
 import { venueBlock, kalshiQuote, polymarketQuote } from '../src/engine/venues.js';
 import { buildEvidencePacket } from '../src/engine/evidence.js';
-import { publicEventView } from '../workers/pbe-predictions/src/premium.js';
+import { premiumEventView } from '../workers/pbe-predictions/src/premium.js';
 
 const NOW = '2026-10-04T13:05:00Z';
 const fc = [{ forecast_id: 'F1', captured_at: '2026-10-04T11:00:09Z', probability: 0.68, roles: ['FIRST_PUBLISHED'] }];
@@ -17,7 +19,7 @@ async function record(polymarket, decision = { state: 'CALL', side: 'YES', offic
   const { packet, sha256 } = await buildEvidencePacket({ event: { event_id: 'E' }, contract: { contract_id: 'C1' }, forecast, snapshot: { snapshot_id: 'S1', cutoff_at: '2026-10-04T11:00:00Z', features: { nbm_pop_union: 0.62 } } });
   const o = { contract_id: 'C1', market_id: 'KXRAIN-X', label: 'Rain in Boston', status: 'NORMALIZED', pbe_pct: 68, market_pct: 63, divergence_pts: 5, model: 'pbe-weather-precip@1.1.0', kalshi_url: kal.url, evidence: [], provenance: forecast.provenance, history: [{ forecast_id: 'F1', t: fc[0].captured_at, pct: 68, market_pct: 59, model: 'pbe-weather-precip@1.1.0', roles: ['FIRST_PUBLISHED'], changed: [], sha: 'x' }], market_path: [{ t: NOW, pct: 63 }], scores: [], venue_scores: [],
     venues: { kalshi: kal, polymarket }, call: { forecast_id: 'F1', pbe_pct: 68, confidence: 'HIGH', model: 'pbe-weather-precip@1.1.0', model_state: 'RESEARCH', published_at: fc[0].captured_at, data_cutoff_at: forecast.data_cutoff_at, evidence_sha256: sha256, evidence: packet, summary: 'National Blend of Models: chance of rain in the climate day 62%.', decision } };
-  return publicEventView({ event: { event_id: 'E', slug: 'rain-boston', title: 'Will it rain in Boston?', category: 'WEATHER', category_label: 'Weather', state: 'RESEARCH', venue: 'Kalshi', venue_event_id: 'KXRAIN-X', kalshi_url: kal.url, lifecycle: 'ACTIVE', close_time: '2026-10-05T04:59:00Z', latest_forecast_at: fc[0].captured_at, latest_market_at: NOW, date_modified: NOW, created_at: NOW }, model: null, contract: null, distribution: null, outcomes: [o] });
+  return premiumEventView({ event: { event_id: 'E', slug: 'rain-boston', title: 'Will it rain in Boston?', category: 'WEATHER', category_label: 'Weather', state: 'RESEARCH', venue: 'Kalshi', venue_event_id: 'KXRAIN-X', kalshi_url: kal.url, lifecycle: 'ACTIVE', close_time: '2026-10-05T04:59:00Z', latest_forecast_at: fc[0].captured_at, latest_market_at: NOW, date_modified: NOW, created_at: NOW }, model: null, contract: null, distribution: null, outcomes: [o] });
 }
 
 test('both venues: exact Polymarket compares; the record shows call-time benchmarks and movement', async () => {

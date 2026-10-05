@@ -1,27 +1,46 @@
-// PropBetEdge Predictions — membership + All Access modules (browser side).
-// The browser never decides entitlement: it asks /api/membership (the Worker asks the network authority) and members
-// fetch premium data from /api/premium/* (private, no-store). Anonymous pages contain no premium data at all.
+// PropBetEdge Predictions — membership + All Access (browser side). Predictions is a premium product included with
+// PropBetEdge All Access; there is no free tier. The browser never decides entitlement: it asks /api/membership (the
+// Worker asks the network authority), and members fetch every piece of intelligence from private, no-store routes
+// (/api/premium/*, /api/desk, /api/live/*). Public pages contain no premium data at all.
+// Header states: loading "Account" · anonymous "Sign in" + "Get All Access" · signed in "Upgrade" ·
+// All Access "ALL ACCESS ACTIVE" · owner "OWNER" · entitlement unverifiable "Access Check" (never shown as unsubscribed).
 (() => {
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const utc = (iso) => (iso ? `${new Date(iso).toISOString().slice(5, 16).replace('T', ' ')}Z` : '—');
-  const FREE = { state: 'free', label: 'FREE', entitled: false };
+  const PRO = 'https://propbetedge.ai/pro';
+  // the membership route itself failed: we do not know, so we do not claim the reader is unsubscribed
+  const UNVERIFIED = { state: 'unverified', label: 'Access Check', entitled: false, degraded: true };
 
   async function membership() {
     try {
       const r = await fetch('/api/membership', { credentials: 'same-origin', cache: 'no-store' });
-      if (r.ok) { const b = await r.json(); return { ...FREE, ...(b.membership || {}), authenticated: Boolean(b.authenticated) }; }
-    } catch { /* network/authority failure -> FREE */ }
-    return { ...FREE, authenticated: false };
+      if (r.ok) { const b = await r.json(); if (b?.membership?.state) return { ...b.membership, authenticated: Boolean(b.authenticated) }; }
+    } catch { /* network/authority failure -> unverified */ }
+    return { ...UNVERIFIED, authenticated: false };
   }
 
   function paintChip(m) {
+    document.documentElement.dataset.acct = m.state;
     const chip = document.getElementById('mem-chip');
     if (!chip) return;
     chip.dataset.state = m.state;
     chip.querySelector('.mem-state').textContent = m.label;
-    const action = chip.querySelector('.mem-action');
-    if (m.entitled) { action.textContent = ''; chip.removeAttribute('data-pbe-signin'); chip.href = m.manage_url || 'https://propbetedge.ai/pro'; chip.title = m.email ? `Signed in as ${m.email}` : 'All Access active'; }
-    else if (m.authenticated) { action.textContent = 'Get All Access'; chip.removeAttribute('data-pbe-signin'); chip.href = 'https://propbetedge.ai/pro'; chip.title = m.email ? `Signed in as ${m.email} — no All Access membership` : ''; }
+    chip.removeAttribute('data-pbe-signin'); chip.removeAttribute('data-acct-retry'); chip.removeAttribute('title');
+    if (m.entitled) { chip.href = m.state === 'owner' ? 'https://propbetedge.ai/' : (m.manage_url || PRO); chip.setAttribute('aria-label', m.state === 'owner' ? 'Owner account' : 'All Access active — manage membership'); if (m.email) chip.title = `Signed in as ${m.email}`; }
+    else if (m.state === 'signed_in') { chip.href = PRO; chip.setAttribute('aria-label', 'Upgrade to PropBetEdge All Access'); chip.title = `${m.email ? `Signed in as ${m.email}. ` : ''}Predictions is included with All Access.`; }
+    else if (m.state === 'unverified') { chip.href = '#'; chip.setAttribute('data-acct-retry', ''); chip.setAttribute('aria-label', 'Membership could not be verified — check again'); chip.title = 'Your membership could not be verified right now. Click to check again.'; }
+    else { chip.href = '#'; chip.setAttribute('data-pbe-signin', ''); chip.setAttribute('aria-label', 'Sign in'); }
+  }
+
+  // Gate actions follow the reader's state (All Access / owner: hidden by CSS; the gate itself is replaced).
+  function paintGates(m) {
+    document.querySelectorAll('[data-gate-cta]').forEach((el) => {
+      if (!('base' in el.dataset)) el.dataset.base = el.innerHTML;
+      const primary = el.querySelector('.cta-primary')?.outerHTML || `<a class="cta-primary" href="${PRO}">Get All Access</a>`;
+      if (m.state === 'unverified') el.innerHTML = '<p class="gate-retry" role="status">We couldn’t verify your membership just now.<button type="button" data-acct-retry>Check again</button></p>';
+      else if (m.state === 'signed_in') el.innerHTML = `${primary}<a class="cta-secondary" href="#" data-pbe-signin>Sign in with another account</a>`;
+      else el.innerHTML = el.dataset.base;
+    });
   }
 
   function signInDialog() {
@@ -30,11 +49,11 @@
       d = document.createElement('dialog');
       d.id = 'pbe-signin'; d.className = 'signin-dialog';
       d.innerHTML = `<form method="dialog" class="signin-form" novalidate>
-<h2>Sign in to PropBetEdge</h2><p class="note">All Access members unlock the full Predictions archive with the same account used across all ten sports.</p>
+<h2>Sign in to PropBetEdge</h2><p class="note">PropBetEdge Predictions is included with All Access. Use the same account you use across all ten sports.</p>
 <label for="signin-email">Email</label><input id="signin-email" name="email" type="email" autocomplete="email" required>
 <div class="signin-actions"><button type="submit" class="cta-primary">Email me a sign-in link</button><button type="button" class="signin-close" data-close>Close</button></div>
 <p class="signin-msg" role="status" aria-live="polite"></p>
-<p class="note">No membership yet? <a href="https://propbetedge.ai/pro">All Access — 10 sports + PropBetEdge Predictions, $29/month</a>.</p></form>`;
+<p class="note">No membership yet? <a href="${PRO}">Get All Access — 10 sports + PropBetEdge Predictions, $29/month</a>.</p></form>`;
       document.body.appendChild(d);
       d.querySelector('[data-close]').addEventListener('click', () => d.close());
       d.querySelector('form').addEventListener('submit', async (ev) => {
@@ -78,13 +97,43 @@ ${outs.map((o) => `<details class="snap"><summary>${esc(o.label)} — ${o.histor
       body.hidden = false; if (lock) lock.hidden = true;
     } catch { /* stays locked */ }
   }
+  const renderArchives = () => document.querySelectorAll('[data-prem-body]').forEach((b) => { const box = b.closest('[data-slug]'); if (box && !box.dataset.loaded) { box.dataset.loaded = '1'; renderArchive(box, box.dataset.slug); } });
 
-  document.addEventListener('click', (ev) => { const a = ev.target.closest('[data-pbe-signin]'); if (a) { ev.preventDefault(); signInDialog(); } });
+  // Event page (members): the intelligence comes from the private event-page route and replaces the gate in place.
+  async function loadEventIntel() {
+    const root = document.querySelector('main[data-event-slug]');
+    const slot = document.querySelector('[data-prem-intel]');
+    if (!root || !slot || slot.dataset.loaded) return;
+    try {
+      const r = await fetch(`/api/premium/event-page/${encodeURIComponent(root.dataset.eventSlug)}`, { credentials: 'same-origin', cache: 'no-store' });
+      if (r.status === 503) { paint({ ...UNVERIFIED, authenticated: true }); return; }
+      if (!r.ok) return; // the gate stays: the server said no
+      const d = await r.json();
+      slot.dataset.loaded = '1'; slot.innerHTML = d.main;
+      const aside = document.querySelector('[data-prem-aside]'); if (aside) aside.innerHTML = d.aside;
+      renderArchives();
+      if (d.multi_venue) import('/multivenue.js?v=20261004mv4').catch((e) => console.warn('multi-venue', e));
+      window.PBE_INTEL_READY = true;
+      document.dispatchEvent(new CustomEvent('pbe:intel'));
+    } catch { /* the gate stays */ }
+  }
 
-  membership().then((m) => {
+  function paint(m) {
     window.PBE_MEMBERSHIP = m;
-    paintChip(m);
+    paintChip(m); paintGates(m);
+  }
+
+  async function resolve() {
+    const m = await membership();
+    paint(m);
     document.dispatchEvent(new CustomEvent('pbe:membership', { detail: m }));
-    if (m.entitled) document.querySelectorAll('[data-prem-body]').forEach((b) => { const box = b.closest('[data-slug]'); if (box) renderArchive(box, box.dataset.slug); });
+    if (m.entitled) { loadEventIntel(); renderArchives(); }
+  }
+
+  document.addEventListener('click', (ev) => {
+    const a = ev.target.closest('[data-pbe-signin]'); if (a) { ev.preventDefault(); signInDialog(); return; }
+    const retry = ev.target.closest('[data-acct-retry]'); if (retry) { ev.preventDefault(); resolve(); }
   });
+
+  resolve();
 })();

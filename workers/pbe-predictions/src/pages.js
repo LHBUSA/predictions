@@ -9,11 +9,11 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261004w5';
+export const ASSET_V = '20261005aa1';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
-export const LIVE_V = '20261004w2';
+export const LIVE_V = '20261005aa1';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
 const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
@@ -104,11 +104,13 @@ ${outs.map((o) => `<tr><td><b>${esc(o.label)}</b>${o.status !== 'NORMALIZED' ? `
 </tbody></table></div>${d?.note ? `<p class="note">${esc(d.note)}</p>` : ''}`;
 }
 
-export function eventDescription(rec) {
-  const h = headlineOutcome(rec);
-  const base = rec.event.title.replace(/\?$/, '');
-  if (h && h.pbe_pct !== null) return `PBE model ${h.pbe_pct}% vs market ${h.market_pct ?? '—'}% for "${h.label}". ${base}: exact resolution rule (${rec.contract?.resolution_authority || 'venue'}), immutable forecast history, evidence and provenance.`;
-  return `${base}: live Kalshi market monitoring with the exact resolution rule. No PBE model is enabled for this event yet, so no PBE probability is shown.`;
+// Public metadata never carries a PBE probability or market comparison (owner contract 2026-10-05: Predictions is an
+// All Access product). `shell` = premium.js publicEventShell.
+export function eventDescription(shell) {
+  const base = shell.event.title.replace(/\?$/, '');
+  return shell.modeled
+    ? `${base}: the PropBetEdge model probability vs the live market, evidence ledger, forecast history and the exact resolution rule. Included with PropBetEdge All Access ($29/month).`
+    : `${base}: live market monitoring with the exact resolution rule. Included with PropBetEdge All Access ($29/month).`;
 }
 
 export function headlineOutcome(rec) {
@@ -118,54 +120,95 @@ export function headlineOutcome(rec) {
   return [...m].filter((o) => o.divergence_pts !== null).sort((a, b) => Math.abs(b.divergence_pts) - Math.abs(a.divergence_pts))[0] || m[0] || quoted || rec.outcomes[0] || null;
 }
 
-export function eventOgImage(rec) {
-  const h = headlineOutcome(rec);
-  const key = [h?.pbe_pct, h?.market_pct, h?.published_at, h?.market_observed_at, rec.event.state].join('|');
+// The public social card carries no numbers, so its cache key is the public shell only.
+export function eventOgImage(shell) {
+  const e = shell.event;
+  const key = [e.title, e.state, e.close_time, e.lifecycle, shell.outcomes.length, 'aa1'].join('|');
   let x = 0; for (const ch of key) x = (Math.imul(x, 31) + ch.charCodeAt(0)) >>> 0;
-  return `${SITE}/og/events/${rec.event.slug}.png?v=${x.toString(36)}`;
+  return `${SITE}/og/events/${e.slug}.png?v=${x.toString(36)}`;
 }
 
-// All Access module: a real preview (the archive's actual size) + unlock; members get the archive client-side from
-// /api/premium/event/<slug> (private, no-store). Nothing premium is in this HTML.
+// Insights (editorial) end-of-story All Access module: the archive's real size + unlock; members get the archive
+// client-side from /api/premium/event/<slug> (private, no-store). Nothing premium is in this HTML.
 export function premiumModule(rec) {
   const a = rec.access?.archive;
   if (!a) return '';
   return `<section class="card panel prem" id="pbe-premium" data-slug="${esc(rec.event.slug)}" aria-labelledby="prem-h">
 <span class="prem-kicker">ALL ACCESS</span><h2 id="prem-h">Full forecast archive</h2>
 <p class="prem-preview"><b class="num">${a.snapshots}</b> immutable PBE snapshots and <b class="num">${a.market_observations}</b> stored market observations across ${a.outcomes} outcome${a.outcomes === 1 ? '' : 's'}: the complete probability path, every intermediate forecast, the changed-input ledger and a downloadable record.</p>
-<div class="prem-lock" data-prem-lock><p>Unlock the full forecast history, model-driver changes and cross-venue intelligence.</p><a class="aa-pill" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_event_unlock">10 sports + PropBetEdge Predictions · $29/month</a> <a class="prem-signin" href="#" data-pbe-signin>Already a member? Sign in</a></div>
+<div class="prem-lock" data-prem-lock><p>Predictions is included with PropBetEdge All Access · $29/month.</p><div class="gate-cta" data-gate-cta><a class="cta-primary" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_event_unlock">Get All Access</a><a class="cta-secondary" href="#" data-pbe-signin>Sign in</a></div></div>
 <div class="prem-body" data-prem-body hidden></div></section>`;
 }
 
-export function renderEvent(rec, { stories = [], multiVenue = false } = {}) {
+const GATE_FEATURES = ['Official PBE probability for every modeled outcome', 'Model vs market comparison', 'Evidence ledger with data cutoff and sources', 'Immutable forecast history and scoring checkpoints', 'Live station and market updates'];
+// The All Access gate. Purchase/sign-in actions sit in [data-gate-cta]: invisible until access.js knows the reader's
+// state (space reserved, no layout shift), never shown to All Access / owner, replaced by a retry when the
+// entitlement check is unavailable.
+export function gatePanel({ heading, features = GATE_FEATURES, placement }) {
+  return `<section class="card panel prem gate" data-gate aria-labelledby="gate-h">
+<span class="prem-kicker">PROPBETEDGE PREDICTIONS · ALL ACCESS</span><h2 id="gate-h">${esc(heading)}</h2>
+<ul class="gate-list">${features.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
+<p class="gate-price">Included with PropBetEdge All Access · <b>$29/month</b></p>
+<div class="gate-cta" data-gate-cta><a class="cta-primary" href="https://propbetedge.ai/pro" data-pbe-placement="${esc(placement)}">Get All Access</a><a class="cta-secondary" href="#" data-pbe-signin>Sign in</a></div>
+</section>`;
+}
+
+// ALL ACCESS: the intelligence of one event (served only through /v1/premium/event-page/<slug>, private, no-store).
+// `rec` = premiumEventView. Returns the main-column and aside HTML that access.js swaps into the public shell.
+export function eventIntel(rec, { multiVenue = false } = {}) {
   const e = rec.event; const h = headlineOutcome(rec);
   const canonical = `${SITE}/events/${e.slug}`;
-  const title = `${e.title.replace(/\?$/, '')} — forecast vs market | PropBetEdge Predictions`;
-  const description = eventDescription(rec);
-  const stale = e.latest_market_at && Date.now() - Date.parse(e.latest_market_at) > 3 * 3600000 && !['CLOSED', 'SETTLED'].includes(e.lifecycle);
-  const c = rec.contract || {};
-  const ogImage = eventOgImage(rec);
-  const jsonld = [{ '@context': 'https://schema.org', '@graph': [
-    ORG_NODE, WEBSITE_NODE,
-    { '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: title, description, dateModified: e.date_modified, isPartOf: { '@id': WEBSITE_ID }, publisher: { '@id': ORG_ID }, breadcrumb: { '@id': `${canonical}#breadcrumbs` }, mainEntity: { '@id': `${canonical}#dataset` }, primaryImageOfPage: { '@type': 'ImageObject', '@id': `${canonical}#card`, url: ogImage, width: 1200, height: 630, caption: `${e.title} — PBE forecast vs market` } },
-    { '@type': 'Dataset', '@id': `${canonical}#dataset`, name: `PBE forecast record: ${e.title}`, description: `Public PropBetEdge forecast record${rec.model ? ` (${rec.model.id})` : ''} for "${e.title}": current PBE probability and market price, the designated scoring checkpoints, exact resolution rule and resolution/score.`, url: canonical, creator: { '@id': ORG_ID }, publisher: { '@id': ORG_ID }, image: { '@id': `${canonical}#card` }, isPartOf: { '@id': WEBSITE_ID }, dateModified: e.date_modified, datePublished: e.created_at, isAccessibleForFree: true, conditionsOfAccess: 'The public record on this page is free. The complete snapshot archive, full market history and input-change ledger are included with PropBetEdge All Access.', keywords: [e.category_label, 'forecast', 'prediction market', 'probability'], variableMeasured: ['PBE model probability', 'market-implied probability (Kalshi mid)', 'divergence (percentage points)'], distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/api/event/${e.slug}` }] },
-    { '@type': 'BreadcrumbList', '@id': `${canonical}#breadcrumbs`, itemListElement: [{ '@type': 'ListItem', position: 1, name: 'PropBetEdge', item: 'https://propbetedge.ai/' }, { '@type': 'ListItem', position: 2, name: 'Predictions', item: `${SITE}/` }, { '@type': 'ListItem', position: 3, name: e.category_label, item: `${SITE}/?category=${encodeURIComponent(e.category)}#desk` }, { '@type': 'ListItem', position: 4, name: e.venue_event_id, item: canonical }] },
-  ] }];
   const kpis = h ? `<div class="kpis">
 <div class="kpi"><span>PBE data model</span><strong class="num">${h.pbe_pct !== null ? `${h.pbe_pct}%` : '—'}</strong><small>${h.pbe_pct !== null ? `${esc(h.label)} · ${esc(h.model)}` : 'Market monitoring — no PBE model'}</small></div>
 <div class="kpi"><span>Market</span><strong class="num">${h.market_pct !== null ? `${h.market_pct}%` : '—'}</strong><small>${h.kalshi_url ? `<a href="${esc(h.kalshi_url)}" target="_blank" rel="noopener">Kalshi ↗</a> · ` : ''}mid ${h.market_observed_at ? utc(h.market_observed_at) : ''}</small></div>
 <div class="kpi"><span>Divergence</span><strong class="num ${h.divergence_pts > 0 ? 'dpos' : h.divergence_pts < 0 ? 'dneg' : ''}">${h.divergence_pts !== null ? `${sign(h.divergence_pts)}<small style="display:inline;font-size:14px"> pts</small>` : '—'}</strong><small>PBE vs current market price</small></div></div>
 ${h.divergence_pts !== null ? `<p class="headline">${Math.abs(h.divergence_pts) <= 2 ? 'PBE and the market agree within 2 points on this outcome.' : `PBE sees a ${h.divergence_pts > 0 ? 'higher' : 'lower'} probability of “${esc(h.label)}” than the current market price.`}</p>` : ''}` : '';
   const evidence = h?.evidence?.length ? `<section class="card panel"><h2>Why the model sees it — ${esc(h.label)}</h2><ul class="ev-list">${h.evidence.map((x) => `<li class="ev-item"><div><b>${esc(x.label)}</b><small>${esc(x.detail || '')}</small></div><strong class="num">${esc(x.value)}${esc(x.unit)}</strong></li>`).join('')}</ul></section>` : '';
-  const snaps = rec.outcomes.filter((o) => o.history.length).map((o) => `<details class="snap"><summary>${esc(o.label)} — ${o.history.length} checkpoint${o.history.length > 1 ? 's' : ''}${o.resolution ? ` · resolved ${esc(String(o.resolution.venue_result).toUpperCase())}` : ''}</summary>
+  const snaps = rec.outcomes.filter((o) => o.history.length).map((o) => `<details class="snap"><summary>${esc(o.label)} — ${o.history.length} snapshot${o.history.length > 1 ? 's' : ''}${o.resolution ? ` · resolved ${esc(String(o.resolution.venue_result).toUpperCase())}` : ''}</summary>
 <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Published</th><th>PBE</th><th>Market then</th><th>Model</th><th>Data cutoff</th><th>Quality</th><th>Scoring role</th></tr></thead><tbody>
-${o.history.map((s) => `<tr><td class="num">${utc(s.t)}</td><td class="num"><b>${s.pct}%</b></td><td class="num">${s.market_pct ?? '—'}${s.market_pct !== null ? '%' : ''}</td><td>${esc(s.model)}</td><td class="num">${utc(s.cutoff)}</td><td>${esc(s.confidence || '')}</td><td>${esc(s.roles.length ? s.roles.map((r) => r.replace(/_/g, ' ').toLowerCase()).join(', ') : 'current')}</td></tr>`).join('')}
+${o.history.map((s) => `<tr><td class="num">${utc(s.t)}</td><td class="num"><b>${s.pct}%</b></td><td class="num">${s.market_pct ?? '—'}${s.market_pct !== null ? '%' : ''}</td><td>${esc(s.model)}</td><td class="num">${utc(s.cutoff)}</td><td>${esc(s.confidence || '')}</td><td>${esc(s.roles.length ? s.roles.map((r) => r.replace(/_/g, ' ').toLowerCase()).join(', ') : 'interim')}</td></tr>`).join('')}
 </tbody></table></div>${o.scores.length ? `<p class="note">Scores (Brier, PBE vs market on the same snapshot): ${o.scores.filter((s) => s.method === 'brier').map((s) => `${s.designation.replace(/_/g, ' ').toLowerCase()} ${s.pbe.toFixed(3)} vs ${s.market === null ? '—' : s.market.toFixed(3)}`).join(' · ')}</p>` : ''}</details>`).join('');
-  const resolved = rec.outcomes.filter((o) => o.resolution);
-  const resolution = resolved.length ? `<section class="card panel"><h2>Resolution</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Outcome</th><th>Venue settlement</th><th>Official value</th><th>Agree</th></tr></thead><tbody>${resolved.map((o) => `<tr><td>${esc(o.label)}</td><td>${esc(String(o.resolution.venue_result).toUpperCase())}${o.resolution.venue_value ? ` (${esc(o.resolution.venue_value)})` : ''}</td><td>${o.resolution.official_outcome ? `${esc(o.resolution.official_outcome)} · ${esc(o.resolution.official_value)} ${esc(o.resolution.official_units)}` : 'pending'}${o.resolution.source_url ? ` · <a href="${esc(o.resolution.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</td><td>${o.resolution.sources_agree === null ? '—' : o.resolution.sources_agree ? 'yes' : '<b>no — flagged</b>'}</td></tr>`).join('')}</tbody></table></div></section>` : '';
   const prov = (h?.provenance || []).map((p) => `<li class="ev-item"><div><b>${esc(p.source)}</b><small>${esc([p.provider, p.station && `station ${p.station}`, p.run && `run ${utc(p.run)}`, p.latest_value_date && `latest ${p.latest_value_date}`, p.updated_at && `issued ${utc(p.updated_at)}`, p.dataset].filter(Boolean).join(' · '))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}</small></div><span class="note">${esc(p.role || '')}</span></li>`).join('');
+  const model = rec.model ? `<section class="card panel"><h2>Model run</h2><dl class="kv"><dt>Versions here</dt><dd>${esc(rec.model.versions.join(', '))}</dd><dt>Data cutoff</dt><dd>${utc(h?.data_cutoff_at)}</dd>${h?.tier ? `<dt>Tier</dt><dd>${esc(h.tier)}</dd>` : ''}</dl></section>` : '';
+  const citation = `PropBetEdge Predictions. "${e.title}" forecast record${rec.model ? `, ${rec.model.id} (${rec.model.state.toLowerCase()})` : ''}. ${canonical} (retrieved ${new Date().toISOString().slice(0, 10)}).`;
+  const main = `<p class="prem-active">ALL ACCESS · ${esc(e.latest_forecast_at ? `${h?.live?.pbe_frozen ? 'pre-window PBE forecast (frozen)' : 'latest PBE forecast'} ${utc(e.latest_forecast_at)}` : 'market monitoring')}${e.latest_market_at ? ` · market observed ${utc(e.latest_market_at)}` : ''}</p>
+<div data-live-region="call">${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}</div>
+<div data-live-region="station">${h?.intel ? liveWeatherBlock(h) : stationBlock(h)}</div>
+<div data-live-region="market">${marketView(h)}</div>
+<section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
+<section class="card panel prem" id="pbe-premium" data-slug="${esc(e.slug)}" aria-labelledby="prem-h"><span class="prem-kicker">ALL ACCESS</span><h2 id="prem-h">Full forecast archive</h2><div class="prem-body" data-prem-body hidden></div></section>
+${h?.call ? `${factsBlock(h)}
+${pbeVsMarket(h)}` : evidence}
+${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Forecast history</h2><p class="note">Every immutable PBE snapshot; the scored ones carry their role (fixed by rule before the outcome).</p>${snaps}</section>` : ''}
+${gradeBlock(rec)}
+${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div><div class="mv-related-box" hidden></div></section>` : ''}`;
+  const aside = `${model}
+${prov && !h?.call ? `<section class="card panel"><h2>Provenance</h2><ul class="ev-list">${prov}<li class="ev-item"><div><b>Market observations — benchmark only, never a model input</b><small>Kalshi via the PropBetEdge canonical market service; first observed by PBE is not necessarily the opening price</small></div><span class="note">benchmark</span></li></ul></section>` : ''}
+${permanentRecord(h, citation, e.slug)}`;
+  return { main, aside, atmosphere: h?.intel?.atmosphere ?? null, multi_venue: Boolean(multiVenue && h?.market_id) };
+}
+
+// PUBLIC event page: the product shell only (premium.js publicEventShell). No PBE probability, market comparison,
+// evidence, history or score is in this HTML; members receive them from /api/premium/event-page/<slug>.
+export function renderEvent(shell, { stories = [] } = {}) {
+  const e = shell.event;
+  const canonical = `${SITE}/events/${e.slug}`;
+  const title = `${e.title.replace(/\?$/, '')} — forecast vs market | PropBetEdge Predictions`;
+  const description = eventDescription(shell);
+  const c = shell.contract || {};
+  const ogImage = eventOgImage(shell);
+  const jsonld = [{ '@context': 'https://schema.org', '@graph': [
+    ORG_NODE, WEBSITE_NODE,
+    { '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: title, description, dateModified: e.date_modified, isPartOf: { '@id': WEBSITE_ID }, publisher: { '@id': ORG_ID }, breadcrumb: { '@id': `${canonical}#breadcrumbs` }, mainEntity: { '@id': `${canonical}#dataset` }, primaryImageOfPage: { '@type': 'ImageObject', '@id': `${canonical}#card`, url: ogImage, width: 1200, height: 630, caption: `${e.title} — PropBetEdge Predictions` } },
+    { '@type': 'Dataset', '@id': `${canonical}#dataset`, name: `PBE forecast record: ${e.title}`, description: `PropBetEdge Predictions forecast record${shell.model ? ` (${shell.model.id})` : ''} for "${e.title}": PBE model probability vs the market, evidence, forecast history and scoring. The exact resolution rule is public; the forecast record is included with PropBetEdge All Access ($29/month).`, url: canonical, creator: { '@id': ORG_ID }, publisher: { '@id': ORG_ID }, image: { '@id': `${canonical}#card` }, isPartOf: { '@id': WEBSITE_ID }, dateModified: e.date_modified, datePublished: e.created_at, isAccessibleForFree: false, conditionsOfAccess: 'Included with PropBetEdge All Access ($29/month).', keywords: [e.category_label, 'forecast', 'prediction market', 'probability'], variableMeasured: ['PBE model probability', 'market-implied probability (Kalshi mid)', 'divergence (percentage points)'] },
+    { '@type': 'BreadcrumbList', '@id': `${canonical}#breadcrumbs`, itemListElement: [{ '@type': 'ListItem', position: 1, name: 'PropBetEdge', item: 'https://propbetedge.ai/' }, { '@type': 'ListItem', position: 2, name: 'Predictions', item: `${SITE}/` }, { '@type': 'ListItem', position: 3, name: e.category_label, item: `${SITE}/?category=${encodeURIComponent(e.category)}#desk` }, { '@type': 'ListItem', position: 4, name: e.venue_event_id, item: canonical }] },
+  ] }];
+  const outs = shell.outcomes;
+  const outcomes = `<section class="card panel"><h2>Tracked outcomes</h2><ul class="ev-list">${outs.map((o) => `<li class="ev-item"><div><b>${esc(o.label)}</b>${o.status !== 'NORMALIZED' ? `<small>${esc(o.reason || o.status)}</small>` : ''}</div>${o.resolution ? `<span class="note">resolved ${esc(String(o.resolution.venue_result).toUpperCase())}</span>` : ''}</li>`).join('')}</ul></section>`;
+  const resolved = outs.filter((o) => o.resolution);
+  const resolution = resolved.length ? `<section class="card panel"><h2>Resolution</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Outcome</th><th>Venue settlement</th><th>Official value</th><th>Agree</th></tr></thead><tbody>${resolved.map((o) => `<tr><td>${esc(o.label)}</td><td>${esc(String(o.resolution.venue_result).toUpperCase())}${o.resolution.venue_value ? ` (${esc(o.resolution.venue_value)})` : ''}</td><td>${o.resolution.official_outcome ? `${esc(o.resolution.official_outcome)} · ${esc(o.resolution.official_value)} ${esc(o.resolution.official_units)}` : 'pending'}${o.resolution.source_url ? ` · <a href="${esc(o.resolution.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</td><td>${o.resolution.sources_agree === null ? '—' : o.resolution.sources_agree ? 'yes' : '<b>no — flagged</b>'}</td></tr>`).join('')}</tbody></table></div></section>` : '';
   const L = c.location || {};
-  const contract = rec.contract ? `<section class="card panel"><h2>Exactly how this resolves</h2><dl class="kv">
+  const contract = shell.contract ? `<section class="card panel"><h2>Exactly how this resolves</h2><dl class="kv">
 ${c.station_id ? `<dt>Station / series</dt><dd>${esc(c.station_id)}${L.name ? ` — ${esc(L.name)} (${esc(L.icao || '')}${L.wfo ? `, NWS ${esc(L.wfo)}` : ''})` : ''}</dd>` : ''}
 <dt>Measurement</dt><dd>${esc(c.measurement_definition || '—')}</dd>
 ${c.observation_start ? `<dt>Window</dt><dd>${utc(c.observation_start)} → ${utc(c.observation_end)} (${esc(c.timezone || 'UTC')})</dd>` : ''}
@@ -175,32 +218,23 @@ ${c.rounding_rule ? `<dt>Rounding</dt><dd>${esc(c.rounding_rule)}</dd>` : ''}
 ${(c.exceptions || []).length ? `<dt>Exceptions</dt><dd>${(c.exceptions || []).map(esc).join(' · ')}</dd>` : ''}
 <dt>Normalization</dt><dd>${esc(c.normalization_status)}${c.status_reason ? ` (${esc(c.status_reason)})` : ''} · ${esc(c.normalizer || '')}</dd>
 </dl>${c.rules_primary_example ? `<p class="note" style="margin-top:10px">Venue rule (example outcome):</p><div class="rules">${esc(c.rules_primary_example)}</div>` : ''}</section>` : '';
-  const model = rec.model ? `<section class="card panel"><h2>Model</h2><dl class="kv"><dt>Family</dt><dd>${esc(rec.model.name)} (${esc(rec.model.id)})</dd><dt>State</dt><dd>${badge(rec.model.state)}</dd><dt>Versions here</dt><dd>${esc(rec.model.versions.join(', '))}</dd><dt>Inputs</dt><dd>${esc(rec.model.inputs)}</dd><dt>Data cutoff</dt><dd>${utc(h?.data_cutoff_at)}</dd>${h?.tier ? `<dt>Tier</dt><dd>${esc(h.tier)}</dd>` : ''}</dl><p class="note" style="margin-top:10px"><b>Known limitations:</b> ${rec.model.limitations.map(esc).join(' · ')}</p></section>` : '';
-  const citation = `PropBetEdge Predictions. "${e.title}" forecast record${rec.model ? `, ${rec.model.id} (${rec.model.state.toLowerCase()})` : ''}. ${canonical} (retrieved ${new Date().toISOString().slice(0, 10)}).`;
-  const body = `<main class="wrap" data-live-src="/api/live/event/${esc(e.slug)}">
+  const model = shell.model ? `<section class="card panel"><h2>Model</h2><dl class="kv"><dt>Family</dt><dd>${esc(shell.model.name)} (${esc(shell.model.id)})</dd><dt>State</dt><dd>${badge(shell.model.state)}</dd><dt>Inputs</dt><dd>${esc(shell.model.inputs)}</dd></dl><p class="note" style="margin-top:10px"><b>Known limitations:</b> ${shell.model.limitations.map(esc).join(' · ')}</p><p class="note"><a href="/methodology/">Methodology →</a></p></section>` : '';
+  const gate = gatePanel({ heading: shell.modeled ? 'The PBE forecast for this event is included with All Access' : 'Live market monitoring for this event is included with All Access', placement: 'predictions_event_gate' });
+  const body = `<main class="wrap" data-live-src="/api/live/event/${esc(e.slug)}" data-event-slug="${esc(e.slug)}">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="https://propbetedge.ai/">PropBetEdge</a> › <a href="/">Predictions</a> › <a href="/?category=${encodeURIComponent(e.category)}#desk">${esc(e.category_label)}</a> › ${esc(e.venue_event_id)}</nav>
-<header class="ev-head${h?.intel ? ' has-atmo' : ''}">${h?.intel ? atmosphereLayer(h.intel.atmosphere) : ''}<div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
+<header class="ev-head"><div class="ev-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}<span>${e.kalshi_url ? `<a href="${esc(e.kalshi_url)}" target="_blank" rel="noopener">${esc(e.venue)} ${esc(e.venue_event_id)} ↗</a>` : esc(e.venue_event_id)}</span></div>
 <h1>${esc(e.title)}</h1>
 ${shareBar(canonical, e.title)}
-<div class="ev-meta"><span>${h?.live?.pbe_frozen ? 'Pre-window PBE forecast (frozen)' : 'Latest PBE forecast'}: <b class="num">${utc(e.latest_forecast_at)}</b></span><span>Latest market observation: <b class="num">${utc(e.latest_market_at)}</b>${stale ? ' <span class="stale">· stale</span>' : ''}</span><span>Closes ${utc(e.close_time)}</span><span>${rec.outcomes.length} outcome${rec.outcomes.length > 1 ? 's' : ''}</span></div></header>
+<div class="ev-meta"><span>Closes ${utc(e.close_time)}</span><span>${outs.length} outcome${outs.length > 1 ? 's' : ''}</span></div></header>
 <div class="ev-grid"><div>
-<div data-live-region="call">${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}</div>
-<div data-live-region="station">${h?.intel ? liveWeatherBlock(h) : stationBlock(h)}</div>
-<div data-live-region="market">${marketView(h)}</div>
-<section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
-${premiumModule(rec)}
-${h?.call ? `${factsBlock(h)}
-${pbeVsMarket(h)}` : evidence}
-${rec.outcomes.some((o) => o.history.length) ? `<section class="card panel"><h2>Scoring checkpoints</h2><p class="note">The designated snapshots that are scored (fixed by rule before the outcome) and the current forecast. Every intermediate snapshot is in the full archive.</p>${snaps}</section>` : ''}
+<div data-prem-intel>${gate}</div>
+${outcomes}
 ${resolution}
-${gradeBlock(rec)}
-${multiVenue && h?.market_id ? `<section class="card panel" id="mv-chart-panel" hidden data-event="${esc(e.event_id)}" data-market="${esc(h.market_id)}"><h2>PBE vs venues — ${esc(h.label)}</h2><div class="mv-chart"></div><div class="mv-related-box" hidden></div></section><script type="module" src="/multivenue.js?v=20261004mv4"></script>` : ''}
 </div><aside>
+<div data-prem-aside></div>
 ${contract}
 ${model}
-${prov && !h?.call ? `<section class="card panel"><h2>Provenance</h2><ul class="ev-list">${prov}<li class="ev-item"><div><b>Market observations — benchmark only, never a model input</b><small>Kalshi via the PropBetEdge canonical market service; first observed by PBE is not necessarily the opening price</small></div><span class="note">benchmark</span></li></ul></section>` : ''}
 ${stories.length ? `<section class="card panel"><h2>Prediction Intelligence on this event</h2><ul class="ev-list">${stories.map((st) => `<li class="ev-item"><div><b><a href="/insights/${esc(st.slug)}">${esc(st.title)}</a></b><small>${esc(st.family_label)} · ${esc(new Date(st.published_at).toISOString().slice(0, 10))}</small></div></li>`).join('')}</ul></section>` : ''}
-${permanentRecord(h, citation, e.slug)}
 </aside></div></main><script src="/live.js?v=${LIVE_V}" defer></script>`;
   return layout({ title, description, canonical, jsonld, body, ogImage, current: 'desk' });
 }

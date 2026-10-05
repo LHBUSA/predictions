@@ -29,6 +29,11 @@
   }
   const start = () => { if (!timer) timer = setInterval(refresh, POLL_MS); };
   const stop = () => { clearInterval(timer); timer = null; };
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); start(); } else stop(); });
-  if (document.visibilityState === 'visible') start();
+  const go = () => {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); start(); } else stop(); });
+    if (document.visibilityState === 'visible') start();
+  };
+  // Event pages: the live route is All Access (private); polling starts only once access.js has loaded the member's
+  // intelligence into the page. Anonymous and non-member readers never poll it.
+  if (root.hasAttribute('data-event-slug')) { if (window.PBE_INTEL_READY) go(); else document.addEventListener('pbe:intel', go, { once: true }); } else go();
 })();

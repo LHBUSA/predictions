@@ -15,6 +15,9 @@ def ld(title, desc, path):
     graph = [ORG, SITE_NODE, page]
     if path == '/models/':
         page["mainEntity"] = {"@id": f"{SITE}/models/#dataset"}
+        # The model registry (states, sample sizes, limitations, aggregate calibration) is intentionally public
+        # methodology. It carries no live PBE probability; forecasts themselves are All Access (event Dataset nodes
+        # say isAccessibleForFree: false).
         graph.append({"@type": "Dataset", "@id": f"{SITE}/models/#dataset", "name": "PropBetEdge Predictions model registry", "description": "Every PropBetEdge Predictions model family with its state, forecast snapshot counts, resolved sample, calibration status and known limitations.", "url": f"{SITE}/models/", "creator": {"@id": ORG_ID}, "isAccessibleForFree": True, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{SITE}/api/models"}]})
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace('<', '\\u003c')
 
@@ -29,7 +32,7 @@ def head(title, desc, path):
 <meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions"><meta property="og:title" content="{title}"><meta property="og:description" content="{desc}">
 <meta property="og:url" content="https://predictions.propbetedge.ai{path}"><meta property="og:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{title}"><meta name="twitter:description" content="{desc}"><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261004w5">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261005aa1">
 <script type="application/ld+json">{ld(title, desc, path)}</script>
 </head><body>
 {SHELL['header'][{'/models/': 'models', '/methodology/': 'methodology'}.get(path, 'none')]}
@@ -64,6 +67,7 @@ meth = head('Methodology — How PropBetEdge Predictions Forecasts Real-World Ev
 <section class="card panel" id="immutable"><h2>4 · Immutable snapshots and fixed scoring roles</h2><p>A forecast is written once with its model version, feature snapshot, data cutoff, evidence and the market price observed at that moment. A later run creates a new snapshot; nothing is rewritten. The snapshots that count for scoring are fixed by rule before the outcome: FIRST_PUBLISHED, T_MINUS_24H (only if a forecast existed 24 hours before the reference time) and FINAL_PRE_RESOLUTION.</p></section>
 <section class="card panel" id="scoring"><h2>5 · Resolution and scoring</h2><p>The venue settlement and an independent official value (the NWS Daily Climate Report for the exact station, the Treasury par curve, the Federal Reserve target range) are stored separately and compared. PBE and the market are scored on the same snapshot with Brier score and log loss. Model skill is not claimed until enough contracts have resolved.</p></section>
 <section class="card panel"><h2>6 · Model states</h2><p>MONITORING (market shown, no model) → BACKTESTING → SHADOW (forecasts stored, never published) → RESEARCH (published, not validated) → VALIDATED → OFFICIAL. See the <a href="/models/">research board</a>.</p></section>
+<section class="card panel" id="access"><h2>7 · Access</h2><p>This methodology, the model registry and the aggregate scoring record are public. The forecasts themselves — every PBE probability, the model-vs-market comparison, the evidence ledger, forecast history and the full intelligence desk — are PropBetEdge Predictions, included with <a href="https://propbetedge.ai/pro">PropBetEdge All Access</a> ($29/month).</p></section>
 </main>''' + FOOT + '</body></html>\n'
 
 os.makedirs('models', exist_ok=True); os.makedirs('methodology', exist_ok=True)

@@ -327,7 +327,7 @@ The public event record remains accessible without a paid subscription.
 
 ## Product boundary
 
-The public probability record remains free. Pro monetizes workflow and advanced intelligence.
+~~The public probability record remains free.~~ **Superseded 2026-10-05 (owner):** PropBetEdge Predictions is a premium product included with PropBetEdge All Access ($29/month). There is no free tier; public pages carry the product shell, methodology, model registry and aggregate track record only. See docs/ops/ROLLBACK.md "All Access product contract".
 
 Target concepts:
 
