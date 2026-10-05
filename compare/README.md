@@ -22,6 +22,12 @@ Protected routes: anonymous 401 · signed in without All Access 403 · authority
 ## Tests / QA
 `node --test compare/test/*.test.js` (also part of the root `npm test`). Fixtures in `test/fixtures` are real production payloads captured 2026-10-05.
 
+## Mid gap vs top-of-book cross (2026-10-05)
+- **MID GAP** = |Kalshi mid − Polymarket mid| on an approved, aligned COMPARABLE pair: informational market disagreement.
+- **TOP-OF-BOOK EXECUTABLE CROSS** = max(Kalshi bid − Polymarket ask, Polymarket bid − Kalshi ask), YES side, computed ONLY when the desk's `comparison` exists (approved rule gate + aligned quotes). ≤ 0 shows NO EXECUTABLE CROSS. Best displayed prices only: before fees, size not measured. Never labelled arbitrage / EV / net edge / yield.
+- RULE_MISMATCH, WITHDRAWN, single venue: no shared spread and no cross.
+- Rule explanations consume the desk's additive `rule_terms` (`rule-terms/1`: per venue `{complete, terms:[{topic, condition, treatment}]}`, `differs`). Only parsed facts render; incomplete venues show "Not confidently parsed"; absent field = generic reason (compatible with older Workers).
+
 ## Follow-ups
 1. DONE 2026-10-05: score adapters run in Compare (pinned Members `59de9d2`, deterministic transform, drift tests). To re-pin, copy the new Members `api/live.js` byte-for-byte to `test/fixtures/members-<sha>/live.js.txt`, update `MEMBERS_LIVE_SHA256`, and re-run the vendor script.
 2. NHL Origin: DONE in the adapter (patch 3). OPEN: replace Origin-as-server-auth on nhl-api with a proper internal caller contract (signed service token or service binding); a browser header is not a server credential. Members' own NHL adapter is still broken (unchanged by owner instruction).

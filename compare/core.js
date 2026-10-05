@@ -62,6 +62,55 @@ export function venuePrice(v) {
   };
 }
 
+// TOP-OF-BOOK EXECUTABLE CROSS (owner spec 2026-10-05). Only for a pair the approved rule gate made COMPARABLE and
+// whose quotes are aligned (the desk's comparison object); never for RULE_MISMATCH / single venue / stale.
+//   cross = max(Kalshi bid − Polymarket ask, Polymarket bid − Kalshi ask), in bp of $1, YES side.
+// Best displayed prices only: before fees, available size not measured. Not arbitrage, not EV, not net edge.
+export const CROSS_TOOLTIP = "Best displayed bid versus the other venue's best displayed ask. Before fees. Available size not measured.";
+export function topOfBookCross(k, p) {
+  if (!k || !p || [k.bid_bp, k.ask_bp, p.bid_bp, p.ask_bp].some((x) => x == null)) return { state: 'NO_BOOK', bp: null };
+  const a = k.bid_bp - p.ask_bp, b = p.bid_bp - k.ask_bp;
+  const best = Math.max(a, b);
+  const legs = a >= b ? { bid_venue: 'kalshi', bid_bp: k.bid_bp, ask_venue: 'polymarket', ask_bp: p.ask_bp } : { bid_venue: 'polymarket', bid_bp: p.bid_bp, ask_venue: 'kalshi', ask_bp: k.ask_bp };
+  return best > 0 ? { state: 'CROSS', bp: best, ...legs } : { state: 'NO_CROSS', bp: best, ...legs };
+}
+
+// rule-terms/1 -> display lines. Only parsed facts; unknown vocabulary -> 'Not confidently parsed'.
+const TOPIC_LABEL = { postponement: 'Postponed', cancellation: 'Cancelled', tie: 'Tie', walkover: 'Walkover', retirement: 'Retirement / default', no_result: 'No result', no_contest: 'No contest', not_scored: 'Not scored' };
+const COND_LABEL = { postponed: '', starts_within_48h: 'starts within 48h', not_started_within_48h: 'not started within 48h', resumes_within_2w: 'resumes within 2 weeks', beyond_2w: 'beyond 2 weeks', no_makeup: 'no make-up game', cancelled_or_not_started_within_48h: 'or not started within 48h', cancelled_or_beyond_48h: 'or moved beyond 48h', not_played: 'not played', cancelled_or_beyond_2w: 'or moved beyond 2 weeks', draw: 'draw', or_cancelled_before_start: 'or cancelled before the start', no_winner_within_14d: 'no winner within 14 days' };
+const TREAT_LABEL = { open_until_completed: { kalshi: 'remains open, official final result', polymarket: 'remains open until completed' }, split_50_50: { kalshi: '$0.50 each', polymarket: 'resolves 50-50' }, fair_price: 'resolves at a fair price', last_fair_price: 'resolves at the last fair price', advancing_player: 'advancing player wins' };
+export const TERM_TOPICS = Object.keys(TOPIC_LABEL);
+export function termLine(t, venue) {
+  const topic = TOPIC_LABEL[t?.topic], tr = TREAT_LABEL[t?.treatment];
+  const cond = t?.condition == null ? '' : COND_LABEL[t.condition];
+  if (!topic || !tr || cond === undefined) return null;
+  return `${topic}${cond ? ` (${cond})` : ''} → ${typeof tr === 'string' ? tr : tr[venue]}`;
+}
+// Per venue: lines for every term; for a topic only the OTHER venue states (and this venue parsed completely), say so.
+export function ruleTermsView(rt) {
+  if (!rt) return null;
+  const out = {};
+  for (const venue of ['kalshi', 'polymarket']) {
+    const me = rt[venue] || { complete: false, terms: [] }, other = rt[venue === 'kalshi' ? 'polymarket' : 'kalshi'] || { terms: [] };
+    const lines = [];
+    let unknown = !me.complete;
+    for (const topic of TERM_TOPICS) {
+      const mine = (me.terms || []).filter((t) => t.topic === topic);
+      for (const t of mine) { const l = termLine(t, venue); if (l) lines.push({ topic, text: l, differs: (rt.differs || []).includes(topic) }); else unknown = true; }
+      if (!mine.length && me.complete && (other.terms || []).some((t) => t.topic === topic)) lines.push({ topic, text: `${TOPIC_LABEL[topic]} → no clause stated`, differs: true });
+    }
+    out[venue] = { lines, unknown };
+  }
+  out.differs = rt.differs || null;
+  return out;
+}
+export function ruleTermsSummary(rt) {
+  const v = ruleTermsView(rt);
+  if (!v || !v.differs?.length) return null;
+  const pick = (venue, topic) => v[venue].lines.find((l) => l.topic === topic)?.text.split('→ ')[1] || (v[venue].unknown ? 'not confidently parsed' : 'no clause stated');
+  return v.differs.slice(0, 3).map((topic) => `${TOPIC_LABEL[topic] || topic}: Kalshi ${pick('kalshi', topic)} · Polymarket ${pick('polymarket', topic)}`).join(' | ');
+}
+
 // One contract (one outcome of one event) -> normalized row with its comparability badge.
 export function normalizeContract(c) {
   const venues = c.venues || [];
@@ -77,6 +126,9 @@ export function normalizeContract(c) {
   else if (related.some((r) => r.match === 'RULE_MISMATCH' || r.match === 'COMPARABLE_EXCEPT_EXCEPTIONS')) badge = 'RULE_MISMATCH';
   else badge = 'SINGLE_VENUE';
   const gap = cmp ? num(cmp.venue_gap_pts) : null;
+  // rule-terms/1 (propsports-markets desk, additive): from the Polymarket quote or its related entry; absent = null.
+  const pmRaw = venues.find((v) => v.venue === 'polymarket') || (c.related || []).find((r) => r.venue === 'polymarket') || null;
+  const ruleTerms = pmRaw?.rule_terms && pmRaw.rule_terms.version === 'rule-terms/1' ? pmRaw.rule_terms : null;
   const priced = [k, p, ...related, ...listed].filter((x) => x && x.mid_bp != null);
   const pbe = c.pbe && num(c.pbe.probability) != null ? { probability: num(c.pbe.probability), state: c.pbe.state || null, issued_at: c.pbe.issued_at || null, model: c.pbe.model || null, selection: c.pbe.selection || null } : null;
   return {
@@ -84,6 +136,7 @@ export function normalizeContract(c) {
     kalshi: k, polymarket: p, related, listed, comparison: cmp, badge, note,
     gap_pts: gap, gap_rel_pct: gap != null && k?.mid_bp != null && p?.mid_bp != null ? (gap * 100) / ((k.mid_bp + p.mid_bp) / 200) : null,
     pbe, pbe_vs_venues: cmp?.pbe_vs_venues_pts || null, pbe_position: cmp?.pbe_position || null,
+    cross: cmp ? topOfBookCross(k, p) : null, rule_terms: ruleTerms,
     priced: priced.length > 0, all_stale: priced.length > 0 && priced.every((x) => x.freshness === 'stale'),
     freshest_at: priced.map((x) => x.observed_at).filter(Boolean).sort().at(-1) || null
   };
@@ -141,9 +194,10 @@ export function rankEvents(events) {
 }
 
 export const VIEWS = {
-  top: { label: 'TOP SPREADS', filter: (e) => e.active },
+  top: { label: 'TOP MID GAPS', filter: (e) => e.active },
   live: { label: 'LIVE NOW', filter: (e) => e.live },
   pbe: { label: 'PBE CALLS', filter: (e) => e.has_pbe },
+  cross: { label: 'TOP-OF-BOOK CROSS', filter: (e) => e.contracts.some((c) => c.cross?.state === 'CROSS') },
   rules: { label: 'RULE DIFFERENCES', filter: (e) => e.contracts.some((c) => c.badge === 'RULE_MISMATCH' || c.badge === 'WITHDRAWN' || c.comparison?.disclosure) },
   all: { label: 'ALL MARKETS', filter: () => true }
 };
@@ -292,6 +346,7 @@ export function hubStats(events) {
     comparable: active.filter((e) => e.badge === 'COMPARABLE' && e.best_gap != null).length,
     mismatch: active.filter((e) => e.badge === 'RULE_MISMATCH').length,
     pbe: events.filter((e) => e.has_pbe).length,
+    crosses: active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS')).length,
     best: active.reduce((m, e) => (e.best_gap != null && e.best_gap > (m?.best_gap ?? -1) ? e : m), null)
   };
 }

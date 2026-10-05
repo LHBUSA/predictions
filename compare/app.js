@@ -4,7 +4,8 @@
 //   any tile    = detail drawer (board stays put; ?open=<key>, back/forward closes it)
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
-  moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats
+  moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -162,9 +163,20 @@ function px(v, { rel = false, small = false } = {}) {
   const cls = ['px', rel ? 'px-rel' : '', v.freshness === 'stale' ? 'px-stale' : ''].join(' ');
   return `<span class="${cls}" title="${esc(`${rel ? 'Rules differ: not compared. ' : ''}YES ${fmtCents(v.yes_bp)} · NO ${fmtCents(v.no_bp)}${v.bid_bp != null ? ` · bid/ask ${fmtCents(v.bid_bp)}–${fmtCents(v.ask_bp)}` : ''} · observed ${ageText(v.observed_at) || '?'}`)}"><b>${fmtCents(v.yes_bp)}</b>${small ? '' : `<small>NO ${fmtCents(v.no_bp)}</small>`}</span>`;
 }
+// MID GAP = informational market disagreement (mid vs mid). The TOP-OF-BOOK CROSS is a separate, differently styled
+// line so a 3¢ mid gap can never read as a 3¢ executable price. RULE_MISMATCH / single venue: neither.
+function crossLine(c) {
+  if (!c.cross) return '';
+  if (c.cross.state === 'CROSS') return `<small class="xc on" title="${esc(CROSS_TOOLTIP)}">CROSS +${(c.cross.bp / 100).toFixed(1)}¢</small>`;
+  return `<small class="xc" title="${esc(CROSS_TOOLTIP)}">${c.cross.state === 'NO_BOOK' ? 'NO BOOK' : 'NO CROSS'}</small>`;
+}
 function gapCell(c) {
-  if (c.gap_pts != null) return `<span class="gap${c.gap_pts >= 5 ? ' hot' : c.gap_pts >= 2 ? ' warm' : ''}"><b>${c.gap_pts.toFixed(1)}¢</b><small>${c.gap_rel_pct != null ? `${c.gap_rel_pct.toFixed(1)}%` : ''}</small></span>`;
+  if (c.gap_pts != null) return `<span class="gap${c.gap_pts >= 5 ? ' hot' : c.gap_pts >= 2 ? ' warm' : ''}" title="Mid-price gap: market disagreement between the two mids. Not an executable price."><b>${c.gap_pts.toFixed(1)}¢</b>${crossLine(c)}</span>`;
   return `<span class="gap none"><b>—</b><small>${c.note === 'NOT_ALIGNED' ? 'not aligned' : c.badge === 'SINGLE_VENUE' ? 'one venue' : 'not compared'}</small></span>`;
+}
+function badgeFor(e) {
+  const tip = e.badge === 'RULE_MISMATCH' ? (e.contracts.map((c) => ruleTermsSummary(c.rule_terms)).find(Boolean) || BADGES.RULE_MISMATCH) : BADGES[e.badge] || '';
+  return `<span class="badge b-${e.badge.toLowerCase().replace('_', '-')}" title="${esc(tip)}">${esc(e.badge.replace('_', ' '))}${e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : ''}</span>`;
 }
 function freshLine(e) {
   const ages = [];
@@ -187,9 +199,9 @@ function tile(e) {
     return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${gapCell(c)}</div>`;
   }).join('');
   return `<button type="button" class="tile tier-${e.tier}${e.live ? ' is-live' : ''}${isOpen(e) ? ' is-open' : ''}" data-open="${esc(e.key)}" aria-label="${esc(`${e.title}: open details`)}">
-    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badge(e.badge, e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : '')}</span>
+    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
     <span class="tt">${esc(e.title)}</span>
-    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}<span class="vh">SPREAD</span></span>${rows}</span>
+    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span></span>${rows}</span>
     <span class="tf">${pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
   </button>`;
 }
@@ -302,8 +314,10 @@ function renderOverview(box) {
   const top = active.filter((e) => e.best_gap != null).slice(0, 6);
   const st = hubStats(S.events);
   let html = `<header class="hub-head"><div><p class="eyebrow">ALL SPORTS</p><h1>Market command center</h1></div>
-    <div class="stats">${stat('LIVE', st.live, st.live ? 'live' : '')}${stat('ACTIVE MARKETS', st.active)}${stat('COMPARABLE', st.comparable)}${stat('RULES DIFFER', st.mismatch)}${stat('BIGGEST SPREAD', st.best ? `${st.best.best_gap.toFixed(1)}¢` : '—', 'gold')}</div></header>`;
-  html += `<section class="sec"><div class="sec-head"><h2>BIGGEST SPREADS NOW</h2><small>valid Kalshi ↔ Polymarket spreads, aligned within 120 s</small></div>${top.length ? tiles(top) : '<div class="empty"><b>No aligned comparable spreads right now.</b></div>'}</section>`;
+    <div class="stats">${stat('LIVE', st.live, st.live ? 'live' : '')}${stat('ACTIVE MARKETS', st.active)}${stat('COMPARABLE', st.comparable)}${stat('RULES DIFFER', st.mismatch)}${stat('BIGGEST MID GAP', st.best ? `${st.best.best_gap.toFixed(1)}¢` : '—', 'gold')}${stat('TOP-OF-BOOK CROSSES', st.crosses)}</div></header>`;
+  html += `<section class="sec"><div class="sec-head"><h2>BIGGEST MID-PRICE GAPS</h2><small>market disagreement between comparable contracts (mids, aligned within 120 s), not executable prices; each tile shows its top-of-book cross separately</small></div>${top.length ? tiles(top) : '<div class="empty"><b>No aligned comparable mid-price gaps right now.</b></div>'}</section>`;
+  const crosses = active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS')).slice(0, 6);
+  if (crosses.length) html += `<section class="sec"><div class="sec-head"><h2>TOP-OF-BOOK CROSSES</h2><small title="${esc(CROSS_TOOLTIP)}">best displayed bid above the other venue's best displayed ask · before fees · size not measured</small></div>${tiles(crosses)}</section>`;
   const pbe = S.events.filter((e) => e.has_pbe && e.active).slice(0, 3);
   if (pbe.length) html += `<section class="sec"><div class="sec-head"><h2>PBE CALLS</h2><small>PropBetEdge probability next to both venues</small></div>${tiles(pbe)}</section>`;
   const order = SPORTS.map((s) => s.key).map((k) => ({ k, list: active.filter((e) => e.sport === k) })).filter((x) => x.list.length).sort((a, b) => b.list.length - a.list.length);
@@ -322,7 +336,7 @@ function renderHub(box) {
   const hs = hubStats(evs);
   const lane = (S.desk?.lanes || [])[0];
   let html = `<header class="hub-head"><div><p class="eyebrow">${k === 'nonsports' ? 'PREDICTION MARKETS' : 'SPORT HUB'}</p><h1>${esc(LABEL[k])}</h1></div>
-    <div class="stats">${k !== 'nonsports' ? stat('LIVE', hs.live, hs.live ? 'live' : '') : ''}${stat('ACTIVE', hs.active)}${stat('COMPARABLE', hs.comparable)}${stat('RULES DIFFER', hs.mismatch)}${stat('BIGGEST SPREAD', hs.best ? `${hs.best.best_gap.toFixed(1)}¢` : '—', 'gold')}</div></header>`;
+    <div class="stats">${k !== 'nonsports' ? stat('LIVE', hs.live, hs.live ? 'live' : '') : ''}${stat('ACTIVE', hs.active)}${stat('COMPARABLE', hs.comparable)}${stat('RULES DIFFER', hs.mismatch)}${stat('BIGGEST MID GAP', hs.best ? `${hs.best.best_gap.toFixed(1)}¢` : '—', 'gold')}${stat('TOP-OF-BOOK CROSSES', hs.crosses)}</div></header>`;
   if (lane?.state === 'not_connected') { box.innerHTML = html + `<div class="empty"><b>${esc(boardEmpty({ desk: S.desk, viewKey: S.view, events: [] })?.text || 'Not connected yet.')}</b>${upcomingHint()}</div>`; return; }
   const viewList = evs.filter(VIEWS[S.view].filter);
   const whenTabs = k === 'nonsports' ? '' : `<div class="when" role="tablist" aria-label="Date">${WHEN.map((w) => { const n = viewList.filter((e) => inWhen(e, w.key)).length; return `<button type="button" role="tab" data-when="${w.key}" aria-selected="${S.when === w.key}"${!n && w.key !== 'all' ? ' disabled' : ''}>${w.label}<em>${n}</em></button>`; }).join('')}</div>`;
@@ -371,18 +385,26 @@ function spark(series, now) {
   return `<figure class="spark-fig"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="spark" role="img" aria-label="Stored observations, last 24 hours, ${(lo / 100).toFixed(0)} to ${(hi / 100).toFixed(0)} cents">${lines}</svg>
     <figcaption><span>${esc(timeOf(new Date(t0).toISOString()))}</span><span>range ${(lo / 100).toFixed(0)}–${(hi / 100).toFixed(0)}¢</span><span>now</span></figcaption></figure>`;
 }
+function termsBlock(rt) {
+  const v = ruleTermsView(rt);
+  if (!v) return '';
+  const col = (venue, name) => `<div class="wt"><span class="wt-h"><img src="${VENUE[venue].icon}" alt="" width="14" height="14">${name}</span>${v[venue].lines.map((l) => `<span class="wt-l${l.differs ? ' d' : ''}">${esc(l.text)}</span>`).join('')}${v[venue].unknown ? '<span class="wt-l u">Not confidently parsed (some clauses)</span>' : ''}${!v[venue].lines.length && !v[venue].unknown ? '<span class="wt-l">No edge-case clauses stated</span>' : ''}</div>`;
+  return `<div class="wts">${col('kalshi', 'Kalshi')}${col('polymarket', 'Polymarket')}</div>`;
+}
 function whyDiffer(e) {
-  const items = [];
-  for (const c of e.contracts) {
-    if (c.comparison?.disclosure) items.push(`<li><b>${esc(c.label)}</b>: compared as <em>${esc(c.comparison.match_class === 'EXACT_MATCH' ? 'exact match' : 'comparable')}</em>. ${esc(c.comparison.disclosure)}.</li>`);
-    for (const r of c.related) {
-      const codes = (r.reasons || []).map((x) => reasonText(x)).filter(Boolean);
-      items.push(`<li><b>${esc(c.label)}</b> · ${esc(r.venue)} ${r.title ? `“${esc(r.title)}”` : ''}: <em>${esc((r.match || '').replace(/_/g, ' ').toLowerCase())}</em>. ${esc(r.reason || '')}${codes.length ? `<ul>${codes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}</li>`);
-    }
-    if (c.note === 'NOT_ALIGNED') items.push(`<li><b>${esc(c.label)}</b>: ${esc(BADGES.NOT_ALIGNED)}</li>`);
+  const c = e.contracts.find((x) => x.rule_terms) || null;
+  const mismatch = e.badge === 'RULE_MISMATCH' || e.badge === 'WITHDRAWN';
+  const notes = [];
+  for (const x of e.contracts) if (x.note === 'NOT_ALIGNED') { notes.push(`<p class="small">${esc(BADGES.NOT_ALIGNED)}</p>`); break; }
+  if (e.badge === 'SINGLE_VENUE') return `<details class="why why-ok"><summary>Settlement terms</summary><p class="small">${esc(BADGES.SINGLE_VENUE)}</p></details>`;
+  if (!c) {
+    const r = e.contracts.flatMap((x) => x.related)[0];
+    return `<details class="why${mismatch ? '' : ' why-ok'}"${mismatch ? ' open' : ''}><summary>${mismatch ? 'Why these differ' : 'Settlement terms'}</summary><p class="small">${esc(r?.reason || e.contracts.find((x) => x.comparison?.disclosure)?.comparison.disclosure || 'Per-venue settlement terms are not available for this market.')}</p>${notes.join('')}</details>`;
   }
-  if (!items.length) items.push(`<li>${esc(e.badge === 'SINGLE_VENUE' ? BADGES.SINGLE_VENUE : 'Both venues are compared under approved rules with no recorded exceptions.')}</li>`);
-  return `<details class="why"${e.badge !== 'COMPARABLE' ? ' open' : ''}><summary>Why these differ</summary><ul>${items.join('')}</ul></details>`;
+  const head = mismatch
+    ? `<p class="small">${esc(e.contracts.flatMap((x) => x.related)[0]?.reason || 'Settlement rules differ between venues.')}. Highlighted lines differ; prices are shown side by side and never compared.</p>`
+    : '<p class="small">Approved comparable contract: the outcome is identical; only the highlighted edge cases settle differently (owner-approved exception). The comparison is withdrawn if the game is not played as scheduled.</p>';
+  return `<details class="why${mismatch ? '' : ' why-ok'}"${mismatch ? ' open' : ''}><summary>${mismatch ? 'Why these differ' : 'Settlement terms'}</summary>${head}${termsBlock(c.rule_terms)}${notes.join('')}<p class="small muted">Only clauses parsed from each venue's published rules are shown.</p></details>`;
 }
 function movesPanel(e) {
   const d = S.detail.get(e.key);
@@ -409,8 +431,20 @@ function drawerContract(e, c) {
   return `<div class="dc${S.focusMarket === c.id ? ' focus' : ''}">
     <div class="dc-h">${avatar(e, c, 'lg')}<div><b>${esc(c.label)}</b>${scoreOf(e, c)}</div><span class="flex"></span>${gapCell(c)}</div>
     <div class="dc-v">${venue('kalshi', c.kalshi, false)}${venue('polymarket', p, rel)}</div>
+    ${metricsBox(c)}
     <div class="dc-pbe">${c.pbe ? `<b>PBE ${fmtPct(c.pbe.probability)}</b><small>${esc((c.pbe.state || '').replace(/_/g, ' ').toLowerCase())}${c.pbe.issued_at ? ` · issued ${esc(timeOf(c.pbe.issued_at))}` : ''}${c.pbe_vs_venues ? ` · vs venues ${c.pbe_vs_venues.map((x) => (x > 0 ? '+' : '') + x.toFixed(1)).join(' / ')} pts` : ''}</small>` : '<small>No active PBE call</small>'}</div>
   </div>`;
+}
+function metricsBox(c) {
+  if (c.badge !== 'COMPARABLE') return `<div class="dm dm-off"><span><small>SHARED SPREAD</small><b>Not compared</b><em>${esc(c.badge === 'RULE_MISMATCH' ? 'Settlement rules differ: each venue is shown at its own price only.' : c.badge === 'WITHDRAWN' ? BADGES.WITHDRAWN : BADGES.SINGLE_VENUE)}</em></span></div>`;
+  if (c.gap_pts == null) return `<div class="dm dm-off"><span><small>SHARED SPREAD</small><b>Not aligned</b><em>${esc(BADGES.NOT_ALIGNED)}</em></span></div>`;
+  const x = c.cross;
+  const vn = (v) => (v === 'kalshi' ? 'Kalshi' : 'Polymarket');
+  const xs = x?.state === 'CROSS' ? `<b class="pos">+${(x.bp / 100).toFixed(1)}¢</b><em>${vn(x.bid_venue)} bid ${fmtCents(x.bid_bp)} vs ${vn(x.ask_venue)} ask ${fmtCents(x.ask_bp)}</em>`
+    : x?.state === 'NO_CROSS' ? `<b>NO EXECUTABLE CROSS</b><em>Closest: ${vn(x.bid_venue)} bid ${fmtCents(x.bid_bp)} vs ${vn(x.ask_venue)} ask ${fmtCents(x.ask_bp)} (${(x.bp / 100).toFixed(1)}¢)</em>`
+    : '<b>NO BOOK</b><em>One venue has no two-sided top of book.</em>';
+  return `<div class="dm"><span class="dm-mid" title="Difference between the two venues' mid prices. Informational market disagreement, not an executable price."><small>MID-PRICE GAP</small><b>${c.gap_pts.toFixed(1)}¢</b><em>${c.gap_rel_pct != null ? `${c.gap_rel_pct.toFixed(1)}% relative · ` : ''}market disagreement, informational</em></span>
+    <span class="dm-x" title="${esc(CROSS_TOOLTIP)}"><small>TOP-OF-BOOK EXECUTABLE CROSS</small>${xs}<em class="fine">${esc(CROSS_TOOLTIP)}</em></span></div>`;
 }
 function renderDrawer() {
   const dr = $('#drawer'), e = S.memberState === 'entitled' ? openEvent() : null;
@@ -420,7 +454,7 @@ function renderDrawer() {
   const cast = e.join.score?.pbecast_url || e.join.score?.href || e.destination;
   const cmd = new URL(MEMBERS); cmd.searchParams.set('add', deepLink(e)); cmd.searchParams.set('title', `${e.title} · Compare`);
   const keepScroll = $('#drawer-body')?.scrollTop || 0;
-  $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badge(e.badge, e.badge_note === 'NOT_ALIGNED' ? ' · NOT ALIGNED' : '')}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
+  $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badgeFor(e)}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
     <div class="drawer-body" id="drawer-body"><h2>${esc(e.title)}</h2>
       ${e.contracts.map((c) => drawerContract(e, c)).join('')}
       <div class="acts">${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}<a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a></div>
