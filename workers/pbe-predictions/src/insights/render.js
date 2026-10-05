@@ -2,8 +2,6 @@
 // Article = immutable story (evidence packet bounded by as_of) + a clearly labeled LIVE module read at render time.
 import { esc, layout, SITE, badge, headlineOutcome, shareBar, ORG_ID, WEBSITE_ID, ORG_NODE, WEBSITE_NODE } from '../pages.js';
 import { networkModule } from '../network.js';
-import { premiumModule } from '../pages.js';
-import { publicEventView } from '../premium.js';
 import { fmtUtc } from './charts.js';
 import { VERTICALS } from './stories.js';
 import { storyImage, heroOverlaySvg, storySvg } from './images.js';
@@ -107,7 +105,7 @@ export function articleCrumbs(story, built) {
 function continueResearch(story, built) {
   const fam = built.model_family;
   return `<nav class="ix-continue" aria-labelledby="continue-h"><h2 id="continue-h">Continue the research</h2><ul>
-<li><a href="/events/${esc(story.primary)}"><b>Open the live forecast</b><span>The canonical event record: current PBE probability, market, evidence and the scoring checkpoints (full archive with All Access).</span></a></li>
+<li><a href="/events/${esc(story.primary)}"><b>Open the event record</b><span>The exact resolution rule and outcomes; the live PBE forecast, evidence and full history are included with All Access.</span></a></li>
 ${fam ? `<li><a href="/models/#${esc(fam)}"><b>The model on the research board</b><span>${esc(fam)}: state, versions, live forecasts, calibration status and limitations.</span></a></li>` : ''}
 <li><a href="/methodology/#scoring"><b>How forecasts are made and scored</b><span>Contract normalization, point-in-time data, immutable snapshots and fixed scoring roles.</span></a></li>
 <li><a href="/#track-record"><b>Track record</b><span>Resolved forecasts scored against the market on the same snapshots.</span></a></li>
@@ -157,7 +155,6 @@ ${shareBar(url, built.title)}
 ${resolutionModule(built.resolution, story)}
 <section class="ix-quick" aria-labelledby="quick-h"><h2 id="quick-h">Quick read</h2><ul>${built.quick.map((q) => `<li>${q}</li>`).join('')}</ul></section>
 <div class="ix-body">${built.sections}</div>
-${live ? premiumModule(publicEventView(live)) : ''}
 ${ledger(built.ledger, built.rule, model)}
 ${continueResearch(story, built)}
 ${networkModule()}

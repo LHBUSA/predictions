@@ -1,8 +1,9 @@
 // Homepage: renders only stored values from /api (pbe-predictions Worker). No illustrative numbers.
-// Predictions is a premium product included with PropBetEdge All Access (no free tier). Public: the product shell,
-// engine/aggregate stats (summary), calendar, aggregate track record and model registry. All Access / owner: the
-// intelligence desk (/api/desk is gated server-side: 401/403/503 with no payload otherwise), tape and featured
-// divergences. Anonymous readers never request the desk.
+// Predictions is a premium product included with PropBetEdge All Access. Public (owner 2026-10-05): the product shell,
+// engine/aggregate stats, calendar, track record, model registry and a PREVIEW of the desk (/api/preview/desk: what is
+// tracked, close times, venue prices, whether a PBE model covers it) with the PBE numbers shown blurred. The blur covers
+// a placeholder: real PBE numbers never reach a non-member (the server never sends them). All Access / owner: the full
+// desk (/api/desk, gated server-side), tape and featured divergences.
 const API = '/api';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -19,10 +20,30 @@ const dcls = (d) => (d > 0 ? 'dpos' : d < 0 ? 'dneg' : '');
 const getJSON = async (p) => { const r = await fetch(`${API}/${p}`, { cache: 'no-store' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
 // All Access / owner only (access.js resolves membership; the server enforces it). The gate stays for everyone else.
 let member = false;
+let preview = false;
 let mvLoaded = false;
+const show = (id, on) => { const el = $(id); if (el) el.hidden = !on; const lab = document.querySelector(`label[for="${id}"]`); if (lab) lab.hidden = !on; };
 function unlock() {
-  const show = (id, on) => { const el = $(id); if (el) el.hidden = !on; };
-  show('desk-gate', false); show('desk-controls', true); show('hero-member-cta', true);
+  preview = false; state.sort = $('sort')?.value || 'div';
+  show('desk-gate', false); show('desk-controls', true); show('sort', true); show('hero-member-cta', true);
+}
+// Blurred stand-in for a members-only number (a placeholder, not the value: nothing to un-blur).
+const LOCKED = '<span class="locked-num" title="Included with PropBetEdge All Access"><i aria-hidden="true">00</i>%<span class="sr-only">PBE probability included with All Access</span></span>';
+const LOCKED_PTS = '<span class="locked-num" title="Included with PropBetEdge All Access"><i aria-hidden="true">+00</i> pts<span class="sr-only">Divergence included with All Access</span></span>';
+function renderPreview(d) {
+  if (member) return;
+  preview = true; events = d.events; state.sort = 'close';
+  show('desk-controls', true); show('sort', false);
+  tape(); cats(); views(); desk();
+}
+function previewRow(e) {
+  const h = e.headline || {}; const modeled = e.outcomes_modeled > 0;
+  const mkt = h.market_pct != null ? pctTxt(h.market_pct) : null;
+  return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
+      <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}</div>
+      <h3>${esc(e.title)}</h3><div class="sub">${h.label ? `Market favorite: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled</div></div>
+      <div class="cells">${modeled ? `<div class="cell"><span>PBE</span><strong class="num">${LOCKED}</strong></div>` : '<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>'}<div class="cell"><span>Market</span><strong class="${mkt ? 'num' : 'null-state'}">${esc(mkt || 'Awaiting market')}</strong></div>${modeled ? `<div class="cell"><span>Div.</span><strong class="num">${LOCKED_PTS}</strong></div>` : '<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>'}</div>
+      <div class="when"><b>${untilEl(e.close_time)}</b>to close</div></a></div>`;
 }
 function renderDesk(d) {
   events = d.events;
@@ -172,12 +193,14 @@ function stats(s) {
 }
 
 function tape() {
-  const items = events.filter((e) => e.headline && e.headline.pbe_pct !== null).sort((a, b) => b.max_abs_divergence - a.max_abs_divergence).slice(0, 18);
+  const items = preview
+    ? events.filter((e) => e.outcomes_modeled > 0 && e.headline?.market_pct != null).slice(0, 18)
+    : events.filter((e) => e.headline && e.headline.pbe_pct !== null).sort((a, b) => b.max_abs_divergence - a.max_abs_divergence).slice(0, 18);
   $('tape').parentElement.hidden = !items.length;
   if (!items.length) return;
   // ONE semantic track + ONE inert visual clone (the seamless loop): the clone is aria-hidden, inert and out of the tab
   // order, so screen readers, text extraction and crawlers see each item once. Reduced motion: no loop, no clone.
-  const item = (e, clone) => { const h = e.headline; return `<a href="${esc(e.url)}"${clone ? ' aria-hidden="true" tabindex="-1" inert data-tape-clone' : ''}><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${h.pbe_pct}%</b> · MKT <b class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</b>${h.divergence_pts !== null ? ` · <span class="num ${h.divergence_pts >= 0 ? 'pos' : 'neg'}">${pts(h.divergence_pts)}</span>` : ''}</a>`; };
+  const item = (e, clone) => { const h = e.headline; if (preview) return `<a href="${esc(e.url)}"${clone ? ' aria-hidden="true" tabindex="-1" inert data-tape-clone' : ''}><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${LOCKED}</b> · MKT <b class="num">${h.market_pct}%</b></a>`; return `<a href="${esc(e.url)}"${clone ? ' aria-hidden="true" tabindex="-1" inert data-tape-clone' : ''}><b>${esc(e.category_label.toUpperCase())}</b> · ${esc(shortTitle(e))} · ${esc(h.label)} · PBE <b class="num">${h.pbe_pct}%</b> · MKT <b class="num">${h.market_pct ?? '—'}${h.market_pct !== null ? '%' : ''}</b>${h.divergence_pts !== null ? ` · <span class="num ${h.divergence_pts >= 0 ? 'pos' : 'neg'}">${pts(h.divergence_pts)}</span>` : ''}</a>`; };
   const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('tape').innerHTML = items.map((e) => item(e, false)).join('') + (still ? '' : items.map((e) => item(e, true)).join(''));
 }
@@ -214,7 +237,8 @@ function cats() {
 function desk() {
   const openWhy = new Set([...document.querySelectorAll('#desk-list .row-wrap')].filter((w) => w.querySelector('details.why-row')?.open).map((w) => w.querySelector('a.row')?.getAttribute('href')));
   const q = state.q.trim().toLowerCase();
-  let rows = events.filter((e) => (state.cat === 'ALL' || e.category === state.cat) && (state.view === 'ALL' || VIEWS[state.view]?.test(e)) && (!q || `${e.title} ${e.category_label} ${e.outcomes.map((o) => o.label).join(' ')}`.toLowerCase().includes(q)));
+  let rows = events.filter((e) => (state.cat === 'ALL' || e.category === state.cat) && (state.view === 'ALL' || VIEWS[state.view]?.test(e)) && (!q || `${e.title} ${e.category_label} ${(e.outcomes || []).map((o) => o.label).join(' ')}`.toLowerCase().includes(q)));
+  if (preview) { rows.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time)); $('desk-list').innerHTML = rows.length ? rows.map(previewRow).join('') : '<div class="card empty-honest">No live events match this filter.</div>'; return; }
   if (state.sort === 'div') rows.sort((a, b) => b.max_abs_divergence - a.max_abs_divergence || Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'close') rows.sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time));
   if (state.sort === 'fresh') rows.sort((a, b) => Date.parse(b.headline?.published_at || 0) - Date.parse(a.headline?.published_at || 0));
@@ -264,9 +288,15 @@ const LIVE_MS = { summary: 60e3, desk: 60e3, calendar: 120e3, track: 300e3, mode
 const live = { last: {}, inflight: new Set(), sig: {}, requests: 0, timer: null, listener: false };
 async function pull(name) {
   if (document.hidden || live.inflight.has(name)) return;
-  if (name === 'desk' && !member) return;
   live.inflight.add(name); live.last[name] = Date.now(); live.requests += 1;
   try {
+    if (name === 'desk' && !member) {
+      const r = await fetch(`${API}/preview/desk`, { cache: 'no-store' });
+      const body = r.ok ? await r.text() : null;
+      if (!body || body === live.sig.preview || member) return;
+      live.sig.preview = body; renderPreview(JSON.parse(body));
+      return;
+    }
     if (name === 'desk') {
       const r = await fetch(`${API}/desk`, { credentials: 'same-origin', cache: 'no-store' });
       const body = r.ok ? await r.text() : null;
@@ -315,7 +345,8 @@ async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
   if (window.PBE_MEMBERSHIP) onMembership(window.PBE_MEMBERSHIP); // access.js may have resolved first
-  const [s, c, t, m] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models')]);
+  const [s, c, t, m, pv] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk')]);
+  if (pv.status === 'fulfilled' && !member) { live.sig.preview = JSON.stringify(pv.value); renderPreview(pv.value); }
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);

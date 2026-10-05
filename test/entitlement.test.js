@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import './helpers/worker-assets.js';
 const { default: worker } = await import('../workers/pbe-predictions/src/index.js');
 import { predictionsMembership, sessionCookie } from '../workers/pbe-predictions/src/membership.js';
-import { publicEventShell, publicEventView, premiumEventView, eventCsv } from '../workers/pbe-predictions/src/premium.js';
+import { publicEventShell, premiumEventView, eventCsv, deskPreview } from '../workers/pbe-predictions/src/premium.js';
 import { renderEvent, eventIntel } from '../workers/pbe-predictions/src/pages.js';
 import { eventCard } from '../workers/pbe-predictions/src/og-render.js';
 import { siteHeader } from '../workers/pbe-predictions/src/network.js';
@@ -146,7 +146,6 @@ test('member event intelligence (private route) carries the full record; CSV kee
   assert.match(main, /87%/); assert.match(main, /secret-mid-1|84%/); assert.match(main, /SECRET-EVIDENCE/);
   assert.match(aside, /Permanent record/);
   for (const id of ['first-pub', 'secret-mid-1', 'secret-mid-2', 'current']) assert.match(eventCsv(full), new RegExp(id));
-  assert.equal(publicEventView(full).access.archive.snapshots, 4, 'Insights archive module size');
 });
 
 test('header: Sign in + Get All Access, neutral loading state, never a FREE badge', () => {
@@ -181,4 +180,27 @@ test('shipped client copy: no FREE badge, no free desk, no free Predictions', ()
     assert.doesNotMatch(s, /free (desk|predictions)/i, f);
     assert.doesNotMatch(s, /data-state="free"|mem-action/, f);
   }
+});
+
+test('homepage preview (public): whitelisted rows, market favorite headline, close-time order, no PBE number or ranking signal', async () => {
+  const ev = (i, close, outs) => ({ slug: `e${i}`, url: `/events/e${i}`, title: `E${i}`, category: 'WEATHER', category_label: 'Weather', state: 'RESEARCH', close_time: close, outcomes_total: outs.length, outcomes_modeled: outs.filter((o) => o.pbe_pct !== null).length, max_abs_divergence: 61, model_family: 'pbe-x',
+    headline: { label: 'SECRET-HEADLINE', pbe_pct: 87, divergence_pts: 61, why: { drivers: [] }, spark: {} }, outcomes: outs });
+  const full = { generated_at: 'g', events: [ev(1, '2026-10-09T00:00:00Z', [{ label: 'A', pbe_pct: 87, market_pct: 26, divergence_pts: 61 }, { label: 'B', pbe_pct: 13, market_pct: 74, divergence_pts: -61 }]), ev(2, '2026-10-06T00:00:00Z', [{ label: 'C', pbe_pct: null, market_pct: 40, divergence_pts: null }])] };
+  const pv = deskPreview(full);
+  assert.deepEqual(pv.events.map((e) => e.slug), ['e2', 'e1'], 'close-time order, never divergence');
+  assert.deepEqual(pv.events[1].headline, { label: 'B', market_pct: 74, modeled: true }, 'headline = market favorite');
+  assert.deepEqual(pv.events[0].headline, { label: 'C', market_pct: 40, modeled: false });
+  const blob = JSON.stringify(pv);
+  for (const k of ['pbe_pct', 'divergence_pts', 'max_abs_divergence', 'why', 'spark', 'model_family', 'outcomes"']) assert.equal(blob.includes(`"${k.replace('"', '')}"`), false, `preview carries ${k}`);
+  assert.doesNotMatch(blob, /87|SECRET-HEADLINE|61/);
+  const { r, db } = await call('/v1/preview/desk', undefined, authStub(verdict('all_access')));
+  assert.ok(db > 0 && r.status !== 401 && r.status !== 403, 'preview is public (no gate)');
+  const home = readFileSync(new URL('../home.js', import.meta.url), 'utf8');
+  assert.match(home, /const LOCKED = '<span class="locked-num"[^']*<i aria-hidden="true">00<\/i>%/, 'blur covers a placeholder, not a value');
+});
+
+test('Insights are open: no All Access lock inside articles', () => {
+  const r = readFileSync(new URL('../workers/pbe-predictions/src/insights/render.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(r, /premiumModule|data-prem-lock|data-gate/);
+  assert.match(r, /isAccessibleForFree: true/);
 });

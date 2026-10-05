@@ -35,22 +35,6 @@ export function publicEventShell(rec) {
   };
 }
 
-// Insights (editorial) only: the size of an event's archive for the All Access module at the end of a story. Never
-// served by an API or an event page.
-export function publicEventView(rec) {
-  let snapshots = 0; let marketObs = 0;
-  const outcomes = rec.outcomes.map((o) => {
-    snapshots += o.history.length; marketObs += o.market_path.length + (o.venues?.polymarket?.path_n ?? 0);
-    const latestId = o.history.at(-1)?.forecast_id;
-    const history = o.history.filter((h) => h.roles.length || h.forecast_id === latestId).map(({ changed, sha, ...h }) => ({ ...h, checkpoint: true }));
-    const lastMarket = o.market_path.filter((m) => m.pct !== null).at(-1);
-    const venues = o.venues ? { kalshi: trimVenue(o.venues.kalshi), polymarket: trimVenue(o.venues.polymarket) } : o.venues;
-    return withOfficialDecisionsOnly({ ...o, history, market_path: lastMarket ? [lastMarket] : [], venues });
-  });
-  return { ...rec, outcomes, access: { tier: 'checkpoints', archive: { snapshots, market_observations: marketObs, outcomes: rec.outcomes.length } } };
-}
-const trimVenue = (v) => (v ? { ...v, path: [] } : v);
-
 export function premiumEventView(rec) {
   return { ...rec, outcomes: rec.outcomes.map(withOfficialDecisionsOnly), access: { tier: 'all_access' } };
 }
@@ -63,6 +47,21 @@ export function eventCsv(rec) {
     for (const m of o.market_path) rows.push(['market', o.label, o.market_id, '', m.t, 'kalshi_mid', '', m.pct, '', ''].map(q).join(','));
   }
   return `${rows.join('\n')}\n`;
+}
+
+// PUBLIC homepage preview of the desk (owner 2026-10-05: visitors see what is going on; PBE numbers are blurred).
+// Built by whitelist from the full desk: what is tracked, when it closes, the venue's own public price and WHETHER a PBE
+// model covers it. Never the PBE probability, divergence, confidence, evidence or history; the headline outcome is the
+// one the market prices highest and rows are ordered by close time, so neither choice reveals where PBE disagrees.
+export function deskPreview(full) {
+  const events = full.events.map((e) => {
+    const quoted = (e.outcomes || []).filter((o) => o.market_pct !== null && o.market_pct !== undefined).sort((a, b) => b.market_pct - a.market_pct)[0] || null;
+    return {
+      ...pick(e, ['slug', 'url', 'title', 'category', 'category_label', 'state', 'close_time', 'resolves_at', 'outcomes_total', 'outcomes_modeled', 'kalshi_url', 'updated_at']),
+      headline: quoted ? { label: quoted.label, market_pct: quoted.market_pct, modeled: quoted.pbe_pct !== null && quoted.pbe_pct !== undefined } : null,
+    };
+  }).sort((a, b) => Date.parse(a.close_time) - Date.parse(b.close_time) || a.slug.localeCompare(b.slug));
+  return { generated_at: full.generated_at, events, access: { tier: 'preview', required: 'all_access' } };
 }
 
 export const ALL_ACCESS_PRICE = '$29/month';

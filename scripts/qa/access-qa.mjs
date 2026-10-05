@@ -84,7 +84,9 @@ async function visit(state, width, path) {
       purchaseVisible: [...document.querySelectorAll('a[href="https://propbetedge.ai/pro"]')].filter((a) => vis(a) && !a.closest('footer') && /get all access|upgrade/i.test(a.textContent)).length,
       overflow: document.scrollingElement.scrollWidth - window.innerWidth, overlaps,
       freeBadge: /\bFREE\b/.test(text), freeCopy: /free (desk|predictions)/i.test(text),
-      pbeNumbers: (text.match(/PBE[^\n]{0,40}?\d{1,2}%/g) || []).length,
+      // the blurred placeholder reads 00% / +00 pts; any other number right after a PBE label is a leak
+      pbeNumbers: (text.replace(/\+?00(%| pts)/g, '').match(/PBE\s*\d{1,2}%/g) || []).length,
+      locked: document.querySelectorAll('.locked-num').length,
       deskRows: document.querySelectorAll('#desk-list .row').length, intel: !!document.querySelector('[data-prem-intel] [data-live-region="call"]'),
       brokenImgs: [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.getBoundingClientRect().width > 0).map((i) => i.src),
       cls: (performance.getEntriesByType('layout-shift') || []).reduce((a, e) => a + (e.hadRecentInput ? 0 : e.value), 0),
@@ -118,6 +120,6 @@ try {
   for (const path of ['/', `/events/${slug}`]) for (const state of states) for (const w of WIDTHS) await visit(state, w, path);
 } finally { await browser.close(); if (server) await new Promise((r) => server.server.close(r)); }
 writeFileSync(join(OUT, 'report.json'), JSON.stringify({ mode: PROD ? 'prod' : 'local', slug, rows, failures }, null, 1));
-console.log(rows.map((r) => `${r.tag.padEnd(28)} acct=${r.acct} chip="${r.chip}" pill=${r.pillVisible} gate=${r.gateVisible} cta="${r.gateCta}" desk=${r.deskRows} intel=${r.intel} ovf=${r.overflow} cls=${r.cls.toFixed(3)}`).join('\n'));
+console.log(rows.map((r) => `${r.tag.padEnd(28)} locked=${r.locked} acct=${r.acct} chip="${r.chip}" pill=${r.pillVisible} gate=${r.gateVisible} cta="${r.gateCta}" desk=${r.deskRows} intel=${r.intel} ovf=${r.overflow} cls=${r.cls.toFixed(3)}`).join('\n'));
 console.log(failures.length ? `\nFAIL ${failures.length}\n${failures.join('\n')}` : '\nPASS');
 process.exit(failures.length ? 1 : 0);

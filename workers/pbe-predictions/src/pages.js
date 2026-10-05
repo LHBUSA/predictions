@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261005aa1';
+export const ASSET_V = '20261005aa2';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
@@ -126,18 +126,6 @@ export function eventOgImage(shell) {
   const key = [e.title, e.state, e.close_time, e.lifecycle, shell.outcomes.length, 'aa1'].join('|');
   let x = 0; for (const ch of key) x = (Math.imul(x, 31) + ch.charCodeAt(0)) >>> 0;
   return `${SITE}/og/events/${e.slug}.png?v=${x.toString(36)}`;
-}
-
-// Insights (editorial) end-of-story All Access module: the archive's real size + unlock; members get the archive
-// client-side from /api/premium/event/<slug> (private, no-store). Nothing premium is in this HTML.
-export function premiumModule(rec) {
-  const a = rec.access?.archive;
-  if (!a) return '';
-  return `<section class="card panel prem" id="pbe-premium" data-slug="${esc(rec.event.slug)}" aria-labelledby="prem-h">
-<span class="prem-kicker">ALL ACCESS</span><h2 id="prem-h">Full forecast archive</h2>
-<p class="prem-preview"><b class="num">${a.snapshots}</b> immutable PBE snapshots and <b class="num">${a.market_observations}</b> stored market observations across ${a.outcomes} outcome${a.outcomes === 1 ? '' : 's'}: the complete probability path, every intermediate forecast, the changed-input ledger and a downloadable record.</p>
-<div class="prem-lock" data-prem-lock><p>Predictions is included with PropBetEdge All Access · $29/month.</p><div class="gate-cta" data-gate-cta><a class="cta-primary" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_event_unlock">Get All Access</a><a class="cta-secondary" href="#" data-pbe-signin>Sign in</a></div></div>
-<div class="prem-body" data-prem-body hidden></div></section>`;
 }
 
 const GATE_FEATURES = ['Official PBE probability for every modeled outcome', 'Model vs market comparison', 'Evidence ledger with data cutoff and sources', 'Immutable forecast history and scoring checkpoints', 'Live station and market updates'];

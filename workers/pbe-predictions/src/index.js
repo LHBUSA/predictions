@@ -18,7 +18,7 @@ import { desk, summary, calendar, models, eventRecord, contractRecord, contractT
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome, eventIntel } from './pages.js';
 import { renderPng } from './og.js';
 import { predictionsMembership, PRIVATE_HEADERS } from './membership.js';
-import { publicEventShell, premiumEventView, eventCsv, ALL_ACCESS_REQUIRED, ENTITLEMENT_UNAVAILABLE } from './premium.js';
+import { publicEventShell, premiumEventView, eventCsv, deskPreview, ALL_ACCESS_REQUIRED, ENTITLEMENT_UNAVAILABLE } from './premium.js';
 import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
@@ -234,6 +234,8 @@ export default {
       // Membership + All Access. Predictions is a premium product included with All Access: every route below that
       // carries a PBE probability, market comparison, evidence or history is behind requireAllAccess + privateJson.
       if (p === '/v1/membership') { const m = await predictionsMembership(req, env); return privateJson({ authenticated: m.authenticated, membership: m.membership }); }
+      // Public homepage preview: whitelisted desk rows, no PBE numbers (the page blurs placeholders in their place).
+      if (p === '/v1/preview/desk') return json(deskPreview(await desk(store)));
       if (p === '/v1/desk' || p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
       if (p.startsWith('/v1/premium/event-page/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
@@ -342,7 +344,7 @@ export default {
         return ref ? new Response(null, { status: 301, headers: { location: `${SITE}/events/${ref.slug}#${encodeURIComponent(ref.market_id)}`, 'cache-control': 'public, max-age=3600' } }) : html(renderNotFound('/record/'), 404);
       }
       if (p === '/sitemap.xml') return new Response(sitemapXml(await sitemapEntries(store), (await publishedStories(store)).map((i) => ({ slug: i.story.slug, vertical: i.story.vertical, published_at: i.story.published_at }))), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=900, no-transform', vary: 'Accept-Encoding' } });
-      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/membership'], all_access: ['/v1/desk', '/v1/event/:slug', '/v1/contract/:contract_id', '/v1/live/event/:slug', '/v1/premium/*'] }, 404);
+      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/preview/desk', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/membership'], all_access: ['/v1/desk', '/v1/event/:slug', '/v1/contract/:contract_id', '/v1/live/event/:slug', '/v1/premium/*'] }, 404);
     } catch (e) {
       console.error(e.stack || e.message);
       return json({ error: 'internal_error', message: e.message }, 500, 'no-store');

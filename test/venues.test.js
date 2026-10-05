@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { venueBlock, quoteAtOrBefore, divergence, semantics, kalshiQuote, polymarketQuote, freshness, NO_OBSERVATION, AGREEMENT_PTS } from '../src/engine/venues.js';
 import { coverageFromTicks } from '../workers/pbe-predictions/src/venue-data.js';
 import { venueScores } from '../workers/pbe-predictions/src/api.js';
-import { publicEventView, premiumEventView } from '../workers/pbe-predictions/src/premium.js';
+import { publicEventShell, premiumEventView } from '../workers/pbe-predictions/src/premium.js';
 
 const pmRow = (t, bid, ask) => polymarketQuote({ observed_at: t, bid_bp: bid, ask_bp: ask, comparable_mid_bp: (bid + ask) / 2, market_state: 'open', observation_ref: t });
 const quotes = [pmRow('2026-10-04T10:00:00Z', 5800, 6000), pmRow('2026-10-04T11:00:00Z', 6100, 6300), pmRow('2026-10-04T13:00:00Z', 7000, 7200)];
@@ -89,18 +89,15 @@ test('venue scores: same contract, same outcome, same designated timestamp; miss
   assert.equal(venueScores(rows, { kalshi: kal, polymarket: pmRm }, 1)[0].polymarket.status, 'NOT_COMPARABLE');
 });
 
-test('Free / All Access: public venue blocks keep checkpoints, drop the full path; DRAFT decisions never leave admin', () => {
+test('All Access: members get the complete venue path; the public shell carries no venues or calls; DRAFT decisions never leave admin', () => {
   const v = venueBlock({ venue: 'polymarket', quotes, state: 'EXACT_MATCH', marketId: 'pm1', forecasts, now: NOW });
   const rec = { event: {}, outcomes: [{ history: [{ forecast_id: 'f-cur', roles: [], changed: [], sha: 'x' }], market_path: [], venues: { kalshi: null, polymarket: v }, call: { pbe_pct: 68, evidence: {}, decision: { state: 'CALL', official: false } } }] };
-  const pub = publicEventView(rec);
-  assert.deepEqual(pub.outcomes[0].venues.polymarket.path, []);
-  assert.equal(pub.outcomes[0].venues.polymarket.path_n, 3);
-  assert.equal(pub.outcomes[0].venues.polymarket.at_forecast.length, 2);
-  assert.equal('decision' in pub.outcomes[0].call, false);
+  const shell = JSON.stringify(publicEventShell(rec));
+  assert.doesNotMatch(shell, /"venues"|"call"|"history"/);
   assert.equal('decision' in premiumEventView(rec).outcomes[0].call, false);
   assert.equal(premiumEventView(rec).outcomes[0].venues.polymarket.path.length, 3, 'members get the complete stored path');
   const official = { ...rec, outcomes: [{ ...rec.outcomes[0], call: { ...rec.outcomes[0].call, decision: { state: 'CALL', official: true } } }] };
-  assert.equal(publicEventView(official).outcomes[0].call.decision.state, 'CALL');
+  assert.equal(premiumEventView(official).outcomes[0].call.decision.state, 'CALL');
 });
 
 test('change-only storage: an unchanged quote is current as of the last observer read, not its row time', () => {

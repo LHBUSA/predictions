@@ -18,7 +18,7 @@ function boot({ entitled = false, deskBody = null, deskStatus = 200 } = {}) {
   let pending = null;
   const summary = { live_contracts: 1, live_events: 1, by_category: { WEATHER: 1 }, modeled_contracts: 1, monitoring_contracts: 0, resolved_scored: 0, last_engine_cycle: new Date().toISOString(), models_live: 1, models_shadow: 0 };
   const desk = deskBody || { events: [{ url: '/events/a', title: 'A?', category: 'WEATHER', category_label: 'Weather', close_time: new Date(Date.now() + 3600e3).toISOString(), outcomes: [], outcomes_modeled: 1, outcomes_total: 1, max_abs_divergence: 5, state: 'RESEARCH', headline: { label: 'x', pbe_pct: 50, market_pct: 45, divergence_pts: 5, published_at: new Date().toISOString() } }], access: entitled ? { tier: 'all_access' } : { tier: 'free', total_events: 1, shown: 1 } };
-  const bodies = { 'summary': summary, 'desk': { ...desk, access: { tier: 'all_access' } }, 'calendar': { events: [] }, 'track-record': { resolved_contracts: 0, min_for_claims: 30, groups: [] }, 'models': { families: [] } };
+  const bodies = { 'summary': summary, 'preview/desk': { events: [{ slug: 'p', url: '/events/p', title: 'P?', category: 'WEATHER', category_label: 'Weather', state: 'RESEARCH', close_time: new Date(Date.now() + 3600e3).toISOString(), outcomes_total: 2, outcomes_modeled: 1, headline: { label: 'x', market_pct: 45, modeled: true } }] }, 'desk': { ...desk, access: { tier: 'all_access' } }, 'calendar': { events: [] }, 'track-record': { resolved_contracts: 0, min_for_claims: 30, groups: [] }, 'models': { families: [] } };
   const fetch = (url, init = {}) => {
     const path = String(url).replace(/^\/api\//, '').replace(/\?.*$/, '');
     calls.push({ path, init });
@@ -100,15 +100,18 @@ test('no overlapping fetch for a dataset while one is in flight', async () => {
   await flush();
 });
 
-test('anonymous reader: the desk is never requested (first load, cadence, catch-up); the gate stays', async () => {
+test('anonymous reader: the gated desk is never requested; the public preview renders with locked PBE cells', async () => {
   const t = boot();
   await flush(); await flush();
   assert.ok(!t.calls.some((c) => c.path === 'desk' || c.path.startsWith('premium')), 'no desk on first load');
   const L = t.ctx.__live;
   for (const k of Object.keys(L.last)) L.last[k] -= 10 * 60e3;
   t.ctx.__tick(); await flush(); await flush();
-  assert.deepEqual(t.calls.map((c) => c.path).sort(), ['calendar', 'models', 'summary', 'summary', 'track-record', 'calendar', 'models', 'track-record'].sort());
+  assert.deepEqual(t.calls.map((c) => c.path).sort(), ['calendar', 'models', 'preview/desk', 'summary', 'track-record', 'calendar', 'models', 'preview/desk', 'summary', 'track-record'].sort());
   assert.equal(t.ctx.__member(), false);
+  const list = t.nodes['desk-list'].innerHTML;
+  assert.match(list, /locked-num/); assert.match(list, /45%/, 'venue price visible');
+  assert.doesNotMatch(list.replace(/<i aria-hidden="true">\+?00<\/i>/g, ''), /PBE<\/span><strong class="num">\d/, 'no PBE number');
   assert.equal(t.nodes['desk-gate']?.hidden ?? false, false, 'gate still shown');
 });
 
