@@ -61,6 +61,15 @@ npx wrangler versions deploy b98f1aed-8417-4c06-880b-21ded196f92d@100% --config 
   to hasPart, /pro, footer, header, About, search. Revert those two commits to roll back; Stripe identity untouched.
 - sql/005 applied (20261003235900). Rollback file: sql/005_newsroom_transition_graph_ROLLBACK.sql (restores the 003 guard).
 
+## Homepage preview + open Insights (2026-10-05, owner follow-up)
+Public `/v1/preview/desk` (premium.js deskPreview, whitelist: no PBE / divergence / ranking signal); homepage shows every
+live event with venue prices and BLURRED PLACEHOLDER PBE/divergence cells (no real value is ever sent). Insights articles
+no longer carry the All Access lock. Full desk + event intelligence stay gated.
+| Layer | Live | Roll back to |
+|---|---|---|
+| pbe-predictions Worker (main ec58d8d) | `c296d4e9` | `34586ac7` (gate only, no preview, Insights lock) — `npx wrangler versions deploy 34586ac7-8401-49b5-95d2-bc1730733412@100% --config workers/pbe-predictions/wrangler.jsonc -y` |
+| Vercel static (?v=20261005aa4) | build of ec58d8d | the 399a0cb/6a4714d build (Vercel instant rollback); roll back with the Worker |
+
 ## All Access product contract (2026-10-05) — supersedes the Free / All Access boundary below
 
 Owner decision: Predictions is a premium product included with PropBetEdge All Access ($29/month). No free tier.
