@@ -465,7 +465,9 @@ html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-
 .prem-signin{font-size:13px;font-weight:700}
 .prem-active{font-size:12px;letter-spacing:.08em;font-weight:850;color:#8a6a10;margin:0 0 8px}
 .prem-body h3{font-size:15px;margin:10px 0 6px}
-.locked-num{display:inline-block;filter:blur(4.5px);user-select:none;pointer-events:none;color:var(--ink);opacity:.85;font-weight:800}
+.locked-num{display:inline-block;filter:blur(3px);user-select:none;pointer-events:none;color:var(--navy);font-size:18px;font-weight:800;letter-spacing:.02em}
+.locked-num i{font-style:normal}
+.cell strong .locked-num{display:inline-block;font-size:22px;line-height:1.1;font-weight:800;color:var(--navy);text-transform:none;letter-spacing:0;margin:0}
 .lock-note{display:block;margin-top:2px;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#8a6a10;text-transform:uppercase}
 #desk-gate{margin-top:14px}
 .gate{padding:22px 24px}
