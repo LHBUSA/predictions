@@ -36,7 +36,8 @@ export const reasonText = (code) => REASON_TEXT[String(code).split(':')[0]] || n
 
 const num = (v) => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 export const cents = (bp) => (bp == null ? null : bp / 100);
-export const fmtCents = (bp) => (bp == null ? '—' : `${(bp / 100).toFixed(bp % 100 ? 1 : 0)}¢`);
+// Always one decimal so the ¢ and decimal points stack in every price column.
+export const fmtCents = (bp) => (bp == null ? '—' : `${(bp / 100).toFixed(1)}¢`);
 export const fmtPct = (p) => (p == null ? '—' : `${(p * 100).toFixed(Math.abs(p * 100 - Math.round(p * 100)) > 0.05 ? 1 : 0)}%`);
 
 export function ageText(iso, now = Date.now()) {
