@@ -165,6 +165,9 @@ button:disabled{cursor:default}
 /* ---------- live rail ---------- */
 .live{margin-top:6px}
 .live-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;overflow:visible;padding-bottom:6px}
+.live-cards.marquee{display:block;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.lc-track{display:flex;gap:10px;width:max-content;will-change:transform}
+.lc-track>.lc{width:300px;flex:0 0 300px}
 .lc{display:grid;gap:7px;text-align:left;width:100%;padding:12px;border:1px solid rgba(111,212,161,.32);border-radius:var(--r);background:linear-gradient(180deg,rgba(111,212,161,.07),var(--ink-2) 55%);min-height:150px;align-content:start}
 .lc:hover{border-color:rgba(111,212,161,.6)}
 .lc-h{display:flex;justify-content:space-between;align-items:center}
@@ -250,6 +253,7 @@ button:disabled{cursor:default}
   .stat{min-width:0;flex:1 1 30%;padding:7px 9px}.stat b{font-size:17px}
   .hub-head{padding:10px 0 12px}
   .live-cards{grid-template-columns:1fr}
+  .lc-track>.lc{width:260px;flex-basis:260px}
   .drawer-in{width:100%;border-left:0;top:auto;height:92dvh;border-radius:16px 16px 0 0;animation:rise .2s ease-out}
   @keyframes rise{from{transform:translateY(30px);opacity:.6}}
   .dc-v{grid-template-columns:1fr 1fr}.dv b{font-size:20px}
