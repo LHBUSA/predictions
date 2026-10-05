@@ -1,24 +1,33 @@
-import { requireAllAccess, send, sessionCookie, upstreamJson } from '../lib/access.js';
+import { requireAllAccess, send } from '../lib/access.js';
+import { loadBoard, SPORTS } from '../lib/scores/adapters.js';
 
-// INTERIM (2026-10-05): proxies the Members live board until the score adapters run in Compare (item 8).
-// Compare's own requireAllAccess is the entitlement decision for this request. If Members then disagrees
-// (401/403), that is an authority mismatch between two services, not the member's state: it is reported as
-// score_feed_auth_mismatch so the UI shows "score feed unavailable", never "sign in".
-const LIVE_URL = 'https://members.propbetedge.ai/api/live';
-const SPORTS = ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf', 'f1'];
+// GET /api/live?sports=nfl,nba (empty = all). Compare's requireAllAccess is the ONE entitlement decision; the
+// score adapters (vendored from Members @ 59de9d2, see lib/scores/adapters.js) run here directly: no second
+// membership check, no proxy hop. Score data is not member-specific, so a short per-instance memo (after the
+// entitlement check) keeps member polling from multiplying reads against the sport sites.
+const MEMO_MS = 10e3;
+const memo = new Map(); // key -> { at, promise }
+
+export function boardFor(key, now = Date.now(), load = loadBoard) {
+  const hit = memo.get(key);
+  if (hit && now - hit.at < MEMO_MS) return hit.promise;
+  const promise = load(key).catch((e) => { memo.delete(key); throw e; });
+  memo.set(key, { at: now, promise });
+  if (memo.size > 64) memo.delete(memo.keys().next().value);
+  return promise;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return send(res, 405, { error: 'method_not_allowed' });
   const member = await requireAllAccess(req, res);
   if (!member) return;
   const raw = String(req.query?.sports || req.query?.sport || '').toLowerCase();
-  const wanted = raw ? raw.split(',').filter(Boolean) : SPORTS;
+  const wanted = raw ? [...new Set(raw.split(',').filter(Boolean))].sort() : [...SPORTS].sort();
   if (wanted.some((s) => !SPORTS.includes(s))) return send(res, 400, { error: 'unknown_sport' });
-  const url = new URL(LIVE_URL);
-  url.searchParams.set('sports', wanted.join(','));
-  const cookie = sessionCookie(req.headers?.cookie || '');
-  const r = await upstreamJson(url.toString(), { headers: cookie ? { cookie } : {}, timeoutMs: 9000 });
-  if (r.ok) return send(res, 200, { ...r.body, path: 'members-proxy' });
-  if (r.status === 401 || r.status === 403) return send(res, 502, { error: 'score_feed_auth_mismatch', upstream_status: r.status, sports: wanted });
-  return send(res, 502, { error: 'score_feed_unavailable', upstream_status: r.status, detail: r.error || null, sports: wanted });
+  try {
+    const body = await boardFor(wanted.join(','));
+    return send(res, 200, { ...body, path: 'compare-adapters', adapters: 'members@59de9d2' });
+  } catch {
+    return send(res, 502, { error: 'score_feed_unavailable', sports: wanted });
+  }
 }
