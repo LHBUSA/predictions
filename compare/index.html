@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PropBetEdge Compare</title>
-  <meta name="description" content="All Access market intelligence: compare PropBetEdge, Kalshi and Polymarket on normalized contracts.">
+  <meta name="description" content="All Access live market intelligence: scores, PropBetEdge, Kalshi and Polymarket on one screen.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -21,14 +21,14 @@
 <main class="wrap">
   <section class="hero">
     <div>
-      <p class="eyebrow">ALL ACCESS · LIVE MARKET INTELLIGENCE</p>
-      <h1>See where the markets disagree.</h1>
-      <p>Kalshi, Polymarket and PropBetEdge on one normalized screen. Exact and approved-comparable contracts are compared directly. Rule differences stay clearly labeled.</p>
+      <p class="eyebrow">ALL ACCESS · LIVE SCORES + LIVE MARKETS</p>
+      <h1>Watch the game and the market move together.</h1>
+      <p>Live score state, PropBetEdge probability, Kalshi, Polymarket and observed market movement on one normalized screen.</p>
     </div>
     <div class="hero-card">
       <strong id="live-count">—</strong>
       <span>comparable contracts loaded</span>
-      <small>Stored observations · no reconstructed prices</small>
+      <small id="heartbeat">Waiting for live feed…</small>
     </div>
   </section>
 
@@ -39,7 +39,16 @@
   </section>
 
   <section id="app" hidden>
+    <section id="live-rail" class="live-rail" hidden>
+      <div class="rail-head">
+        <div><span class="pulse"></span><b>LIVE COVERAGE</b><small id="live-source">Score feed checking…</small></div>
+        <a href="https://members.propbetedge.ai/#command">OPEN COMMAND CENTER ↗</a>
+      </div>
+      <div id="live-games" class="live-games"></div>
+    </section>
+
     <div class="view-tabs" role="group" aria-label="Comparison view">
+      <button data-view="live" aria-pressed="false">LIVE NOW</button>
       <button data-view="gaps" aria-pressed="true">TOP GAPS</button>
       <button data-view="outside" aria-pressed="false">PBE OUTSIDE BOTH</button>
       <button data-view="all" aria-pressed="false">ALL MARKETS</button>
@@ -63,10 +72,10 @@
     </div>
 
     <div class="summary">
+      <div><span>Live games</span><strong id="livegames">—</strong></div>
       <div><span>Comparable now</span><strong id="exact">—</strong></div>
       <div><span>PBE outside both</span><strong id="outside">—</strong></div>
       <div><span>Largest venue gap</span><strong id="maxgap">—</strong></div>
-      <div><span>Rule-different related</span><strong id="related">—</strong></div>
     </div>
 
     <div id="rows" class="rows"></div>
