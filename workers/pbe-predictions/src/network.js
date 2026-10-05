@@ -16,7 +16,7 @@ const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/pre
 const productLinks = (current) => NET.product.map(([label, href, key]) => `<a href="${href}"${key === current ? ' aria-current="page"' : ''}>${e(label)}</a>`).join('');
 
 export function siteHeader(current = null) {
-  return `<header class="topbar"><div class="wrap">
+  return `<link rel="stylesheet" href="/pbe-consent-v1.css"><script src="/pbe-consent-v1.js"></script><header class="topbar"><div class="wrap">
 ${BRAND}
 <nav class="nav" aria-label="Predictions">${productLinks(current)}</nav>
 <div class="top-right">
