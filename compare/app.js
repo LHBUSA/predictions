@@ -193,16 +193,34 @@ function pbeLine(e) {
 
 // ---------------------------------------------------------------------------------------------------------
 // Tile (compact market card, Kalshi-style grid). Whole tile opens the drawer.
+// 3-way (soccer 90-minute result): one market with three outcomes; each venue's book sum shown as its own number.
+const BOOK_TIP = 'Book sum: the three outcome YES mids on one venue added up. 100¢ means the three prices are internally consistent; it is not a probability and never compares venues.';
+const threeWayChip = (e) => (e.three_way ? '<span class="tw" title="One market, three outcomes: home win, draw, away win after 90 minutes plus stoppage time (no extra time or penalties).">3-WAY · 90 MIN</span>' : '');
+function bookLine(e) {
+  const b = e.three_way.book;
+  const v = (k, n) => (b[k] ? `${n} ${fmtCents(b[k].sum_bp)}` : `${n} —`);
+  return `<span class="bk" title="${esc(BOOK_TIP)}">BOOK ${v('kalshi', 'K')} · ${v('polymarket', 'P')}</span>`;
+}
+function distribution(e) {
+  if (!e.three_way) return '';
+  const names = ['home', 'draw', 'away'].map((r) => e.contracts.find((c) => c.role === r)?.label || r);
+  const bar = (venue, label) => {
+    const b = e.three_way.book[venue];
+    if (!b) return `<div class="dist"><span class="dist-h"><img src="${VENUE[venue].icon}" alt="" width="14" height="14">${label}</span><span class="dist-none">Not all three outcomes priced</span></div>`;
+    return `<div class="dist"><span class="dist-h"><img src="${VENUE[venue].icon}" alt="" width="14" height="14">${label}<em title="${esc(BOOK_TIP)}">book ${fmtCents(b.sum_bp)}</em></span><span class="dist-bar">${b.mids_bp.map((m, i) => `<i class="seg s${i}" style="flex:${Math.max(1, m)}" title="${esc(names[i])} ${fmtCents(m)}"><b>${esc(['H', 'D', 'A'][i])} ${fmtCents(m)}</b></i>`).join('')}</span></div>`;
+  };
+  return `<section class="dists" aria-label="Three-outcome price distribution per venue"><p class="small">${esc(names.join(' · '))}: each venue's own three prices. ${e.badge === 'COMPARABLE' ? '' : 'Rules differ: shown side by side, never compared.'}</p>${bar('kalshi', 'Kalshi')}${bar('polymarket', 'Polymarket')}</section>`;
+}
 function tile(e) {
   const rows = e.contracts.slice(0, 3).map((c) => {
     const p = pmFor(c), rel = !c.polymarket && !!p;
     return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${gapCell(c)}</div>`;
   }).join('');
   return `<button type="button" class="tile tier-${e.tier}${e.live ? ' is-live' : ''}${isOpen(e) ? ' is-open' : ''}" data-open="${esc(e.key)}" aria-label="${esc(`${e.title}: open details`)}">
-    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
+    <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
     <span class="tt">${esc(e.title)}</span>
     <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span></span>${rows}</span>
-    <span class="tf">${pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
+    <span class="tf">${e.three_way ? `${e.has_pbe ? pbeLine(e) : ''}${bookLine(e)}` : pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
   </button>`;
 }
 const tiles = (list) => `<div class="tiles">${list.map(tile).join('')}</div>`;
@@ -454,8 +472,9 @@ function renderDrawer() {
   const cast = e.join.score?.pbecast_url || e.join.score?.href || e.destination;
   const cmd = new URL(MEMBERS); cmd.searchParams.set('add', deepLink(e)); cmd.searchParams.set('title', `${e.title} · Compare`);
   const keepScroll = $('#drawer-body')?.scrollTop || 0;
-  $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}<span class="flex"></span>${badgeFor(e)}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
+  $('#drawer-in').innerHTML = `<header class="dh"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}<span class="flex"></span>${badgeFor(e)}<button type="button" class="x" data-close aria-label="Close details">✕</button></header>
     <div class="drawer-body" id="drawer-body"><h2>${esc(e.title)}</h2>
+      ${distribution(e)}
       ${e.contracts.map((c) => drawerContract(e, c)).join('')}
       <div class="acts">${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}<a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a></div>
       <section class="dsec">${movesPanel(e)}</section>

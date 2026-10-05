@@ -278,3 +278,18 @@ button:disabled{cursor:default}
 .wt-l.d{color:var(--paper);border-left-color:var(--warn)}
 .wt-l.u{color:var(--faint);font-style:italic}
 @media (max-width:560px){.dm{grid-template-columns:1fr}.wts{grid-template-columns:1fr}}
+
+/* ---------- 3-way (soccer 90-minute result) ---------- */
+.tw{font:700 8.5px var(--mono);letter-spacing:.08em;color:var(--paper);border:1px solid var(--line-2);border-radius:4px;padding:2px 5px;background:var(--ink)}
+.av-draw{background:var(--ink-3)}.av-draw i{font:700 14px var(--mono);color:var(--muted)}
+.bk{font:700 10px var(--mono);color:var(--muted);letter-spacing:.02em;white-space:nowrap}
+.dists{display:grid;gap:8px;margin:0 0 12px;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink)}
+.dist{display:grid;gap:4px}
+.dist-h{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+.dist-h img{border-radius:3px}.dist-h em{margin-left:auto;font:600 10px var(--mono);font-style:normal;color:var(--faint);letter-spacing:0}
+.dist-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.dist-bar .seg{display:flex;align-items:center;justify-content:center;min-width:0;font-style:normal;border-right:1px solid var(--ink)}
+.dist-bar .seg:last-child{border-right:0}
+.dist-bar .seg b{font:700 10px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.dist-bar .s0{background:rgba(232,227,217,.22)}.dist-bar .s1{background:rgba(232,227,217,.08)}.dist-bar .s2{background:rgba(208,163,90,.28)}
+.dist-none{font-size:11px;color:var(--faint)}
