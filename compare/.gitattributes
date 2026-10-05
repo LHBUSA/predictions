@@ -1,0 +1,3 @@
+# Byte-pinned vendor source + generated output: never convert line endings
+test/fixtures/members-59de9d2/* -text
+lib/scores/*.js text eol=lf

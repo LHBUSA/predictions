@@ -1,0 +1,378 @@
+import { memberAccess } from './_member-auth.js';
+import { absoluteAsset } from './_media.js';
+
+const SOURCE_TIMEOUT_MS = 4200;
+const NOW = () => new Date().toISOString();
+const SPORTS = ['mlb','nfl','nba','wnba','nhl','ufc','tennis','soccer','golf','f1'];
+
+const etDate = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+}).format(new Date());
+const compact = (d) => String(d || '').replace(/-/g, '');
+const arr = (v) => Array.isArray(v) ? v : [];
+const n = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
+const text = (...xs) => xs.find((x) => x !== null && x !== undefined && String(x).trim() !== '') ?? null;
+
+function state(raw) {
+  const s = String(raw || '').toLowerCase();
+  if (['live','in','in_progress','playing','active'].includes(s)) return 'live';
+  if (['post','final','completed','complete','finished','off'].includes(s)) return 'final';
+  if (['suspended','delayed','postponed'].includes(s)) return s;
+  if (['pre','scheduled','schedule','future','fut','upcoming'].includes(s)) return 'scheduled';
+  return s || 'unknown';
+}
+
+function makeEvent({
+  id, sport, kind='game', title, startsAt=null, status='unknown', statusLabel=null, detail=null,
+  away=null, home=null, summary=null, href, pbecastUrl=null, updatedAt=null, meta={}
+}) {
+  return {
+    id: `${sport}:${String(id)}`,
+    source_id: String(id),
+    sport,
+    kind,
+    title: title || sport.toUpperCase(),
+    starts_at: startsAt,
+    status: state(status),
+    status_label: statusLabel || String(status || '').toUpperCase(),
+    detail,
+    score: away || home ? { away, home } : null,
+    summary,
+    href,
+    pbecast_url: pbecastUrl,
+    updated_at: updatedAt,
+    meta
+  };
+}
+
+async function getJson(url) {
+  const response = await fetch(url, {
+    headers: { accept: 'application/json', 'user-agent': 'PropBetEdge-Members/1.0' },
+    signal: AbortSignal.timeout(SOURCE_TIMEOUT_MS),
+    cache: 'no-store'
+  });
+  if (!response.ok) throw new Error(`HTTP_${response.status}`);
+  return response.json();
+}
+
+function teamSide(c) {
+  const t = c?.team || c || {};
+  return {
+    id: String(text(t.id, c?.id) || ''),
+    abbr: String(text(t.abbreviation, t.abbrev, t.shortDisplayName, t.short_name, t.name) || '—'),
+    name: String(text(t.displayName, t.display_name, t.name, t.place) || '—'),
+    score: n(c?.score ?? t?.score),
+    logo: text(t.logo, t?.logos?.[0]?.href, t?.logos?.[0])
+  };
+}
+
+async function mlb() {
+  const date = etDate();
+  const url = `https://mlb.propbetedge.ai/api/mlb-data/api/v1/schedule?sportId=1&date=${date}&hydrate=team,linescore`;
+  const body = await getJson(url);
+  const games = arr(body?.dates).flatMap((d) => arr(d?.games));
+  return {
+    fetched_at: NOW(),
+    items: games.slice(0, 30).map((g) => {
+      const away = {
+        id: String(g?.teams?.away?.team?.id || ''),
+        abbr: String(text(g?.teams?.away?.team?.abbreviation, g?.teams?.away?.team?.name) || 'AWAY'),
+        name: String(g?.teams?.away?.team?.name || 'Away'),
+        score: n(g?.teams?.away?.score),
+        logo: g?.teams?.away?.team?.id ? `https://www.mlbstatic.com/team-logos/${g.teams.away.team.id}.svg` : null
+      };
+      const home = {
+        id: String(g?.teams?.home?.team?.id || ''),
+        abbr: String(text(g?.teams?.home?.team?.abbreviation, g?.teams?.home?.team?.name) || 'HOME'),
+        name: String(g?.teams?.home?.team?.name || 'Home'),
+        score: n(g?.teams?.home?.score),
+        logo: g?.teams?.home?.team?.id ? `https://www.mlbstatic.com/team-logos/${g.teams.home.team.id}.svg` : null
+      };
+      const rawState = g?.status?.abstractGameState === 'Live' ? 'live'
+        : g?.status?.abstractGameState === 'Final' ? 'final' : 'scheduled';
+      const detail = rawState === 'live'
+        ? [g?.linescore?.inningHalf, g?.linescore?.currentInningOrdinal].filter(Boolean).join(' ')
+        : g?.status?.detailedState || null;
+      return makeEvent({
+        id: g?.gamePk, sport: 'mlb', title: `${away.abbr} @ ${home.abbr}`,
+        startsAt: g?.gameDate || null, status: rawState, statusLabel: g?.status?.detailedState || rawState,
+        detail, away, home,
+        href: `https://mlb.propbetedge.ai/games?game=${encodeURIComponent(g?.gamePk || '')}`,
+        pbecastUrl: `https://mlb.propbetedge.ai/pbecast?game=${encodeURIComponent(g?.gamePk || '')}`
+      });
+    })
+  };
+}
+
+async function nfl() {
+  const date = compact(etDate());
+  const body = await getJson(`https://nfl.propbetedge.ai/api/nfl-live?date=${date}`);
+  return {
+    fetched_at: body?.source?.fetched_at || NOW(),
+    items: arr(body?.games).slice(0, 30).map((g) => {
+      const away = teamSide(g?.teams?.away), home = teamSide(g?.teams?.home);
+      return makeEvent({
+        id:g.id, sport:'nfl', title:`${away.abbr} @ ${home.abbr}`,
+        startsAt:g.date || null, status:g?.status?.semantics || g?.status?.state,
+        statusLabel:g?.status?.short_detail || g?.status?.detail || g?.status?.semantics,
+        detail:[g?.status?.period ? `Q${g.status.period}` : null, g?.status?.clock].filter(Boolean).join(' · ') || null,
+        away,home,
+        href:`https://nfl.propbetedge.ai/#matchups?game=${encodeURIComponent(g.id)}`,
+        pbecastUrl:`https://nfl.propbetedge.ai/#pbecast?game=${encodeURIComponent(g.id)}`,
+        updatedAt:body?.source?.fetched_at || null
+      });
+    })
+  };
+}
+
+async function nba() {
+  const date = compact(etDate());
+  const body = await getJson(`https://nba.propbetedge.ai/api/nba-provider?r=scoreboard&dates=${date}`);
+  return {
+    fetched_at: text(body?.timestamp, body?.day?.date, NOW()),
+    items: arr(body?.events).slice(0, 30).map((ev) => {
+      const comp = arr(ev?.competitions)[0] || {};
+      const cs = arr(comp?.competitors);
+      const a = cs.find((x) => x?.homeAway === 'away') || cs[0] || {};
+      const h = cs.find((x) => x?.homeAway === 'home') || cs[1] || {};
+      const away = teamSide(a), home = teamSide(h);
+      const st = comp?.status || ev?.status || {};
+      return makeEvent({
+        id:ev.id, sport:'nba', title:`${away.abbr} @ ${home.abbr}`,
+        startsAt:ev.date || comp.date || null, status:st?.type?.state,
+        statusLabel:st?.type?.shortDetail || st?.type?.detail || st?.type?.state,
+        detail:[st?.period ? `Q${st.period}` : null, st?.displayClock].filter(Boolean).join(' · ') || null,
+        away,home,
+        href:`https://nba.propbetedge.ai/#games?game=${encodeURIComponent(ev.id)}`,
+        pbecastUrl:`https://nba.propbetedge.ai/#nbacast/${encodeURIComponent(ev.id)}`,
+        updatedAt:body?.timestamp || null
+      });
+    })
+  };
+}
+
+async function wnba() {
+  const date = compact(etDate());
+  const body = await getJson(`https://wnba-api.sales-fd3.workers.dev/v1/schedule?date=${date}`);
+  const games = arr(body?.data?.games || body?.games);
+  return {
+    fetched_at: body?.meta?.fetched_at || body?.meta?.fetchedAt || NOW(),
+    items: games.slice(0, 30).map((g) => {
+      const away = teamSide(g?.away), home = teamSide(g?.home);
+      return makeEvent({
+        id:g.game_id || g.id, sport:'wnba', title:`${away.abbr} @ ${home.abbr}`,
+        startsAt:g.start_utc || null, status:g?.status?.state,
+        statusLabel:g?.status?.short_detail || g?.status?.detail || g?.status?.state,
+        detail:[g?.status?.period ? `Q${g.status.period}` : null, g?.status?.clock].filter(Boolean).join(' · ') || null,
+        away,home,
+        href:`https://wnba.propbetedge.ai/matchups/${encodeURIComponent(g.game_id || g.id)}`,
+        pbecastUrl:`https://wnba.propbetedge.ai/cast/${encodeURIComponent(g.game_id || g.id)}`,
+        updatedAt:body?.meta?.fetched_at || body?.meta?.fetchedAt || null
+      });
+    })
+  };
+}
+
+async function nhl() {
+  const date = etDate();
+  const body = await getJson(`https://nhl-api.propbetedge.ai/nhl/board?date=${date}`);
+  return {
+    fetched_at: body?.fetched_at || NOW(),
+    items: arr(body?.games).slice(0, 30).map((g) => {
+      const away = teamSide(g?.teams?.away), home = teamSide(g?.teams?.home);
+      const sem = g?.status?.in_intermission ? 'live' : g?.status?.semantics;
+      const detail = g?.status?.semantics === 'LIVE'
+        ? [g?.status?.in_intermission ? 'INTERMISSION' : g?.status?.period ? `P${g.status.period}` : null, g?.status?.clock].filter(Boolean).join(' · ')
+        : g?.status?.last_period_type && g?.status?.semantics === 'FINAL' ? `FINAL/${g.status.last_period_type}` : null;
+      return makeEvent({
+        id:g.id, sport:'nhl', title:`${away.abbr} @ ${home.abbr}`,
+        startsAt:g.start_time_utc || null, status:sem,
+        statusLabel:g?.status?.in_intermission ? 'INTERMISSION' : g?.status?.semantics,
+        detail,away,home,
+        href:`https://nhl.propbetedge.ai/#/matchup/${encodeURIComponent(g.id)}`,
+        pbecastUrl:`https://nhl.propbetedge.ai/#/cast/${encodeURIComponent(g.id)}`,
+        updatedAt:body?.fetched_at || null
+      });
+    })
+  };
+}
+
+function tennisSide(side) {
+  const players = arr(side?.players);
+  return players.map((p) => p?.name || p?.full_name || p?.display_name).filter(Boolean).join(' / ') || side?.name || 'TBD';
+}
+async function tennis() {
+  const body = await getJson('https://tennis-api.propbetedge.ai/v1/live');
+  return {
+    fetched_at: body?.meta?.as_of || body?.meta?.fetched_at || NOW(),
+    items: arr(body?.data).slice(0, 30).map((m) => {
+      const A = tennisSide(m?.sides?.A), B = tennisSide(m?.sides?.B);
+      const setsA = arr(m?.sets).map((s) => s?.A ?? s?.games?.A).filter((x) => x !== null && x !== undefined).join(' ');
+      const setsB = arr(m?.sets).map((s) => s?.B ?? s?.games?.B).filter((x) => x !== null && x !== undefined).join(' ');
+      const point = m?.live?.point ? `${m.live.point.A ?? ''}-${m.live.point.B ?? ''}` : null;
+      return makeEvent({
+        id:m.id, sport:'tennis', kind:'match', title:`${A} vs ${B}`,
+        startsAt:text(m.start_utc,m.starts_at,m.scheduled_at), status:m.status,
+        statusLabel:m.status === 'in_progress' ? 'LIVE' : String(m.status || '').toUpperCase(),
+        detail:[m?.round_label || m?.round, point].filter(Boolean).join(' · ') || null,
+        summary:{ label:'SETS', value:`${setsA || '—'}  ·  ${setsB || '—'}`, secondary:m?.tournament?.name || m?.edition?.name || null },
+        href:`https://tennis.propbetedge.ai/matches/${encodeURIComponent(m.id)}`,
+        pbecastUrl:`https://tennis.propbetedge.ai/pbecast/${encodeURIComponent(m.id)}`,
+        updatedAt:text(m?.source_updated_at,body?.meta?.as_of)
+      });
+    })
+  };
+}
+
+async function soccer() {
+  const body = await getJson('https://soccer-api.sales-fd3.workers.dev/v1/live');
+  const data = body?.data || {};
+  const rows = [
+    ...arr(data.live).map((m) => ({ m, forced:'live' })),
+    ...arr(data.upcoming).slice(0, 12).map((m) => ({ m, forced:'scheduled' })),
+    ...arr(data.recent).slice(0, 6).map((m) => ({ m, forced:'final' }))
+  ];
+  return {
+    fetched_at: body?.meta?.fetched_at || body?.meta?.as_of || NOW(),
+    items: rows.slice(0, 30).map(({m,forced}) => {
+      const away = {
+        id:String(m?.away?.id || ''), abbr:String(text(m?.away?.short_name,m?.away?.name) || 'AWAY'),
+        name:String(m?.away?.name || 'Away'), score:n(m?.score?.away ?? m?.live?.enrichment?.score?.away), logo:absoluteAsset(text(m?.away?.crest?.url,m?.away?.crest_url), 'https://soccer.propbetedge.ai')
+      };
+      const home = {
+        id:String(m?.home?.id || ''), abbr:String(text(m?.home?.short_name,m?.home?.name) || 'HOME'),
+        name:String(m?.home?.name || 'Home'), score:n(m?.score?.home ?? m?.live?.enrichment?.score?.home), logo:absoluteAsset(text(m?.home?.crest?.url,m?.home?.crest_url), 'https://soccer.propbetedge.ai')
+      };
+      return makeEvent({
+        id:m.id, sport:'soccer', kind:'match', title:`${home.abbr} vs ${away.abbr}`,
+        startsAt:m.kickoff_at || null, status:forced, statusLabel:forced === 'final' ? 'FT' : forced === 'live' ? 'LIVE' : 'NEXT',
+        detail:text(m?.live?.display_clock,m?.competition?.name), away,home,
+        href:`https://soccer.propbetedge.ai/matches/${encodeURIComponent(m.id)}`,
+        pbecastUrl:`https://soccer.propbetedge.ai/pbecast/${encodeURIComponent(m.id)}`,
+        updatedAt:body?.meta?.fetched_at || body?.meta?.as_of || null
+      });
+    })
+  };
+}
+
+async function golf() {
+  const body = await getJson('https://golf.propbetedge.ai/api/v1/live?top=100');
+  const events = arr(body?.events);
+  return {
+    fetched_at: body?.generated_at || NOW(),
+    items: events.slice(0, 16).map((ev) => {
+      const lead = arr(ev?.leaders)[0];
+      const slug = ev?.edition?.slug;
+      const leaderName = lead?.name || lead?.player?.name || null;
+      const leaderScore = lead?.total_to_par;
+      return makeEvent({
+        id:slug || ev?.edition?.id, sport:'golf', kind:'tournament', title:ev?.edition?.name || 'Golf tournament',
+        startsAt:ev?.first_tee || null, status:ev?.state,
+        statusLabel:ev?.state === 'live' ? `ROUND ${ev?.round || ''} · LIVE` : String(ev?.state || '').replaceAll('_',' ').toUpperCase(),
+        detail:[ev?.tour, ev?.course?.name].filter(Boolean).join(' · ') || null,
+        summary: leaderName ? {label: ev?.state === 'final' ? 'CHAMPION' : 'LEADER', value:`${leaderName} ${leaderScore == null ? '' : leaderScore > 0 ? '+'+leaderScore : leaderScore}`.trim(), secondary:ev?.within_two ? `${ev.within_two} within two` : null} : null,
+        href:`https://golf.propbetedge.ai/tournament/${encodeURIComponent(slug || '')}`,
+        pbecastUrl:`https://golf.propbetedge.ai/pbecast?tournament=${encodeURIComponent(slug || '')}`,
+        updatedAt:ev?.updated_at || body?.generated_at || null
+      });
+    })
+  };
+}
+
+async function f1() {
+  const body = await getJson('https://f1-api.propbetedge.ai/v1/f1/live');
+  const s = body?.session || body?.data?.session || null;
+  const rootState = body?.state || body?.data?.state || s?.state || 'unknown';
+  if (!s && rootState === 'idle') return { fetched_at:NOW(), items:[] };
+  const eventId = text(s?.event_id, body?.event?.id, body?.data?.event?.id, body?._frame?.meta?.event_id);
+  const eventName = text(s?.event_name, body?.event?.name, body?.data?.event?.name, body?._frame?.meta?.event_name, 'Formula 1');
+  const sid = text(s?.id,body?.session_id,'live');
+  return {
+    fetched_at:text(body?.fetched_at,body?.updated_at,NOW()),
+    items:[makeEvent({
+      id:sid, sport:'f1', kind:'race', title:String(eventName),
+      startsAt:s?.start_utc || null, status:rootState,
+      statusLabel:rootState === 'live' ? `${s?.label || s?.type || 'SESSION'} · LIVE` : String(s?.label || rootState).toUpperCase(),
+      detail:[s?.lap != null ? `LAP ${s.lap}${s?.laps_total ? '/'+s.laps_total : ''}` : null,s?.flag,s?.status].filter(Boolean).join(' · ') || null,
+      summary:{label:'SESSION',value:String(s?.label || s?.type || 'F1'),secondary:s?.flag || null},
+      href:eventId ? `https://f1.propbetedge.ai/races/${encodeURIComponent(eventId)}` : 'https://f1.propbetedge.ai/',
+      pbecastUrl:eventId ? `https://f1.propbetedge.ai/pbecast/${encodeURIComponent(eventId)}` : 'https://f1.propbetedge.ai/pbecast',
+      updatedAt:text(body?.fetched_at,body?.updated_at)
+    })]
+  };
+}
+
+async function ufc() {
+  const body = await getJson('https://ufc-api.propbetedge.ai/v1/ufc/events?status=upcoming&limit=6');
+  const rows = arr(body?.data?.events || body?.data || body?.events);
+  return {
+    fetched_at:body?.meta?.generated_at || NOW(),
+    items:rows.slice(0,6).map((ev) => {
+      const id = ev?.id || ev?.event_id;
+      const slug = ev?.slug || ev?.slug_id;
+      return makeEvent({
+        id, sport:'ufc', kind:'event', title:ev?.name || ev?.event_name || 'UFC event',
+        startsAt:text(ev?.event_date,ev?.start_utc,ev?.date), status:'scheduled', statusLabel:'FIGHT CARD',
+        detail:text(ev?.venue?.name,ev?.location,ev?.city),
+        summary:{label:'CARD',value:text(ev?.bout_count,ev?.bouts?.length) ? `${text(ev?.bout_count,ev?.bouts?.length)} bouts` : 'Upcoming',secondary:null},
+        href:slug ? `https://ufc.propbetedge.ai/events/${encodeURIComponent(slug)}` : 'https://ufc.propbetedge.ai/events',
+        pbecastUrl:null,updatedAt:body?.meta?.generated_at || null
+      });
+    })
+  };
+}
+
+const LOADERS = { mlb,nfl,nba,wnba,nhl,ufc,tennis,soccer,golf,f1 };
+
+export default async function handler(req,res) {
+  res.setHeader('Cache-Control','private, no-store, max-age=0');
+  res.setHeader('X-Content-Type-Options','nosniff');
+  if (req.method !== 'GET') {
+    res.setHeader('Allow','GET');
+    return res.status(405).json({error:'method_not_allowed'});
+  }
+
+  const access = await memberAccess(req);
+  if (!access.ok) return res.status(access.status).json({error:access.reason});
+  if (!access.granted) return res.status(403).json({error:'all_access_required',membership:{state:access.membership.state,entitled:false}});
+
+  const wanted = String(req.query?.sports || '').trim().toLowerCase();
+  const keys = wanted ? wanted.split(',').filter((x) => SPORTS.includes(x)) : SPORTS;
+  const started = Date.now();
+  const settled = await Promise.all(keys.map(async (key) => {
+    const at = Date.now();
+    try {
+      const result = await LOADERS[key]();
+      return {key,state:'ok',ms:Date.now()-at,...result};
+    } catch (error) {
+      return {key,state:'unavailable',ms:Date.now()-at,fetched_at:null,items:[],error:error instanceof Error ? error.message : 'unavailable'};
+    }
+  }));
+
+  const items = settled.flatMap((s) => s.items).sort((a,b) => {
+    const rank = (x) => x.status === 'live' ? 0 : x.status === 'scheduled' ? 1 : x.status === 'final' ? 2 : 3;
+    const r = rank(a)-rank(b);
+    if (r) return r;
+    return String(a.starts_at || '').localeCompare(String(b.starts_at || ''));
+  });
+
+  return res.status(200).json({
+    contract:'members-live/1',
+    generated_at:NOW(),
+    duration_ms:Date.now()-started,
+    live_count:items.filter((x) => x.status === 'live').length,
+    total:items.length,
+    items,
+    sources:settled.map(({key,state,ms,fetched_at,items,error}) => ({key,state,ms,fetched_at,count:items.length,...(error?{error}:{} )})),
+    predictions:{
+      key:'predictions',
+      title:'PropBetEdge Predictions',
+      href:'https://predictions.propbetedge.ai/',
+      state:'available'
+    }
+  });
+}
