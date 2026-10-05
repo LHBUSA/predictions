@@ -1,1 +1,77 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PropBetEdge Compare</title><link rel="stylesheet" href="/style.css"></head><body><header><div class="wrap top"><a class="brand" href="https://propbetedge.ai">PROP BET EDGE <span>COMPARE</span></a><nav><a href="https://members.propbetedge.ai">Command Center</a><a href="https://predictions.propbetedge.ai">Predictions</a><button id="acct">Account</button></nav></div></header><main class="wrap"><section class="hero"><div><p class="eyebrow">ALL ACCESS · LIVE MARKET INTELLIGENCE</p><h1>See where the markets disagree.</h1><p>Kalshi, Polymarket and PropBetEdge on one normalized screen. Exact matches are compared directly; rule differences stay clearly labeled.</p></div><div class="hero-card"><strong id="live-count">—</strong><span>comparable contracts loaded</span><small>Stored observations · no reconstructed prices</small></div></section><section id="gate" class="gate"><h2>All Access required</h2><p>Compare is part of PropBetEdge All Access.</p><a href="https://propbetedge.ai/pro">Get All Access</a></section><section id="app" hidden><div class="controls"><select id="scope"><option value="nonsports">Prediction Markets</option><option value="nfl">NFL</option><option value="nba">NBA</option><option value="nhl">NHL</option><option value="mlb">MLB</option><option value="wnba">WNBA</option></select><select id="sort"><option value="gap">Largest market gap</option><option value="pbe">Largest PBE divergence</option></select><input id="q" placeholder="Search markets"></div><div class="summary"><div><span>Exact comparisons</span><strong id="exact">—</strong></div><div><span>Rule-different</span><strong id="related">—</strong></div><div><span>Largest gap</span><strong id="maxgap">—</strong></div></div><div id="rows" class="rows"></div></section></main><script type="module" src="/app.js"></script></body></html>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PropBetEdge Compare</title>
+  <meta name="description" content="All Access market intelligence: compare PropBetEdge, Kalshi and Polymarket on normalized contracts.">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="wrap top">
+    <a class="brand" href="https://propbetedge.ai">PROP BET EDGE <span>COMPARE</span></a>
+    <nav>
+      <a href="https://members.propbetedge.ai">Command Center</a>
+      <a href="https://predictions.propbetedge.ai">Predictions</a>
+      <button id="acct" type="button">Account</button>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">ALL ACCESS · LIVE MARKET INTELLIGENCE</p>
+      <h1>See where the markets disagree.</h1>
+      <p>Kalshi, Polymarket and PropBetEdge on one normalized screen. Exact and approved-comparable contracts are compared directly. Rule differences stay clearly labeled.</p>
+    </div>
+    <div class="hero-card">
+      <strong id="live-count">—</strong>
+      <span>comparable contracts loaded</span>
+      <small>Stored observations · no reconstructed prices</small>
+    </div>
+  </section>
+
+  <section id="gate" class="gate">
+    <h2>All Access required</h2>
+    <p>Compare is part of PropBetEdge All Access.</p>
+    <a href="https://propbetedge.ai/pro">Get All Access</a>
+  </section>
+
+  <section id="app" hidden>
+    <div class="view-tabs" role="group" aria-label="Comparison view">
+      <button data-view="gaps" aria-pressed="true">TOP GAPS</button>
+      <button data-view="outside" aria-pressed="false">PBE OUTSIDE BOTH</button>
+      <button data-view="all" aria-pressed="false">ALL MARKETS</button>
+    </div>
+
+    <div class="controls">
+      <select id="scope" aria-label="Market scope">
+        <option value="nonsports">Prediction Markets</option>
+        <option value="nfl">NFL</option>
+        <option value="nba">NBA</option>
+        <option value="nhl">NHL</option>
+        <option value="mlb">MLB</option>
+        <option value="wnba">WNBA</option>
+      </select>
+      <select id="sort" aria-label="Sort comparisons">
+        <option value="gap">Largest market gap</option>
+        <option value="pbe">Largest PBE divergence</option>
+        <option value="fresh">Freshest observations</option>
+      </select>
+      <input id="q" placeholder="Search markets" aria-label="Search markets">
+    </div>
+
+    <div class="summary">
+      <div><span>Comparable now</span><strong id="exact">—</strong></div>
+      <div><span>PBE outside both</span><strong id="outside">—</strong></div>
+      <div><span>Largest venue gap</span><strong id="maxgap">—</strong></div>
+      <div><span>Rule-different related</span><strong id="related">—</strong></div>
+    </div>
+
+    <div id="rows" class="rows"></div>
+  </section>
+</main>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
