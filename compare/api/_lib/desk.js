@@ -32,8 +32,27 @@ export function laneResult(lane, r) {
   return { lane: { lane, state, upstream_status: r.status, error: r.error || r.body?.error || null, events: 0, capped: false, ms: r.ms }, events: [], rules: null, contract: null };
 }
 
+export async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(Number(limit) || 1, items.length || 1)) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 export async function loadLanes(lanes, opts = {}) {
-  const results = await Promise.all(lanes.map(async (lane) => laneResult(lane, await upstreamJson(laneUrl(lane), opts))));
+  // ALL SPORTS used to fire ten expensive market-desk reads into the same Worker/Supabase backend at once.
+  // As the soccer/F1/golf/tennis venue maps grew, that burst started pushing otherwise healthy lanes beyond
+  // Compare's 8 s upstream timeout. Bound the fanout; individual sport tabs still remain a single read.
+  const concurrency = Math.max(1, Math.min(Number(opts.concurrency) || lanes.length || 1, lanes.length || 1));
+  const upstreamOpts = { ...opts };
+  delete upstreamOpts.concurrency; delete upstreamOpts.noMedia; delete upstreamOpts.media;
+  const results = await mapLimit(lanes, concurrency, async (lane) => laneResult(lane, await upstreamJson(laneUrl(lane), upstreamOpts)));
   const ufc = results.find((x) => x.lane.lane === 'ufc' && x.lane.state === 'ok');
   const soccer = results.find((x) => x.lane.lane === 'soccer' && x.lane.state === 'ok');
   if (!opts.noMedia) await Promise.all([ufc ? enrichUfc(ufc.events, opts.media || {}) : null, soccer ? enrichSoccer(soccer.events, opts.media || {}) : null]);
