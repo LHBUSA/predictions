@@ -110,3 +110,44 @@ linear-gradient(180deg,#07111f,#081522)}
 .cx-tape:hover .cx-tape-track,.cx-tape:focus-within .cx-tape-track{animation-play-state:paused}
 @keyframes cxTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.cx-tape-track{animation:none}.cx-tape{overflow-x:auto}.cx-tape-set[aria-hidden="true"]{display:none}}
+
+/* crypto ticker readability + logo pass */
+.cx-tape-shell{background:#020913;border-bottom:1px solid #1a3450;box-shadow:0 10px 26px rgba(0,0,0,.22)}
+.cx-tape-meta{min-width:142px;padding:10px 0;color:#9eb2c7;font-size:10px}
+.cx-live-pulse{font-size:10px;color:#7be3b8}
+.cx-tape-item{display:flex;align-items:center;gap:10px;min-width:176px;padding:10px 14px;border-left:1px solid #17314a;background:rgba(255,255,255,.012)}
+.cx-tape-item:hover{background:rgba(255,255,255,.035)}
+.cx-tape-copy{display:grid;grid-template-columns:auto auto;gap:1px 9px;align-items:baseline;min-width:0}
+.cx-tape-copy>b{font-size:11px;letter-spacing:.07em;color:#f4f8fd}
+.cx-tape-copy>.num{font-size:13.5px!important;font-weight:900!important;color:#f5f9ff;text-align:right}
+.cx-tape-copy>small{grid-column:1/-1;font-size:8.5px;letter-spacing:.04em;color:#8da2b7!important}
+.cx-tape-item.up .cx-tape-copy>.num{color:#6ee1b5}
+.cx-tape-item.down .cx-tape-copy>.num{color:#ff9a7e}
+.cx-coin-logo{display:inline-grid;place-items:center;flex:0 0 auto;border-radius:50%;background:#0d1c2c;border:1px solid #24435f;box-shadow:0 2px 10px rgba(0,0,0,.24);overflow:hidden}
+.cx-coin-logo img{width:70%;height:70%;object-fit:contain;display:block}
+.cx-coin-logo.sm{width:30px;height:30px}
+.cx-coin-logo.md{width:34px;height:34px}
+.cx-coin-logo.lg{width:42px;height:42px}
+.cx-coin-fallback{display:grid;place-items:center;width:100%;height:100%;font:900 9px var(--mono);color:#dce8f7}
+.cx-coin-id{gap:11px}
+.cx-coin-id b{font-size:14px;color:#f6f9fd}
+.cx-coin-id small{font-size:10px;color:#91a6bb}
+.cx-coin-price strong{font-size:18px;color:#fff}
+.cx-coin-price small{font-size:10px}
+.cx-coin-book span{color:#92a7bb;background:#07131f;border-color:#19344f}
+.cx-coin-book b{color:#e7f0fa;font-size:11px}
+.cx-coin{border-color:#1a334d;background:#07131f}
+.cx-coin:hover{border-color:#3d6487;background:#0a1928}
+.crypto-page .cx-panel,.crypto-page .cx-market-board,.crypto-page .cx-ladder,.crypto-page .cx-universe,.crypto-page .cx-command-chart,.crypto-page .cx-decision{border-color:#1d3957}
+.crypto-page .cx-muted,.crypto-page .note,.crypto-page .cx-market-row small,.crypto-page .cx-rh-meta,.crypto-page .cx-evidence span,.crypto-page .cx-record span{color:#9aafc3}
+.crypto-page .cx-panel h2,.crypto-page .cx-market-row strong,.crypto-page .cx-rh-price strong,.crypto-page .cx-evidence strong,.crypto-page .cx-record strong{color:#f7fbff}
+.crypto-page .cx-kpi{border-color:#213e5e;background:rgba(255,255,255,.045)}
+.crypto-page .cx-kpi span{color:#91a6bb}
+.crypto-page .cx-kpi small{color:#9db1c4}
+.crypto-page .cx-kpi strong{color:#fff}
+@media(max-width:760px){
+  .cx-tape-item{min-width:164px;padding:9px 12px}
+  .cx-coin-logo.sm{width:28px;height:28px}
+  .cx-coin-logo.lg{width:38px;height:38px}
+  .cx-tape-copy>.num{font-size:13px!important}
+}
