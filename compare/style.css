@@ -399,3 +399,58 @@ button:disabled{cursor:default}
   .tiles-featured .tt,.tiles-pbe .tt{font-size:15px}
   .premium-link{display:none}
 }
+
+
+/* ---------- live ticker compact pass (2026-10-06b) ---------- */
+/* The live rail is a score ticker, not a reserved play-by-play panel. Each item owns its own height. */
+.live{padding:8px 10px 9px;margin:10px 0 12px}
+.live>.sec-head{margin-bottom:6px}
+.live-cards:not(.marquee){
+  display:flex;align-items:flex-start;gap:8px;overflow-x:auto;overflow-y:hidden;
+  padding:0 0 1px;scrollbar-width:none;scroll-snap-type:x proximity;overscroll-behavior-inline:contain
+}
+.live-cards:not(.marquee)::-webkit-scrollbar{display:none}
+.live-cards:not(.marquee)>.lc{
+  flex:1 1 252px;min-width:230px;max-width:320px;align-self:flex-start;scroll-snap-align:start
+}
+.live-cards:not(.marquee)>.lc-tennis-card{flex-basis:272px;min-width:250px}
+.live-cards:not(.marquee)>.lc-tennis-card.is-doubles{flex-basis:308px;min-width:290px;max-width:340px}
+.lc-track{align-items:flex-start}
+.lc{
+  min-height:0!important;height:auto;align-content:start;padding:9px 10px;gap:5px
+}
+.lc-h{min-height:16px}
+.lc-h .sport{font-size:8.5px}
+.lc-h .st-live{max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ticker-score{gap:14px}
+.ticker-team{grid-template-columns:20px minmax(0,1fr) auto;gap:5px}
+.ticker-team .av-sm{width:20px;height:20px}
+.ticker-team b{font-size:11px}
+.ticker-team strong{font-size:14px}
+.ticker-edge{margin-top:1px;font-size:9px;line-height:1.2}
+.ticker-title{display:block;min-width:0;font:600 12px/1.25 var(--disp);letter-spacing:.03em;color:var(--paper)}
+.ticker-score-stack,.ticker-tennis-match{display:grid;gap:3px;min-width:0}
+.ticker-score-row,.ticker-tennis-row{
+  display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:6px;align-items:center;min-width:0;min-height:22px
+}
+.ticker-score-row img{width:20px;height:20px;object-fit:contain}
+.ticker-logo-fallback{width:20px;height:20px;border-radius:6px;border:1px solid var(--line);background:var(--ink)}
+.ticker-score-row b,.ticker-tennis-row b{
+  min-width:0;font:700 11px/1.15 var(--mono);color:var(--paper);white-space:normal;overflow-wrap:anywhere
+}
+.ticker-score-row strong,.ticker-tennis-row strong{
+  font:700 13px/1 var(--mono);color:var(--paper);white-space:nowrap
+}
+.ticker-tennis-match .ticker-tennis-row{grid-template-columns:minmax(0,1fr) auto;padding:1px 0}
+.ticker-tennis-match.is-doubles .ticker-tennis-row b{font-size:10px;line-height:1.12}
+.lc-tennis-card .ticker-edge-muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-tennis-card.is-doubles .ticker-edge-muted{font-size:8.5px}
+.lc-score{min-height:0!important}
+
+/* A long doubles name can make that card taller, but it must never stretch every sibling card. */
+.live-cards>.lc{align-self:flex-start}
+@media (max-width:720px){
+  .live{padding:8px}
+  .live-cards:not(.marquee)>.lc{flex:0 0 248px;min-width:248px;max-width:248px}
+  .live-cards:not(.marquee)>.lc-tennis-card.is-doubles{flex-basis:292px;min-width:292px;max-width:292px}
+}
