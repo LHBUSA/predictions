@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Market Intelligence | PropBetEdge Predictions</title>
-<meta name="description" content="All Access market intelligence: live equities, crypto and macro context analyzed by Bull, Bear and Quant AI perspectives.">
+<meta name="description" content="Live market intelligence across equities, crypto, macro, technicals and AI debate. Included with PropBetEdge All Access.">
 <meta name="robots" content="noindex,follow">
-<meta name="theme-color" content="#07090d">
+<meta name="theme-color" content="#0d1118">
 <link rel="canonical" href="https://predictions.propbetedge.ai/markets/">
-<link rel="stylesheet" href="/markets/market-intelligence.css?v=20261006d">
+<link rel="stylesheet" href="/markets/market-intelligence.css?v=20261006e">
 </head>
 <body class="is-preview">
 <div class="terminal" id="terminal">
@@ -20,6 +20,7 @@
     </div>
     <div class="status">
       <span class="live"><i></i>LIVE</span>
+      <span id="market-session">US MARKET</span>
       <span id="market-mood">MARKET</span>
       <span class="access-chip" id="access-chip">CHECKING ACCESS</span>
       <a href="/" class="back">Predictions ↗</a>
@@ -27,30 +28,40 @@
   </header>
 
   <div class="accessbar" id="accessbar">
-    <div><b>PREVIEW MODE</b><span>See the full Market Intelligence terminal. All Access unlocks live values, AI debate, consults and Trade Lab.</span></div>
+    <div><b>PREVIEW MODE</b><span>Explore the entire terminal. All Access unlocks live values, AI debate, consults and Trade Lab.</span></div>
     <div class="access-actions"><button type="button" id="market-signin">Sign in</button><a href="https://propbetedge.ai/pro">Unlock All Access</a></div>
   </div>
 
-  <div class="ticker" id="ticker"><span>SPY <b>•••••</b></span><span>QQQ <b>•••••</b></span><span>BTC <b>•••••</b></span><span>ETH <b>•••••</b></span><span>Live values unlock with All Access</span></div>
+  <div class="ticker-shell">
+    <div class="ticker-label">LIVE TAPE</div>
+    <div class="ticker" id="ticker"><span>SPY <b>•••••</b></span><span>QQQ <b>•••••</b></span><span>BTC <b>•••••</b></span><span>ETH <b>•••••</b></span></div>
+  </div>
 
   <main class="workspace">
-    <aside class="rail">
-      <section class="panel">
-        <div class="panel-title">EQUITIES <small id="eq-time">—</small></div>
+    <aside class="rail left-rail">
+      <section class="panel watch-panel">
+        <div class="panel-title"><span>WATCHLIST</span><small id="eq-time">—</small></div>
+        <div class="watch-add">
+          <input id="add-symbol" maxlength="10" placeholder="Add ticker e.g. NVDA">
+          <button id="add-symbol-btn" type="button">+</button>
+        </div>
         <div id="equities" class="rows"></div>
       </section>
+
       <section class="panel">
-        <div class="panel-title">CRYPTO <small id="crypto-time">—</small></div>
+        <div class="panel-title"><span>CRYPTO</span><small id="crypto-time">—</small></div>
         <div id="crypto" class="rows"></div>
       </section>
+
       <section class="panel">
-        <div class="panel-title">MACRO</div>
+        <div class="panel-title"><span>MACRO</span></div>
         <div id="macro" class="rows"></div>
       </section>
+
       <section class="panel">
-        <div class="panel-title">SENTIMENT</div>
+        <div class="panel-title"><span>FEAR / GREED</span></div>
         <div class="fear">
-          <div class="fear-top"><span>Fear / Greed</span><b id="fg-num">—</b></div>
+          <div class="fear-top"><span>Market sentiment</span><b id="fg-num">—</b></div>
           <div class="fear-track"><i id="fg-needle"></i></div>
           <small id="fg-label">—</small>
         </div>
@@ -59,15 +70,24 @@
 
     <section class="intel">
       <div class="mode-tabs">
-        <button id="debate-tab" class="mode active" data-mode="debate"><span>⚔</span><b>DEBATE</b><small>Quant → Bull → Bear</small></button>
-        <button id="consult-tab" class="mode" data-mode="consult"><span>◆</span><b>CONSULT</b><small>One analyst, one deep read</small></button>
-        <button id="trade-tab" class="mode" data-mode="trade"><span>△</span><b>TRADE LAB</b><small>Chart screenshot risk review</small></button>
+        <button id="debate-tab" class="mode active" data-mode="debate"><span>⚔</span><div><b>DEBATE</b><small>Quant → Bull → Bear</small></div></button>
+        <button id="consult-tab" class="mode" data-mode="consult"><span>◆</span><div><b>CONSULT</b><small>One analyst, one deep read</small></div></button>
+        <button id="trade-tab" class="mode" data-mode="trade"><span>△</span><div><b>TRADE LAB</b><small>Chart screenshot risk review</small></div></button>
       </div>
 
       <div class="persona-tabs" id="persona-tabs" hidden>
         <button class="persona bull active" data-persona="bull"><b>BULL</b><small>Upside case</small></button>
         <button class="persona bear" data-persona="bear"><b>BEAR</b><small>Risk case</small></button>
         <button class="persona quant" data-persona="quant"><b>QUANT</b><small>Data read</small></button>
+      </div>
+
+      <div class="focus-strip">
+        <div><span>FOCUS</span><b id="focus-symbol">SPY</b><small id="focus-name">S&P 500</small></div>
+        <div class="focus-metrics">
+          <span id="focus-price">$—</span>
+          <span id="focus-change">—</span>
+          <span id="focus-range">H — · L —</span>
+        </div>
       </div>
 
       <div class="trade-lab" id="trade-lab" hidden>
@@ -92,21 +112,24 @@
             <p class="trade-note">Trade Lab evaluates chart structure, the user-supplied entry/stop/target, contradictions and invalidation evidence. It does not size positions or tell you to buy or sell.</p>
           </div>
         </div>
-        <div class="trade-result" id="trade-result" hidden></div>
+        <div class="trade-result markdown" id="trade-result" hidden></div>
       </div>
 
-      <div class="feed" id="feed">
-        <div class="welcome" id="welcome">
-          <div class="triad"><span class="bull-t">BULL.</span><span class="bear-t">BEAR.</span><span class="quant-t">QUANT.</span></div>
-          <p>Three independent AI perspectives grounded in the market snapshot on this screen. Debate runs the tape first, then the upside case, then the risk case.</p>
-          <div class="quick">
-            <button data-q="What is the market telling us right now?">Read the market right now</button>
-            <button data-q="Is the current equity move supported by volatility and macro data?">Equities vs volatility</button>
-            <button data-q="What is the strongest signal in crypto right now?">Crypto signal</button>
-            <button data-q="What is the biggest risk the market may be underpricing?">Underpriced risk</button>
+      <div class="feed-wrap" id="feed-wrap">
+        <div class="feed" id="feed">
+          <div class="welcome" id="welcome">
+            <div class="triad"><span class="bull-t">BULL.</span><span class="bear-t">BEAR.</span><span class="quant-t">QUANT.</span></div>
+            <p>Live market context, three independent reads, and a terminal that keeps the tape visible while you work. Click any stock or tape item to focus the technical panel.</p>
+            <div class="quick">
+              <button data-q="What is the market telling us right now?">Read the market right now</button>
+              <button data-q="Is the current equity move supported by volatility and macro data?">Equities vs volatility</button>
+              <button data-q="What is the strongest signal in crypto right now?">Crypto signal</button>
+              <button data-q="What is the biggest risk the market may be underpricing?">Underpriced risk</button>
+            </div>
           </div>
+          <div id="messages"></div>
         </div>
-        <div id="messages"></div>
+        <button id="jump-latest" class="jump-latest" type="button" hidden>↓ Latest</button>
       </div>
 
       <footer class="composer">
@@ -117,9 +140,41 @@
         <div class="composer-meta"><span id="mode-label">DEBATE MODE</span><span>OpenAI · live market context · informational only</span></div>
       </footer>
     </section>
+
+    <aside class="rail right-rail">
+      <section class="panel">
+        <div class="panel-title"><span>TECHNICALS</span><small id="tech-symbol">SPY</small></div>
+        <div id="technicals" class="tech-grid">
+          <div class="tech-card"><span>RSI 14</span><b>—</b><small>—</small></div>
+          <div class="tech-card"><span>MACD</span><b>—</b><small>—</small></div>
+          <div class="tech-card"><span>EMA 50</span><b>—</b><small>—</small></div>
+          <div class="tech-card"><span>VOLUME</span><b>—</b><small>—</small></div>
+          <div class="tech-card wide"><span>52W RANGE</span><b>—</b><small>—</small></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title"><span>MARKET PULSE</span></div>
+        <div id="market-pulse" class="pulse-list">
+          <div><span>BTC dominance</span><b>—</b></div>
+          <div><span>Analyst consensus</span><b>—</b></div>
+          <div><span>Yield curve</span><b>—</b></div>
+          <div><span>Market mood</span><b>—</b></div>
+        </div>
+      </section>
+
+      <section class="panel news-panel">
+        <div class="panel-title"><span>MARKET NEWS</span></div>
+        <div id="news-list" class="news-list"><div class="news-item locked-copy">Live headlines unlock with All Access.</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title"><span>EARNINGS</span></div>
+        <div id="earnings-list" class="earnings-list"><div class="earning locked-copy">Live earnings calendar unlocks with All Access.</div></div>
+      </section>
+    </aside>
   </main>
 </div>
-
-<script src="/markets/market-intelligence.js?v=20261006d" defer></script>
+<script src="/markets/market-intelligence.js?v=20261006e" defer></script>
 </body>
 </html>
