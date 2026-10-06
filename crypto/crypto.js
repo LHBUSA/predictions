@@ -5,6 +5,22 @@ const pct=(v)=>v==null?'—':`${(Number(v)*100).toFixed(1)}%`;
 const usd=(v,d=2)=>v==null?'—':Number(v).toLocaleString(undefined,{style:'currency',currency:'USD',minimumFractionDigits:d,maximumFractionDigits:d});
 const ago=(iso)=>{if(!iso)return'—';const sec=Math.max(0,Math.round((Date.now()-Date.parse(iso))/1000));return sec<10?'just now':sec<60?`${sec}s ago`:sec<3600?`${Math.round(sec/60)}m ago`:`${Math.round(sec/3600)}h ago`;};
 const digits=(v)=>{const n=Math.abs(Number(v));return n>=1000?2:n>=1?4:n>=.01?5:8};
+const COIN_BRAND={
+  BTC:['bitcoin','F7931A'],ETH:['ethereum','627EEA'],SOL:['solana','14F195'],DOGE:['dogecoin','C2A633'],
+  XRP:['xrp','25A768'],ADA:['cardano','0D1E30'],LINK:['chainlink','375BD2'],AVAX:['avalanche','E84142'],
+  LTC:['litecoin','345D9D'],BCH:['bitcoincash','8DC351'],AAVE:['aave','B6509E'],UNI:['uniswap','FF007A'],
+  DOT:['polkadot','E6007A'],XLM:['stellar','7D00FF'],SHIB:['shiba-inu','FFA409'],ARB:['arbitrum','28A0F0'],
+  OP:['optimism','FF0420'],ETC:['ethereumclassic','328332']
+};
+function coinLogo(asset){
+  const x=COIN_BRAND[String(asset||'').toUpperCase()];
+  return x ? 'https://cdn.simpleicons.org/'+x[0]+'/'+x[1] : '';
+}
+function coinMark(asset,size='md'){
+  const a=String(asset||'').toUpperCase(),src=coinLogo(a);
+  const img=src ? '<img src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">' : '';
+  return '<span class="cx-coin-logo '+size+'">'+img+'<span class="cx-coin-fallback"'+(src?' style="display:none"':'')+'>'+esc(a.slice(0,3))+'</span></span>';
+}
 async function get(p){const r=await fetch(`${API}/${p}`,{cache:'no-store'});if(!r.ok)throw new Error(`${p} ${r.status}`);return r.json();}
 
 let closeAt=null;
@@ -181,7 +197,8 @@ function renderTape(){
     const delta=prior==null||x.mark==null?null:Number(x.mark)-Number(prior);
     const cls=delta==null?'':delta>0?'up':delta<0?'down':'';
     const move=delta==null?'LIVE':delta>0?'▲':delta<0?'▼':'•';
-    return `<a class="cx-tape-item ${cls}" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(x.symbol.replace('-USD',''))}/" target="_blank" rel="noopener"><b>${esc(x.symbol.replace('-USD',''))}</b><span class="num">${usd(x.mark,digits(x.mark))}</span><small>${move} · ${x.raw_quote_crossed?'RAW BOOK CROSSED':'ROBINHOOD'}</small></a>`;
+    const asset=x.symbol.replace('-USD','');
+    return `<a class="cx-tape-item ${cls}" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(asset)}/" target="_blank" rel="noopener">${coinMark(asset,'sm')}<span class="cx-tape-copy"><b>${esc(asset)}</b><span class="num">${usd(x.mark,digits(x.mark))}</span><small>${move} · ${x.raw_quote_crossed?'RAW BOOK CROSSED':'ROBINHOOD'}</small></span></a>`;
   }).join('');
   const duration=Math.max(44,rows.length*3.2);
   const phase=(Date.now()/1000)%duration;
@@ -203,7 +220,7 @@ function renderMarketBoard(){
     const tick=prior==null||x.mark==null?0:Number(x.mark)-Number(prior);
     const tickClass=tick>0?'tick-up':tick<0?'tick-down':'';
     return `<article class="cx-coin ${tickClass}">
-      <div class="cx-coin-id"><span class="cx-coin-badge">${esc(asset.slice(0,4))}</span><div><b>${esc(asset)}</b><small>${esc(x.symbol)}</small></div></div>
+      <div class="cx-coin-id">${coinMark(asset,'lg')}<div><b>${esc(asset)}</b><small>${esc(x.symbol)}</small></div></div>
       <div class="cx-coin-price"><strong class="num">${usd(x.mark,digits(x.mark))}</strong><small class="${move==null?'':move>=0?'up':'down'}">${move==null?'collecting…':`${move>=0?'+':''}${move.toFixed(3)}% session`}</small></div>
       <div class="cx-coin-spark">${spark(hist)}</div>
       <div class="cx-coin-book"><span>Bid <b class="num">${usd(x.raw_bid,digits(x.raw_bid))}</b></span><span>Ask <b class="num">${usd(x.raw_ask,digits(x.raw_ask))}</b></span></div>
