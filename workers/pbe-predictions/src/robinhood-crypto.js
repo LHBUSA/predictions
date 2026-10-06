@@ -103,9 +103,31 @@ export class RobinhoodCryptoMarketData {
     return data;
   }
 
-  tradingPairs(symbols = []) {
-    const q = (Array.isArray(symbols) ? symbols : [symbols]).filter(Boolean).map((s) => `symbol=${encodeURIComponent(String(s).toUpperCase())}`).join('&');
-    return this.get(`/api/v2/crypto/trading/trading_pairs/${q ? `?${q}` : ''}`);
+  tradingPairs(symbols = [], { cursor = null, limit = null } = {}) {
+    const q = new URLSearchParams();
+    for (const s of (Array.isArray(symbols) ? symbols : [symbols]).filter(Boolean)) q.append('symbol', String(s).toUpperCase());
+    if (cursor) q.set('cursor', String(cursor));
+    if (limit != null) q.set('limit', String(limit));
+    const qs = q.toString();
+    return this.get(`/api/v2/crypto/trading/trading_pairs/${qs ? `?${qs}` : ''}`);
+  }
+
+  async tradingPairsAll({ limit = 100, maxPages = 20 } = {}) {
+    const results = [];
+    let cursor = null;
+    for (let page = 0; page < maxPages; page += 1) {
+      const body = await this.tradingPairs([], { cursor, limit });
+      results.push(...(body?.results || []));
+      if (!body?.next) return { results, next: null, pages: page + 1 };
+      try {
+        const u = new URL(body.next);
+        cursor = u.searchParams.get('cursor');
+      } catch {
+        cursor = null;
+      }
+      if (!cursor) return { results, next: body.next, pages: page + 1 };
+    }
+    return { results, next: 'page_limit_reached', pages: maxPages };
   }
 
   bestBidAsk(symbols) {
