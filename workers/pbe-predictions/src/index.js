@@ -334,6 +334,60 @@ export default {
           return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null, credential }, 502, 'public, max-age=10');
         }
       }
+      if (p === '/v1/crypto/markets') {
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=15');
+        const rh = robinhoodForEnv(env);
+        const defs = [
+          { symbol: 'BTC-USD', quantity: '0.001' },
+          { symbol: 'ETH-USD', quantity: '0.01' },
+          { symbol: 'SOL-USD', quantity: '0.1' },
+        ];
+        try {
+          const [pairs, quotes, ...estimates] = await Promise.all([
+            rh.tradingPairs(defs.map((x) => x.symbol)),
+            rh.bestBidAsk(defs.map((x) => x.symbol)),
+            ...defs.map((x) => rh.estimatedPrice(x.symbol, { side: 'both', quantity: x.quantity })),
+          ]);
+          const pairBy = Object.fromEntries((pairs?.results || []).map((x) => [x.symbol, x]));
+          const quoteBy = Object.fromEntries((quotes?.results || []).map((x) => [x.symbol, x]));
+          const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+          const rows = defs.map((d, i) => {
+            const q = quoteBy[d.symbol] || {};
+            const bid = num(q.bid); const ask = num(q.ask);
+            const crossed = bid != null && ask != null && bid > ask;
+            const est = estimates[i]?.results?.[0] || null;
+            const ebid = num(est?.bid); const eask = num(est?.ask);
+            const estimateCrossed = ebid != null && eask != null && ebid > eask;
+            const cleanBid = !crossed ? bid : (!estimateCrossed ? ebid : null);
+            const cleanAsk = !crossed ? ask : (!estimateCrossed ? eask : null);
+            const mid = cleanBid != null && cleanAsk != null ? (cleanBid + cleanAsk) / 2 : null;
+            const spreadBps = cleanBid != null && cleanAsk != null && mid > 0 ? ((cleanAsk - cleanBid) / mid) * 10000 : null;
+            return {
+              symbol: d.symbol,
+              api_tradable: pairBy[d.symbol]?.is_api_tradable === true,
+              timestamp: est?.timestamp || q.timestamp || null,
+              bid: cleanBid,
+              ask: cleanAsk,
+              mid,
+              spread_bps: spreadBps,
+              raw_quote_crossed: crossed,
+              quote_source: crossed ? 'estimated_price_fallback' : 'best_bid_ask',
+              estimate_quantity: d.quantity,
+              fee_ratio: num(est?.fee_ratio),
+            };
+          });
+          return json({
+            ok: true,
+            source: 'Robinhood Crypto',
+            mode: 'READ_ONLY_MARKET_DATA',
+            execution_enabled: false,
+            generated_at: new Date().toISOString(),
+            symbols: rows,
+          }, 200, 'public, max-age=5');
+        } catch (e) {
+          return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_market_data_unavailable' }, 502, 'public, max-age=5');
+        }
+      }
       if (p === '/v1/summary') return json(await summary(store));
       // Membership + All Access. Predictions is a premium product included with All Access: every route below that
       // carries a PBE probability, market comparison, evidence or history is behind requireAllAccess + privateJson.
