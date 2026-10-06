@@ -1,6 +1,6 @@
 (() => {
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-let mode='debate', persona='bull', busy=false, market=null, chartData='';
+let mode='debate', persona='bull', busy=false, market=null, chartData='', isMember=false;
 const stocks=['SPY','QQQ','DIA','IWM','VIX'];
 const crypto=['BTC','ETH','SOL','BNB','XRP','ADA'];
 const names={SPY:'S&P 500',QQQ:'Nasdaq 100',DIA:'Dow',IWM:'Russell 2000',VIX:'Volatility'};
@@ -10,30 +10,16 @@ const cls=(v)=>Number(v)>0?'up':Number(v)<0?'dn':'flat';
 const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function membership(){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),4500);
   try{
-    const r=await fetch('/api/membership',{credentials:'same-origin',cache:'no-store'});
+    const r=await fetch('/api/membership',{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
     const b=await r.json().catch(()=>({}));
+    clearTimeout(timer);
     if(r.ok&&b?.membership) return {...b.membership,authenticated:Boolean(b.authenticated)};
   }catch{}
+  clearTimeout(timer);
   return {state:'unverified',entitled:false,authenticated:false};
-}
-function gate(m){
-  const state=$('#gate-state'), actions=$('#gate-actions');
-  if(m.entitled&&(m.state==='all_access'||m.state==='owner')){
-    $('#gate').hidden=true; $('#terminal').hidden=false; loadMarket(); return;
-  }
-  if(m.state==='anonymous'||!m.authenticated){
-    state.textContent='Sign in with the same PropBetEdge account used for All Access.';
-    actions.innerHTML='<button class="primary" id="signin">Sign in</button><a href="https://propbetedge.ai/pro">Get All Access</a>';
-    $('#signin').onclick=signIn;
-  }else if(m.state==='signed_in'){
-    state.textContent='You are signed in, but this account does not currently include All Access.';
-    actions.innerHTML='<a class="primary" href="https://propbetedge.ai/pro">Upgrade to All Access</a>';
-  }else{
-    state.textContent='Membership could not be verified right now. Nothing premium is loaded until access is confirmed.';
-    actions.innerHTML='<button class="primary" id="retry">Check again</button>';
-    $('#retry').onclick=boot;
-  }
 }
 function signIn(){
   const email=prompt('Email for your PropBetEdge sign-in link:');
@@ -41,8 +27,33 @@ function signIn(){
   fetch('https://auth.propbetedge.ai/magic/request',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email,return_to:location.href})})
     .then(()=>alert('Check your inbox for the PropBetEdge sign-in link.')).catch(()=>alert('Sign-in is unavailable right now.'));
 }
-async function boot(){ $('#gate-state').textContent='Checking membership…'; $('#gate-actions').innerHTML=''; gate(await membership()); }
-
+function renderPreview(){
+  const eq=[['SPY','S&P 500'],['QQQ','Nasdaq 100'],['DIA','Dow'],['IWM','Russell 2000'],['VIX','Volatility']];
+  $('#equities').innerHTML=eq.map(([s,n])=>'<div class="row"><div class="row-left"><b>'+s+'</b><small>'+n+'</small></div><div class="row-right"><b>$•••••</b><small>+•.••%</small></div></div>').join('');
+  const cc=[['BTC','Bitcoin'],['ETH','Ethereum'],['SOL','Solana'],['BNB','BNB Chain']];
+  $('#crypto').innerHTML=cc.map(([s,n])=>'<div class="row"><div class="row-left"><b>'+s+'</b><small>'+n+'</small></div><div class="row-right"><b>$•••••</b><small>+•.••%</small></div></div>').join('');
+  const mm=['FED FUNDS','30Y MORTGAGE','UNEMPLOYMENT','10Y TREASURY','10Y−2Y'];
+  $('#macro').innerHTML=mm.map(k=>'<div class="row"><div class="row-left"><small>'+k+'</small></div><div class="row-right"><b>•.••%</b></div></div>').join('');
+  $('#fg-num').textContent='••'; $('#fg-label').textContent='Locked'; $('#fg-needle').style.left='50%';
+}
+function applyMembership(m){
+  isMember=Boolean(m?.entitled&&(m.state==='all_access'||m.state==='owner'));
+  document.body.classList.toggle('is-member',isMember);
+  document.body.classList.toggle('is-preview',!isMember);
+  const chip=$('#access-chip');
+  if(isMember){
+    if(chip) chip.textContent='ALL ACCESS ACTIVE';
+    loadMarket();
+    return;
+  }
+  if(chip) chip.textContent=m?.authenticated?'ALL ACCESS REQUIRED':'PREVIEW';
+  renderPreview();
+}
+async function boot(){
+  renderPreview();
+  const m=await membership();
+  applyMembership(m);
+}
 function renderRows(){
   const q=market?.stocks?.quotes||[];
   $('#equities').innerHTML=stocks.map(s=>{const x=q.find(v=>v.symbol===s);if(!x)return'';return '<div class="row"><div class="row-left"><b>'+s+'</b><small>'+names[s]+'</small></div><div class="row-right"><b>$'+fmt(x.price)+'</b><small class="'+cls(x.pct)+'">'+pct(x.pct)+'</small></div></div>'}).join('');
@@ -105,6 +116,7 @@ async function runConsult(t){
   await parseSSE(r,e=>{if(e.type==='text')box.textContent=e.text});
 }
 async function send(){
+  if(!isMember){document.querySelector('#accessbar')?.scrollIntoView({behavior:'smooth',block:'nearest'});return}
   const t=$('#prompt').value.trim();if(!t||busy)return;busy=true;$('#send').disabled=true;$('#prompt').value='';
   try{if(mode==='debate')await runDebate(t);else await runConsult(t)}catch{const d=document.createElement('div');d.className='topic';d.textContent='Analysis unavailable. Please try again.';$('#messages').appendChild(d)}
   finally{busy=false;$('#send').disabled=false;$('#prompt').focus()}
@@ -122,14 +134,15 @@ async function useChart(file){
   const img=$('#chart-preview'), empty=$('#chart-empty');img.src=chartData;img.hidden=false;empty.hidden=true;
 }
 const drop=$('#chart-drop'), file=$('#chart-file');
-$('#choose-chart').onclick=(e)=>{e.preventDefault();file.click()};
-drop.addEventListener('click',(e)=>{if(e.target.id!=='choose-chart'&&e.target.tagName!=='IMG')file.click()});
+$('#choose-chart').onclick=(e)=>{e.preventDefault();if(!isMember){document.querySelector('#accessbar')?.scrollIntoView({behavior:'smooth',block:'nearest'});return}file.click()};
+drop.addEventListener('click',(e)=>{if(!isMember){document.querySelector('#accessbar')?.scrollIntoView({behavior:'smooth',block:'nearest'});return}if(e.target.id!=='choose-chart'&&e.target.tagName!=='IMG')file.click()});
 file.addEventListener('change',()=>useChart(file.files?.[0]));
 for(const ev of ['dragenter','dragover'])drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')});
 for(const ev of ['dragleave','drop'])drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')});
 drop.addEventListener('drop',e=>useChart(e.dataTransfer?.files?.[0]));
 
 $('#analyze-chart').onclick=async()=>{
+  if(!isMember){document.querySelector('#accessbar')?.scrollIntoView({behavior:'smooth',block:'nearest'});return}
   if(!chartData){alert('Add a chart screenshot first.');return}
   const btn=$('#analyze-chart'), out=$('#trade-result');btn.disabled=true;btn.textContent='READING CHART…';out.hidden=false;out.textContent='Reading chart structure and live market context…';
   try{
@@ -151,5 +164,5 @@ $('#analyze-chart').onclick=async()=>{
 $$('.quick button').forEach(b=>b.onclick=()=>{$('#prompt').value=b.dataset.q;send()});
 $('#send').onclick=send;$('#prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 $('#prompt').addEventListener('input',e=>{e.target.style.height='auto';e.target.style.height=Math.min(120,e.target.scrollHeight)+'px'});
-boot();setInterval(()=>{if(!$('#terminal').hidden)loadMarket()},90000);
+$('#market-signin').onclick=signIn;boot();setInterval(()=>{if(isMember)loadMarket()},90000);
 })();
