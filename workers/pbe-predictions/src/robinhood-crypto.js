@@ -1,11 +1,12 @@
-// Robinhood Crypto Trading API — READ-ONLY market-data client for Predictions.
+// Robinhood Crypto Trading API client for Predictions.
 //
 // Secrets:
 //   ROBINHOOD_CRYPTO_API_KEY
 //   ROBINHOOD_CRYPTO_PRIVATE_KEY_B64  (32-byte Ed25519 seed, base64)
+//   ROBINHOOD_TRADING_ENABLED         ("true" only to permit live order/cancel calls)
 //
-// Security boundary: this module intentionally exposes NO account, holdings, order,
-// preview, cancel, or trading methods. It is market-data only.
+// Read paths (market data, account, holdings, orders) remain available whenever credentials are configured.
+// Live order placement and cancellation fail closed unless the explicit trading kill switch is enabled.
 
 const BASE = 'https://trading.robinhood.com';
 const enc = new TextEncoder();
@@ -64,11 +65,12 @@ export async function robinhoodCredentialFingerprint(env) {
 }
 
 export class RobinhoodCryptoMarketData {
-  constructor({ apiKey, privateKeyB64, fetchImpl = globalThis.fetch, now = () => Math.floor(Date.now() / 1000) } = {}) {
+  constructor({ apiKey, privateKeyB64, tradingEnabled = false, fetchImpl = globalThis.fetch, now = () => Math.floor(Date.now() / 1000) } = {}) {
     if (!apiKey) throw new TypeError('Robinhood API key is required');
     if (!privateKeyB64) throw new TypeError('Robinhood private key is required');
     this.apiKey = String(apiKey).trim();
     this.privateKeyB64 = String(privateKeyB64);
+    this.tradingEnabled = tradingEnabled === true;
     this.fetchImpl = (input, init) => fetchImpl(input, init);
     this.now = now;
     this._key = null;
@@ -87,19 +89,37 @@ export class RobinhoodCryptoMarketData {
     };
   }
 
-  async get(path) {
-    if (!path.startsWith('/api/v2/crypto/')) throw new Error('Robinhood path outside read-only crypto surface');
-    const headers = await this.headers('GET', path);
-    const res = await this.fetchImpl(BASE + path, { method: 'GET', headers, cache: 'no-store' });
+  async request(method, path, body = '') {
+    if (!path.startsWith('/api/v2/crypto/')) throw new Error('Robinhood path outside v2 crypto surface');
+    const m = String(method || 'GET').toUpperCase();
+    const payload = body === '' ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
+    const headers = await this.headers(m, path, payload);
+    if (payload) headers['content-type'] = 'application/json';
+    const res = await this.fetchImpl(BASE + path, {
+      method: m,
+      headers,
+      ...(payload ? { body: payload } : {}),
+      cache: 'no-store',
+    });
     let data = null;
-    try { data = await res.json(); } catch {}
+    try { data = await res.json(); } catch {
+      try { data = await res.text(); } catch {}
+    }
     if (!res.ok) {
-      const e = new Error(`Robinhood read failed: ${res.status}`);
+      const e = new Error(`Robinhood request failed: ${res.status}`);
       e.status = res.status;
       e.detail = data;
       throw e;
     }
     return data;
+  }
+
+  get(path) {
+    return this.request('GET', path);
+  }
+
+  post(path, body = '') {
+    return this.request('POST', path, body);
   }
 
   tradingPairs(symbols = []) {
@@ -121,12 +141,70 @@ export class RobinhoodCryptoMarketData {
     const q = new URLSearchParams({ symbol: sym, side, quantity: String(quantity) }).toString();
     return this.get(`/api/v2/crypto/trading/estimated_price/?${q}`);
   }
+
+  accounts() {
+    return this.get('/api/v2/crypto/trading/accounts/');
+  }
+
+  holdings(accountNumber, assetCodes = []) {
+    const account = String(accountNumber || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    const q = new URLSearchParams({ account_number: account });
+    for (const code of (Array.isArray(assetCodes) ? assetCodes : [assetCodes]).filter(Boolean)) q.append('asset_code', String(code).toUpperCase());
+    return this.get(`/api/v2/crypto/trading/holdings/?${q.toString()}`);
+  }
+
+  orders(accountNumber, filters = {}) {
+    const account = String(accountNumber || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    const q = new URLSearchParams({ account_number: account });
+    for (const k of ['symbol','side','type','state','created_at_start','created_at_end','updated_at_start','updated_at_end','cursor']) {
+      if (filters?.[k] != null && String(filters[k]).trim() !== '') q.set(k, String(filters[k]));
+    }
+    return this.get(`/api/v2/crypto/trading/orders/?${q.toString()}`);
+  }
+
+  order(accountNumber, orderId) {
+    const account = String(accountNumber || '').trim();
+    const id = String(orderId || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new TypeError('valid order id is required');
+    return this.get(`/api/v2/crypto/trading/orders/${encodeURIComponent(id)}/?account_number=${encodeURIComponent(account)}`);
+  }
+
+  async placeOrder(accountNumber, order) {
+    if (!this.tradingEnabled) throw new Error('Robinhood live trading is disabled');
+    const account = String(accountNumber || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    const symbol = String(order?.symbol || '').toUpperCase();
+    const side = String(order?.side || '').toLowerCase();
+    const type = String(order?.type || '').toLowerCase();
+    const clientOrderId = String(order?.client_order_id || '').trim();
+    if (!/^[A-Z0-9]+-USD$/.test(symbol)) throw new TypeError('symbol must be a USD trading pair');
+    if (!['buy','sell'].includes(side)) throw new TypeError('side must be buy or sell');
+    if (!['market','limit','stop_loss','stop_limit'].includes(type)) throw new TypeError('unsupported order type');
+    if (!/^[0-9a-f-]{36}$/i.test(clientOrderId)) throw new TypeError('client_order_id must be a UUID');
+    const configKey = `${type}_order_config`;
+    const config = order?.[configKey];
+    if (!config || typeof config !== 'object' || Array.isArray(config)) throw new TypeError(`${configKey} is required`);
+    const body = { symbol, client_order_id: clientOrderId, side, type, [configKey]: config };
+    const path = `/api/v2/crypto/trading/orders/?account_number=${encodeURIComponent(account)}`;
+    return this.post(path, body);
+  }
+
+  cancelOrder(orderId) {
+    if (!this.tradingEnabled) throw new Error('Robinhood live trading is disabled');
+    const id = String(orderId || '').trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new TypeError('valid order id is required');
+    return this.post(`/api/v2/crypto/trading/orders/${encodeURIComponent(id)}/cancel/`);
+  }
 }
 
 export function robinhoodForEnv(env, fetchImpl) {
   return new RobinhoodCryptoMarketData({
     apiKey: env.ROBINHOOD_CRYPTO_API_KEY,
     privateKeyB64: env.ROBINHOOD_CRYPTO_PRIVATE_KEY_B64,
+    tradingEnabled: env.ROBINHOOD_TRADING_ENABLED === 'true',
     ...(fetchImpl ? { fetchImpl } : {}),
   });
 }
