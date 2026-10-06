@@ -6,17 +6,17 @@ export const PERSONAS = {
   bull: {
     name: 'Bull',
     role: 'The Bull Case',
-    instruction: 'You are the Bull analyst inside PropBetEdge Market Intelligence. Build the strongest evidence-based upside case from the supplied live market data. Be concise, specific and numerical. Acknowledge material downside risks. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
+    instruction: 'You are the Bull analyst inside PropBetEdge Market Intelligence. Build the strongest evidence-based upside case from the supplied live market data. Be concise, specific and numerical. Use at most 4 short sections and roughly 180 words. Acknowledge material downside risks. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
   },
   bear: {
     name: 'Bear',
     role: 'The Bear Case',
-    instruction: 'You are the Bear analyst inside PropBetEdge Market Intelligence. Stress-test the market narrative using the supplied live market data. Lead with the clearest risk, contradiction or missing assumption. Be concise, specific and numerical. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
+    instruction: 'You are the Bear analyst inside PropBetEdge Market Intelligence. Stress-test the market narrative using the supplied live market data. Lead with the clearest risk, contradiction or missing assumption. Be concise, specific and numerical. Use at most 4 short sections and roughly 180 words. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
   },
   quant: {
     name: 'Quant',
     role: 'The Data Read',
-    instruction: 'You are the Quant analyst inside PropBetEdge Market Intelligence. Read the supplied market data clinically. Lead with the most important number, separate signal from noise, and do not express a personal bullish or bearish preference. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
+    instruction: 'You are the Quant analyst inside PropBetEdge Market Intelligence. Read the supplied market data clinically. Lead with the most important number, separate signal from noise, and do not express a personal bullish or bearish preference. Use at most 4 short sections and roughly 180 words. Never invent a price, percentage, catalyst or fact. This is market analysis, not personalized financial advice.'
   }
 };
 
@@ -39,28 +39,49 @@ export function contextFromMarket(d) {
   const coins = d?.crypto?.coins || [];
   const macro = d?.macro?.indicators || {};
   const news = d?.news?.news || [];
-  const q = (s) => quotes.find((x)=>x.symbol===s);
-  const coin = (s) => coins.find((x)=>String(x.symbol||'').toUpperCase()===s);
+  const earnings = d?.news?.earnings || [];
+  const consensus = d?.options?.summary || {};
   const f = (v) => v == null ? 'N/A' : String(v);
+  const pct = (v) => v == null ? 'N/A' : ((Number(v) > 0 ? '+' : '') + Number(v).toFixed(2) + '%');
+
+  const equityLines = quotes
+    .filter((x)=>x?.symbol)
+    .slice(0,20)
+    .map((x)=>x.symbol + ': $' + f(x.price) + ' | ' + pct(x.pct) + ' | H ' + f(x.high) + ' | L ' + f(x.low));
+
+  const cryptoLines = coins
+    .filter((x)=>x?.symbol)
+    .slice(0,20)
+    .map((x)=>String(x.symbol).toUpperCase() + ': $' + f(x.current_price) + ' | 24h ' + pct(x.price_change_percentage_24h) + (x.price_change_percentage_7d_in_currency != null ? ' | 7d ' + pct(x.price_change_percentage_7d_in_currency) : ''));
+
   return [
     '[CURRENT MARKET SNAPSHOT]',
-    'SPY: ' + f(q('SPY')?.price) + ' (' + f(q('SPY')?.pct) + '%)',
-    'QQQ: ' + f(q('QQQ')?.price) + ' (' + f(q('QQQ')?.pct) + '%)',
-    'DIA: ' + f(q('DIA')?.price) + ' (' + f(q('DIA')?.pct) + '%)',
-    'IWM: ' + f(q('IWM')?.price) + ' (' + f(q('IWM')?.pct) + '%)',
-    'VIX: ' + f(q('VIX')?.price),
-    'BTC: ' + f(coin('BTC')?.current_price) + ' (' + f(coin('BTC')?.price_change_percentage_24h) + '% 24h)',
-    'ETH: ' + f(coin('ETH')?.current_price) + ' (' + f(coin('ETH')?.price_change_percentage_24h) + '% 24h)',
-    'SOL: ' + f(coin('SOL')?.current_price) + ' (' + f(coin('SOL')?.price_change_percentage_24h) + '% 24h)',
+    'US EQUITIES / ETFs:',
+    ...(equityLines.length ? equityLines : ['No equity quotes available']),
+    '',
+    'CRYPTO:',
+    ...(cryptoLines.length ? cryptoLines : ['No crypto quotes available']),
+    '',
+    'MARKET STATE:',
     'Fear/Greed: ' + f(d?.sentiment?.current?.value) + ' ' + f(d?.sentiment?.current?.value_classification),
+    'Market mood: ' + f(d?.mood?.label || d?.mood?.mood),
+    'BTC dominance: ' + f(d?.crypto?.btcDominance) + '%',
+    'Analyst consensus: ' + f(consensus?.sentiment) + ' | bullish ' + f(consensus?.bullish) + ' / bearish ' + f(consensus?.bearish) + ' / neutral ' + f(consensus?.neutral),
+    '',
+    'MACRO:',
     'Fed funds: ' + f(macro?.fedfunds?.current?.value) + '%',
+    'CPI: ' + f(macro?.cpi?.current?.value),
     '30Y mortgage: ' + f(macro?.rate30?.current?.value) + '%',
     'Unemployment: ' + f(macro?.unemployment?.current?.value) + '%',
     '10Y Treasury: ' + f(macro?.treasury10y?.current?.value) + '%',
     '2Y Treasury: ' + f(macro?.treasury2y?.current?.value) + '%',
     'Yield curve 10Y-2Y: ' + f(d?.macro?.yieldCurve?.spread) + '%',
-    'Top market headlines:',
-    ...news.slice(0,5).map((n)=>'- ' + n.headline + ' [' + (n.source||'source') + ']'),
+    '',
+    'TOP MARKET HEADLINES:',
+    ...news.slice(0,6).map((n)=>'- ' + n.headline + ' [' + (n.source||'source') + ']'),
+    '',
+    'UPCOMING EARNINGS:',
+    ...earnings.slice(0,6).map((e)=>'- ' + f(e.symbol) + ' | EPS est ' + f(e.epsEstimate) + ' | ' + f(e.hour)),
     '',
     'Use only the snapshot above for numerical claims. If the requested security or fact is not present, say that the live feed does not currently contain it.'
   ].join('\n');
