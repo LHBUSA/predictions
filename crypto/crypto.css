@@ -98,3 +98,15 @@ linear-gradient(180deg,#07111f,#081522)}
 .cx-market-board{margin-top:0}
 @media(max-width:1180px){.cx-command{grid-template-columns:1fr}.cx-command-copy{padding-bottom:0}.cx-command-chart{min-height:0}.cx-command-copy h1{max-width:850px}.cx-hero-marketline{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.cx-command-copy h1{font-size:50px}.cx-hero-marketline{grid-template-columns:1fr}.cx-decision-grid{grid-template-columns:1fr 1fr}.cx-decision-grid>div:last-child{grid-column:1/-1}.cx-decision-main>strong{font-size:58px}.cx-command-chart{padding:11px}.cx-chart-topline{align-items:flex-start;flex-direction:column}.cx-chart-hud{display:grid;grid-template-columns:repeat(3,1fr);width:100%}}
+
+/* continuous all-crypto ticker */
+.cx-tape{position:relative;overflow:hidden;display:block;white-space:nowrap}
+.cx-tape::before,.cx-tape::after{content:"";position:absolute;top:0;bottom:0;width:38px;z-index:2;pointer-events:none}
+.cx-tape::before{left:0;background:linear-gradient(90deg,#040c16,transparent)}
+.cx-tape::after{right:0;background:linear-gradient(270deg,#040c16,transparent)}
+.cx-tape-track{display:flex;width:max-content;animation:cxTicker var(--ticker-duration,72s) linear infinite;animation-delay:var(--ticker-offset,0s);will-change:transform}
+.cx-tape-set{display:flex;flex:0 0 auto}
+.cx-tape-item{min-width:148px}
+.cx-tape:hover .cx-tape-track,.cx-tape:focus-within .cx-tape-track{animation-play-state:paused}
+@keyframes cxTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.cx-tape-track{animation:none}.cx-tape{overflow-x:auto}.cx-tape-set[aria-hidden="true"]{display:none}}
