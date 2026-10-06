@@ -233,6 +233,84 @@ export default {
           return json({ ok: false, configured: true, status: e?.status ?? null, error: e?.message ?? 'robinhood_preflight_failed', detail: e?.detail ?? null }, 502, 'no-store');
         }
       }
+      if (req.method === 'GET' && p === '/admin/crypto/robinhood/execution-intelligence') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false }, 503, 'no-store');
+        const rh = robinhoodForEnv(env);
+        const ladderUsd = [10, 25, 50, 100];
+        const symbols = ['BTC-USD', 'ETH-USD', 'SOL-USD'];
+        try {
+          const accounts = await rh.accounts();
+          const account = accounts?.results?.[0] ?? null;
+          if (!account?.account_number) return json({ ok: false, error: 'no_crypto_account' }, 404, 'no-store');
+          const [holdings, orders, pairs, quotes] = await Promise.all([
+            rh.holdings(account.account_number),
+            rh.orders(account.account_number),
+            rh.tradingPairs(symbols),
+            rh.bestBidAsk(symbols),
+          ]);
+          const pairBy = Object.fromEntries((pairs?.results || []).map((x) => [x.symbol, x]));
+          const quoteBy = Object.fromEntries((quotes?.results || []).map((x) => [x.symbol, x]));
+          const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+          const ladders = {};
+          for (const symbol of symbols) {
+            const q = quoteBy[symbol] || {};
+            const rawBid = num(q.bid); const rawAsk = num(q.ask);
+            const rawMid = rawBid != null && rawAsk != null ? (rawBid + rawAsk) / 2 : null;
+            if (!(rawMid > 0)) { ladders[symbol] = []; continue; }
+            const rows = [];
+            for (const usd of ladderUsd) {
+              const quantity = (usd / rawMid).toPrecision(12);
+              const est = await rh.estimatedPrice(symbol, { side: 'both', quantity });
+              const er = est?.results || [];
+              const sell = er.find((x) => x?.side === 'bid') || null;
+              const buy = er.find((x) => x?.side === 'ask') || null;
+              const qty = num(quantity);
+              const sellCredit = num(sell?.est_total_credit);
+              const buyCost = num(buy?.est_total_cost);
+              const netSell = qty > 0 && sellCredit != null ? sellCredit / qty : null;
+              const grossBuy = qty > 0 && buyCost != null ? buyCost / qty : null;
+              const mid = netSell != null && grossBuy != null ? (netSell + grossBuy) / 2 : null;
+              rows.push({
+                usd,
+                quantity,
+                net_sell: netSell,
+                gross_buy: grossBuy,
+                total_friction_bps: mid > 0 && netSell != null && grossBuy != null ? ((grossBuy - netSell) / mid) * 10000 : null,
+                fee_ratio: num(buy?.fee_ratio ?? sell?.fee_ratio),
+                timestamp: buy?.timestamp || sell?.timestamp || null,
+              });
+            }
+            ladders[symbol] = rows;
+          }
+          return json({
+            ok: true,
+            source: 'Robinhood Crypto',
+            account: {
+              status: account.status ?? null,
+              account_type: account.account_type ?? null,
+              buying_power: account.buying_power ?? null,
+              buying_power_currency: account.buying_power_currency ?? null,
+              is_api_tradable: account.is_api_tradable === true,
+              fee_tier_status: account.fee_tier_status ?? null,
+            },
+            holdings: holdings?.results || [],
+            recent_orders: (orders?.results || []).slice(0, 25),
+            pairs: symbols.map((symbol) => ({
+              symbol,
+              api_tradable: pairBy[symbol]?.is_api_tradable === true,
+              asset_increment: pairBy[symbol]?.asset_increment ?? null,
+              quote_increment: pairBy[symbol]?.quote_increment ?? null,
+              min_order_size: pairBy[symbol]?.min_order_size ?? null,
+              max_order_size: pairBy[symbol]?.max_order_size ?? null,
+            })),
+            execution_ladders: ladders,
+            generated_at: new Date().toISOString(),
+          }, 200, 'no-store');
+        } catch (e) {
+          return json({ ok: false, status: e?.status ?? null, error: e?.message ?? 'robinhood_execution_intelligence_failed', detail: e?.detail ?? null }, 502, 'no-store');
+        }
+      }
       if (req.method === 'GET' && p === '/admin/crypto/robinhood/quote-debug') {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         if (!robinhoodConfigured(env)) return json({ ok: false, configured: false }, 503, 'no-store');
@@ -354,6 +432,25 @@ export default {
           return json({ ok: true, configured: true, authenticated: true, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, symbols_verified: ['BTC-USD', 'ETH-USD'], credential }, 200, 'public, max-age=30');
         } catch (e) {
           return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null, credential }, 502, 'public, max-age=10');
+        }
+      }
+      if (p === '/v1/crypto/universe') {
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=60');
+        try {
+          const all = await robinhoodForEnv(env).tradingPairsAll({ limit: 100, maxPages: 20 });
+          const rows = (all.results || []).filter((x) => x?.is_api_tradable === true).map((x) => ({
+            symbol: x.symbol,
+            asset_code: x.asset_code ?? null,
+            quote_code: x.quote_code ?? 'USD',
+            asset_increment: x.asset_increment ?? null,
+            quote_increment: x.quote_increment ?? null,
+            min_order_size: x.min_order_size ?? null,
+            max_order_size: x.max_order_size ?? null,
+            api_tradable: true,
+          })).sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
+          return json({ ok: true, source: 'Robinhood Crypto', count: rows.length, pages: all.pages, symbols: rows }, 200, 'public, max-age=60');
+        } catch (e) {
+          return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_universe_unavailable' }, 502, 'public, max-age=10');
         }
       }
       if (p === '/v1/crypto/markets') {
