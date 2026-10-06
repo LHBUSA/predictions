@@ -174,13 +174,20 @@ function recordMarketHistory(rows){
 
 function renderTape(){
   const tape=$('price-tape'); if(!tape)return;
-  const rows=marketRows.slice(0,12);
-  tape.innerHTML=rows.map(x=>{
+  const rows=marketRows;
+  if(!rows.length){tape.innerHTML='';return;}
+  const items=rows.map(x=>{
     const prior=marketLast.get(x.symbol);
     const delta=prior==null||x.mark==null?null:Number(x.mark)-Number(prior);
     const cls=delta==null?'':delta>0?'up':delta<0?'down':'';
-    return `<a class="cx-tape-item ${cls}" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(x.symbol.replace('-USD',''))}/" target="_blank" rel="noopener"><b>${esc(x.symbol.replace('-USD',''))}</b><span class="num">${usd(x.mark,digits(x.mark))}</span><small>${x.raw_quote_crossed?'crossed raw book':'live'}</small></a>`;
+    const move=delta==null?'LIVE':delta>0?'▲':delta<0?'▼':'•';
+    return `<a class="cx-tape-item ${cls}" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(x.symbol.replace('-USD',''))}/" target="_blank" rel="noopener"><b>${esc(x.symbol.replace('-USD',''))}</b><span class="num">${usd(x.mark,digits(x.mark))}</span><small>${move} · ${x.raw_quote_crossed?'RAW BOOK CROSSED':'ROBINHOOD'}</small></a>`;
   }).join('');
+  const duration=Math.max(44,rows.length*3.2);
+  const phase=(Date.now()/1000)%duration;
+  tape.style.setProperty('--ticker-duration',`${duration}s`);
+  tape.style.setProperty('--ticker-offset',`-${phase.toFixed(2)}s`);
+  tape.innerHTML=`<div class="cx-tape-track" aria-label="${rows.length} live Robinhood crypto prices"><div class="cx-tape-set">${items}</div><div class="cx-tape-set" aria-hidden="true">${items}</div></div>`;
 }
 
 function renderMarketBoard(){
