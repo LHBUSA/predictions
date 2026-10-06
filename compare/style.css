@@ -480,3 +480,48 @@ button:disabled{cursor:default}
   .ticker-market-row{grid-template-columns:minmax(0,1fr) auto auto}
   .ticker-market-row>em{grid-column:2 / -1;justify-self:end}
 }
+
+
+/* ---------- first-class live hierarchy + brand restore (2026-10-06d) ---------- */
+.brand{flex:none;min-width:max-content;overflow:visible}
+.brand-full{display:block!important;width:124px!important;height:31px!important;object-fit:contain!important;object-position:center!important;border-radius:0!important}
+.brand-product{display:flex!important;align-items:flex-end!important;height:31px;line-height:1}
+.brand-product small{margin:0 0 1px!important;letter-spacing:.28em}
+.live{display:grid;gap:8px;padding:10px 10px 11px}
+.live>.sec-head{margin-bottom:0}
+.live-tier{display:grid;gap:6px;min-width:0}
+.live-tier[hidden]{display:none!important}
+.live-tier+.live-tier{padding-top:8px;border-top:1px solid rgba(255,255,255,.055)}
+.live-tier-head{display:flex;align-items:center;gap:10px;padding:0 2px}
+.live-tier-head strong{font:700 10px/1 var(--disp);letter-spacing:.16em;color:var(--paper)}
+.live-tier-head small{font:700 8px/1 var(--mono);letter-spacing:.07em;color:var(--faint)}
+.live-tier-secondary .live-tier-head strong{color:var(--muted)}
+.live-tier-secondary{opacity:.9}
+.live-tier-secondary .live-cards{filter:saturate(.82)}
+.live-cards{min-width:0}
+.live-cards:not(.marquee){display:flex;align-items:flex-start;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;scrollbar-width:none;scroll-snap-type:x proximity}
+.live-cards:not(.marquee)::-webkit-scrollbar{display:none}
+.live-cards:not(.marquee)>.lc{flex:0 0 300px;min-width:300px;max-width:360px}
+.live-cards:not(.marquee)>.lc-market-card{flex-basis:340px;min-width:330px}
+.live-cards:not(.marquee)>.lc-score-only{flex-basis:278px;min-width:270px;max-width:310px}
+.lc-market-card{border-color:rgba(245,166,35,.42);background:linear-gradient(180deg,rgba(36,32,24,.98),rgba(18,17,14,.98));box-shadow:inset 0 1px 0 rgba(245,166,35,.08)}
+.lc-score-only{border-color:var(--line);background:linear-gradient(180deg,rgba(25,24,21,.94),rgba(17,16,14,.94))}
+.no-market-chip{justify-self:start;margin-top:2px;padding:3px 6px;border:1px solid var(--line-2);border-radius:5px;font:700 8px/1 var(--mono);letter-spacing:.09em;color:var(--faint);background:rgba(255,255,255,.025)}
+.live-player-photos{display:flex;flex:none;margin-right:1px}
+.live-player-photo{width:26px;height:26px;border-radius:50%;overflow:hidden;border:1px solid var(--line-2);background:var(--ink);display:grid;place-items:center}
+.live-player-photo+ .live-player-photo{margin-left:-8px}
+.live-player-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 22%}
+.live-player-photo i{font:700 8px/1 var(--mono);font-style:normal;color:var(--muted)}
+.ticker-tennis-row{grid-template-columns:auto minmax(0,1fr) auto!important;gap:7px!important;min-height:29px!important}
+.ticker-tennis-match.is-doubles .live-player-photo{width:23px;height:23px}
+.ticker-tennis-match.is-doubles .ticker-tennis-row b{font-size:9.5px;line-height:1.16}
+.lc-market-card .ticker-market-grid{margin-top:2px}
+.lc-market-card .ticker-market-row{grid-template-columns:minmax(70px,1fr) repeat(3,max-content)}
+.lc-market-card .ticker-venue{font-size:9px;padding:3px 5px}
+.lc-market-card .ticker-edge{color:var(--up);padding-top:1px}
+@media (max-width:720px){
+  .brand-full{width:108px!important;height:27px!important}
+  .brand-product{height:27px}
+  .live-cards:not(.marquee)>.lc,.live-cards:not(.marquee)>.lc-market-card{flex-basis:294px;min-width:294px;max-width:294px}
+  .live-cards:not(.marquee)>.lc-score-only{flex-basis:260px;min-width:260px;max-width:260px}
+}

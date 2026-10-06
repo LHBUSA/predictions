@@ -12,14 +12,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://a.espncdn.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261006g3">
+  <link rel="stylesheet" href="/style.css?v=20261006g4">
 </head>
 <body>
 <header class="top">
   <div class="wrap top-in">
     <a class="brand" href="/" aria-label="PropBetEdge Compare home">
-      <img src="https://propbetedge.ai/logo/pbe-mark-80.png" alt="" width="67" height="26" decoding="async" fetchpriority="high">
-      <span><b>PROP BET EDGE</b><small>COMPARE</small></span>
+      <img class="brand-full" src="https://propbetedge.ai/logo/pbe-full-400.png" alt="PropBetEdge" width="124" height="31" decoding="async" fetchpriority="high">
+      <span class="brand-product"><small>COMPARE</small></span>
     </a>
     <span class="venues" aria-label="Venues compared"><img src="/assets/kalshi.png" alt="Kalshi" width="18" height="18"><i>↔</i><img src="/assets/polymarket.png" alt="Polymarket" width="18" height="18"><i>+</i><b>PBE</b></span>
     <nav class="top-nav" aria-label="PropBetEdge">
@@ -58,8 +58,15 @@
   </section>
 
   <section id="live" class="live" hidden aria-label="Live now">
-    <div class="sec-head"><h2><span class="pulse"></span>LIVE</h2><small id="live-meta">SCORES & MARKET MOVES</small></div>
-    <div id="live-cards" class="live-cards"></div>
+    <div class="sec-head"><h2><span class="pulse"></span>LIVE NOW</h2><small id="live-meta">SCORES & MARKET MOVES</small></div>
+    <div id="live-market-block" class="live-tier" hidden>
+      <div class="live-tier-head"><strong>LIVE MARKETS</strong><small id="live-market-meta"></small></div>
+      <div id="live-market-cards" class="live-cards"></div>
+    </div>
+    <div id="live-score-block" class="live-tier live-tier-secondary" hidden>
+      <div class="live-tier-head"><strong>LIVE SCORES</strong><small id="live-score-meta"></small></div>
+      <div id="live-score-cards" class="live-cards"></div>
+    </div>
   </section>
 
   <section id="board" class="board" hidden aria-label="Markets"></section>
@@ -85,6 +92,6 @@
   </nav>
   <p>Venue numbers are PropBetEdge timestamped observations of public venue reads, not live order books. A spread is shown only between contracts whose settlement rules were approved as comparable. Kalshi and Polymarket marks identify the venues; PropBetEdge is not affiliated with either. Nothing here is investment advice.</p>
 </footer>
-<script type="module" src="/app.js?v=20261006g3"></script>
+<script type="module" src="/app.js?v=20261006g4"></script>
 </body>
 </html>
