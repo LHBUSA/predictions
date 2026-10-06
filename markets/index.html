@@ -1081,8 +1081,15 @@ async function focusMarket(symbol,kind='stock'){
     panel.innerHTML=
       '<div class="ft-row"><span>RSI 14</span><b>'+fmt(d?.rsi?.rsi14,1)+' · '+(d?.rsi?.signal14||'—')+'</b></div>'+
       '<div class="ft-row"><span>MACD</span><b>'+fmt(d?.macd?.histogram,3)+' · '+(d?.macd?.bias||'—')+'</b></div>'+
-      '<div class="ft-row"><span>EMA 50</span><b>
+      '<div class="ft-row"><span>EMA 50</span><b>$'+fmt(d?.emas?.ema50,2)+' · '+(d?.emas?.trend==='above50'?'above':'below')+'</b></div>'+
+      '<div class="ft-row"><span>Volume</span><b>'+fmt(d?.volume?.ratio,2)+'× · '+(d?.volume?.signal||'—')+'</b></div>'+
+      '<div class="ft-row"><span>52W range</span><b>$'+fmt(d?.range?.low52w,2)+'–$'+fmt(d?.range?.high52w,2)+'</b></div>';
+  }catch{
+    panel.innerHTML='<div class="ft-row"><span>Technicals</span><b>Unavailable</b></div>';
+  }
+}
 
+let currentMood = 'neutral';
 function applyMood(mood) {
   if (!mood) return;
   const app = document.getElementById('app') || document.querySelector('.app');
