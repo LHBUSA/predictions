@@ -34,23 +34,35 @@ function renderNowcast(n,rh){
   const spot=btc?.mid??fm.btc_spot_usd??null;
   $('target').textContent=usd(target,2);
   $('spot').textContent=usd(spot,2);
+  $('hero-spot').textContent=usd(spot,2);
   if(spot!=null&&target>0){
     const d=spot-target,p=d/target*100;
     $('distance').textContent=`${d>=0?'+':''}${usd(d,2)}`;
     $('distance-sub').textContent=`${p>=0?'+':''}${p.toFixed(3)}% from reference`;
   }
   $('pbe-up').textContent=f?pct(f.p_up):'—';
+  $('hero-pbe-up').textContent=f?pct(f.p_up):'—';
+  $('hero-meter').style.width=f?`${Math.max(0,Math.min(100,Number(f.p_up)*100))}%`:'0%';
   $('model-meta').textContent=f?`${f.model_id}@${f.model_version} · ${ago(f.data_cutoff_at)}`:'awaiting forecast';
   const k=n.markets?.kalshi;
   const pm=n.markets?.polymarket;
   $('kalshi-up').textContent=k?.mid==null?'—':pct(k.mid);
+  $('hero-kalshi').textContent=k?.mid==null?'—':pct(k.mid);
   $('kalshi-meta').textContent=k?`${k.market_status||'market'} · ${ago(k.captured_at)}`:'same contract benchmark';
   $('mkt-kalshi').textContent=k?.mid==null?'—':pct(k.mid);
   $('mkt-poly').textContent=pm?.mid==null?'—':pct(pm.mid);
   if(f&&k?.mid!=null){
     const gap=(Number(f.p_up)-Number(k.mid))*100;
     $('divergence').textContent=`${gap>=0?'+':''}${gap.toFixed(1)} pts`;
-  } else $('divergence').textContent='—';
+    $('chart-gap').textContent=`${gap>=0?'+':''}${gap.toFixed(1)} pts`;
+    $('hero-signal-copy').textContent=Math.abs(gap)>=10?`PBE differs from Kalshi by ${Math.abs(gap).toFixed(1)} pts`:gap>=0?'PBE is above the market':'PBE is below the market';
+  } else {
+    $('divergence').textContent='—';
+    $('chart-gap').textContent='—';
+    $('hero-signal-copy').textContent='Waiting for market benchmark';
+  }
+  $('chart-pbe').textContent=f?pct(f.p_up):'—';
+  $('chart-kalshi').textContent=k?.mid==null?'—':pct(k.mid);
   $('window-times').textContent=`${new Date(n.window.open_at).toISOString().slice(11,16)}–${new Date(n.window.close_at).toISOString().slice(11,16)} UTC`;
   const age=f?Date.now()-Date.parse(f.data_cutoff_at):Infinity;
   const fr=$('freshness'); fr.textContent=age<120000?'current':age<300000?'delayed':'stale'; fr.className=`fresh ${age<120000?'fresh-current':age<300000?'fresh-delayed':'fresh-stale'}`;
@@ -68,16 +80,54 @@ function renderNowcast(n,rh){
 }
 
 function renderChart(n){
-  const svg=$('prob-chart'); const W=900,H=330,P=44;
+  const svg=$('prob-chart'); const tip=$('chart-tooltip');
+  const W=900,H=360,PL=50,PR=22,PT=38,PB=42;
   const open=Date.parse(n.window.open_at),close=Date.parse(n.window.close_at);
-  const x=t=>P+(Date.parse(t)-open)/(close-open)*(W-2*P);
-  const y=v=>P+(1-Number(v))*(H-2*P);
-  const path=(rows,key)=>rows.filter(r=>r[key]!=null).map((r,i)=>`${i?'L':'M'}${x(r.t).toFixed(1)},${y(r[key]).toFixed(1)}`).join(' ');
-  const grid=[.25,.5,.75].map(v=>`<line x1="${P}" y1="${y(v)}" x2="${W-P}" y2="${y(v)}" class="cx-grid"/><text x="8" y="${y(v)+4}" class="cx-axis">${Math.round(v*100)}%</text>`).join('');
-  const p=path(n.forecast_path||[],'p_up');
-  const k=path(n.venue_path?.kalshi||[],'mid');
-  const m=path(n.venue_path?.polymarket||[],'mid');
-  svg.innerHTML=`${grid}<line x1="${P}" y1="${H-P}" x2="${W-P}" y2="${H-P}" class="cx-axis-line"/>${p?`<path d="${p}" class="cx-path pbe"/>`:''}${k?`<path d="${k}" class="cx-path kalshi"/>`:''}${m?`<path d="${m}" class="cx-path poly"/>`:''}`;
+  const x=t=>PL+(Date.parse(t)-open)/(close-open)*(W-PL-PR);
+  const y=v=>PT+(1-Number(v))*(H-PT-PB);
+  const rowsP=(n.forecast_path||[]).filter(r=>r.p_up!=null);
+  const rowsK=(n.venue_path?.kalshi||[]).filter(r=>r.mid!=null);
+  const rowsM=(n.venue_path?.polymarket||[]).filter(r=>r.mid!=null);
+  const path=(rows,key)=>rows.map((r,i)=>`${i?'L':'M'}${x(r.t).toFixed(1)},${y(r[key]).toFixed(1)}`).join(' ');
+  const p=path(rowsP,'p_up'),k=path(rowsK,'mid'),m=path(rowsM,'mid');
+  const pArea=rowsP.length?`${p} L ${x(rowsP.at(-1).t).toFixed(1)},${H-PB} L ${x(rowsP[0].t).toFixed(1)},${H-PB} Z`:'';
+  const grid=[0,.25,.5,.75,1].map(v=>`<line x1="${PL}" y1="${y(v)}" x2="${W-PR}" y2="${y(v)}" class="cx-grid"/><text x="8" y="${y(v)+4}" class="cx-axis">${Math.round(v*100)}%</text>`).join('');
+  const ticks=[0,.25,.5,.75,1].map(q=>{const t=open+(close-open)*q;return `<text x="${PL+(W-PL-PR)*q}" y="${H-13}" text-anchor="${q===0?'start':q===1?'end':'middle'}" class="cx-axis">${new Date(t).toISOString().slice(11,16)}</text>`;}).join('');
+  const nowX=Math.max(PL,Math.min(W-PR,x(new Date().toISOString())));
+  const latestP=rowsP.at(-1), latestK=rowsK.at(-1), latestM=rowsM.at(-1);
+  const dots=[
+    latestP?`<circle cx="${x(latestP.t)}" cy="${y(latestP.p_up)}" r="5" class="cx-dot pbe"/>`:'',
+    latestK?`<circle cx="${x(latestK.t)}" cy="${y(latestK.mid)}" r="4" class="cx-dot kalshi"/>`:'',
+    latestM?`<circle cx="${x(latestM.t)}" cy="${y(latestM.mid)}" r="4" class="cx-dot poly"/>`:''
+  ].join('');
+  svg.innerHTML=`<defs>
+    <linearGradient id="pbeArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#69a9ff" stop-opacity=".24"/><stop offset="100%" stop-color="#69a9ff" stop-opacity="0"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  ${grid}${ticks}
+  <line x1="${nowX}" y1="${PT}" x2="${nowX}" y2="${H-PB}" class="cx-now-line"/><text x="${Math.min(nowX+6,W-70)}" y="${PT+12}" class="cx-now-label">NOW</text>
+  ${pArea?`<path d="${pArea}" class="cx-area"/>`:''}
+  ${p?`<path d="${p}" class="cx-path pbe" filter="url(#glow)"/>`:''}
+  ${k?`<path d="${k}" class="cx-path kalshi"/>`:''}
+  ${m?`<path d="${m}" class="cx-path poly"/>`:''}
+  ${dots}
+  <rect x="${PL}" y="${PT}" width="${W-PL-PR}" height="${H-PT-PB}" fill="transparent" class="cx-hit"/>`;
+
+  const allTimes=[...rowsP.map(r=>Date.parse(r.t)),...rowsK.map(r=>Date.parse(r.t)),...rowsM.map(r=>Date.parse(r.t))].sort((a,b)=>a-b);
+  const nearest=(rows,key,t)=>rows.reduce((best,r)=>Math.abs(Date.parse(r.t)-t)<Math.abs(Date.parse(best?.t??0)-t)?r:best,null);
+  svg.onmousemove=(ev)=>{
+    if(!allTimes.length)return;
+    const rect=svg.getBoundingClientRect();
+    const px=(ev.clientX-rect.left)/rect.width*W;
+    const t=open+(px-PL)/(W-PL-PR)*(close-open);
+    const rp=nearest(rowsP,'p_up',t), rk=nearest(rowsK,'mid',t), rm=nearest(rowsM,'mid',t);
+    const tt=Math.max(open,Math.min(close,t));
+    tip.hidden=false;
+    tip.style.left=`${Math.max(8,Math.min(rect.width-180,ev.clientX-rect.left+12))}px`;
+    tip.style.top=`${Math.max(8,ev.clientY-rect.top-72)}px`;
+    tip.innerHTML=`<b>${new Date(tt).toISOString().slice(11,19)} UTC</b><span>PBE ${rp?pct(rp.p_up):'—'}</span><span>Kalshi ${rk?pct(rk.mid):'—'}</span><span>Polymarket ${rm?pct(rm.mid):'—'}</span>`;
+  };
+  svg.onmouseleave=()=>{tip.hidden=true;};
 }
 
 function renderRecord(r){
