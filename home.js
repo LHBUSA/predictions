@@ -291,6 +291,44 @@ function cryptoMarkets(c) {
     </article>`;
   }).join('');
 }
+function cryptoExecutionLab(ladder, universe) {
+  const ladders = $('crypto-ladders');
+  const count = $('crypto-universe-count');
+  const summary = $('crypto-universe-summary');
+  const chips = $('crypto-universe-chips');
+  if (!ladders || !count || !summary || !chips) return;
+
+  const fmt = (n, symbol) => {
+    if (n == null) return '—';
+    const d = symbol === 'BTC-USD' || symbol === 'ETH-USD' ? 2 : 4;
+    return Number(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+  };
+  const names = { 'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum', 'SOL-USD': 'Solana' };
+
+  if (ladder?.ok && ladder.ladders) {
+    const order = ['BTC-USD','ETH-USD','SOL-USD'];
+    ladders.innerHTML = order.map((symbol) => {
+      const rows = ladder.ladders[symbol] || [];
+      return `<section class="crypto-ladder-card"><div class="crypto-ladder-title"><b>${esc(symbol.replace('-USD',''))}</b><span>${esc(names[symbol] || symbol)}</span></div>
+        <div class="tbl-wrap"><table class="tbl crypto-ladder-table"><thead><tr><th>USD size</th><th>Net sell</th><th>Gross buy</th><th>Friction</th></tr></thead><tbody>
+        ${rows.length ? rows.map((r) => `<tr><td class="num">${Number(r.usd).toFixed(0)}</td><td class="num">${fmt(r.net_sell, symbol)}</td><td class="num">${fmt(r.gross_buy, symbol)}</td><td class="num">${r.total_friction_bps == null ? '—' : Number(r.total_friction_bps).toFixed(2) + ' bps'}</td></tr>`).join('') : '<tr><td colspan="4">No estimate available</td></tr>'}
+        </tbody></table></div></section>`;
+    }).join('');
+  } else {
+    ladders.innerHTML = '<div class="empty-honest">Execution ladder temporarily unavailable.</div>';
+  }
+
+  if (universe?.ok && Array.isArray(universe.symbols)) {
+    count.textContent = `${universe.count} API-tradable pairs`;
+    summary.textContent = `(${universe.count})`;
+    chips.innerHTML = universe.symbols.map((x) => `<span class="crypto-universe-chip">${esc(x.symbol)}</span>`).join('');
+  } else {
+    count.textContent = 'Universe unavailable';
+    summary.textContent = '';
+    chips.innerHTML = '<span class="note">Robinhood universe temporarily unavailable.</span>';
+  }
+}
+
 function calendar(c) {
   const rows = c.events.slice(0, 14);
   $('cal').innerHTML = rows.length ? rows.map((e) => `<tr><td class="num">${new Date(e.close_time).toISOString().slice(0, 16).replace('T', ' ')} UTC</td><td><a href="${esc(e.url)}">${esc(e.title)}</a></td><td>${esc(e.category_label)}</td><td>${badge(e.state)}</td><td class="num">${e.outcomes_total}</td></tr>`).join('') : '<tr><td colspan="5" class="note">No tracked event closes in the next three weeks.</td></tr>';
@@ -318,7 +356,7 @@ function fail(where, e) { console.error(where, e); }
 // network at all; on return, everything due is fetched immediately. One timer, one visibility listener, at most one
 // in-flight request per dataset; a dataset re-renders only when its payload changed (no tape restart, no CLS).
 // The desk refreshes only for members; a failed read keeps what is on screen (never a downgrade, never a free payload).
-const LIVE_MS = { summary: 60e3, desk: 60e3, crypto: 15e3, calendar: 120e3, track: 300e3, models: 300e3 };
+const LIVE_MS = { summary: 60e3, desk: 60e3, crypto: 15e3, cryptoLab: 60e3, calendar: 120e3, track: 300e3, models: 300e3 };
 const live = { last: {}, inflight: new Set(), sig: {}, requests: 0, timer: null, listener: false };
 async function pull(name) {
   if (document.hidden || live.inflight.has(name)) return;
@@ -343,6 +381,11 @@ async function pull(name) {
       return;
     }
     const path = { summary: 'summary', crypto: 'crypto/markets', calendar: 'calendar', track: 'track-record', models: 'models' }[name];
+    if (name === 'cryptoLab') {
+      const [ladder, universe] = await Promise.allSettled([getJSON('crypto/execution-ladder'), getJSON('crypto/universe')]);
+      cryptoExecutionLab(ladder.status === 'fulfilled' ? ladder.value : null, universe.status === 'fulfilled' ? universe.value : null);
+      return;
+    }
     const r = await fetch(`${API}/${path}`, { cache: 'no-store' });
     if (!r.ok) return;
     const body = await r.text();
@@ -380,15 +423,16 @@ async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
   if (window.PBE_MEMBERSHIP) onMembership(window.PBE_MEMBERSHIP); // access.js may have resolved first
-  const [s, c, t, m, pv, cr] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk'), getJSON('crypto/markets')]);
+  const [s, c, t, m, pv, cr, cl, cu] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk'), getJSON('crypto/markets'), getJSON('crypto/execution-ladder'), getJSON('crypto/universe')]);
   if (pv.status === 'fulfilled' && !member) { live.sig.preview = JSON.stringify(pv.value); renderPreview(pv.value); }
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);
   if (m.status === 'fulfilled') registry(m.value);
   if (cr.status === 'fulfilled') cryptoMarkets(cr.value); else cryptoMarkets({ ok: false });
+  cryptoExecutionLab(cl.status === 'fulfilled' ? cl.value : null, cu.status === 'fulfilled' ? cu.value : null);
   if (s.status === 'fulfilled') live.scored = s.value.resolved_scored;
   const t0 = Date.now();
-  startLive({ summary: t0, desk: live.last.desk || t0, crypto: t0, calendar: t0, track: t0, models: t0 });
+  startLive({ summary: t0, desk: live.last.desk || t0, crypto: t0, cryptoLab: t0, calendar: t0, track: t0, models: t0 });
 }
 main();
