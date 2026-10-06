@@ -38,10 +38,11 @@ export function siteFooter() {
 <div class="nf-grid">
 ${col('Predictions', NET.footer_product)}
 <div class="nf-col nf-sports"><strong>PropBetEdge Sports</strong><div class="nf-sports-grid">${NET.sports.map(([label, href]) => `<a href="${href}" ${ext}>${e(label)}</a>`).join('')}</div></div>
+${col('All Access', NET.all_access_products)}
 ${col('Network', NET.network)}
 <div class="nf-col"><strong>Trust</strong>${NET.trust.map(([label, href]) => `<a href="${href}">${e(label)}</a>`).join('')}<span class="nf-note">${e(NET.disclaimer)}</span></div>
 </div>
-<p class="nf-line"><a href="${NET.all_access.url}" data-pbe-placement="predictions_footer_all_access"><strong>PropBetEdge All Access</strong></a> — 10 sports + PropBetEdge Predictions for $29/month.</p>
+<p class="nf-line"><a href="${NET.all_access.url}" data-pbe-placement="predictions_footer_all_access"><strong>PropBetEdge All Access</strong></a> — 10 sports + Predictions + Compare for $29/month.</p>
 <p class="nf-fine"><a href="${NET.brand.url}" ${ext}>PropBetEdge</a> · Predictions is part of the PropBetEdge intelligence network.</p>
 </div></footer>`;
 }
