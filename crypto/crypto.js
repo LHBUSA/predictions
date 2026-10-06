@@ -3,10 +3,16 @@ const $=(id)=>document.getElementById(id);
 const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct=(v)=>v==null?'—':`${(Number(v)*100).toFixed(1)}%`;
 const usd=(v,d=2)=>v==null?'—':Number(v).toLocaleString(undefined,{style:'currency',currency:'USD',minimumFractionDigits:d,maximumFractionDigits:d});
-const ago=(iso)=>{if(!iso)return'—';const m=Math.max(0,Math.round((Date.now()-Date.parse(iso))/60000));return m<1?'just now':m<60?`${m} min ago`:`${Math.round(m/60)} h ago`;};
+const ago=(iso)=>{if(!iso)return'—';const sec=Math.max(0,Math.round((Date.now()-Date.parse(iso))/1000));return sec<10?'just now':sec<60?`${sec}s ago`:sec<3600?`${Math.round(sec/60)}m ago`:`${Math.round(sec/3600)}h ago`;};
+const digits=(v)=>{const n=Math.abs(Number(v));return n>=1000?2:n>=1?4:n>=.01?5:8};
 async function get(p){const r=await fetch(`${API}/${p}`,{cache:'no-store'});if(!r.ok)throw new Error(`${p} ${r.status}`);return r.json();}
 
 let closeAt=null;
+let marketRows=[];
+let marketQuery='';
+let marketLast=new Map();
+const marketHistory=new Map();
+
 function tickCountdown(){
   if(!closeAt){$('countdown').textContent='--:--';return;}
   const s=Math.max(0,Math.floor((Date.parse(closeAt)-Date.now())/1000));
@@ -14,6 +20,7 @@ function tickCountdown(){
 }
 
 function featureMap(f){return f&&typeof f==='object'?f:{};}
+
 function renderNowcast(n,rh){
   const live=$('crypto-live');
   if(!n?.ok||!n.window){live.querySelector('span').textContent='Nowcast unavailable';return;}
@@ -28,7 +35,7 @@ function renderNowcast(n,rh){
   $('target').textContent=usd(target,2);
   $('spot').textContent=usd(spot,2);
   if(spot!=null&&target>0){
-    const d=spot-target, p=d/target*100;
+    const d=spot-target,p=d/target*100;
     $('distance').textContent=`${d>=0?'+':''}${usd(d,2)}`;
     $('distance-sub').textContent=`${p>=0?'+':''}${p.toFixed(3)}% from reference`;
   }
@@ -92,6 +99,68 @@ function renderRobinhood(rh){
   <div class="cx-rh-meta"><span>fee ${fee}</span><span>${btc.raw_quote_crossed?'raw book crossed':'raw book clean'}</span><span>${ago(btc.timestamp)}</span></div>`;
 }
 
+function spark(points){
+  if(!points||points.length<2)return '<svg viewBox="0 0 90 26" class="cx-spark"><path d="M2 13 L88 13" class="flat"/></svg>';
+  const vals=points.map(x=>x.v),min=Math.min(...vals),max=Math.max(...vals),span=Math.max(1e-12,max-min);
+  const d=points.map((p,i)=>`${i?'L':'M'}${(2+i*(86/(points.length-1))).toFixed(1)} ${(23-(p.v-min)/span*20).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 90 26" class="cx-spark"><path d="${d}"/></svg>`;
+}
+
+function recordMarketHistory(rows){
+  const now=Date.now();
+  for(const x of rows){
+    if(x.mark==null)continue;
+    const arr=marketHistory.get(x.symbol)||[];
+    arr.push({t:now,v:Number(x.mark)});
+    while(arr.length>36)arr.shift();
+    marketHistory.set(x.symbol,arr);
+  }
+}
+
+function renderTape(){
+  const tape=$('price-tape'); if(!tape)return;
+  const rows=marketRows.slice(0,12);
+  tape.innerHTML=rows.map(x=>{
+    const prior=marketLast.get(x.symbol);
+    const delta=prior==null||x.mark==null?null:Number(x.mark)-Number(prior);
+    const cls=delta==null?'':delta>0?'up':delta<0?'down':'';
+    return `<a class="cx-tape-item ${cls}" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(x.symbol.replace('-USD',''))}/" target="_blank" rel="noopener"><b>${esc(x.symbol.replace('-USD',''))}</b><span class="num">${usd(x.mark,digits(x.mark))}</span><small>${x.raw_quote_crossed?'crossed raw book':'live'}</small></a>`;
+  }).join('');
+}
+
+function renderMarketBoard(){
+  const q=marketQuery.trim().toUpperCase();
+  const rows=marketRows.filter(x=>!q||x.symbol.includes(q));
+  $('board-count').textContent=`${rows.length} shown · ${marketRows.length} live`;
+  $('market-board').innerHTML=rows.map(x=>{
+    const asset=x.symbol.replace('-USD','');
+    const hist=marketHistory.get(x.symbol)||[];
+    const first=hist[0]?.v,last=hist.at(-1)?.v;
+    const move=first&&last?((last-first)/first*100):null;
+    const prior=marketLast.get(x.symbol);
+    const tick=prior==null||x.mark==null?0:Number(x.mark)-Number(prior);
+    const tickClass=tick>0?'tick-up':tick<0?'tick-down':'';
+    return `<article class="cx-coin ${tickClass}">
+      <div class="cx-coin-id"><span class="cx-coin-badge">${esc(asset.slice(0,4))}</span><div><b>${esc(asset)}</b><small>${esc(x.symbol)}</small></div></div>
+      <div class="cx-coin-price"><strong class="num">${usd(x.mark,digits(x.mark))}</strong><small class="${move==null?'':move>=0?'up':'down'}">${move==null?'collecting…':`${move>=0?'+':''}${move.toFixed(3)}% session`}</small></div>
+      <div class="cx-coin-spark">${spark(hist)}</div>
+      <div class="cx-coin-book"><span>Bid <b class="num">${usd(x.raw_bid,digits(x.raw_bid))}</b></span><span>Ask <b class="num">${usd(x.raw_ask,digits(x.raw_ask))}</b></span></div>
+      <div class="cx-coin-state">${x.raw_quote_crossed?'<span class="rail-flag">raw crossed</span>':'<span class="rail-good">book clean</span>'}<small>${ago(x.timestamp)}</small></div>
+      <a class="cx-coin-trade" href="https://robinhood.com/us/en/crypto/${encodeURIComponent(asset)}/" target="_blank" rel="noopener noreferrer">Trade ↗</a>
+    </article>`;
+  }).join('')||'<div class="empty-honest">No live Robinhood pairs match that search.</div>';
+}
+
+function renderLivePrices(p){
+  if(!p?.ok||!Array.isArray(p.symbols))return;
+  for(const x of marketRows) if(x.mark!=null) marketLast.set(x.symbol,x.mark);
+  marketRows=p.symbols;
+  recordMarketHistory(marketRows);
+  renderTape();
+  renderMarketBoard();
+  $('price-updated').textContent=`updated ${ago(p.generated_at)} · ${p.count} live pairs`;
+}
+
 function renderLadder(l){
   const el=$('ladders');
   if(!l?.ok){el.innerHTML='<div class="empty-honest">Execution ladder unavailable.</div>';return;}
@@ -105,11 +174,21 @@ function renderUniverse(u){
   $('universe').innerHTML=`<div class="cx-universe-chips">${u.symbols.map(x=>`<span>${esc(x.symbol)}</span>`).join('')}</div>`;
 }
 
-async function load(){
-  const [n,rh,l,u]=await Promise.allSettled([get('crypto/nowcast'),get('crypto/markets'),get('crypto/execution-ladder'),get('crypto/universe')]);
-  const nv=n.status==='fulfilled'?n.value:null, rv=rh.status==='fulfilled'?rh.value:null;
-  renderNowcast(nv,rv); renderRobinhood(rv); renderLadder(l.status==='fulfilled'?l.value:null); renderUniverse(u.status==='fulfilled'?u.value:null);
+async function loadFast(){
+  try{renderLivePrices(await get('crypto/live-prices'));}catch(e){console.error('live prices',e);}
 }
-load();
-setInterval(()=>{if(!document.hidden)load();},15000);
+async function loadCore(){
+  const [n,rh]=await Promise.allSettled([get('crypto/nowcast'),get('crypto/markets')]);
+  const nv=n.status==='fulfilled'?n.value:null,rv=rh.status==='fulfilled'?rh.value:null;
+  renderNowcast(nv,rv);renderRobinhood(rv);
+}
+async function loadSlow(){
+  const [l,u]=await Promise.allSettled([get('crypto/execution-ladder'),get('crypto/universe')]);
+  renderLadder(l.status==='fulfilled'?l.value:null);renderUniverse(u.status==='fulfilled'?u.value:null);
+}
+$('coin-search')?.addEventListener('input',e=>{marketQuery=e.target.value;renderMarketBoard();});
+loadFast();loadCore();loadSlow();
+setInterval(()=>{if(!document.hidden)loadFast();},5000);
+setInterval(()=>{if(!document.hidden)loadCore();},15000);
+setInterval(()=>{if(!document.hidden)loadSlow();},60000);
 setInterval(tickCountdown,1000);
