@@ -82,6 +82,16 @@
 
   <div class="tape" aria-label="Live probability tape" hidden><div class="tape-track" id="tape"></div></div>
 
+  <section class="section crypto-rail" id="crypto-markets"><div class="wrap">
+    <div class="section-head"><div><span class="overline">LIVE CRYPTO MARKET RAIL</span><h2>Robinhood market data, normalized for Predictions</h2><p>BTC, ETH and SOL market state from the authenticated Robinhood feed. Crossed top-of-book snapshots are automatically rejected and replaced with the estimated-price lane when available.</p></div><div class="rail-status" id="crypto-rail-status">Connecting…</div></div>
+    <div class="crypto-grid" id="crypto-grid" aria-live="polite">
+      <div class="card crypto-card skel" style="height:132px"></div>
+      <div class="card crypto-card skel" style="height:132px"></div>
+      <div class="card crypto-card skel" style="height:132px"></div>
+    </div>
+    <p class="note crypto-note">Market data only. PropBetEdge models remain independent of Robinhood prices; Robinhood is an external execution/market-data venue, not a model input.</p>
+  </div></section>
+
   <section class="section" hidden><div class="wrap">
     <div class="section-head"><div><span class="overline">FEATURED</span><h2>Largest model-vs-market divergences</h2><p>Research-stage models. A divergence is a disagreement to inspect, not a guarantee.</p></div></div>
     <div class="featured" id="featured"></div>
