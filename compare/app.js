@@ -390,23 +390,23 @@ function liveCard(e) {
   const markets = liveMarketRows(e);
   if (e.sport === 'tennis') {
     const doubles = String(s?.title || e.title || '').includes(' / ');
-    return `<a class="lc ticker-game lc-market-card lc-tennis-card${doubles ? ' is-doubles' : ''}" href="${esc(s?.pbecast_url || s?.href || '#')}" aria-label="Open live PBEcast for ${esc(s?.title || e.title)}">
+    return `<button type="button" class="lc ticker-game lc-market-card lc-tennis-card${doubles ? ' is-doubles' : ''}" data-open="${esc(e.key)}">
       <span class="lc-h"><span class="sport">TENNIS</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
       ${tennisTickerBody(s?.title || e.title, s?.summary, s?.meta)}
       ${markets}
-      <small class="ticker-edge">${esc(insight)} · OPEN PBECAST →</small>
-    </a>`;
+      <small class="ticker-edge">${esc(insight)}</small>
+    </button>`;
   }
   const lines = e.contracts.slice(0, 2).map((c) => {
     const side = sideFor(e, c);
     return `<span class="ticker-team">${avatar(e, c, 'sm')}<b>${esc(side?.abbr || c.label)}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
   }).join('');
-  return `<a class="lc ticker-game lc-market-card" href="${esc(s?.pbecast_url || s?.href || '#')}" aria-label="Open live PBEcast for ${esc(s?.title || e.title)}">
+  return `<button type="button" class="lc ticker-game lc-market-card" data-open="${esc(e.key)}">
     <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
     <span class="ticker-score">${lines}</span>
     ${markets}
-    <small class="ticker-edge">${esc(insight)} · OPEN PBECAST →</small>
-  </a>`;
+    <small class="ticker-edge">${esc(insight)}</small>
+  </button>`;
 }
 
 function plainLiveCard(x) {
@@ -416,10 +416,10 @@ function plainLiveCard(x) {
   if (tennis) body = tennisTickerBody(x.title, x.summary, x.meta);
   else if (x.score?.away) body = plainScoreTickerBody(x);
   else body = `<span class="ticker-title">${esc(x.title)}</span>`;
-  return `<a class="lc lc-plain ticker-game lc-score-only${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}" aria-label="Open live PBEcast for ${esc(x.title || x.sport)}">
+  return `<a class="lc lc-plain ticker-game lc-score-only${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     ${body}
-    <span class="score-only-foot"><small class="no-market-chip">NO MARKETS</small><small class="pbecast-link">OPEN PBECAST →</small></span></a>`;
+    <small class="no-market-chip">NO MARKETS</small></a>`;
 }
 
 function renderLive() {
