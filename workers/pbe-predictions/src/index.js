@@ -529,6 +529,41 @@ export default {
           return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_universe_unavailable' }, 502, 'public, max-age=10');
         }
       }
+      if (p === '/v1/crypto/live-prices') {
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=5');
+        const rh = robinhoodForEnv(env);
+        const preferred = ['BTC-USD','ETH-USD','SOL-USD','DOGE-USD','XRP-USD','ADA-USD','LINK-USD','AVAX-USD','LTC-USD','BCH-USD','SHIB-USD','UNI-USD','AAVE-USD','ETC-USD','XLM-USD','DOT-USD','ARB-USD','OP-USD','PEPE-USD','BONK-USD'];
+        try {
+          const all = await rh.tradingPairsAll({ limit: 100, maxPages: 20 });
+          const tradable = (all.results || []).filter((x) => x?.is_api_tradable === true);
+          const by = Object.fromEntries(tradable.map((x) => [x.symbol, x]));
+          const selected = preferred.filter((s) => by[s]).concat(tradable.map((x) => x.symbol).filter((s) => !preferred.includes(s))).slice(0, 24);
+          const quotes = selected.length ? await rh.bestBidAsk(selected) : { results: [] };
+          const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+          const rows = (quotes?.results || []).map((q) => {
+            const bid = num(q.bid); const ask = num(q.ask);
+            const crossed = bid != null && ask != null && bid > ask;
+            const mark = bid != null && ask != null ? (bid + ask) / 2 : (bid ?? ask);
+            const pair = by[q.symbol] || {};
+            return {
+              symbol: q.symbol,
+              timestamp: q.timestamp ?? null,
+              mark,
+              raw_bid: bid,
+              raw_ask: ask,
+              raw_quote_crossed: crossed,
+              api_tradable: pair.is_api_tradable === true,
+              asset_increment: pair.asset_increment ?? null,
+              quote_increment: pair.quote_increment ?? null,
+              min_order_size: pair.min_order_size ?? null,
+              max_order_size: pair.max_order_size ?? null,
+            };
+          });
+          return json({ ok: true, source: 'Robinhood Crypto', generated_at: new Date().toISOString(), count: rows.length, symbols: rows }, 200, 'public, max-age=3');
+        } catch (e) {
+          return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_live_prices_unavailable' }, 502, 'public, max-age=3');
+        }
+      }
       if (p === '/v1/crypto/execution-ladder') {
         if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=30');
         const rh = robinhoodForEnv(env);
@@ -545,20 +580,22 @@ export default {
             const rawMid = rawBid != null && rawAsk != null ? (rawBid + rawAsk) / 2 : null;
             const rows = [];
             if (rawMid > 0) {
-              for (const usd of ladderUsd) {
-                const quantity = (usd / rawMid).toPrecision(12);
-                const est = await rh.estimatedPrice(symbol, { side: 'both', quantity });
-                const er = est?.results || [];
-                const sell = er.find((x) => x?.side === 'bid') || null;
-                const buy = er.find((x) => x?.side === 'ask') || null;
+              const quantities = ladderUsd.map((usd) => (usd / rawMid).toPrecision(12));
+              const est = await rh.estimatedPrice(symbol, { side: 'both', quantity: quantities.join(',') });
+              const er = est?.results || [];
+              for (let i = 0; i < ladderUsd.length; i += 1) {
+                const quantity = quantities[i];
                 const qty = num(quantity);
+                const sameQty = (x) => Math.abs(num(x?.quantity) - qty) <= Math.max(1e-12, qty * 1e-9);
+                const sell = er.find((x) => x?.side === 'bid' && sameQty(x)) || null;
+                const buy = er.find((x) => x?.side === 'ask' && sameQty(x)) || null;
                 const sellCredit = num(sell?.est_total_credit);
                 const buyCost = num(buy?.est_total_cost);
                 const netSell = qty > 0 && sellCredit != null ? sellCredit / qty : null;
                 const grossBuy = qty > 0 && buyCost != null ? buyCost / qty : null;
                 const mid = netSell != null && grossBuy != null ? (netSell + grossBuy) / 2 : null;
                 rows.push({
-                  usd,
+                  usd: ladderUsd[i],
                   quantity,
                   net_sell: netSell,
                   gross_buy: grossBuy,
