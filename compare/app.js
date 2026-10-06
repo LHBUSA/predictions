@@ -225,7 +225,7 @@ function tile(e) {
     <span class="tf">${e.three_way ? `${e.has_pbe ? pbeLine(e) : ''}${bookLine(e)}` : pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
   </button>`;
 }
-const tiles = (list) => `<div class="tiles">${list.map(tile).join('')}</div>`;
+const tiles = (list, cls = '') => `<div class="tiles${cls ? ` ${cls}` : ''}">${list.map(tile).join('')}</div>`;
 
 // ---------------------------------------------------------------------------------------------------------
 // Chrome: account chip, hub nav, health, notices, gate
@@ -295,18 +295,17 @@ function renderGate() {
 // Live rail (any scope with live games)
 function liveCard(e) {
   const s = e.join.score;
+  const best = e.contracts.filter((c) => c.gap_pts != null).sort((a, b) => b.gap_pts - a.gap_pts)[0] || null;
+  const crosses = e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
   const lines = e.contracts.slice(0, 2).map((c) => {
-    const k = c.kalshi, p = pmFor(c), rel = !c.polymarket && !!p;
-    return `<span class="lc-row">${avatar(e, c, 'sm')}<b>${esc(c.label)}</b>${scoreOf(e, c)}
-      <span class="lc-bar k"><i style="width:${k?.mid_bp != null ? k.mid_bp / 100 : 0}%"></i><em><img src="${VENUE.kalshi.icon}" alt="" width="10" height="10">${fmtCents(k?.mid_bp)}</em></span>
-      <span class="lc-bar p${rel ? ' rel' : ''}"><i style="width:${p?.mid_bp != null ? p.mid_bp / 100 : 0}%"></i><em><img src="${VENUE.polymarket.icon}" alt="" width="10" height="10">${fmtCents(p?.mid_bp)}${rel ? '*' : ''}</em></span>
-      <span class="lc-gap">${c.gap_pts != null ? `${c.gap_pts.toFixed(1)}¢` : '—'}</span></span>`;
+    const side = sideFor(e, c);
+    return `<span class="ticker-team">${avatar(e, c, 'sm')}<b>${esc(side?.abbr || c.label)}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
   }).join('');
-  const rel = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket'));
-  return `<button type="button" class="lc" data-open="${esc(e.key)}">
+  const insight = best ? `${e.contracts.length} market${e.contracts.length === 1 ? '' : 's'} · max ${best.gap_pts.toFixed(1)}¢ gap${crosses ? ` · ${crosses} cross${crosses === 1 ? '' : 'es'}` : ''}` : `${e.contracts.length} linked market${e.contracts.length === 1 ? '' : 's'}`;
+  return `<button type="button" class="lc ticker-game" data-open="${esc(e.key)}">
     <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
-    ${lines}${rel ? '<small class="lc-rel">* Polymarket rules differ · not compared</small>' : ''}
-    <small class="lc-age">${esc(['score ' + (ageText(s?.updated_at || S.live?.generated_at) || ''), freshLine(e)].filter(Boolean).join(' · '))}</small>
+    <span class="ticker-score">${lines}</span>
+    <small class="ticker-edge">${esc(insight)}</small>
   </button>`;
 }
 function renderLive() {
@@ -317,7 +316,7 @@ function renderLive() {
   const unlinked = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
   sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
   if (sec.hidden) return;
-  $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
+  $('#live-meta').textContent = `SCORES & MARKET MOVES · ${liveItems.length} LIVE · ${linked.length} LINKED`;
   const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map(plainLiveCard));
   liveRail(cards);
 }
@@ -343,10 +342,10 @@ function plainLiveCard(x) {
       : ['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport)
         ? 'No comparison market linked to this game'
         : 'Score shown separately · market link UNMATCHED';
-  return `<a class="lc lc-plain${tennis ? ' lc-tennis-card' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
+  return `<a class="lc lc-plain ticker-game${tennis ? ' lc-tennis-card' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     <span class="lc-score">${body}</span>
-    <small class="lc-age">${esc(note)}</small></a>`;
+    <small class="ticker-edge ticker-edge-muted">${esc(note)}</small></a>`;
 }
 
 // Live rail: more than MARQUEE_MIN games -> a slow continuous scroll (owner 2026-10-05), never a scrollbar.
@@ -393,15 +392,15 @@ function stat(label, value, cls = '') { return `<span class="stat ${cls}"><small
 
 function renderOverview(box) {
   const active = S.events.filter((e) => e.active);
-  const top = active.filter((e) => e.best_gap != null).slice(0, 6);
+  const ranked = active.filter((e) => e.best_gap != null);
+  const crosses = active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS'));
+  const featured = [...new Map([...crosses, ...ranked].map((e) => [e.key, e])).values()].slice(0, 4);
+  const pbe = S.events.filter((e) => e.has_pbe && e.active).slice(0, 4);
   const st = hubStats(S.events);
-  let html = `<header class="hub-head"><div><p class="eyebrow">ALL SPORTS</p><h1>Market command center</h1></div>
+  let html = `<header class="hub-head command-head"><div><p class="eyebrow">ALL SPORTS</p><h1>Market command center</h1><p class="command-sub">Live scores, venue prices, cross-market gaps and PropBetEdge calls in one view.</p></div>
     <div class="stats">${stat('LIVE', st.live, st.live ? 'live' : '')}${stat('ACTIVE MARKETS', st.active)}${stat('COMPARABLE', st.comparable)}${stat('RULES DIFFER', st.mismatch)}${stat('BIGGEST MID GAP', st.best ? `${st.best.best_gap.toFixed(1)}¢` : '—', 'gold')}${stat('TOP-OF-BOOK CROSSES', st.crosses)}</div></header>`;
-  html += `<section class="sec"><div class="sec-head"><h2>BIGGEST MID-PRICE GAPS</h2><small>market disagreement between comparable contracts (mids, aligned within 120 s), not executable prices; each tile shows its top-of-book cross separately</small></div>${top.length ? tiles(top) : '<div class="empty"><b>No aligned comparable mid-price gaps right now.</b></div>'}</section>`;
-  const crosses = active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS')).slice(0, 6);
-  if (crosses.length) html += `<section class="sec"><div class="sec-head"><h2>TOP-OF-BOOK CROSSES</h2><small title="${esc(CROSS_TOOLTIP)}">best displayed bid above the other venue's best displayed ask · before fees · size not measured</small></div>${tiles(crosses)}</section>`;
-  const pbe = S.events.filter((e) => e.has_pbe && e.active).slice(0, 3);
-  if (pbe.length) html += `<section class="sec"><div class="sec-head"><h2>PBE CALLS</h2><small>PropBetEdge probability next to both venues</small></div>${tiles(pbe)}</section>`;
+  html += `<section class="sec featured-sec"><div class="sec-head premium-head"><h2><span class="sec-icon">◆</span>FEATURED MARKETS</h2><small>Top cross-market opportunities across all sports</small><span class="flex"></span><button type="button" class="act premium-link" data-view="top">VIEW ALL MARKETS →</button></div>${featured.length ? tiles(featured, 'tiles-featured') : '<div class="empty"><b>No active featured comparisons right now.</b></div>'}</section>`;
+  if (pbe.length) html += `<section class="sec pbe-sec"><div class="sec-head premium-head"><h2><span class="sec-icon target">◎</span>PBE CALLS</h2><small>PropBetEdge probability next to both venues</small></div>${tiles(pbe, 'tiles-pbe')}</section>`;
   const order = SPORTS.map((s) => s.key).map((k) => ({ k, list: active.filter((e) => e.sport === k) })).filter((x) => x.list.length).sort((a, b) => b.list.length - a.list.length);
   for (const { k, list } of order) {
     const hs = hubStats(S.events.filter((e) => e.sport === k));
