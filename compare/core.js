@@ -10,10 +10,10 @@ export const SPORT_KEYS = SPORTS.map((s) => s.key);
 
 // Score <-> market joins are ID-ONLY. These sports' market canonical_event_id is the same provider id the
 // score feed publishes (ESPN event id for NFL/NBA, MLB gamePk, NHL gamePk), proven 2026-10-05.
-// Every other sport is UNMATCHED until a deterministic crosswalk exists (UFC: desk = bouts, feed = cards).
-// Soccer (2026-10-05): market canonical_event_id and the score feed's source_id are both the soccer-api match UUID
-// (proven: a matched canonical id appears verbatim in the soccer score feed).
-export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'mlb', 'nhl', 'soccer']);
+// Soccer (2026-10-05): market canonical_event_id and the score feed's source_id are both the soccer-api match UUID.
+// Tennis (2026-10-06): the market registry and tennis live feed both use our canonical match UUID; exact-id proof
+// captured on live Muchova v Osaka. UFC remains UNMATCHED because the desk lists bouts while its live feed lists cards.
+export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'mlb', 'nhl', 'soccer', 'tennis']);
 
 export const BADGES = {
   COMPARABLE: 'Both venues list this outcome and their settlement rules were approved as comparable. The gap is a real price difference on the same question.',
