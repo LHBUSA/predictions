@@ -274,14 +274,15 @@ function cryptoMarkets(c) {
     return Number(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
   };
   grid.innerHTML = c.symbols.map((x) => {
-    const spread = x.spread_bps == null ? '—' : `${Number(x.spread_bps).toFixed(2)} bps`;
+    const friction = x.spread_bps == null ? '—' : `${Number(x.spread_bps).toFixed(2)} bps`;
     const stamp = x.timestamp ? ago(x.timestamp) : '—';
-    const clean = x.raw_quote_crossed ? '<span class="rail-flag">normalized</span>' : '<span class="rail-good">top of book</span>';
+    const rawState = x.raw_quote_crossed ? '<span class="rail-flag">raw book crossed</span>' : '<span class="rail-good">raw book clean</span>';
+    const fee = x.fee_ratio == null ? '—' : `${(Number(x.fee_ratio) * 100).toFixed(2)}%`;
     return `<article class="card crypto-card">
       <div class="crypto-card-head"><div><span class="cat">${esc(x.symbol.replace('-USD',''))}</span><span class="crypto-name">${esc(x.symbol)}</span></div>${x.api_tradable ? '<span class="rail-good">API tradable</span>' : '<span class="rail-flag">not API tradable</span>'}</div>
       <div class="crypto-mid num">${fmt(x.mid, x.symbol)}</div>
-      <div class="crypto-book"><span>Bid <b class="num">${fmt(x.bid, x.symbol)}</b></span><span>Ask <b class="num">${fmt(x.ask, x.symbol)}</b></span><span>Spread <b class="num">${spread}</b></span></div>
-      <div class="crypto-foot">${clean}<span>${esc(x.quote_source || '')}</span><span>${stamp}</span></div>
+      <div class="crypto-book"><span>Net sell <b class="num">${fmt(x.bid, x.symbol)}</b></span><span>Gross buy <b class="num">${fmt(x.ask, x.symbol)}</b></span><span>Total friction <b class="num">${friction}</b></span></div>
+      <div class="crypto-foot"><span class="rail-good">fee-adjusted</span><span>fee ${fee}</span>${rawState}<span>${stamp}</span></div>
     </article>`;
   }).join('');
 }
