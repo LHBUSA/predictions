@@ -20,6 +20,11 @@
       "desk"
     ],
     [
+      "Markets",
+      "/markets/",
+      "markets"
+    ],
+    [
       "Crypto",
       "/crypto/",
       "crypto"
@@ -44,6 +49,10 @@
     [
       "Intelligence Desk",
       "/#desk"
+    ],
+    [
+      "Market Intelligence",
+      "/markets/"
     ],
     [
       "Crypto Nowcast",
