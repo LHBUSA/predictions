@@ -1,6 +1,6 @@
 (() => {
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-let mode='debate', persona='bull', busy=false, market=null;
+let mode='debate', persona='bull', busy=false, market=null, chartData='';
 const stocks=['SPY','QQQ','DIA','IWM','VIX'];
 const crypto=['BTC','ETH','SOL','BNB','XRP','ADA'];
 const names={SPY:'S&P 500',QQQ:'Nasdaq 100',DIA:'Dow',IWM:'Russell 2000',VIX:'Volatility'};
@@ -71,10 +71,13 @@ async function loadMarket(){
   }catch(e){$('#ticker').innerHTML='<span>Market feed temporarily unavailable</span>'}
 }
 function setMode(m){
-  mode=m; $$('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  mode=m; $('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
   $('#persona-tabs').hidden=m!=='consult';
-  $('#prompt').placeholder=m==='debate'?'Throw a market question into the debate…':'Ask '+persona.toUpperCase()+' for a market read…';
-  $('#mode-label').textContent=m==='debate'?'DEBATE MODE':'CONSULT · '+persona.toUpperCase();
+  $('#trade-lab').hidden=m!=='trade';
+  $('#feed').hidden=m==='trade';
+  $('.composer').hidden=m==='trade';
+  if(m==='debate'){$('#prompt').placeholder='Throw a market question into the debate…';$('#mode-label').textContent='DEBATE MODE';}
+  else if(m==='consult'){$('#prompt').placeholder='Ask '+persona.toUpperCase()+' for a market read…';$('#mode-label').textContent='CONSULT · '+persona.toUpperCase();}
 }
 function setPersona(p){persona=p;$$('.persona').forEach(b=>b.classList.toggle('active',b.dataset.persona===p));setMode('consult')}
 function addTopic(t){$('#welcome')?.remove();const d=document.createElement('div');d.className='topic';d.textContent=t;$('#messages').appendChild(d);scroll()}
@@ -106,7 +109,45 @@ async function send(){
   try{if(mode==='debate')await runDebate(t);else await runConsult(t)}catch{const d=document.createElement('div');d.className='topic';d.textContent='Analysis unavailable. Please try again.';$('#messages').appendChild(d)}
   finally{busy=false;$('#send').disabled=false;$('#prompt').focus()}
 }
-$$('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$$('.persona').forEach(b=>b.onclick=()=>setPersona(b.dataset.persona));
+$('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$('.persona').forEach(b=>b.onclick=()=>setPersona(b.dataset.persona));
+
+function fileToData(file){
+  return new Promise((resolve,reject)=>{
+    const rd=new FileReader();rd.onload=()=>resolve(String(rd.result||''));rd.onerror=reject;rd.readAsDataURL(file);
+  });
+}
+async function useChart(file){
+  if(!file||!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>4_500_000){alert('Use a PNG, JPG or WEBP chart under 4.5 MB.');return}
+  chartData=await fileToData(file);
+  const img=$('#chart-preview'), empty=$('#chart-empty');img.src=chartData;img.hidden=false;empty.hidden=true;
+}
+const drop=$('#chart-drop'), file=$('#chart-file');
+$('#choose-chart').onclick=(e)=>{e.preventDefault();file.click()};
+drop.addEventListener('click',(e)=>{if(e.target.id!=='choose-chart'&&e.target.tagName!=='IMG')file.click()});
+file.addEventListener('change',()=>useChart(file.files?.[0]));
+for(const ev of ['dragenter','dragover'])drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')});
+for(const ev of ['dragleave','drop'])drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')});
+drop.addEventListener('drop',e=>useChart(e.dataTransfer?.files?.[0]));
+
+$('#analyze-chart').onclick=async()=>{
+  if(!chartData){alert('Add a chart screenshot first.');return}
+  const btn=$('#analyze-chart'), out=$('#trade-result');btn.disabled=true;btn.textContent='READING CHART…';out.hidden=false;out.textContent='Reading chart structure and live market context…';
+  try{
+    const r=await fetch('/api/market-intelligence/chart',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({
+      image:chartData,
+      symbol:$('#trade-symbol').value,
+      direction:$('#trade-direction').value,
+      entry:$('#trade-entry').value,
+      stop:$('#trade-stop').value,
+      target:$('#trade-target').value,
+      thesis:$('#trade-thesis').value
+    })});
+    const b=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(b.error||r.status);
+    out.textContent=b.analysis||'No analysis returned.';
+  }catch(e){out.textContent='Trade Lab could not complete this chart review. Please try again.'}
+  finally{btn.disabled=false;btn.textContent='READ THE CHART'}
+};
 $$('.quick button').forEach(b=>b.onclick=()=>{$('#prompt').value=b.dataset.q;send()});
 $('#send').onclick=send;$('#prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 $('#prompt').addEventListener('input',e=>{e.target.style.height='auto';e.target.style.height=Math.min(120,e.target.scrollHeight)+'px'});
