@@ -290,9 +290,15 @@ export function screenNotices({ desk, deskStatus, live, liveStatus, scope, event
   else if (deskStatus === 403) n.push({ level: 'auth', code: 'forbidden', text: 'Compare is part of PropBetEdge All Access. This account does not include it.' });
   else if (deskStatus === 503) n.push({ level: 'error', code: 'access_check', text: 'We could not verify your membership right now. Nothing is shown until access is verified; retrying automatically.' });
   else if (deskStatus === 0) n.push({ level: 'error', code: 'network', text: 'Network error reaching Compare. Retrying automatically.' });
+  const unavailable = (desk?.lanes || []).filter((l) => l.state === 'unavailable');
+  if (scope === 'sports' && unavailable.length > 1) {
+    const names = unavailable.map((l) => l.lane.toUpperCase());
+    n.push({ level: 'error', code: 'lanes_unavailable', lanes: unavailable.map((l) => l.lane),
+      text: `${unavailable.length} market lanes are delayed upstream (${names.join(', ')}). Loaded lanes remain live; missing lanes retry automatically.` });
+  }
   for (const l of desk?.lanes || []) {
     const name = l.lane === 'nonsports' ? 'Prediction markets' : l.lane.toUpperCase();
-    if (l.state === 'unavailable') n.push({ level: 'error', code: 'lane_unavailable', lane: l.lane, text: `${name} market feed unavailable (upstream ${l.upstream_status || l.error || 'error'}). Its markets are missing from this board until it recovers.` });
+    if (l.state === 'unavailable' && !(scope === 'sports' && unavailable.length > 1)) n.push({ level: 'error', code: 'lane_unavailable', lane: l.lane, text: `${name} market feed unavailable (upstream ${l.upstream_status || l.error || 'error'}). Its markets are missing from this board until it recovers.` });
     else if (l.state === 'not_connected' && scope !== 'sports') n.push({ level: 'info', code: 'lane_not_connected', lane: l.lane, text: `${name} comparison lane is not connected yet. No Kalshi ↔ Polymarket desk exists for this sport.` });
     else if (l.capped && scope !== 'sports') n.push({ level: 'info', code: 'lane_capped', lane: l.lane, text: `${name}: showing the first ${desk.page_limit} events (upstream page limit; no further pages exist yet).` });
   }
