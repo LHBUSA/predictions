@@ -539,14 +539,16 @@ export default {
           const by = Object.fromEntries(tradable.map((x) => [x.symbol, x]));
           const selected = preferred.filter((s) => by[s]).concat(tradable.map((x) => x.symbol).filter((s) => !preferred.includes(s))).slice(0, 24);
           const quotes = selected.length ? await rh.bestBidAsk(selected) : { results: [] };
+          const quoteBy = Object.fromEntries((quotes?.results || []).map((q) => [q.symbol, q]));
           const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
-          const rows = (quotes?.results || []).map((q) => {
+          const rows = selected.map((symbol) => {
+            const q = quoteBy[symbol] || {};
             const bid = num(q.bid); const ask = num(q.ask);
             const crossed = bid != null && ask != null && bid > ask;
             const mark = bid != null && ask != null ? (bid + ask) / 2 : (bid ?? ask);
-            const pair = by[q.symbol] || {};
+            const pair = by[symbol] || {};
             return {
-              symbol: q.symbol,
+              symbol,
               timestamp: q.timestamp ?? null,
               mark,
               raw_bid: bid,
@@ -558,7 +560,7 @@ export default {
               min_order_size: pair.min_order_size ?? null,
               max_order_size: pair.max_order_size ?? null,
             };
-          });
+          }).filter((x) => x.mark != null);
           return json({ ok: true, source: 'Robinhood Crypto', generated_at: new Date().toISOString(), count: rows.length, symbols: rows }, 200, 'public, max-age=3');
         } catch (e) {
           return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_live_prices_unavailable' }, 502, 'public, max-age=3');
