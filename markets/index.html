@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Market Intelligence | PropBetEdge Predictions</title>
+<meta name="description" content="All Access market intelligence: live equities, crypto and macro context analyzed by Bull, Bear and Quant AI perspectives.">
+<meta name="robots" content="noindex,follow">
+<meta name="theme-color" content="#07090d">
+<link rel="canonical" href="https://predictions.propbetedge.ai/markets/">
+<link rel="stylesheet" href="/markets/market-intelligence.css?v=20261006a">
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <span class="eyebrow">PROPBETEDGE PREDICTIONS · ALL ACCESS</span>
+    <h1>Market Intelligence</h1>
+    <p>Live market state plus three independent AI reads. This terminal is included with PropBetEdge All Access.</p>
+    <div class="gate-state" id="gate-state">Checking membership…</div>
+    <div class="gate-actions" id="gate-actions"></div>
+  </div>
+</div>
+
+<div class="terminal" id="terminal" hidden>
+  <header class="term-head">
+    <div class="brand">
+      <a href="/" aria-label="Back to Predictions">PropBetEdge <b>PREDICTIONS</b></a>
+      <span class="slash">/</span><strong>MARKET INTELLIGENCE</strong>
+      <span class="all-access">ALL ACCESS</span>
+    </div>
+    <div class="status">
+      <span class="live"><i></i>LIVE</span>
+      <span id="market-mood">MARKET</span>
+      <a href="/" class="back">Predictions ↗</a>
+    </div>
+  </header>
+
+  <div class="ticker" id="ticker"><span>Loading live market state…</span></div>
+
+  <main class="workspace">
+    <aside class="rail">
+      <section class="panel">
+        <div class="panel-title">EQUITIES <small id="eq-time">—</small></div>
+        <div id="equities" class="rows"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title">CRYPTO <small id="crypto-time">—</small></div>
+        <div id="crypto" class="rows"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title">MACRO</div>
+        <div id="macro" class="rows"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title">SENTIMENT</div>
+        <div class="fear">
+          <div class="fear-top"><span>Fear / Greed</span><b id="fg-num">—</b></div>
+          <div class="fear-track"><i id="fg-needle"></i></div>
+          <small id="fg-label">—</small>
+        </div>
+      </section>
+    </aside>
+
+    <section class="intel">
+      <div class="mode-tabs">
+        <button id="debate-tab" class="mode active" data-mode="debate"><span>⚔</span><b>DEBATE</b><small>Quant → Bull → Bear</small></button>
+        <button id="consult-tab" class="mode" data-mode="consult"><span>◆</span><b>CONSULT</b><small>One analyst, one deep read</small></button>
+      </div>
+
+      <div class="persona-tabs" id="persona-tabs" hidden>
+        <button class="persona bull active" data-persona="bull"><b>BULL</b><small>Upside case</small></button>
+        <button class="persona bear" data-persona="bear"><b>BEAR</b><small>Risk case</small></button>
+        <button class="persona quant" data-persona="quant"><b>QUANT</b><small>Data read</small></button>
+      </div>
+
+      <div class="feed" id="feed">
+        <div class="welcome" id="welcome">
+          <div class="triad"><span class="bull-t">BULL.</span><span class="bear-t">BEAR.</span><span class="quant-t">QUANT.</span></div>
+          <p>Three independent AI perspectives grounded in the market snapshot on this screen. Debate runs the tape first, then the upside case, then the risk case.</p>
+          <div class="quick">
+            <button data-q="What is the market telling us right now?">Read the market right now</button>
+            <button data-q="Is the current equity move supported by volatility and macro data?">Equities vs volatility</button>
+            <button data-q="What is the strongest signal in crypto right now?">Crypto signal</button>
+            <button data-q="What is the biggest risk the market may be underpricing?">Underpriced risk</button>
+          </div>
+        </div>
+        <div id="messages"></div>
+      </div>
+
+      <footer class="composer">
+        <div class="input-shell">
+          <textarea id="prompt" rows="1" maxlength="1200" placeholder="Throw a market question into the debate…"></textarea>
+          <button id="send" aria-label="Send">↗</button>
+        </div>
+        <div class="composer-meta"><span id="mode-label">DEBATE MODE</span><span>OpenAI · live market context · informational only</span></div>
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script src="/markets/market-intelligence.js?v=20261006a" defer></script>
+</body>
+</html>
