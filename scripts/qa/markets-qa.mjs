@@ -20,6 +20,7 @@ try{
   for(const state of live?['production']:['anonymous','free','unverified','all_access','owner']){
     for(const width of state==='production'||state==='anonymous'||state==='all_access'?[1440,1280,1024,768,390]:[1440,390]){
       const page=await browser.newPage();const errors=[];const requests=[];let consultBody;
+      await page.setCacheEnabled(false);
       page.on('pageerror',e=>errors.push(e.message));
       await page.setViewport({width,height:width<800?844:1000,deviceScaleFactor:1});
       if(!live){
