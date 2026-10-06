@@ -453,6 +453,52 @@ export default {
           return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_universe_unavailable' }, 502, 'public, max-age=10');
         }
       }
+      if (p === '/v1/crypto/execution-ladder') {
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=30');
+        const rh = robinhoodForEnv(env);
+        const symbols = ['BTC-USD', 'ETH-USD', 'SOL-USD'];
+        const ladderUsd = [10, 25, 50, 100];
+        try {
+          const quotes = await rh.bestBidAsk(symbols);
+          const quoteBy = Object.fromEntries((quotes?.results || []).map((x) => [x.symbol, x]));
+          const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+          const out = {};
+          for (const symbol of symbols) {
+            const q = quoteBy[symbol] || {};
+            const rawBid = num(q.bid); const rawAsk = num(q.ask);
+            const rawMid = rawBid != null && rawAsk != null ? (rawBid + rawAsk) / 2 : null;
+            const rows = [];
+            if (rawMid > 0) {
+              for (const usd of ladderUsd) {
+                const quantity = (usd / rawMid).toPrecision(12);
+                const est = await rh.estimatedPrice(symbol, { side: 'both', quantity });
+                const er = est?.results || [];
+                const sell = er.find((x) => x?.side === 'bid') || null;
+                const buy = er.find((x) => x?.side === 'ask') || null;
+                const qty = num(quantity);
+                const sellCredit = num(sell?.est_total_credit);
+                const buyCost = num(buy?.est_total_cost);
+                const netSell = qty > 0 && sellCredit != null ? sellCredit / qty : null;
+                const grossBuy = qty > 0 && buyCost != null ? buyCost / qty : null;
+                const mid = netSell != null && grossBuy != null ? (netSell + grossBuy) / 2 : null;
+                rows.push({
+                  usd,
+                  quantity,
+                  net_sell: netSell,
+                  gross_buy: grossBuy,
+                  total_friction_bps: mid > 0 && netSell != null && grossBuy != null ? ((grossBuy - netSell) / mid) * 10000 : null,
+                  fee_ratio: num(buy?.fee_ratio ?? sell?.fee_ratio),
+                  timestamp: buy?.timestamp || sell?.timestamp || null,
+                });
+              }
+            }
+            out[symbol] = rows;
+          }
+          return json({ ok: true, source: 'Robinhood Crypto', sizes_usd: ladderUsd, ladders: out, generated_at: new Date().toISOString() }, 200, 'public, max-age=15');
+        } catch (e) {
+          return json({ ok: false, source: 'Robinhood Crypto', status: e?.status ?? null, error: 'crypto_execution_ladder_unavailable' }, 502, 'public, max-age=5');
+        }
+      }
       if (p === '/v1/crypto/markets') {
         if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=15');
         const rh = robinhoodForEnv(env);
