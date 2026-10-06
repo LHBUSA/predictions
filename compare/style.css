@@ -454,3 +454,29 @@ button:disabled{cursor:default}
   .live-cards:not(.marquee)>.lc{flex:0 0 248px;min-width:248px;max-width:248px}
   .live-cards:not(.marquee)>.lc-tennis-card.is-doubles{flex-basis:292px;min-width:292px;max-width:292px}
 }
+
+
+/* ---------- live market visibility pass (2026-10-06c) ---------- */
+.ticker-market-grid{display:grid;gap:3px;padding-top:4px;border-top:1px solid var(--line);min-width:0}
+.ticker-market-row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:5px;align-items:center;min-width:0
+}
+.ticker-market-row>b{
+  min-width:0;font:700 9px/1.1 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.ticker-venue{
+  display:inline-flex;align-items:center;gap:3px;padding:2px 4px;border:1px solid var(--line);
+  border-radius:5px;background:var(--ink);font:700 8.5px/1 var(--mono);color:var(--paper);white-space:nowrap
+}
+.ticker-venue img{width:10px;height:10px;border-radius:2px}
+.ticker-venue.is-off{opacity:.34}
+.ticker-venue.is-related{color:var(--warn);border-style:dashed;border-color:rgba(224,180,90,.4)}
+.ticker-market-row>em{
+  font:700 7.5px/1 var(--mono);font-style:normal;letter-spacing:.08em;color:var(--gold);
+  padding:2px 4px;border-radius:4px;background:var(--gold-soft);white-space:nowrap
+}
+.lc-tennis-card:has(.ticker-market-grid){min-width:280px}
+@media (max-width:720px){
+  .ticker-market-row{grid-template-columns:minmax(0,1fr) auto auto}
+  .ticker-market-row>em{grid-column:2 / -1;justify-self:end}
+}
