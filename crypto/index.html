@@ -10,7 +10,7 @@
 <link rel="canonical" href="https://predictions.propbetedge.ai/crypto/">
 <meta name="theme-color" content="#07111f">
 <link rel="stylesheet" href="/site.css?v=20261006crypto1">
-<link rel="stylesheet" href="/crypto/crypto.css?v=20261006c1">
+<link rel="stylesheet" href="/crypto/crypto.css?v=20261006c2">
 </head>
 <body class="crypto-page">
 <header class="topbar"><div class="wrap">
@@ -20,6 +20,7 @@
 </div></header>
 
 <main>
+<section class="cx-tape-shell" aria-label="Live Robinhood crypto prices"><div class="wrap"><div class="cx-tape-meta"><span class="cx-live-pulse"><i></i> Robinhood live</span><span id="price-updated">waiting for prices</span></div><div class="cx-tape" id="price-tape"></div></div></section>
 <section class="cx-hero"><div class="wrap">
   <div class="cx-hero-head">
     <div><span class="overline">PBE CRYPTO NOWCAST · BTC · 15 MIN</span><h1>Probability intelligence for the next 15 minutes.</h1><p>PBE's independent BTC nowcast beside Kalshi's live market probability and Robinhood's fee-adjusted execution economics.</p></div>
@@ -33,6 +34,16 @@
     <div class="cx-kpi"><span>Kalshi up</span><strong class="num" id="kalshi-up">—</strong><small id="kalshi-meta">same contract benchmark</small></div>
     <div class="cx-kpi"><span>Model vs market</span><strong class="num" id="divergence">—</strong><small>percentage-point gap</small></div>
   </div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <section class="cx-market-board card">
+    <div class="cx-board-head">
+      <div><span class="overline">ROBINHOOD LIVE MARKET</span><h2>Crypto price board</h2><p>Fast-scanning API-tradable market state. Search the Robinhood universe and jump straight to execution.</p></div>
+      <div class="cx-board-tools"><input id="coin-search" class="cx-search" type="search" placeholder="Search BTC, ETH, SOL…" autocomplete="off"><span id="board-count" class="cx-muted">—</span></div>
+    </div>
+    <div class="cx-board" id="market-board"></div>
+  </section>
 </div></section>
 
 <section class="section"><div class="wrap cx-main">
@@ -80,5 +91,5 @@
 </main>
 
 <footer class="footer"><div class="wrap"><div><strong>PropBetEdge Predictions</strong><p class="note">Independent probability. Auditable decisions.</p></div><div><a href="/">Predictions</a> · <a href="/methodology/">Methodology</a> · <a href="https://propbetedge.ai/terms">Terms</a></div></div></footer>
-<script src="/crypto/crypto.js?v=20261006c1" defer></script>
+<script src="/crypto/crypto.js?v=20261006c2" defer></script>
 </body></html>
