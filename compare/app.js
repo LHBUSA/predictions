@@ -293,15 +293,38 @@ function renderGate() {
 
 // ---------------------------------------------------------------------------------------------------------
 // Live rail (any scope with live games)
+function tennisTickerBody(title, summary) {
+  const sides = String(title || '').split(/\s+vs\s+/i);
+  const sets = String(summary?.value || '').split(/\s+·\s+/);
+  if (sides.length !== 2) return `<span class="ticker-title">${esc(title || 'Live tennis')}</span>`;
+  const doubles = sides.some((side) => side.includes(' / '));
+  const row = (name, score) => `<span class="ticker-tennis-row"><b>${esc(name)}</b>${score && score !== '—' ? `<strong>${esc(score)}</strong>` : ''}</span>`;
+  return `<span class="ticker-tennis-match${doubles ? ' is-doubles' : ''}">${row(sides[0], sets[0])}${row(sides[1], sets[1])}</span>`;
+}
+
+function plainScoreTickerBody(x) {
+  if (!x.score?.away) return '';
+  const row = (side) => `<span class="ticker-score-row">${side?.logo ? `<img src="${esc(side.logo)}" alt="" width="22" height="22">` : '<span class="ticker-logo-fallback"></span>'}<b>${esc(side?.abbr || side?.name || '—')}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
+  return `<span class="ticker-score-stack">${row(x.score.away)}${row(x.score.home)}</span>`;
+}
+
 function liveCard(e) {
   const s = e.join.score;
   const best = e.contracts.filter((c) => c.gap_pts != null).sort((a, b) => b.gap_pts - a.gap_pts)[0] || null;
   const crosses = e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
+  const insight = best ? `${e.contracts.length} market${e.contracts.length === 1 ? '' : 's'} · max ${best.gap_pts.toFixed(1)}¢ gap${crosses ? ` · ${crosses} cross${crosses === 1 ? '' : 'es'}` : ''}` : `${e.contracts.length} linked market${e.contracts.length === 1 ? '' : 's'}`;
+  if (e.sport === 'tennis') {
+    const doubles = String(s?.title || e.title || '').includes(' / ');
+    return `<button type="button" class="lc ticker-game lc-tennis-card${doubles ? ' is-doubles' : ''}" data-open="${esc(e.key)}">
+      <span class="lc-h"><span class="sport">TENNIS</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
+      ${tennisTickerBody(s?.title || e.title, s?.summary)}
+      <small class="ticker-edge">${esc(insight)}</small>
+    </button>`;
+  }
   const lines = e.contracts.slice(0, 2).map((c) => {
     const side = sideFor(e, c);
     return `<span class="ticker-team">${avatar(e, c, 'sm')}<b>${esc(side?.abbr || c.label)}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
   }).join('');
-  const insight = best ? `${e.contracts.length} market${e.contracts.length === 1 ? '' : 's'} · max ${best.gap_pts.toFixed(1)}¢ gap${crosses ? ` · ${crosses} cross${crosses === 1 ? '' : 'es'}` : ''}` : `${e.contracts.length} linked market${e.contracts.length === 1 ? '' : 's'}`;
   return `<button type="button" class="lc ticker-game" data-open="${esc(e.key)}">
     <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
     <span class="ticker-score">${lines}</span>
@@ -325,29 +348,21 @@ function plainLiveCard(x) {
   const tennis = x.sport === 'tennis';
   const doubles = tennis && String(x.title || '').includes(' / ');
   let body;
-  if (x.score?.away) {
-    body = `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>`;
-  } else if (tennis) {
-    const sides = String(x.title || '').split(/\s+vs\s+/i);
-    body = sides.length === 2
-      ? `<span class="lc-tennis${doubles ? ' is-doubles' : ''}"><strong>${esc(sides[0])}</strong><i>vs</i><strong>${esc(sides[1])}</strong></span>`
-      : `<span class="lc-tennis${doubles ? ' is-doubles' : ''}"><strong>${esc(x.title)}</strong></span>`;
-  } else {
-    body = `<span>${esc(x.title)}</span>`;
-  }
+  if (tennis) body = tennisTickerBody(x.title, x.summary);
+  else if (x.score?.away) body = plainScoreTickerBody(x);
+  else body = `<span class="ticker-title">${esc(x.title)}</span>`;
   const note = doubles
-    ? 'Doubles score only · Compare market coverage is singles only'
+    ? 'Doubles score only · singles comparison markets only'
     : tennis
-      ? 'No comparison market listed for this live match'
+      ? 'Score only · no comparison market listed'
       : ['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport)
-        ? 'No comparison market linked to this game'
-        : 'Score shown separately · market link UNMATCHED';
-  return `<a class="lc lc-plain ticker-game${tennis ? ' lc-tennis-card' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
+        ? 'Score only · no linked comparison market'
+        : 'Score only · market link unavailable';
+  return `<a class="lc lc-plain ticker-game${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
-    <span class="lc-score">${body}</span>
+    ${body}
     <small class="ticker-edge ticker-edge-muted">${esc(note)}</small></a>`;
 }
-
 // Live rail: more than MARQUEE_MIN games -> a slow continuous scroll (owner 2026-10-05), never a scrollbar.
 // The cards are rendered twice (the copy is aria-hidden and out of the tab order) and moved by an offset that
 // survives the 15-60 s re-renders, so new scores never make the rail jump. Pauses on hover / keyboard focus;
