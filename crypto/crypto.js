@@ -55,8 +55,12 @@ function renderNowcast(n,rh){
   $('hero-price-age').textContent=btc?.timestamp?`Robinhood · ${ago(btc.timestamp)}`:'live execution reference';
   if(spot!=null&&target>0){
     const d=spot-target,p=d/target*100;
-    $('distance').textContent=`${d>=0?'+':''}${usd(d,2)}`;
-    $('distance-sub').textContent=`${p>=0?'+':''}${p.toFixed(3)}% from reference`;
+    const dText=`${d>=0?'+':''}${usd(d,2)}`;
+    const pText=`${p>=0?'+':''}${p.toFixed(3)}% from reference`;
+    $('distance').textContent=dText;
+    $('distance-sub').textContent=pText;
+    $('chart-distance').textContent=dText;
+    $('chart-distance-sub').textContent=pText;
   }
   $('pbe-up').textContent=f?pct(f.p_up):'—';
   $('hero-pbe-up').textContent=f?pct(f.p_up):'—';
@@ -87,6 +91,9 @@ function renderNowcast(n,rh){
   $('window-times').textContent=`${new Date(n.window.open_at).toISOString().slice(11,16)}–${new Date(n.window.close_at).toISOString().slice(11,16)} UTC`;
   const age=f?Date.now()-Date.parse(f.data_cutoff_at):Infinity;
   const fr=$('freshness'); fr.textContent=age<120000?'current':age<300000?'delayed':'stale'; fr.className=`fresh ${age<120000?'fresh-current':age<300000?'fresh-delayed':'fresh-stale'}`;
+  $('chart-z').textContent=fm.z_distance!=null?Number(fm.z_distance).toFixed(3):'—';
+  $('chart-vol').textContent=fm.rv60_annualized!=null?`${(Number(fm.rv60_annualized)*100).toFixed(1)}%`:'—';
+  $('chart-friction').textContent=btc?.spread_bps==null?'—':`${Number(btc.spread_bps).toFixed(2)} bps`;
   const evidence=[
     ['Current proxy',fm.btc_spot_usd!=null?usd(fm.btc_spot_usd,2):'—'],
     ['Open reference',fm.btc_open_ref_usd!=null?usd(fm.btc_open_ref_usd,2):usd(target,2)],
