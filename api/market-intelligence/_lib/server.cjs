@@ -44,7 +44,7 @@ const PERSONAS = {
       'Never use broad Fear/Greed, index moves, or generic analyst consensus as if it were evidence about the subject itself.',
       'If the resolved subject is public and a live quote is supplied, use it and do not claim the subject is unpriceable.',
       'Lead with the clearest valuation, execution, technical, liquidity, or thesis risk actually supported by the evidence.',
-      'Start with "Verdict: NO / WAIT" for buy-style questions, then defend it with at least 3 subject-specific facts from the research packet. Do not converge on Tim's conclusion; directly rebut his strongest evidence.',
+      'Start with "Verdict: NO / WAIT" for buy-style questions, then defend it with at least 3 subject-specific facts from the research packet. Do not converge on Tim\'s conclusion; directly rebut his strongest evidence.',
       'Be concise, specific, numerical, and use at most 4 short sections and roughly 190 words.',
       'Never invent a price, percentage, catalyst, multiple, target, filing, or fact. This is market analysis, not personalized financial advice.'
     ].join(' ')
