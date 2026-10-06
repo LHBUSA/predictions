@@ -2,7 +2,7 @@
 // Internally modular: discovery + contract normalization (src/engine/contracts.js), domain routing
 // (src/engine/classify.js), weather model (src/weather/*), publication/resolution/scoring (cycle.js), API (api.js).
 import { runBtcShadow } from '../../../src/crypto/btc-shadow.js';
-import { robinhoodConfigured, robinhoodForEnv } from './robinhood-crypto.js';
+import { robinhoodConfigured, robinhoodForEnv, robinhoodCredentialFingerprint } from './robinhood-crypto.js';
 import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
@@ -266,11 +266,12 @@ export default {
       // No credentials, account data, holdings, orders, balances, prices or trading actions are exposed here.
       if (p === '/v1/health/robinhood') {
         if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false }, 503, 'public, max-age=30');
+        const credential = await robinhoodCredentialFingerprint(env);
         try {
           await robinhoodForEnv(env).bestBidAsk(['BTC-USD', 'ETH-USD']);
-          return json({ ok: true, configured: true, authenticated: true, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, symbols_verified: ['BTC-USD', 'ETH-USD'] }, 200, 'public, max-age=30');
+          return json({ ok: true, configured: true, authenticated: true, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, symbols_verified: ['BTC-USD', 'ETH-USD'], credential }, 200, 'public, max-age=30');
         } catch (e) {
-          return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null }, 502, 'public, max-age=10');
+          return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null, credential }, 502, 'public, max-age=10');
         }
       }
       if (p === '/v1/summary') return json(await summary(store));
