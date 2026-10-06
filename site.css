@@ -95,6 +95,24 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .rail-good{background:var(--pos-bg);color:var(--pos)}
 .rail-flag{background:var(--amber-bg);color:var(--amber)}
 .crypto-note{margin:10px 2px 0;color:#8da2ba}
+.crypto-lab{margin-top:16px;padding-top:16px;border-top:1px solid rgba(142,173,208,.16)}
+.crypto-lab-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:10px}
+.crypto-lab-head h3{margin:3px 0;color:#f5f9ff;font-size:18px;letter-spacing:-.02em}
+.crypto-lab-head p{margin:0;color:#9fb2c8;font-size:12.5px}
+.crypto-universe-count{border:1px solid rgba(142,173,208,.16);background:rgba(255,255,255,.04);border-radius:999px;padding:6px 10px;color:#b8c8d9;font-size:11px;font-weight:800;white-space:nowrap}
+.crypto-ladders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.crypto-ladder-card{border:1px solid rgba(142,173,208,.14);border-radius:12px;background:rgba(255,255,255,.035);overflow:hidden}
+.crypto-ladder-title{display:flex;align-items:baseline;gap:7px;padding:10px 12px 6px;color:#f5f9ff}
+.crypto-ladder-title b{font-size:15px}.crypto-ladder-title span{font-size:10.5px;color:#8fa5bd}
+.crypto-ladder-table{color:#dbe7f4;background:transparent}
+.crypto-ladder-table th{color:#7f97b2;border-bottom-color:rgba(142,173,208,.14)}
+.crypto-ladder-table td{border-bottom-color:rgba(142,173,208,.09)}
+.crypto-universe{margin-top:10px;border:1px solid rgba(142,173,208,.14);border-radius:11px;background:rgba(255,255,255,.03)}
+.crypto-universe>summary{cursor:pointer;padding:9px 11px;color:#c8d6e6;font-size:12px;font-weight:800}
+.crypto-universe-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 11px 11px}
+.crypto-universe-chip{display:inline-flex;border:1px solid rgba(142,173,208,.15);border-radius:999px;padding:4px 7px;color:#aac0d8;background:rgba(255,255,255,.025);font:700 10.5px var(--mono)}
+@media (max-width:900px){.crypto-ladders{grid-template-columns:1fr}.crypto-lab-head{align-items:flex-start}}
+@media (max-width:640px){.crypto-lab-head{display:grid;gap:8px}.crypto-universe-count{justify-self:start}}
 .crypto-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
 .crypto-trade-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:8px 11px;border-radius:9px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;text-decoration:none!important}
 .crypto-trade-btn:hover{background:#173b63}
