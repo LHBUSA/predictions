@@ -15,24 +15,19 @@
   },
   "product": [
     [
-      "Intelligence desk",
+      "Desk",
       "/#desk",
       "desk"
     ],
     [
-      "Market Intelligence",
-      "/markets/",
-      "markets"
+      "Crypto",
+      "/crypto/",
+      "crypto"
     ],
     [
       "Insights",
       "/insights/",
       "insights"
-    ],
-    [
-      "Calendar",
-      "/#calendar",
-      "calendar"
     ],
     [
       "Models",
@@ -43,11 +38,6 @@
       "Track record",
       "/#track-record",
       "record"
-    ],
-    [
-      "Methodology",
-      "/methodology/",
-      "methodology"
     ]
   ],
   "footer_product": [
@@ -56,8 +46,8 @@
       "/#desk"
     ],
     [
-      "Market Intelligence",
-      "/markets/"
+      "Crypto Nowcast",
+      "/crypto/"
     ],
     [
       "Insights",
