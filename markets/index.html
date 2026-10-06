@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex,follow">
 <meta name="theme-color" content="#07090d">
 <link rel="canonical" href="https://predictions.propbetedge.ai/markets/">
-<link rel="stylesheet" href="/markets/market-intelligence.css?v=20261006a">
+<link rel="stylesheet" href="/markets/market-intelligence.css?v=20261006b">
 </head>
 <body>
 <div class="gate" id="gate">
@@ -65,12 +65,38 @@
       <div class="mode-tabs">
         <button id="debate-tab" class="mode active" data-mode="debate"><span>⚔</span><b>DEBATE</b><small>Quant → Bull → Bear</small></button>
         <button id="consult-tab" class="mode" data-mode="consult"><span>◆</span><b>CONSULT</b><small>One analyst, one deep read</small></button>
+        <button id="trade-tab" class="mode" data-mode="trade"><span>△</span><b>TRADE LAB</b><small>Chart screenshot risk review</small></button>
       </div>
 
       <div class="persona-tabs" id="persona-tabs" hidden>
         <button class="persona bull active" data-persona="bull"><b>BULL</b><small>Upside case</small></button>
         <button class="persona bear" data-persona="bear"><b>BEAR</b><small>Risk case</small></button>
         <button class="persona quant" data-persona="quant"><b>QUANT</b><small>Data read</small></button>
+      </div>
+
+      <div class="trade-lab" id="trade-lab" hidden>
+        <div class="trade-grid">
+          <label class="chart-drop" id="chart-drop">
+            <input id="chart-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+            <img id="chart-preview" alt="" hidden>
+            <div id="chart-empty"><strong>DROP A CHART SCREENSHOT</strong><span>TradingView or any charting platform · PNG, JPG or WEBP</span><button type="button" id="choose-chart">Choose chart</button></div>
+          </label>
+          <div class="setup-card">
+            <span class="eyebrow">TRADE LAB · INFORMATIONAL RISK REVIEW</span>
+            <h2>See the chart. Stress-test the thesis.</h2>
+            <div class="setup-fields">
+              <label>Instrument<input id="trade-symbol" maxlength="12" placeholder="SPY, BTC, NVDA"></label>
+              <label>Direction<select id="trade-direction"><option value="">Not specified</option><option value="long">Long thesis</option><option value="short">Short thesis</option></select></label>
+              <label>Entry<input id="trade-entry" maxlength="32" placeholder="Optional"></label>
+              <label>Stop<input id="trade-stop" maxlength="32" placeholder="Optional"></label>
+              <label>Target<input id="trade-target" maxlength="32" placeholder="Optional"></label>
+            </div>
+            <label class="thesis">Your thesis<textarea id="trade-thesis" maxlength="1000" rows="4" placeholder="What do you see in the setup? What are you expecting to happen?"></textarea></label>
+            <button class="analyze-chart" id="analyze-chart" type="button">READ THE CHART</button>
+            <p class="trade-note">Trade Lab evaluates chart structure, the user-supplied entry/stop/target, contradictions and invalidation evidence. It does not size positions or tell you to buy or sell.</p>
+          </div>
+        </div>
+        <div class="trade-result" id="trade-result" hidden></div>
       </div>
 
       <div class="feed" id="feed">
@@ -98,6 +124,6 @@
   </main>
 </div>
 
-<script src="/markets/market-intelligence.js?v=20261006a" defer></script>
+<script src="/markets/market-intelligence.js?v=20261006b" defer></script>
 </body>
 </html>
