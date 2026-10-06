@@ -2,6 +2,7 @@
 // Internally modular: discovery + contract normalization (src/engine/contracts.js), domain routing
 // (src/engine/classify.js), weather model (src/weather/*), publication/resolution/scoring (cycle.js), API (api.js).
 import { runBtcShadow } from '../../../src/crypto/btc-shadow.js';
+import { robinhoodConfigured, robinhoodForEnv } from './robinhood-crypto.js';
 import { MarketsService } from './markets.js';
 import { EngineStore } from '../../../src/engine/store.js';
 import { runCycle } from './cycle.js';
@@ -140,6 +141,37 @@ export default {
           fail_closed: r.writes.contracts.filter((c) => c.normalization_status !== 'NORMALIZED').map((c) => ({ market_id: c.market_id, status: c.normalization_status, reason: c.status_reason, detail: c.detail, rules: c.rules_primary })),
           forecasts: r.writes.forecasts.map((f) => ({ market_id: f.market_id, model: `${f.model_id}@${f.model_version}`, state: f.model_state, pbe: f.probability, market: f.market_probability, confidence: f.confidence, cutoff: f.data_cutoff_at, evidence: f.explanation.evidence, tier: f.explanation.model_tier ?? null })),
         } : { summary: r.summary }, 200, 'no-store');
+      }
+      if (req.method === 'GET' && p === '/admin/crypto/robinhood') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, mode: 'READ_ONLY_MARKET_DATA' }, 503, 'no-store');
+        const rh = robinhoodForEnv(env);
+        try {
+          const [pairs, quotes, estimate] = await Promise.all([
+            rh.tradingPairs(['BTC-USD', 'ETH-USD']),
+            rh.bestBidAsk(['BTC-USD', 'ETH-USD']),
+            rh.estimatedPrice('BTC-USD', { side: 'both', quantity: '0.01' }),
+          ]);
+          return json({
+            ok: true,
+            configured: true,
+            mode: 'READ_ONLY_MARKET_DATA',
+            trading_enabled: false,
+            api_key_suffix: String(env.ROBINHOOD_CRYPTO_API_KEY).slice(-4),
+            pairs,
+            quotes,
+            estimate,
+          }, 200, 'no-store');
+        } catch (e) {
+          return json({
+            ok: false,
+            configured: true,
+            mode: 'READ_ONLY_MARKET_DATA',
+            trading_enabled: false,
+            status: e?.status ?? null,
+            error: e?.message ?? 'robinhood_read_failed',
+          }, 502, 'no-store');
+        }
       }
       if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
