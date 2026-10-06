@@ -1,5 +1,5 @@
 import { upstreamJson } from '../../compare/api/_lib/access.js';
-import { safeSymbols } from './_lib/server.mjs';
+import { safeSymbols } from './_lib/server.cjs';
 
 const LEGACY_MARKETS='https://markets-proptechusa.sales-fd3.workers.dev/market';
 const ROBINHOOD='https://pbe-predictions.sales-fd3.workers.dev/v1/crypto/live-prices';
