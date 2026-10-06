@@ -233,6 +233,28 @@ export default {
           return json({ ok: false, configured: true, status: e?.status ?? null, error: e?.message ?? 'robinhood_preflight_failed', detail: e?.detail ?? null }, 502, 'no-store');
         }
       }
+      if (req.method === 'GET' && p === '/admin/crypto/robinhood/quote-debug') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false }, 503, 'no-store');
+        const rh = robinhoodForEnv(env);
+        const symbols = ['BTC-USD', 'ETH-USD', 'SOL-USD'];
+        try {
+          const out = {};
+          for (const symbol of symbols) {
+            const quantity = symbol === 'BTC-USD' ? '0.001' : symbol === 'ETH-USD' ? '0.01' : '0.1';
+            const [book, both, bid, ask] = await Promise.all([
+              rh.bestBidAsk([symbol]),
+              rh.estimatedPrice(symbol, { side: 'both', quantity }),
+              rh.estimatedPrice(symbol, { side: 'bid', quantity }),
+              rh.estimatedPrice(symbol, { side: 'ask', quantity }),
+            ]);
+            out[symbol] = { quantity, best_bid_ask: book, estimated_both: both, estimated_bid: bid, estimated_ask: ask };
+          }
+          return json({ ok: true, source: 'Robinhood Crypto', symbols: out }, 200, 'no-store');
+        } catch (e) {
+          return json({ ok: false, status: e?.status ?? null, error: e?.message ?? 'robinhood_quote_debug_failed', detail: e?.detail ?? null }, 502, 'no-store');
+        }
+      }
       if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
