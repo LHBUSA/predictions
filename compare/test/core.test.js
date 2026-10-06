@@ -41,9 +41,17 @@ test('join: UFC is UNMATCHED (bouts vs cards), never joined', () => {
   const fake = scoreIndex([{ sport: 'ufc', source_id: ufc[0].canonical_event_id, status: 'live', title: ufc[0].title }]);
   const j = joinScore(ufc[0], fake);
   assert.equal(j.state, 'UNMATCHED', 'even an accidental id equality is not trusted for UFC');
-  assert.deepEqual([...ID_JOIN_SPORTS].sort(), ['mlb', 'nba', 'nfl', 'nhl', 'soccer'], 'soccer added 2026-10-05: market and score feed share the soccer-api match UUID (test/soccer.test.js)');
+  assert.deepEqual([...ID_JOIN_SPORTS].sort(), ['mlb', 'nba', 'nfl', 'nhl', 'soccer', 'tennis']);
 });
 
+test('join: tennis links live score to market by the same canonical match UUID', () => {
+  const id = 'd3af7c1a-b542-5c10-a1fe-8c95f17db9a9';
+  const tennis = scoreIndex([{ sport: 'tennis', source_id: id, status: 'live', title: 'Karolina Muchova vs Naomi Osaka' }]);
+  const linked = joinScore({ sport: 'tennis', canonical_event_id: id }, tennis);
+  assert.equal(linked.state, 'LINKED');
+  assert.equal(linked.score.source_id, id);
+  assert.equal(joinScore({ sport: 'tennis', canonical_event_id: '00000000-0000-0000-0000-000000000000' }, tennis).state, 'NO_SCORE', 'tennis still fails closed: exact UUID only');
+});
 test('badges from real payloads: NBA COMPARABLE, NFL future RULE_MISMATCH, NFL past WITHDRAWN', () => {
   const nba = withSport(fx('desk-nba.json'), 'nba');
   const cmp = nba.flatMap((e) => e.contracts).map(normalizeContract).filter((c) => c.comparison);
