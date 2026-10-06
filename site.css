@@ -95,6 +95,11 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .rail-good{background:var(--pos-bg);color:var(--pos)}
 .rail-flag{background:var(--amber-bg);color:var(--amber)}
 .crypto-note{margin:10px 2px 0;color:#8da2ba}
+.crypto-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
+.crypto-trade-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:8px 11px;border-radius:9px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;text-decoration:none!important}
+.crypto-trade-btn:hover{background:#173b63}
+.crypto-action-note{font-size:10.5px;color:var(--muted);text-align:right}
+@media (max-width:640px){.crypto-actions{align-items:stretch;flex-direction:column}.crypto-trade-btn{width:100%}.crypto-action-note{text-align:left}}
 @media (max-width:900px){.crypto-shell{padding:16px}.crypto-shell-head{align-items:flex-start}.crypto-grid{grid-template-columns:1fr}.crypto-mid{font-size:30px}}
 @media (max-width:640px){.crypto-shell-head{display:grid;gap:10px}.crypto-meta{display:grid;grid-template-columns:1fr 1fr}.crypto-book{grid-template-columns:1fr}.crypto-card{min-height:0}.crypto-book b{font-size:14px}}
 

@@ -279,12 +279,15 @@ function cryptoMarkets(c) {
     const stamp = x.timestamp ? ago(x.timestamp) : '—';
     const rawState = x.raw_quote_crossed ? '<span class="rail-flag">raw book crossed</span>' : '<span class="rail-good">raw book clean</span>';
     const fee = x.fee_ratio == null ? '—' : `${(Number(x.fee_ratio) * 100).toFixed(2)}%`;
+    const asset = x.symbol.replace('-USD','');
+    const tradeUrl = `https://robinhood.com/us/en/crypto/${encodeURIComponent(asset)}/`;
     return `<article class="card crypto-card">
-      <div class="crypto-card-head"><div><span class="crypto-symbol">${esc(x.symbol.replace('-USD',''))}</span><span class="crypto-name">${esc(names[x.symbol] || x.symbol)}</span></div>${x.api_tradable ? '<span class="rail-good">API tradable</span>' : '<span class="rail-flag">not API tradable</span>'}</div>
+      <div class="crypto-card-head"><div><span class="crypto-symbol">${esc(asset)}</span><span class="crypto-name">${esc(names[x.symbol] || x.symbol)}</span></div>${x.api_tradable ? '<span class="rail-good">API tradable</span>' : '<span class="rail-flag">not API tradable</span>'}</div>
       <div class="crypto-price-label">Fee-adjusted midpoint</div>
       <div class="crypto-mid num">${fmt(x.mid, x.symbol)}</div>
       <div class="crypto-book"><span>Net sell <b class="num">${fmt(x.bid, x.symbol)}</b></span><span>Gross buy <b class="num">${fmt(x.ask, x.symbol)}</b></span><span>Total friction <b class="num">${friction}</b></span></div>
       <div class="crypto-foot"><span class="rail-good">fee-adjusted</span><span>Fee ${fee}</span><span>Size ${esc(String(x.estimate_quantity || '—'))}</span>${rawState}<span>${stamp}</span></div>
+      <div class="crypto-actions"><a class="crypto-trade-btn" href="${tradeUrl}" target="_blank" rel="noopener noreferrer">Trade ${esc(asset)} on Robinhood <span aria-hidden="true">↗</span></a><span class="crypto-action-note">Opens Robinhood to review and place the order</span></div>
     </article>`;
   }).join('');
 }
