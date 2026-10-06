@@ -308,16 +308,45 @@ function plainScoreTickerBody(x) {
   return `<span class="ticker-score-stack">${row(x.score.away)}${row(x.score.home)}</span>`;
 }
 
-function liveCard(e) {
-  const s = e.join.score;
+function liveMarketRows(e) {
+  const rows = e.contracts.filter((c) => c.priced).slice(0, 2).map((c) => {
+    const k = c.kalshi, p = pmFor(c);
+    const kOn = k?.mid_bp != null, pOn = p?.mid_bp != null;
+    const only = Number(kOn) + Number(pOn) === 1;
+    const pRelated = pOn && !c.polymarket && c.related.some((r) => r.venue === 'polymarket' && r.mid_bp != null);
+    return `<span class="ticker-market-row">
+      <b>${esc(c.label || 'Market')}</b>
+      <span class="ticker-venue${kOn ? '' : ' is-off'}"><img src="${VENUE.kalshi.icon}" alt="" width="10" height="10">K ${kOn ? fmtCents(k.yes_bp) : '—'}</span>
+      <span class="ticker-venue${pOn ? (pRelated ? ' is-related' : '') : ' is-off'}"><img src="${VENUE.polymarket.icon}" alt="" width="10" height="10">P ${pOn ? fmtCents(p.yes_bp) : '—'}${pRelated ? '*' : ''}</span>
+      ${only ? '<em>ONLY</em>' : ''}
+    </span>`;
+  }).join('');
+  return rows ? `<span class="ticker-market-grid">${rows}</span>` : '';
+}
+
+function liveMarketInsight(e) {
   const best = e.contracts.filter((c) => c.gap_pts != null).sort((a, b) => b.gap_pts - a.gap_pts)[0] || null;
   const crosses = e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
-  const insight = best ? `${e.contracts.length} market${e.contracts.length === 1 ? '' : 's'} · max ${best.gap_pts.toFixed(1)}¢ gap${crosses ? ` · ${crosses} cross${crosses === 1 ? '' : 'es'}` : ''}` : `${e.contracts.length} linked market${e.contracts.length === 1 ? '' : 's'}`;
+  const hasK = e.contracts.some((c) => c.kalshi?.mid_bp != null);
+  const hasP = e.contracts.some((c) => pmFor(c)?.mid_bp != null);
+  const related = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket' && r.mid_bp != null));
+  if (hasK && hasP && best) return `KALSHI + POLY · MAX ${best.gap_pts.toFixed(1)}¢ GAP${crosses ? ` · ${crosses} CROSS${crosses === 1 ? '' : 'ES'}` : ''}`;
+  if (hasK && hasP) return `KALSHI + POLY · ${related ? 'RULES DIFFER · PRICES SHOWN' : 'PRICES SHOWN'}`;
+  if (hasK) return 'KALSHI ONLY · MARKET SHOWN';
+  if (hasP) return 'POLY ONLY · MARKET SHOWN';
+  return 'MARKET ATTACHED · CURRENT PRICE UNAVAILABLE';
+}
+
+function liveCard(e) {
+  const s = e.join.score;
+  const insight = liveMarketInsight(e);
+  const markets = liveMarketRows(e);
   if (e.sport === 'tennis') {
     const doubles = String(s?.title || e.title || '').includes(' / ');
     return `<button type="button" class="lc ticker-game lc-tennis-card${doubles ? ' is-doubles' : ''}" data-open="${esc(e.key)}">
       <span class="lc-h"><span class="sport">TENNIS</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
       ${tennisTickerBody(s?.title || e.title, s?.summary)}
+      ${markets}
       <small class="ticker-edge">${esc(insight)}</small>
     </button>`;
   }
@@ -328,6 +357,7 @@ function liveCard(e) {
   return `<button type="button" class="lc ticker-game" data-open="${esc(e.key)}">
     <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
     <span class="ticker-score">${lines}</span>
+    ${markets}
     <small class="ticker-edge">${esc(insight)}</small>
   </button>`;
 }
@@ -339,7 +369,7 @@ function renderLive() {
   const unlinked = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
   sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
   if (sec.hidden) return;
-  $('#live-meta').textContent = `SCORES & MARKET MOVES · ${liveItems.length} LIVE · ${linked.length} LINKED`;
+  $('#live-meta').textContent = `SCORES & MARKET MOVES · ${liveItems.length} LIVE · ${linked.length} MARKET-LINKED`;
   const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map(plainLiveCard));
   liveRail(cards);
 }
@@ -352,12 +382,8 @@ function plainLiveCard(x) {
   else if (x.score?.away) body = plainScoreTickerBody(x);
   else body = `<span class="ticker-title">${esc(x.title)}</span>`;
   const note = doubles
-    ? 'Doubles score only · singles comparison markets only'
-    : tennis
-      ? 'Score only · no comparison market listed'
-      : ['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport)
-        ? 'Score only · no linked comparison market'
-        : 'Score only · market link unavailable';
+    ? 'Score only · doubles market lane not connected'
+    : 'No market attached to this live match in Compare yet';
   return `<a class="lc lc-plain ticker-game${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     ${body}
