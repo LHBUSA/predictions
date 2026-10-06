@@ -365,57 +365,51 @@ export default {
           { symbol: 'SOL-USD', quantity: '0.1' },
         ];
         try {
-          const [pairs, quotes] = await Promise.all([
+          const [pairs, quotes, ...estimates] = await Promise.all([
             rh.tradingPairs(defs.map((x) => x.symbol)),
             rh.bestBidAsk(defs.map((x) => x.symbol)),
+            ...defs.map((d) => rh.estimatedPrice(d.symbol, { side: 'both', quantity: d.quantity })),
           ]);
           const pairBy = Object.fromEntries((pairs?.results || []).map((x) => [x.symbol, x]));
           const quoteBy = Object.fromEntries((quotes?.results || []).map((x) => [x.symbol, x]));
           const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
 
-          // Robinhood documents bid/ask as a normal top-of-book, but partner-exchange snapshots can
-          // occasionally arrive crossed. Never publish a negative spread. For crossed symbols only,
-          // ask Robinhood's size-aware estimated-price endpoint for bid and ask independently.
-          const crossedDefs = defs.filter((d) => {
+          // v2 best_bid_ask is a fee-exclusive partner-exchange snapshot and can be crossed across venues.
+          // For the public execution rail, publish fee-adjusted, size-aware economics instead:
+          // net proceeds per unit on a sell and gross cost per unit on a buy. These are derived directly
+          // from Robinhood's estimated total credit/cost and therefore reflect the selected order size + fee.
+          const rows = defs.map((d, i) => {
             const q = quoteBy[d.symbol] || {};
-            const bid = num(q.bid); const ask = num(q.ask);
-            return bid != null && ask != null && bid > ask;
-          });
-          const fallbackPairs = await Promise.all(crossedDefs.map(async (d) => {
-            const [bidEstimate, askEstimate] = await Promise.all([
-              rh.estimatedPrice(d.symbol, { side: 'bid', quantity: d.quantity }),
-              rh.estimatedPrice(d.symbol, { side: 'ask', quantity: d.quantity }),
-            ]);
-            const pick = (payload, side) => (payload?.results || []).find((x) => x?.side === side) || payload?.results?.[0] || null;
-            return [d.symbol, { bid: pick(bidEstimate, 'bid'), ask: pick(askEstimate, 'ask') }];
-          }));
-          const fallbackBy = Object.fromEntries(fallbackPairs);
-
-          const rows = defs.map((d) => {
-            const q = quoteBy[d.symbol] || {};
-            const bid = num(q.bid); const ask = num(q.ask);
-            const crossed = bid != null && ask != null && bid > ask;
-            const fb = fallbackBy[d.symbol] || {};
-            const ebid = num(fb.bid?.bid);
-            const eask = num(fb.ask?.ask);
-            const fallbackValid = ebid != null && eask != null && ebid <= eask;
-            const cleanBid = crossed ? (fallbackValid ? ebid : null) : bid;
-            const cleanAsk = crossed ? (fallbackValid ? eask : null) : ask;
-            const mid = cleanBid != null && cleanAsk != null ? (cleanBid + cleanAsk) / 2 : null;
-            const spreadBps = cleanBid != null && cleanAsk != null && mid > 0 ? ((cleanAsk - cleanBid) / mid) * 10000 : null;
+            const rawBid = num(q.bid); const rawAsk = num(q.ask);
+            const rawCrossed = rawBid != null && rawAsk != null && rawBid > rawAsk;
+            const estRows = estimates[i]?.results || [];
+            const sell = estRows.find((x) => x?.side === 'bid') || null;
+            const buy = estRows.find((x) => x?.side === 'ask') || null;
+            const qty = num(d.quantity);
+            const totalCredit = num(sell?.est_total_credit);
+            const totalCost = num(buy?.est_total_cost);
+            const effectiveBid = qty > 0 && totalCredit != null ? totalCredit / qty : null;
+            const effectiveAsk = qty > 0 && totalCost != null ? totalCost / qty : null;
+            const valid = effectiveBid != null && effectiveAsk != null && effectiveBid <= effectiveAsk;
+            const cleanBid = valid ? effectiveBid : null;
+            const cleanAsk = valid ? effectiveAsk : null;
+            const mid = valid ? (cleanBid + cleanAsk) / 2 : null;
+            const spreadBps = valid && mid > 0 ? ((cleanAsk - cleanBid) / mid) * 10000 : null;
             return {
               symbol: d.symbol,
               api_tradable: pairBy[d.symbol]?.is_api_tradable === true,
-              timestamp: (crossed ? (fb.ask?.timestamp || fb.bid?.timestamp) : q.timestamp) || null,
+              timestamp: buy?.timestamp || sell?.timestamp || q.timestamp || null,
               bid: cleanBid,
               ask: cleanAsk,
               mid,
               spread_bps: spreadBps,
-              raw_quote_crossed: crossed,
-              quote_valid: cleanBid != null && cleanAsk != null,
-              quote_source: crossed ? (fallbackValid ? 'estimated_price_bid_ask' : 'crossed_quote_rejected') : 'best_bid_ask',
+              quote_valid: valid,
+              quote_source: valid ? 'estimated_price_fee_adjusted' : 'estimated_price_rejected',
               estimate_quantity: d.quantity,
-              fee_ratio: num(fb.ask?.fee_ratio ?? fb.bid?.fee_ratio),
+              fee_ratio: num(buy?.fee_ratio ?? sell?.fee_ratio),
+              raw_bid: rawBid,
+              raw_ask: rawAsk,
+              raw_quote_crossed: rawCrossed,
             };
           });
           return json({
