@@ -39,7 +39,7 @@ export function transform(src) {
   // first-class live score cards without a second tennis API request.
   s = replaceOnce(s,
     "        summary:{ label:'SETS', value:\`${setsA || '—'}  ·  ${setsB || '—'}\`, secondary:m?.tournament?.name || m?.edition?.name || null },",
-    "        summary:{ label:'SETS', value:\`${setsA || '—'}  ·  ${setsB || '—'}\`, secondary:m?.tournament?.name || m?.edition?.name || null },\\n        meta:{ sides:m?.sides || null },",
+    "        summary:{ label:'SETS', value:\`${setsA || '—'}  ·  ${setsB || '—'}\`, secondary:m?.tournament?.name || m?.edition?.name || null },\n        meta:{ sides:m?.sides || null },",
     'tennis player media');
 
   // PATCH 5: the HTTP handler (and its Members membership gate) becomes a pure loader.
