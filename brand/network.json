@@ -1,5 +1,5 @@
 {
-  "_comment": "Single source for the PropBetEdge network shell on predictions.propbetedge.ai (Worker pages, index.html, static pages). Commercial truth: 10 live sports + PropBetEdge Predictions = All Access, $29/month. Predictions is NOT a sport.",
+  "_comment": "Single source for the PropBetEdge Predictions network shell. Sports stay separate; All Access groups the premium cross-sport products.",
   "brand": {
     "name": "PropBetEdge",
     "url": "https://propbetedge.ai/",
@@ -11,7 +11,7 @@
     "label": "All Access",
     "price": "$29/mo",
     "url": "https://propbetedge.ai/pro",
-    "line": "PropBetEdge All Access — 10 sports + PropBetEdge Predictions for $29/month."
+    "line": "PropBetEdge All Access — 10 sports + Predictions + Compare for $29/month."
   },
   "product": [
     [
@@ -123,10 +123,6 @@
       "https://propbetedge.ai/"
     ],
     [
-      "All Access — $29/mo",
-      "https://propbetedge.ai/pro"
-    ],
-    [
       "PropBetEdge News",
       "https://propbetedge.ai/news"
     ],
@@ -169,5 +165,23 @@
       "https://propbetedge.ai/support"
     ]
   ],
-  "disclaimer": "Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model."
+  "disclaimer": "Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model.",
+  "all_access_products": [
+    [
+      "All Access",
+      "https://propbetedge.ai/pro"
+    ],
+    [
+      "Command Center",
+      "https://members.propbetedge.ai/"
+    ],
+    [
+      "Compare",
+      "https://compare.propbetedge.ai/"
+    ],
+    [
+      "Predictions",
+      "https://predictions.propbetedge.ai/"
+    ]
+  ]
 }
