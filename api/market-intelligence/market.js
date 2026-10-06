@@ -1,5 +1,5 @@
 import { requireAllAccess, send, upstreamJson } from '../../compare/api/_lib/access.js';
-import { safeSymbols } from '../../src/market-intelligence-server.js';
+import { safeSymbols } from './_lib/server.js';
 
 const UPSTREAM='https://markets-proptechusa.sales-fd3.workers.dev/market';
 
