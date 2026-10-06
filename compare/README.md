@@ -15,8 +15,9 @@ Rollback point before V1 repair: `dpl_2M7jzWJQJGWAn3qyH9ohNUvD8MPj` (578eba5).
 Protected routes: anonymous 401 · signed in without All Access 403 · authority unreachable 503 + Retry-After.
 
 ## Data rules
-- Score ↔ market joins are ID-only (`core.js` `ID_JOIN_SPORTS` = NFL, NBA, MLB, NHL). UFC and every other sport = UNMATCHED. No title or team-name matching anywhere.
+- Score ↔ market joins are ID-only (`core.js` `ID_JOIN_SPORTS` = NFL, NBA, MLB, NHL, Soccer, Tennis). Tennis uses the same PropSports canonical match UUID in the live feed and market registry; no title/player-name fallback is allowed. UFC remains UNMATCHED (market = bouts, live feed = cards).
 - Badges: COMPARABLE (± EXACT / NOT ALIGNED), RULE MISMATCH, WITHDRAWN, SINGLE VENUE; score join: UNMATCHED. RULE_MISMATCH stays fail-closed: shown with its own price, never a spread.
+- Tennis comparison-market coverage is singles only today (ATP `MS` / WTA `WS`, Kalshi `KXATPMATCH` / `KXWTAMATCH`; Polymarket doubles are intentionally filtered from ingestion). Doubles can appear in the live score rail, but are labelled score-only instead of `UNMATCHED`.
 - Movement = stored observations only (step semantics); a window without an observation at or before its start is "not enough observations", never 0.
 
 ## Tests / QA
