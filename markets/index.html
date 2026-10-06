@@ -297,6 +297,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 .mode-btn.active{background:var(--bg3);}
 .mode-btn.debate.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--tim),var(--bra));}
 .mode-btn.consult.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--glod);}
+.mode-btn.trade.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:#8c7cff;}
 .mode-icon{font-size:16px;}
 .mode-label{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt2);}
 .mode-btn.active .mode-label{color:var(--txt);}
@@ -317,6 +318,19 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 .pp-tab.data .pp-name{color:var(--glod);}
 .pp-role{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);}
 
+.trade-lab{display:none;flex:1;overflow-y:auto;padding:18px;background:var(--bg);}
+.mode-trade .trade-lab{display:block}.mode-trade .feed,.mode-trade .input-area{display:none}
+.trade-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:14px}
+.trade-drop{min-height:390px;border:1px dashed var(--bdr2);border-radius:7px;background:var(--bg2);display:grid;place-items:center;overflow:hidden;cursor:pointer;position:relative}
+.trade-drop.drag{border-color:#8c7cff;background:rgba(140,124,255,.05)}.trade-drop img{width:100%;height:auto;max-height:60vh;object-fit:contain;display:block}
+#trade-empty{text-align:center;color:var(--txt2);padding:28px}.trade-icon{font-size:26px;color:#8c7cff;margin-bottom:8px}#trade-empty strong,#trade-empty span{display:block}#trade-empty strong{color:var(--txt);font-size:13px;text-transform:uppercase;letter-spacing:.08em}#trade-empty span{font:11px/1.5 var(--sans);margin:7px 0 13px}
+#trade-empty button,.trade-read{border:1px solid rgba(140,124,255,.45);background:rgba(140,124,255,.11);color:#c9c2ff;border-radius:5px;padding:8px 12px;font:700 9px var(--mono);letter-spacing:.08em;cursor:pointer}
+.trade-form{border:1px solid var(--bdr);border-radius:7px;background:var(--bg2);padding:16px}.trade-kicker{font-size:8px;letter-spacing:.14em;color:#9e91ff}.trade-form h2{font:600 22px/1.15 var(--sans);margin:7px 0 14px}.trade-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trade-fields label,.trade-thesis{display:flex;flex-direction:column;gap:5px;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3)}
+.trade-fields input,.trade-fields select,.trade-thesis textarea{width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:5px;color:var(--txt);padding:8px 9px;font:11px var(--mono);outline:none}.trade-thesis{margin-top:9px}.trade-thesis textarea{resize:vertical;min-height:96px;text-transform:none;letter-spacing:0}.trade-read{width:100%;margin-top:10px}.trade-note{font:10px/1.55 var(--sans);color:var(--txt3);margin-top:9px}.trade-result{display:none;margin-top:14px;padding:15px;border:1px solid var(--bdr);border-left:2px solid #8c7cff;border-radius:6px;background:var(--bg2);font:12.5px/1.65 var(--sans);color:var(--txt2)}.trade-result.show{display:block}.trade-result h1,.trade-result h2,.trade-result h3{font-size:13px;color:var(--txt);margin:10px 0 4px}.trade-result ul,.trade-result ol{padding-left:18px;margin:6px 0}
+.market-preview .trade-drop::after,.market-preview .trade-read::after{content:'ALL ACCESS';position:absolute;inset:0;display:grid;place-items:center;background:rgba(11,15,21,.78);color:var(--glod);font-size:8px;letter-spacing:.1em;border-radius:inherit}.trade-read{position:relative}
+@media(max-width:960px){.trade-grid{grid-template-columns:1fr}.trade-drop{min-height:280px}}
+@media(max-width:540px){.trade-fields{grid-template-columns:1fr}}
 /* FEED */
 .feed{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;}
 .feed::-webkit-scrollbar{width:3px;}
@@ -601,6 +615,10 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
         <span class="mode-icon">💬</span>
         <div><div class="mode-label">Consult</div><div class="mode-desc">One-on-one with your analyst</div></div>
       </div>
+      <div class="mode-btn trade" id="btn-trade" onclick="setMode('trade')">
+        <span class="mode-icon">△</span>
+        <div><div class="mode-label">Trade Lab</div><div class="mode-desc">Chart screenshot risk review</div></div>
+      </div>
     </div>
     <div class="persona-pick" id="persona-pick">
       <div class="pp-tab tim active" id="pp-tim" onclick="setPersona('tim')">
@@ -618,6 +636,31 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
         <span class="acc-badge new" id="acc-data">—</span>
         <div class="trash-talk" id="trash-data"></div>
       </div>
+    </div>
+
+    <div class="trade-lab" id="trade-lab">
+      <div class="trade-grid">
+        <label class="trade-drop" id="trade-drop">
+          <input id="trade-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <img id="trade-preview" alt="" hidden>
+          <div id="trade-empty"><div class="trade-icon">▧</div><strong>Drop a chart screenshot</strong><span>TradingView or any chart platform · PNG, JPG, WEBP</span><button type="button" id="trade-choose">Choose chart</button></div>
+        </label>
+        <div class="trade-form">
+          <div class="trade-kicker">TRADE LAB · ALL ACCESS</div>
+          <h2>See it. Read it. Stress-test it.</h2>
+          <div class="trade-fields">
+            <label>Instrument<input id="trade-symbol" maxlength="12" placeholder="SPY, BTC, NVDA"></label>
+            <label>Direction<select id="trade-direction"><option value="">Not specified</option><option value="long">Long thesis</option><option value="short">Short thesis</option></select></label>
+            <label>Entry<input id="trade-entry" maxlength="32" placeholder="Optional"></label>
+            <label>Stop<input id="trade-stop" maxlength="32" placeholder="Optional"></label>
+            <label>Target<input id="trade-target" maxlength="32" placeholder="Optional"></label>
+          </div>
+          <label class="trade-thesis">Your thesis<textarea id="trade-thesis" maxlength="1000" rows="5" placeholder="What do you see? What are you expecting to happen?"></textarea></label>
+          <button class="trade-read" id="trade-read" type="button">READ THE CHART</button>
+          <div class="trade-note">Informational risk review only. Trade Lab evaluates chart structure, your stated levels, contradictions, and invalidation evidence. It does not size positions or tell you to buy or sell.</div>
+        </div>
+      </div>
+      <div class="trade-result" id="trade-result"></div>
     </div>
 
     <div class="feed" id="feed">
@@ -753,9 +796,10 @@ function setMode(m) {
   document.getElementById('center').className = `center mode-${m}`;
   document.getElementById('btn-debate').classList.toggle('active', m==='debate');
   document.getElementById('btn-consult').classList.toggle('active', m==='consult');
+  document.getElementById('btn-trade').classList.toggle('active', m==='trade');
   document.getElementById('persona-pick').classList.toggle('show', m==='consult');
-  document.getElementById('inp').placeholder = m==='debate'?'Throw a topic into the debate…':`Ask ${P[persona].name} anything…`;
-  document.getElementById('im-mode').textContent = m==='debate'?'Debate Mode':`Consulting ${P[persona].name}`;
+  if(m==='debate'){document.getElementById('inp').placeholder='Throw a topic into the debate…';document.getElementById('im-mode').textContent='Debate Mode';}
+  else if(m==='consult'){document.getElementById('inp').placeholder=`Ask ${P[persona].name} anything…`;document.getElementById('im-mode').textContent=`Consulting ${P[persona].name}`;}
 }
 
 function setPersona(p) {
@@ -1140,6 +1184,34 @@ async function loadData(){
 
   }catch(e){console.warn('Market data:',e.message);}
 }
+
+let tradeImage='';
+function tradeLocked(){document.getElementById('access-preview')?.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function fileData(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=reject;r.readAsDataURL(file);});}
+async function useTradeFile(file){
+  if(!isMember){tradeLocked();return;}
+  if(!file||!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>4500000){alert('Use a PNG, JPG or WEBP chart under 4.5 MB.');return;}
+  tradeImage=await fileData(file);const img=document.getElementById('trade-preview');img.src=tradeImage;img.hidden=false;document.getElementById('trade-empty').style.display='none';
+}
+const tradeDrop=document.getElementById('trade-drop'),tradeFile=document.getElementById('trade-file');
+document.getElementById('trade-choose').onclick=e=>{e.preventDefault();if(!isMember){tradeLocked();return;}tradeFile.click();};
+tradeDrop.onclick=e=>{if(e.target.id==='trade-choose')return;if(!isMember){tradeLocked();return;}tradeFile.click();};
+tradeFile.onchange=()=>useTradeFile(tradeFile.files?.[0]);
+['dragenter','dragover'].forEach(ev=>tradeDrop.addEventListener(ev,e=>{e.preventDefault();if(isMember)tradeDrop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>tradeDrop.addEventListener(ev,e=>{e.preventDefault();tradeDrop.classList.remove('drag');}));
+tradeDrop.addEventListener('drop',e=>useTradeFile(e.dataTransfer?.files?.[0]));
+document.getElementById('trade-read').onclick=async()=>{
+  if(!isMember){tradeLocked();return;}if(!tradeImage){alert('Add a chart screenshot first.');return;}
+  const btn=document.getElementById('trade-read'),out=document.getElementById('trade-result');btn.disabled=true;btn.textContent='READING CHART…';out.classList.add('show');out.textContent='Reading chart structure and live market context…';
+  try{
+    const res=await fetch(API+'/chart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      image:tradeImage,symbol:document.getElementById('trade-symbol').value,direction:document.getElementById('trade-direction').value,
+      entry:document.getElementById('trade-entry').value,stop:document.getElementById('trade-stop').value,target:document.getElementById('trade-target').value,thesis:document.getElementById('trade-thesis').value
+    })});
+    const b=await res.json().catch(()=>({}));if(!res.ok)throw new Error();out.innerHTML=md(b.analysis||'No analysis returned.');
+  }catch{out.textContent='Trade Lab could not complete this chart review. Please try again.';}
+  finally{btn.disabled=false;btn.textContent='READ THE CHART';}
+};
 
 let isMember=false;
 async function checkMembership(){
