@@ -293,13 +293,26 @@ function renderGate() {
 
 // ---------------------------------------------------------------------------------------------------------
 // Live rail (any scope with live games)
-function tennisTickerBody(title, summary) {
-  const sides = String(title || '').split(/\s+vs\s+/i);
+function livePlayerPhoto(player) {
+  const src = player?.photo?.thumb || player?.photo?.square || player?.photo?.portrait || (player?.id && /^[0-9a-f-]{36}$/.test(player.id) ? `https://tennis-api.propbetedge.ai/media/players/${player.id}/thumb.webp` : null);
+  const initials = String(player?.name || '?').split(/\s+/).filter(Boolean).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
+  return src
+    ? `<span class="live-player-photo"><img src="${esc(src)}" alt="" loading="lazy" decoding="async" data-initials="${esc(initials)}"></span>`
+    : `<span class="live-player-photo"><i>${esc(initials || '?')}</i></span>`;
+}
+
+function tennisTickerBody(title, summary, meta = null) {
+  const names = String(title || '').split(/\s+vs\s+/i);
   const sets = String(summary?.value || '').split(/\s+·\s+/);
-  if (sides.length !== 2) return `<span class="ticker-title">${esc(title || 'Live tennis')}</span>`;
-  const doubles = sides.some((side) => side.includes(' / '));
-  const row = (name, score) => `<span class="ticker-tennis-row"><b>${esc(name)}</b>${score && score !== '—' ? `<strong>${esc(score)}</strong>` : ''}</span>`;
-  return `<span class="ticker-tennis-match${doubles ? ' is-doubles' : ''}">${row(sides[0], sets[0])}${row(sides[1], sets[1])}</span>`;
+  const sides = [meta?.sides?.A, meta?.sides?.B];
+  if (names.length !== 2) return `<span class="ticker-title">${esc(title || 'Live tennis')}</span>`;
+  const doubles = sides.some((side) => (side?.players || []).length > 1) || names.some((side) => side.includes(' / '));
+  const row = (name, score, side) => {
+    const players = side?.players || [];
+    const photos = players.length ? `<span class="live-player-photos">${players.slice(0, 2).map(livePlayerPhoto).join('')}</span>` : '';
+    return `<span class="ticker-tennis-row">${photos}<b>${esc(name)}</b>${score && score !== '—' ? `<strong>${esc(score)}</strong>` : ''}</span>`;
+  };
+  return `<span class="ticker-tennis-match${doubles ? ' is-doubles' : ''}">${row(names[0], sets[0], sides[0])}${row(names[1], sets[1], sides[1])}</span>`;
 }
 
 function plainScoreTickerBody(x) {
@@ -309,18 +322,19 @@ function plainScoreTickerBody(x) {
 }
 
 function liveMarketRows(e) {
-  const rows = e.contracts.filter((c) => c.priced).slice(0, 2).map((c) => {
+  const rows = e.contracts.filter((c) => c.priced).map((c) => {
     const k = c.kalshi, p = pmFor(c);
     const kOn = k?.mid_bp != null, pOn = p?.mid_bp != null;
+    if (!kOn && !pOn) return '';
     const only = Number(kOn) + Number(pOn) === 1;
     const pRelated = pOn && !c.polymarket && c.related.some((r) => r.venue === 'polymarket' && r.mid_bp != null);
     return `<span class="ticker-market-row">
       <b>${esc(c.label || 'Market')}</b>
-      <span class="ticker-venue${kOn ? '' : ' is-off'}"><img src="${VENUE.kalshi.icon}" alt="" width="10" height="10">K ${kOn ? fmtCents(k.yes_bp) : '—'}</span>
-      <span class="ticker-venue${pOn ? (pRelated ? ' is-related' : '') : ' is-off'}"><img src="${VENUE.polymarket.icon}" alt="" width="10" height="10">P ${pOn ? fmtCents(p.yes_bp) : '—'}${pRelated ? '*' : ''}</span>
+      ${kOn ? `<span class="ticker-venue"><img src="${VENUE.kalshi.icon}" alt="" width="10" height="10">K ${fmtCents(k.yes_bp)}</span>` : ''}
+      ${pOn ? `<span class="ticker-venue${pRelated ? ' is-related' : ''}"><img src="${VENUE.polymarket.icon}" alt="" width="10" height="10">P ${fmtCents(p.yes_bp)}${pRelated ? '*' : ''}</span>` : ''}
       ${only ? '<em>ONLY</em>' : ''}
     </span>`;
-  }).join('');
+  }).filter(Boolean).join('');
   return rows ? `<span class="ticker-market-grid">${rows}</span>` : '';
 }
 
@@ -332,9 +346,9 @@ function liveMarketInsight(e) {
   const related = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket' && r.mid_bp != null));
   if (hasK && hasP && best) return `KALSHI + POLY · MAX ${best.gap_pts.toFixed(1)}¢ GAP${crosses ? ` · ${crosses} CROSS${crosses === 1 ? '' : 'ES'}` : ''}`;
   if (hasK && hasP) return `KALSHI + POLY · ${related ? 'RULES DIFFER · PRICES SHOWN' : 'PRICES SHOWN'}`;
-  if (hasK) return 'KALSHI ONLY · MARKET SHOWN';
-  if (hasP) return 'POLY ONLY · MARKET SHOWN';
-  return 'MARKET ATTACHED · CURRENT PRICE UNAVAILABLE';
+  if (hasK) return 'KALSHI ONLY · LIVE PRICE';
+  if (hasP) return 'POLY ONLY · LIVE PRICE';
+  return 'MARKET ATTACHED · PRICE TEMPORARILY UNAVAILABLE';
 }
 
 function liveCard(e) {
@@ -343,9 +357,9 @@ function liveCard(e) {
   const markets = liveMarketRows(e);
   if (e.sport === 'tennis') {
     const doubles = String(s?.title || e.title || '').includes(' / ');
-    return `<button type="button" class="lc ticker-game lc-tennis-card${doubles ? ' is-doubles' : ''}" data-open="${esc(e.key)}">
+    return `<button type="button" class="lc ticker-game lc-market-card lc-tennis-card${doubles ? ' is-doubles' : ''}" data-open="${esc(e.key)}">
       <span class="lc-h"><span class="sport">TENNIS</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
-      ${tennisTickerBody(s?.title || e.title, s?.summary)}
+      ${tennisTickerBody(s?.title || e.title, s?.summary, s?.meta)}
       ${markets}
       <small class="ticker-edge">${esc(insight)}</small>
     </button>`;
@@ -354,66 +368,79 @@ function liveCard(e) {
     const side = sideFor(e, c);
     return `<span class="ticker-team">${avatar(e, c, 'sm')}<b>${esc(side?.abbr || c.label)}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
   }).join('');
-  return `<button type="button" class="lc ticker-game" data-open="${esc(e.key)}">
+  return `<button type="button" class="lc ticker-game lc-market-card" data-open="${esc(e.key)}">
     <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
     <span class="ticker-score">${lines}</span>
     ${markets}
     <small class="ticker-edge">${esc(insight)}</small>
   </button>`;
 }
-function renderLive() {
-  const sec = $('#live');
-  const linked = S.events.filter((e) => e.live);
-  const liveItems = (S.live?.items || []).filter((x) => x.status === 'live');
-  const ids = new Set(linked.map((e) => `${e.sport}:${e.canonical_event_id}`));
-  const unlinked = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
-  sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
-  if (sec.hidden) return;
-  $('#live-meta').textContent = `SCORES & MARKET MOVES · ${liveItems.length} LIVE · ${linked.length} MARKET-LINKED`;
-  const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map(plainLiveCard));
-  liveRail(cards);
-}
 
 function plainLiveCard(x) {
   const tennis = x.sport === 'tennis';
   const doubles = tennis && String(x.title || '').includes(' / ');
   let body;
-  if (tennis) body = tennisTickerBody(x.title, x.summary);
+  if (tennis) body = tennisTickerBody(x.title, x.summary, x.meta);
   else if (x.score?.away) body = plainScoreTickerBody(x);
   else body = `<span class="ticker-title">${esc(x.title)}</span>`;
-  const note = doubles
-    ? 'Score only · doubles market lane not connected'
-    : 'No market attached to this live match in Compare yet';
-  return `<a class="lc lc-plain ticker-game${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
+  return `<a class="lc lc-plain ticker-game lc-score-only${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     ${body}
-    <small class="ticker-edge ticker-edge-muted">${esc(note)}</small></a>`;
+    <small class="no-market-chip">NO MARKETS</small></a>`;
 }
-// Live rail: more than MARQUEE_MIN games -> a slow continuous scroll (owner 2026-10-05), never a scrollbar.
-// The cards are rendered twice (the copy is aria-hidden and out of the tab order) and moved by an offset that
-// survives the 15-60 s re-renders, so new scores never make the rail jump. Pauses on hover / keyboard focus;
-// reduced-motion users get a static rail they can swipe (scrollbar still hidden).
-const MARQUEE_MIN = 6, MARQUEE_PX_S = 26;
-const mq = { raf: 0, x: 0, last: 0, paused: false, bound: false };
+
+function renderLive() {
+  const sec = $('#live');
+  const marketEvents = S.events.filter((e) => e.live && e.contracts.some((c) => c.priced));
+  const liveItems = (S.live?.items || []).filter((x) => x.status === 'live');
+  const ids = new Set(marketEvents.map((e) => `${e.sport}:${e.canonical_event_id}`));
+  const scoreOnly = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
+  sec.hidden = S.memberState !== 'entitled' || (!marketEvents.length && !scoreOnly.length);
+  if (sec.hidden) { stopMarquee(); return; }
+
+  $('#live-meta').textContent = `${liveItems.length} LIVE · ${marketEvents.length} WITH MARKETS`;
+  const marketBlock = $('#live-market-block'), scoreBlock = $('#live-score-block');
+  marketBlock.hidden = !marketEvents.length;
+  scoreBlock.hidden = !scoreOnly.length;
+  $('#live-market-meta').textContent = marketEvents.length ? `${marketEvents.length} LIVE EVENT${marketEvents.length === 1 ? '' : 'S'} · PRICES SHOWN` : '';
+  $('#live-score-meta').textContent = scoreOnly.length ? `${scoreOnly.length} SCORE-ONLY · NO MARKETS` : '';
+  liveRail('live-market-cards', marketEvents.map(liveCard), 'market');
+  liveRail('live-score-cards', scoreOnly.slice(0, 24).map(plainLiveCard), 'scores');
+}
+
+// Each rail keeps its own scroll/marquee state. Market cards always render first; score-only games never displace them.
+const MARQUEE_MIN = 5, MARQUEE_PX_S = 24;
+const rails = new Map();
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-function liveRail(cards) {
-  const box = $('#live-cards');
+function railState(key) {
+  if (!rails.has(key)) rails.set(key, { raf:0, x:0, last:0, paused:false, bound:false });
+  return rails.get(key);
+}
+function liveRail(id, cards, key) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const mq = railState(key);
   if (!mq.bound) {
     mq.bound = true;
-    const pause = (v) => () => { mq.paused = v; };
-    box.addEventListener('pointerenter', pause(true)); box.addEventListener('pointerleave', pause(false));
-    box.addEventListener('focusin', pause(true)); box.addEventListener('focusout', pause(false));
+    box.addEventListener('pointerenter', () => { mq.paused = true; });
+    box.addEventListener('pointerleave', () => { mq.paused = false; });
+    box.addEventListener('focusin', () => { mq.paused = true; });
+    box.addEventListener('focusout', () => { mq.paused = false; });
   }
+  if (!cards.length) { stopRail(key); box.innerHTML=''; box.classList.remove('marquee'); return; }
   const on = cards.length >= MARQUEE_MIN && !reducedMotion();
   box.classList.toggle('marquee', on);
-  if (!on) { stopMarquee(); box.innerHTML = cards.join(''); return; }
+  if (!on) { stopRail(key); box.innerHTML = cards.join(''); return; }
   const copy = cards.map((h) => h.replace(/^<(a|button)\b/, '<$1 tabindex="-1" aria-hidden="true" data-copy'));
   box.innerHTML = `<div class="lc-track">${cards.join('')}${copy.join('')}</div>`;
   box.dataset.n = String(cards.length);
-  if (!mq.raf) { mq.last = 0; mq.raf = requestAnimationFrame(stepMarquee); } else stepMarquee.apply_(); // keep offset
+  if (!mq.raf) { mq.last = 0; mq.raf = requestAnimationFrame((t) => stepMarquee(key, t)); }
+  else applyRail(key);
 }
-function stepMarquee(t) {
-  const box = $('#live-cards'), track = box?.querySelector('.lc-track');
+function stepMarquee(key, t) {
+  const mq = railState(key);
+  const id = key === 'market' ? 'live-market-cards' : 'live-score-cards';
+  const box = document.getElementById(id), track = box?.querySelector('.lc-track');
   if (!track) { mq.raf = 0; return; }
   const dt = mq.last ? Math.min(100, t - mq.last) / 1000 : 0;
   mq.last = t;
@@ -421,10 +448,20 @@ function stepMarquee(t) {
   const loop = first ? first.offsetLeft - track.children[0].offsetLeft : 0;
   if (!mq.paused && loop > 0) { mq.x += dt * MARQUEE_PX_S; if (mq.x >= loop) mq.x -= loop; }
   track.style.transform = `translate3d(${-mq.x.toFixed(1)}px,0,0)`;
-  mq.raf = requestAnimationFrame(stepMarquee);
+  mq.raf = requestAnimationFrame((n) => stepMarquee(key, n));
 }
-stepMarquee.apply_ = () => { const track = $('#live-cards .lc-track'); if (track) track.style.transform = `translate3d(${-mq.x.toFixed(1)}px,0,0)`; };
-function stopMarquee() { if (mq.raf) cancelAnimationFrame(mq.raf); mq.raf = 0; mq.last = 0; }
+function applyRail(key) {
+  const mq = railState(key);
+  const id = key === 'market' ? 'live-market-cards' : 'live-score-cards';
+  const track = document.querySelector(`#${id} .lc-track`);
+  if (track) track.style.transform = `translate3d(${-mq.x.toFixed(1)}px,0,0)`;
+}
+function stopRail(key) {
+  const mq = railState(key);
+  if (mq.raf) cancelAnimationFrame(mq.raf);
+  mq.raf = 0; mq.last = 0;
+}
+function stopMarquee() { for (const key of rails.keys()) stopRail(key); }
 
 // ---------------------------------------------------------------------------------------------------------
 // Overview hub (ALL SPORTS) and sport hubs
