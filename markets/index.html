@@ -1247,13 +1247,39 @@ async function loadData(){
   try{
     const stocks=tickerStocks.join(',');
     const crypto=tickerCrypto.join(',');
-    const res=await fetch(`${API}/market?stocks=${stocks}&crypto=${crypto}`);
-    if(!res.ok) throw new Error(res.status);
-    mkt=await res.json();
-    renderEQ(mkt);renderCR(mkt);renderFG(mkt);renderMac(mkt);
-    renderOC(mkt);renderNews(mkt);renderEarns(mkt);buildTape(mkt);renderMob(mkt);
-    if(mkt.mood) applyMood(mkt.mood);
+    const [marketRes,rhRes]=await Promise.allSettled([
+      fetch(`${API}/market?stocks=${encodeURIComponent(stocks)}&crypto=${encodeURIComponent(crypto)}`,{cache:'no-store'}),
+      fetch('/api/crypto/live-prices',{cache:'no-store'})
+    ]);
+    if(marketRes.status!=='fulfilled'||!marketRes.value.ok) throw new Error(marketRes.status==='fulfilled'?marketRes.value.status:'market_fetch');
+    mkt=await marketRes.value.json();
 
+    let rh=null;
+    if(rhRes.status==='fulfilled'&&rhRes.value.ok) rh=await rhRes.value.json().catch(()=>null);
+    if(rh?.ok&&Array.isArray(rh.symbols)){
+      const by=Object.fromEntries(rh.symbols.map(x=>[String(x.symbol||'').replace(/-USD$/,'').toUpperCase(),x]));
+      const legacy=Array.isArray(mkt?.crypto?.coins)?mkt.crypto.coins:[];
+      const legacyBy=Object.fromEntries(legacy.map(x=>[String(x.symbol||'').toUpperCase(),x]));
+      const coins=[...new Set(tickerCrypto.map(x=>String(x).toUpperCase()))].map(asset=>{
+        const q=by[asset],base=legacyBy[asset]||{};
+        if(!q&&!base?.symbol)return null;
+        return {...base,
+          symbol:(base.symbol||asset).toLowerCase(),
+          name:base.name||asset,
+          current_price:q?.mark!=null?Number(q.mark):base.current_price,
+          robinhood_mark:q?.mark!=null?Number(q.mark):null,
+          robinhood_bid:q?.raw_bid!=null?Number(q.raw_bid):null,
+          robinhood_ask:q?.raw_ask!=null?Number(q.raw_ask):null,
+          robinhood_timestamp:q?.timestamp||null,
+          price_source:q?'Robinhood Crypto':(base.price_source||'CoinGecko')
+        };
+      }).filter(Boolean);
+      mkt={...mkt,crypto:{...(mkt.crypto||{}),coins},robinhood:rh};
+    }
+
+    renderEQ(mkt);renderCR(mkt);renderFG(mkt);renderMac(mkt);
+    renderOC(mkt);renderRobinhood(mkt);renderNews(mkt);renderEarns(mkt);buildTape(mkt);renderMob(mkt);
+    if(mkt.mood) applyMood(mkt.mood);
   }catch(e){console.warn('Market data:',e.message);}
 }
 
