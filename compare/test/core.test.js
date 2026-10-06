@@ -157,3 +157,26 @@ test('default view is TOP SPREADS over active events (not LIVE NOW)', () => {
   assert.ok(top.length > 0, 'real NBA desk yields an active board with nothing live');
   assert.ok(top.every((e) => e.active));
 });
+
+
+test('ALL SPORTS collapses multiple lane timeouts into one incident notice', () => {
+  const desk = { lanes: [
+    { lane:'nfl', state:'unavailable', error:'timeout' },
+    { lane:'nba', state:'unavailable', error:'timeout' },
+    { lane:'nhl', state:'unavailable', error:'timeout' },
+    { lane:'mlb', state:'ok', events:3 }
+  ], events: [] };
+  const n = screenNotices({ desk, deskStatus:200, scope:'sports', events:[], live:{items:[],sources:[]}, liveStatus:200 });
+  const group = n.filter((x) => x.code === 'lanes_unavailable');
+  assert.equal(group.length, 1);
+  assert.deepEqual(group[0].lanes, ['nfl','nba','nhl']);
+  assert.match(group[0].text, /3 market lanes are delayed upstream/);
+  assert.equal(n.filter((x) => x.code === 'lane_unavailable').length, 0);
+});
+
+test('single sport still shows its specific lane failure', () => {
+  const desk = { lanes:[{ lane:'nba', state:'unavailable', error:'timeout' }], events:[] };
+  const n = screenNotices({ desk, deskStatus:200, scope:'nba', events:[], live:{items:[],sources:[]}, liveStatus:200 });
+  assert.equal(n.filter((x) => x.code === 'lane_unavailable').length, 1);
+  assert.equal(n.filter((x) => x.code === 'lanes_unavailable').length, 0);
+});
