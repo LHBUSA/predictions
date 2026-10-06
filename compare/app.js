@@ -88,10 +88,43 @@ async function loadDesk(signal) {
 async function loadLive(signal) {
   const sports = scopeLiveSports();
   if (!sports.length) { S.live = null; S.liveStatus = null; return; }
-  const r = await getJson(`/api/live?sports=${sports.join(',')}`, signal);
+  const previous = S.live;
+  let r = await getJson(`/api/live?sports=${sports.join(',')}`, signal);
   S.liveStatus = r.status;
-  if (r.status === 200 && r.body) { S.live = r.body; S.liveAt = Date.now(); }
-  else if (r.status === 401 || r.status === 403) { S.memberState = r.status === 401 ? 'anonymous' : 'forbidden'; render(); unmount(); return; }
+
+  // A single slow sport source must not zero the live product. Retry failed sources by themselves (different
+  // server memo key), then retain the previous successful rows as delayed data if the retry still misses.
+  if (r.status === 200 && r.body) {
+    let body = r.body;
+    const failed = (body.sources || []).filter((x) => x.state !== 'ok').map((x) => x.key).filter((x) => sports.includes(x));
+    if (failed.length) {
+      const retry = await getJson(`/api/live?sports=${failed.join(',')}`, signal);
+      if (retry.status === 200 && retry.body) {
+        const recovered = new Set((retry.body.sources || []).filter((x) => x.state === 'ok').map((x) => x.key));
+        if (recovered.size) {
+          const keep = (body.items || []).filter((x) => !recovered.has(x.sport));
+          body = {
+            ...body,
+            items:[...keep, ...(retry.body.items || []).filter((x) => recovered.has(x.sport))],
+            sources:(body.sources || []).map((x) => recovered.has(x.key) ? (retry.body.sources || []).find((y) => y.key === x.key) || x : x)
+          };
+          body.live_count = body.items.filter((x) => x.status === 'live').length;
+        }
+      }
+    }
+    const stillFailed = new Set((body.sources || []).filter((x) => x.state !== 'ok').map((x) => x.key));
+    if (previous?.items?.length && stillFailed.size) {
+      const have = new Set((body.items || []).map((x) => `${x.sport}:${x.source_id}`));
+      const carry = previous.items.filter((x) => stillFailed.has(x.sport) && !have.has(`${x.sport}:${x.source_id}`));
+      if (carry.length) {
+        body = { ...body, items:[...(body.items || []), ...carry.map((x) => ({ ...x, meta:{ ...(x.meta || {}), delayed_cached:true } }))] };
+        body.live_count = body.items.filter((x) => x.status === 'live').length;
+      }
+    }
+    S.live = body; S.liveAt = Date.now();
+  } else if (r.status === 401 || r.status === 403) {
+    S.memberState = r.status === 401 ? 'anonymous' : 'forbidden'; render(); unmount(); return;
+  }
   rebuild(); render();
 }
 async function loadDetail(e, signal) {
