@@ -525,10 +525,3 @@ button:disabled{cursor:default}
   .live-cards:not(.marquee)>.lc,.live-cards:not(.marquee)>.lc-market-card{flex-basis:294px;min-width:294px;max-width:294px}
   .live-cards:not(.marquee)>.lc-score-only{flex-basis:260px;min-width:260px;max-width:260px}
 }
-
-
-/* ---------- live PBEcast affordance (2026-10-06e) ---------- */
-.ticker-game{cursor:pointer}
-.ticker-game:hover .pbecast-link,.ticker-game:hover .ticker-edge{color:var(--gold)}
-.pbecast-link{font:700 8px/1 var(--mono);letter-spacing:.08em;color:var(--gold);white-space:nowrap}
-.score-only-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
