@@ -69,7 +69,7 @@ export default async function handler(req,res){
         'Do not issue a personalized trade instruction.',
         'Use these compact Markdown headings: Stance; Confidence (qualitative, explain evidence limits); Key driver; Risk; What would change my mind. Do not invent numerical confidence or unsupported facts.'
       ].join('\n');
-      const answer=await askOpenAI({instruction:p.instruction,input:prompt,maxOutput:500});
+      const answer=await askOpenAI({instruction:p.instruction+' For this debate, use exactly five compact headings: Stance, Confidence, Key driver, Risk, What would change my mind. Explain confidence qualitatively; do not invent numerical confidence.',input:prompt,maxOutput:500});
       responses[key]=answer;
       sendEvent(res,{type:'text',persona:key,text:answer});
       sendEvent(res,{type:'persona_done',persona:key});
