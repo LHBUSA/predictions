@@ -200,6 +200,39 @@ export default {
           return json({ ok: false, configured: true, status: e?.status ?? null, error: e?.message ?? 'robinhood_account_read_failed', detail: e?.detail ?? null }, 502, 'no-store');
         }
       }
+      if (req.method === 'GET' && p === '/admin/crypto/robinhood/preflight') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false }, 503, 'no-store');
+        const rh = robinhoodForEnv(env);
+        const symbols = ['BTC-USD', 'ETH-USD', 'SOL-USD'];
+        try {
+          const accounts = await rh.accounts();
+          const account = accounts?.results?.[0] ?? null;
+          if (!account?.account_number) return json({ ok: false, error: 'no_crypto_account' }, 404, 'no-store');
+          const [pairs, quotes] = await Promise.all([
+            rh.tradingPairs(symbols),
+            rh.bestBidAsk(symbols),
+          ]);
+          const bySymbol = Object.fromEntries((pairs?.results || []).map((x) => [x.symbol, x]));
+          return json({
+            ok: true,
+            configured: true,
+            authenticated: true,
+            account_status: account.status ?? null,
+            account_api_tradable: account.is_api_tradable === true,
+            buying_power: account.buying_power ?? null,
+            buying_power_currency: account.buying_power_currency ?? null,
+            symbols: symbols.map((symbol) => ({
+              symbol,
+              api_tradable: bySymbol[symbol]?.is_api_tradable === true,
+            })),
+            quotes,
+            live_order_submission_enabled: false,
+          }, 200, 'no-store');
+        } catch (e) {
+          return json({ ok: false, configured: true, status: e?.status ?? null, error: e?.message ?? 'robinhood_preflight_failed', detail: e?.detail ?? null }, 502, 'no-store');
+        }
+      }
       if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
