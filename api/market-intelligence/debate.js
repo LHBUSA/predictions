@@ -1,5 +1,6 @@
 import { requireAllAccess, send } from '../../compare/api/_lib/access.js';
 import { PERSONAS, buildResearchContext, askOpenAI, sseHeaders, sendEvent } from './_lib/server.cjs';
+import { memoryContext } from './_lib/memory.js';
 
 export default async function handler(req,res){
   if(req.method!=='POST') return send(res,405,{error:'method_not_allowed'});
@@ -55,6 +56,7 @@ export default async function handler(req,res){
 
       const prompt=[
         ctx,
+        memoryContext(req.body?.memory),
         '',
         '[DEBATE TOPIC]',
         topic,
@@ -64,13 +66,20 @@ export default async function handler(req,res){
         '',
         'Use the resolved subject packet as the primary evidence. Broad market context is secondary.',
         'Directly address the strongest conflicting point already raised when applicable.',
-        'Do not issue a personalized trade instruction.'
+        'Do not issue a personalized trade instruction.',
+        'Use these compact Markdown headings: Stance; Confidence (qualitative, explain evidence limits); Key driver; Risk; What would change my mind. Do not invent numerical confidence or unsupported facts.'
       ].join('\n');
       const answer=await askOpenAI({instruction:p.instruction,input:prompt,maxOutput:500});
       responses[key]=answer;
       sendEvent(res,{type:'text',persona:key,text:answer});
       sendEvent(res,{type:'persona_done',persona:key});
     }
+    const summary=await askOpenAI({
+      instruction:'You are the neutral editor of a PropBetEdge research debate. Summarize the supplied analyst responses; do not invent evidence, numeric confidence or consensus. Do not issue personalized trade instructions.',
+      input:['Topic: '+topic,JSON.stringify(responses),'Write a concise decision brief using headings: Agreement; Disagreement; Deciding evidence; Next check. Identify missing data and what would change the thesis.'].join('\n'),
+      maxOutput:350
+    });
+    sendEvent(res,{type:'summary',text:summary});
     sendEvent(res,{type:'debate_done',resolved:{subject:resolved.subject,symbol:resolved.symbol}});res.end();
   }catch(e){
     if(!res.headersSent) return send(res,502,{error:'analysis_unavailable'});

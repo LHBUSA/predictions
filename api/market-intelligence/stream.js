@@ -1,5 +1,6 @@
 import { requireAllAccess, send } from '../../compare/api/_lib/access.js';
 import { PERSONAS, buildResearchContext, askOpenAI, sseHeaders, sendEvent } from './_lib/server.cjs';
+import { memoryContext } from './_lib/memory.js';
 
 export default async function handler(req,res){
   if(req.method!=='POST') return send(res,405,{error:'method_not_allowed'});
@@ -16,6 +17,7 @@ export default async function handler(req,res){
       instruction:persona.instruction,
       input:[
         ctx,
+        memoryContext(req.body?.memory),
         '',
         '[USER QUESTION]',
         message,

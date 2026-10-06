@@ -480,6 +480,8 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 @media(max-width:480px){.w-hed{font-size:30px;}.tb-link{display:none;}.topbar{padding:0 10px;}}
 .access-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 12px;background:#151d27;border-bottom:1px solid var(--bdr2);font-size:9px;color:var(--txt2);flex-shrink:0}.access-preview>div{display:flex;align-items:center;gap:9px}.access-preview b{color:var(--glod);letter-spacing:.12em}.access-preview button,.access-preview a{font:600 9px var(--mono);padding:5px 8px;border:1px solid var(--bdr2);border-radius:4px;background:var(--bg3);color:var(--txt);text-decoration:none;cursor:pointer}.access-preview a{color:var(--glod);border-color:var(--dat-b)}.market-member .access-preview{display:none}.market-preview .send,.market-preview .qt-chip,.market-preview .w-card,.market-preview .pp-tab{position:relative}.market-preview .send::after,.market-preview .qt-chip::after,.market-preview .w-card::after,.market-preview .pp-tab::after{content:'ALL ACCESS';position:absolute;inset:0;display:grid;place-items:center;background:rgba(11,15,21,.76);color:var(--glod);font-size:7px;letter-spacing:.08em;border-radius:inherit}.db-body h1,.db-body h2,.db-body h3,.m-bub h1,.m-bub h2,.m-bub h3{font-size:13px;margin:10px 0 5px;color:var(--txt)}.db-body ul,.db-body ol,.m-bub ul,.m-bub ol{padding-left:18px;margin:6px 0}.db-body li,.m-bub li{margin:3px 0}@media(max-width:760px){.access-preview{align-items:flex-start;flex-direction:column}.access-preview>div{flex-wrap:wrap}}
 </style>
+<link rel="stylesheet" href="/markets/premium-workspace.css">
+<script src="/markets/premium-workspace.js" defer></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -503,7 +505,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
     <button class="tb-settings" id="settings-btn" onclick="toggleSettings()" title="Customize ticker">⚙</button>
   </div>
 </div>
-<div id="access-preview" class="access-preview"><div><b>PREVIEW MODE</b><span>Explore the full terminal. All Access unlocks live values, Debate, Consult and Trade Lab.</span></div><div><button onclick="marketSignIn()">Sign in</button><a href="https://propbetedge.ai/pro">Unlock All Access</a></div></div>
+<div id="access-preview" class="access-preview"><div><b>PREVIEW MODE</b><span>All Access unlocks analyst sessions, Live Market Wire, Trade Lab and saved research.</span></div><div><button onclick="marketSignIn()">Sign in</button><a href="https://propbetedge.ai/pro">Unlock All Access</a></div></div>
 
 <!-- SETTINGS PANEL -->
 <div class="settings-overlay" id="settings-overlay" onclick="closeSettings(event)">
@@ -614,18 +616,18 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 
   <div class="center mode-debate" id="center">
     <div class="mode-bar">
-      <div class="mode-btn debate active" id="btn-debate" onclick="setMode('debate')">
-        <span class="mode-icon">⚔️</span>
-        <div><div class="mode-label">Debate</div><div class="mode-desc">All three analysts respond</div></div>
-      </div>
-      <div class="mode-btn consult" id="btn-consult" onclick="setMode('consult')">
-        <span class="mode-icon">💬</span>
-        <div><div class="mode-label">Consult</div><div class="mode-desc">One-on-one with your analyst</div></div>
-      </div>
-      <div class="mode-btn trade" id="btn-trade" onclick="setMode('trade')">
-        <span class="mode-icon">△</span>
-        <div><div class="mode-label">Trade Lab</div><div class="mode-desc">Chart screenshot risk review</div></div>
-      </div>
+      <button type="button" class="mode-btn debate active" id="btn-debate" onclick="setMode('debate')" aria-pressed="true">
+        <span class="mode-icon">01</span>
+        <span><span class="mode-label">Debate</span><span class="mode-desc">Three perspectives. One thesis.</span></span><span class="mode-lock">ALL ACCESS</span>
+      </button>
+      <button type="button" class="mode-btn consult" id="btn-consult" onclick="setMode('consult')" aria-pressed="false">
+        <span class="mode-icon">02</span>
+        <span><span class="mode-label">Consult</span><span class="mode-desc">Your analyst. In context.</span></span><span class="mode-lock">ALL ACCESS</span>
+      </button>
+      <button type="button" class="mode-btn trade" id="btn-trade" onclick="setMode('trade')" aria-pressed="false">
+        <span class="mode-icon">03</span>
+        <span><span class="mode-label">Trade Lab</span><span class="mode-desc">Map risk. Test the setup.</span></span><span class="mode-lock">ALL ACCESS</span>
+      </button>
     </div>
     <div class="persona-pick" id="persona-pick">
       <div class="pp-tab tim active" id="pp-tim" onclick="setPersona('tim')">
@@ -672,25 +674,39 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 
     <div class="feed" id="feed">
       <div class="welcome" id="welcome">
-        <div class="w-hed"><span class="bull">Bull.</span><br><span class="bear">Bear.</span><br><span class="quant">Quant.</span></div>
-        <p class="w-sub">Three AI analysts grounded in live data from 8 dedicated data workers — Finnhub, CoinGecko, FRED, Blockchair, and more. Debate mode fires all three in sequence, each reacting to the others.</p>
-        <div class="w-cards">
-          <div class="w-card debate" onclick="setMode('debate');document.getElementById('inp').focus()">
-            <div class="wc-top"><span class="wc-icon">⚔️</span><span class="wc-mode">Debate Mode</span></div>
-            <div class="wc-desc">Throw a topic in. Data reads the tape, Tim makes the bull case, Bramer tears it apart. Each one sees what the others said.</div>
-          </div>
-          <div class="w-card consult" onclick="setMode('consult');document.getElementById('inp').focus()">
-            <div class="wc-top"><span class="wc-icon">💬</span><span class="wc-mode">Consult Mode</span></div>
-            <div class="wc-desc">Pick one analyst and go deep. They remember the full conversation and pull live data on every response.</div>
-          </div>
+        <div class="workspace-heading"><span class="premium-kicker">PROPBETEDGE PREDICTIONS · ALL ACCESS</span><span class="premium-badge" id="workspace-access">MEMBER WORKSPACE</span></div>
+        <div class="welcome-grid">
+          <section class="workspace-hero">
+            <h1>Bull. Bear. Quant. <br><span>Find the conviction.</span></h1>
+            <p>Turn live equities, crypto and macro context into a thesis you can defend. Three AI analysts challenge the evidence before you act.</p>
+            <div class="analyst-path"><span>01 Quant</span><span>02 Bull</span><span>03 Bear</span></div>
+            <p class="hero-note">Independent perspectives. Shared evidence. A clear decision brief.</p>
+            <div class="workflow-list">
+              <button type="button" data-workflow="debate"><i>01</i><span><b>Challenge a thesis</b><small>Evidence, counterargument, confidence and what would change the read.</small></span></button>
+              <button type="button" data-workflow="consult"><i>02</i><span><b>Ask your analyst</b><small>Go deeper with follow-up context and your saved research style.</small></span></button>
+              <button type="button" data-workflow="trade"><i>03</i><span><b>Stress-test a setup</b><small>Chart structure, entry, invalidation and catalyst risk.</small></span></button>
+            </div>
+          </section>
+          <section class="wire-panel" aria-labelledby="wire-title">
+            <div class="wire-head"><div><h2 id="wire-title"><span class="wire-pip"></span>Live Market Wire</h2><p>From the market tape to your next question.</p></div><span class="premium-badge" id="wire-state">ALL ACCESS</span></div>
+            <div id="wire-note" class="wire-preview-note">Member feed · preview of research workflows</div>
+            <div id="wire-cards" aria-live="polite"></div>
+            <div class="wire-foot" id="wire-freshness">Source timestamps and context appear with each member update.</div>
+          </section>
         </div>
+        <div class="signal-grid">
+          <div class="signal-card"><small>MARKET MOTION</small><b id="signal-mover">Find the outlier</b><p id="signal-mover-note">Rank the largest moves in your selected ticker universe.</p></div>
+          <div class="signal-card"><small>CONSENSUS CHECK</small><b id="signal-sentiment">Read the context</b><p id="signal-sentiment-note">Sentiment informs the question; it does not prove the thesis.</p></div>
+          <div class="signal-card"><small>VENUE DIVERGENCE</small><b>Compare the contract</b><p>Check settlement rules and liquidity before treating a price gap as an edge.</p><a href="https://compare.propbetedge.ai/" class="wire-source">Open venue comparison ↗</a></div>
+        </div>
+        <div class="prompt-heading">Start with a better question</div>
         <div class="qt-chips">
-          <span class="qt-chip" onclick="quickDebate('Is the S&P selloff a buying opportunity or the start of something worse?')">S&P selloff — buy or run?</span>
-          <span class="qt-chip" onclick="quickDebate('Bitcoin at current prices — where does it go from here?')">BTC next move</span>
-          <span class="qt-chip" onclick="quickDebate('What is the Iran conflict doing to oil and energy stocks?')">Iran & oil impact</span>
-          <span class="qt-chip" onclick="quickDebate('Fear and Greed at extreme fear — is this capitulation or is there more pain?')">Extreme Fear — capitulation?</span>
-          <span class="qt-chip" onclick="quickDebate('What does the inverted yield curve tell us about recession risk?')">Yield curve recession risk</span>
-          <span class="qt-chip" onclick="quickDebate('Is Ethereum undervalued relative to Bitcoin dominance right now?')">ETH vs BTC value</span>
+          <button class="qt-chip" onclick="quickDebate('Is BTC overextended here?')">Is BTC overextended here?</button>
+          <button class="qt-chip" onclick="quickDebate('Debate NVDA after this move')">Debate NVDA after this move</button>
+          <button class="qt-chip" onclick="quickDebate('What is the risk into CPI?')">What is the risk into CPI?</button>
+          <a class="qt-chip" href="https://compare.propbetedge.ai/">Kalshi vs Polymarket divergences ↗</a>
+          <button class="qt-chip" onclick="quickDebate('What event risk matters most this week?')">What event risk matters most this week?</button>
+          <button class="qt-chip" onclick="quickDebate('Is ETH lagging or coiling?')">Is ETH lagging or coiling?</button>
         </div>
       </div>
       <div class="msgs" id="msgs"></div>
@@ -698,8 +714,8 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 
     <div class="input-area">
       <div class="input-shell" id="input-shell">
-        <textarea id="inp" rows="1" placeholder="Throw a topic into the debate…"></textarea>
-        <button class="send" id="send-btn" onclick="doSend()">
+        <textarea id="inp" rows="1" maxlength="900" aria-label="Your market question" placeholder="Bring a thesis. Let three analysts challenge it."></textarea>
+        <button class="send" id="send-btn" onclick="doSend()" aria-label="Send market question">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
@@ -710,6 +726,22 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
   </div>
 
   <div class="rightbar">
+    <section class="memory-panel" aria-labelledby="memory-title">
+      <div class="memory-title"><h2 id="memory-title">Your research, remembered.</h2><span class="premium-badge">ALL ACCESS</span></div>
+      <p>Saved watchlists, favorite prompts and previous sessions. Pick up where you left off.</p>
+      <div id="memory-locked" class="memory-locked"><a href="https://propbetedge.ai/pro">Unlock your workspace ↗</a></div>
+      <div id="memory-controls" hidden>
+        <p>Saved on this browser. Visible to other subscribers using this browser; clear on a shared device.</p>
+        <label for="watchlist-name">Watchlist name</label><input id="watchlist-name" maxlength="40" placeholder="My Crypto, AI Stocks, Macro">
+        <div class="memory-buttons"><button id="save-watchlist" type="button">Save current tickers</button><button id="save-prompt" type="button">Save prompt</button></div>
+        <div id="saved-watchlists" class="memory-list"></div>
+        <label for="research-style">Preferred research style</label><select id="research-style"><option value="balanced">Balanced evidence</option><option value="concise">Concise decision brief</option><option value="technical">Technical detail</option><option value="risk">Risk first</option></select>
+        <div id="saved-prompts" class="memory-list"></div>
+        <div class="memory-buttons"><button id="continue-session" type="button">Continue last session</button><button id="new-session" type="button">New session</button><button id="clear-memory" type="button">Clear memory</button></div>
+        <div id="saved-sessions" class="memory-list sessions"></div>
+      </div>
+      <div id="memory-status" class="memory-status" role="status"></div>
+    </section>
     <div class="rb-hd">Robinhood Crypto <span id="rh-updated" style="float:right;color:var(--txt3)">live</span></div>
     <div id="rh-rail" class="rh-rail"><div class="ft-row"><span>BTC / USD</span><b>Loading…</b></div></div>
     <div class="rb-hd" style="border-top:1px solid var(--bdr)">Focused Technicals <span id="focus-tech-symbol" style="float:right;color:var(--txt2)">SPY</span></div>
@@ -739,19 +771,17 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 <script>
 function marketSignIn(){const email=prompt('Email for your PropBetEdge sign-in link:');if(!email)return;fetch('https://auth.propbetedge.ai/magic/request',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email,return_to:location.href})}).then(()=>alert('Check your inbox for the PropBetEdge sign-in link.')).catch(()=>alert('Sign-in is unavailable right now.'));}
 const API = '/api/market-intelligence';
-const uid = localStorage.getItem('mkt_uid') || ('u_' + Math.random().toString(36).slice(2) + Date.now().toString(36));
-localStorage.setItem('mkt_uid', uid);
 
 // ═══ TICKER PREFERENCES ═══
 const DEFAULT_STOCKS = ['SPY','QQQ','DIA','IWM','VIX','AAPL','MSFT','NVDA','AMZN','META','GOOGL','TSLA','AMD','PLTR','COIN'];
 const DEFAULT_CRYPTO = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','LINK'];
 
-let tickerStocks = JSON.parse(localStorage.getItem('ticker_stocks') || JSON.stringify(DEFAULT_STOCKS));
-let tickerCrypto = JSON.parse(localStorage.getItem('ticker_crypto') || JSON.stringify(DEFAULT_CRYPTO));
+function storedTickers(key,fallback){try{const v=JSON.parse(localStorage.getItem(key));return Array.isArray(v)?v.filter(x=>typeof x==='string'&&/^[A-Z0-9.-]{1,10}$/.test(x)).slice(0,20):[...fallback];}catch{return [...fallback];}}
+let tickerStocks = storedTickers('ticker_stocks',DEFAULT_STOCKS);
+let tickerCrypto = storedTickers('ticker_crypto',DEFAULT_CRYPTO);
 
 function savePrefs() {
-  localStorage.setItem('ticker_stocks', JSON.stringify(tickerStocks));
-  localStorage.setItem('ticker_crypto', JSON.stringify(tickerCrypto));
+  try{localStorage.setItem('ticker_stocks', JSON.stringify(tickerStocks));localStorage.setItem('ticker_crypto', JSON.stringify(tickerCrypto));}catch{}
 }
 
 function renderChips() {
@@ -817,17 +847,20 @@ const pb   = p => p==='tim'?'--tim-b':p==='bramer'?'--bra-b':'--dat-b';
 setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'America/New_York'})+' EST'; }, 1000);
 
 function setMode(m) {
+  if(busy)return;
   mode = m;
   document.getElementById('center').className = `center mode-${m}`;
   document.getElementById('btn-debate').classList.toggle('active', m==='debate');
   document.getElementById('btn-consult').classList.toggle('active', m==='consult');
   document.getElementById('btn-trade').classList.toggle('active', m==='trade');
+  for(const k of ['debate','consult','trade'])document.getElementById('btn-'+k).setAttribute('aria-pressed',String(m===k));
   document.getElementById('persona-pick').classList.toggle('show', m==='consult');
-  if(m==='debate'){document.getElementById('inp').placeholder='Throw a topic into the debate…';document.getElementById('im-mode').textContent='Debate Mode';}
+  if(m==='debate'){document.getElementById('inp').placeholder='Bring a thesis. Let three analysts challenge it.';document.getElementById('im-mode').textContent='Debate · Quant → Bull → Bear';}
   else if(m==='consult'){document.getElementById('inp').placeholder=`Ask ${P[persona].name} anything…`;document.getElementById('im-mode').textContent=`Consulting ${P[persona].name}`;}
 }
 
 function setPersona(p) {
+  if(busy)return;
   persona = p;
   document.querySelectorAll('.pp-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`pp-${p}`).classList.add('active');
@@ -870,9 +903,10 @@ function quickDebate(topic){setMode('debate');inp.value=topic;inp.dispatchEvent(
 async function doSend(){
   const text=inp.value.trim();if(!text||busy)return;
   busy=true;inp.value='';inp.style.height='auto';sBtn.classList.remove('on');
+  sBtn.disabled=true;
   hideWelcome(); followFeed=true;
-  if(mode==='debate') await runDebate(text); else await runConsult(text);
-  busy=false;inp.focus();
+  try{if(mode==='debate') await runDebate(text); else await runConsult(text);}
+  finally{busy=false;sBtn.disabled=false;window.MarketWorkspace?.capture(text);inp.focus();}
 }
 
 // ── DEBATE ──
@@ -883,10 +917,10 @@ async function runDebate(topic){
   msgs.appendChild(te);scrollBot();
   try{
     const res=await fetch(`${API}/debate`,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({topic,stock_symbols:tickerStocks.join(','),crypto_symbols:tickerCrypto.join(',')})});
+      body:JSON.stringify({topic,stock_symbols:tickerStocks.join(','),crypto_symbols:tickerCrypto.join(','),memory:window.MarketWorkspace?.context()})});
     if(!res.ok) throw new Error(res.status);
     const reader=res.body.getReader(),dec=new TextDecoder();
-    let buf='';const blocks={};
+    let buf='';const blocks={};let complete=false;
     while(true){
       const{done,value}=await reader.read();if(done)break;
       buf+=dec.decode(value,{stream:true});
@@ -905,7 +939,7 @@ async function runDebate(topic){
             const uiPersona=e.persona==='bull'?'tim':e.persona==='bear'?'bramer':'data';
             const col=`var(${pcol(uiPersona)})`;
             const block=document.createElement('div');block.className=`debate-block ${uiPersona}`;
-            block.innerHTML=`<div class="db-head"><span class="db-emoji">${e.emoji}</span><div><div class="db-name">${e.name}</div><div class="db-role">${e.role}</div></div><div class="db-dot pulsing"></div></div><div class="db-body"><div class="db-typing"><div class="dt-d" style="background:${col}"></div><div class="dt-d" style="background:${col}"></div><div class="dt-d" style="background:${col}"></div></div></div>`;
+            block.innerHTML=`<div class="db-head"><span class="db-emoji">${esc(e.emoji||'')}</span><div><div class="db-name">${esc(e.persona.toUpperCase())} · ${esc(e.name)}</div><div class="db-role">${esc(e.role)}</div></div><div class="db-dot pulsing"></div></div><div class="db-body"><div class="db-typing"><div class="dt-d" style="background:${col}"></div><div class="dt-d" style="background:${col}"></div><div class="dt-d" style="background:${col}"></div></div></div>`;
             msgs.appendChild(block);blocks[e.persona]={block,body:block.querySelector('.db-body'),acc:'',col};scrollBot();
           }
           if(e.type==='text'&&blocks[e.persona]){
@@ -914,9 +948,16 @@ async function runDebate(topic){
             scrollBot();
           }
           if(e.type==='persona_done'&&blocks[e.persona]){const b=blocks[e.persona];b.body.innerHTML=md(b.acc);b.block.querySelector('.db-dot').classList.remove('pulsing');}
+          if(e.type==='summary'){
+            const conclusion=document.createElement('section');conclusion.className='debate-summary';conclusion.innerHTML='<h2>Decision brief</h2><div class="db-body">'+md(e.text)+'</div>';
+            msgs.appendChild(conclusion);scrollBot();
+          }
+          if(e.type==='debate_done'){complete=true;window.MarketWorkspace?.remember(topic,Object.entries(blocks).map(([k,b])=>k+': '+b.acc).join('\n\n'));}
+          if(e.type==='error'){const err=document.createElement('div');err.className='debate-topic';err.textContent='Analysis interrupted. Retry to complete the debate.';msgs.appendChild(err);}
         }catch{}
       }
     }
+    if(!complete){const note=document.createElement('div');note.className='debate-topic';note.textContent='Debate incomplete. Some analyst responses may be missing.';msgs.appendChild(note);}
   }catch{const el=document.createElement('div');el.className='debate-topic';el.innerHTML=`<span class="dt-lbl" style="color:var(--red)">Error</span><span class="dt-txt">Connection issue — try again.</span>`;document.getElementById('msgs').appendChild(el);}
 }
 
@@ -947,7 +988,7 @@ async function runConsult(text){
   addMsg('user',text);showTyping();
   try{
     const res=await fetch(`${API}/stream`,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:text,persona:persona==='tim'?'bull':persona==='bramer'?'bear':'quant',stock_symbols:tickerStocks.join(','),crypto_symbols:tickerCrypto.join(',')})});
+      body:JSON.stringify({message:text,persona:persona==='tim'?'bull':persona==='bramer'?'bear':'quant',stock_symbols:tickerStocks.join(','),crypto_symbols:tickerCrypto.join(','),memory:window.MarketWorkspace?.context()})});
     if(!res.ok) throw new Error(res.status);
     const reader=res.body.getReader(),dec=new TextDecoder();
     let buf='',bub=null,acc='',tGone=false;
@@ -967,7 +1008,7 @@ async function runConsult(text){
             document.getElementById('msgs').appendChild(n);scrollBot();
           }
           if(e.type==='text'){if(!tGone){hideTyping();tGone=true;}acc+=e.text;if(!bub)bub=addMsg(persona,acc,true);else bub.innerHTML=md(acc);scrollBot();}
-          if(e.type==='done'&&bub){bub.classList.remove('streaming');bub.innerHTML=md(acc);}
+          if(e.type==='done'&&bub){bub.classList.remove('streaming');bub.innerHTML=md(acc);window.MarketWorkspace?.remember(text,acc);}
         }catch{}
       }
     }
@@ -1291,7 +1332,7 @@ async function loadData(){
     renderEQ(mkt);renderCR(mkt);renderFG(mkt);renderMac(mkt);
     renderOC(mkt);renderRobinhood(mkt);renderNews(mkt);renderEarns(mkt);buildTape(mkt);renderMob(mkt);
     if(mkt.mood) applyMood(mkt.mood);
-  }catch(e){console.warn('Market data:',e.message);}
+  }catch(e){console.warn('Market data:',e.message);document.getElementById('tape').innerHTML='<span class="ti"><span class="ti-sym">Market feed unavailable</span><span class="ti-val">Retrying on next refresh</span></span>';}
 }
 
 let tradeImage='';
@@ -1323,19 +1364,22 @@ document.getElementById('trade-read').onclick=async()=>{
 };
 
 let isMember=false;
+let membershipVerdict=null;
 async function checkMembership(){
   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),4500);
   try{
     const r=await fetch('/api/membership',{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
     const b=await r.json().catch(()=>({}));clearTimeout(timer);
+    membershipVerdict=r.ok?b:{membership:{state:'unverified'},authenticated:false};
     return Boolean(r.ok&&b?.membership?.entitled&&(b.membership.state==='all_access'||b.membership.state==='owner'));
-  }catch{clearTimeout(timer);return false;}
+  }catch{clearTimeout(timer);membershipVerdict={membership:{state:'unverified'},authenticated:false};return false;}
 }
 function applyPreview(){document.body.classList.add('market-preview');}
 async function bootMarket(){
   isMember=await checkMembership();
   document.body.classList.toggle('market-member',isMember);
   document.body.classList.toggle('market-preview',!isMember);
+  window.dispatchEvent(new Event('market-access'));
   loadData();
   setInterval(()=>{if(!document.hidden)loadData();},60000);
 }
