@@ -261,7 +261,18 @@ export default {
       }
       if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405, 'no-store');
       const store = storeFor(env);
-      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
+      if (p === '/v1/health') return json({ ok: true, engine_enabled: env.ENGINE_ENABLED === 'true', robinhood_configured: robinhoodConfigured(env), series: { weather: env.WEATHER_SERIES, macro: env.MACRO_SERIES, rates: env.RATES_SERIES, monitor: env.MONITOR_SERIES } }, 200, 'no-store');
+      // Public operational health only: authenticates a READ-ONLY Robinhood quote request and returns status booleans.
+      // No credentials, account data, holdings, orders, balances, prices or trading actions are exposed here.
+      if (p === '/v1/health/robinhood') {
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false }, 503, 'public, max-age=30');
+        try {
+          await robinhoodForEnv(env).bestBidAsk(['BTC-USD', 'ETH-USD']);
+          return json({ ok: true, configured: true, authenticated: true, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, symbols_verified: ['BTC-USD', 'ETH-USD'] }, 200, 'public, max-age=30');
+        } catch (e) {
+          return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null }, 502, 'public, max-age=10');
+        }
+      }
       if (p === '/v1/summary') return json(await summary(store));
       // Membership + All Access. Predictions is a premium product included with All Access: every route below that
       // carries a PBE probability, market comparison, evidence or history is behind requireAllAccess + privateJson.
