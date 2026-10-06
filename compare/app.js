@@ -318,11 +318,35 @@ function renderLive() {
   sec.hidden = S.memberState !== 'entitled' || (!linked.length && !unlinked.length);
   if (sec.hidden) return;
   $('#live-meta').textContent = `${liveItems.length} live · ${linked.length} with linked markets`;
-  const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map((x) => `<a class="lc lc-plain" href="${esc(x.pbecast_url || x.href || '#')}">
-    <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
-    <span class="lc-score">${x.score?.away ? `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>` : `<span>${esc(x.title)}</span>`}</span>
-    <small class="lc-age">${esc(['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport) ? 'No comparison market linked to this game' : 'Score shown separately · market link UNMATCHED')}</small></a>`));
+  const cards = linked.map(liveCard).concat(unlinked.slice(0, 24).map(plainLiveCard));
   liveRail(cards);
+}
+
+function plainLiveCard(x) {
+  const tennis = x.sport === 'tennis';
+  const doubles = tennis && String(x.title || '').includes(' / ');
+  let body;
+  if (x.score?.away) {
+    body = `${x.score.away.logo ? `<img src="${esc(x.score.away.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.away.abbr)}</span><b>${esc(x.score.away.score ?? '—')}</b>${x.score.home.logo ? `<img src="${esc(x.score.home.logo)}" alt="" width="22" height="22">` : ''}<span>${esc(x.score.home.abbr)}</span><b>${esc(x.score.home.score ?? '—')}</b>`;
+  } else if (tennis) {
+    const sides = String(x.title || '').split(/\s+vs\s+/i);
+    body = sides.length === 2
+      ? `<span class="lc-tennis${doubles ? ' is-doubles' : ''}"><strong>${esc(sides[0])}</strong><i>vs</i><strong>${esc(sides[1])}</strong></span>`
+      : `<span class="lc-tennis${doubles ? ' is-doubles' : ''}"><strong>${esc(x.title)}</strong></span>`;
+  } else {
+    body = `<span>${esc(x.title)}</span>`;
+  }
+  const note = doubles
+    ? 'Doubles score only · Compare market coverage is singles only'
+    : tennis
+      ? 'No comparison market listed for this live match'
+      : ['nfl', 'nba', 'mlb', 'nhl'].includes(x.sport)
+        ? 'No comparison market linked to this game'
+        : 'Score shown separately · market link UNMATCHED';
+  return `<a class="lc lc-plain${tennis ? ' lc-tennis-card' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
+    <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
+    <span class="lc-score">${body}</span>
+    <small class="lc-age">${esc(note)}</small></a>`;
 }
 
 // Live rail: more than MARQUEE_MIN games -> a slow continuous scroll (owner 2026-10-05), never a scrollbar.
