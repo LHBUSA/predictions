@@ -71,7 +71,7 @@ async function loadMarket(){
   }catch(e){$('#ticker').innerHTML='<span>Market feed temporarily unavailable</span>'}
 }
 function setMode(m){
-  mode=m; $('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  mode=m; document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
   $('#persona-tabs').hidden=m!=='consult';
   $('#trade-lab').hidden=m!=='trade';
   $('#feed').hidden=m==='trade';
@@ -109,7 +109,7 @@ async function send(){
   try{if(mode==='debate')await runDebate(t);else await runConsult(t)}catch{const d=document.createElement('div');d.className='topic';d.textContent='Analysis unavailable. Please try again.';$('#messages').appendChild(d)}
   finally{busy=false;$('#send').disabled=false;$('#prompt').focus()}
 }
-$('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$('.persona').forEach(b=>b.onclick=()=>setPersona(b.dataset.persona));
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));document.querySelectorAll('.persona').forEach(b=>b.onclick=()=>setPersona(b.dataset.persona));
 
 function fileToData(file){
   return new Promise((resolve,reject)=>{
