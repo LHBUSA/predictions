@@ -1,5 +1,5 @@
 import { requireAllAccess, send } from '../../compare/api/_lib/access.js';
-import { PERSONAS, marketData, contextFromMarket, askOpenAI, sseHeaders, sendEvent } from '../../src/market-intelligence-server.js';
+import { PERSONAS, marketData, contextFromMarket, askOpenAI, sseHeaders, sendEvent } from './_lib/server.js';
 
 export default async function handler(req,res){
   if(req.method!=='POST') return send(res,405,{error:'method_not_allowed'});
