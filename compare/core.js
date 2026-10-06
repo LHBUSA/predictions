@@ -83,9 +83,9 @@ const TOPIC_LABEL = { postponement: 'Postponed', cancellation: 'Cancelled', tie:
   // golf field winner (owner 2026-10-05)
   dead_heat: 'Dead heat', withdrawal: 'Withdraws', dns: 'Does not tee off', eliminated: 'Eliminated (e.g. missed cut)', disqualification: 'Disqualified', shortened: 'Shortened event', unlisted_winner: 'Unlisted golfer wins', source: 'Result source' };
 const COND_LABEL = { postponed: '', starts_within_48h: 'starts within 48h', not_started_within_48h: 'not started within 48h', resumes_within_2w: 'resumes within 2 weeks', beyond_2w: 'beyond 2 weeks', no_makeup: 'no make-up game', cancelled_or_not_started_within_48h: 'or not started within 48h', cancelled_or_beyond_48h: 'or moved beyond 48h', not_played: 'not played', cancelled_or_beyond_2w: 'or moved beyond 2 weeks', draw: 'draw', or_cancelled_before_start: 'or cancelled before the start', no_winner_within_14d: 'no winner within 14 days', no_data_within_24h: 'no official data within 24h', fallback: 'official data unavailable', rescheduled_beyond_48h: 'rescheduled more than 48h away', rescheduled_beyond_2w: 'rescheduled more than 2 weeks away',
-  tie_after_regulation: 'tied after regulation', multiple_winners: 'co-winners declared', withdraws: '', withdraws_or_does_not_tee_off: '', eliminated_from_contention: '', dq_before_expiry: 'before settlement', truncated_with_official_result: 'official result declared', no_winner_by_deadline: 'no winner by the venue deadline', cancelled_no_official_result: 'no official result', unlisted_player_wins: '', primary: '' };
+  tie_after_regulation: 'tied after regulation', tie_on_points: 'level on points', cancelled_or_beyond_7d: 'or moved more than 7 days', rescheduled_beyond_7d: 'rescheduled more than 7 days away', season_cancelled_or_incomplete_by_deadline: 'season cancelled or not completed by the venue deadline', season_incomplete_by_deadline: 'season not completed by the venue deadline', multiple_winners: 'co-winners declared', withdraws: '', withdraws_or_does_not_tee_off: '', eliminated_from_contention: '', dq_before_expiry: 'before settlement', truncated_with_official_result: 'official result declared', no_winner_by_deadline: 'no winner by the venue deadline', cancelled_no_official_result: 'no official result', unlisted_player_wins: '', primary: '' };
 const TREAT_LABEL = { open_until_completed: { kalshi: 'remains open, official final result', polymarket: 'remains open until completed' }, split_50_50: { kalshi: '$0.50 each', polymarket: 'resolves 50-50' }, fair_price: 'resolves at a fair price', last_fair_price: 'resolves at the last fair price', advancing_player: 'advancing player wins', settles_as_draw: 'settles as a draw (team markets No, draw Yes)', split_50_50_or_draw: 'resolves 50-50, or Draw', consensus_allowed: 'credible-reporting consensus may be used',
-  no: 'resolves No', official_winner_per_tour_rules: 'official winner under PGA TOUR rules (playoff)', alphabetical_last_name_wins: 'alphabetically first last name wins; other co-winners No', split_1_over_n: '$1 split equally across co-winners', other_bucket: '"Other": every listed golfer resolves No', open_up_to_2_weeks: 'stays open up to 2 weeks', last_traded_price_or_fair: 'last traded price or a fair allocation', reported_result_stands: 'reported result stands', pga_tour: 'PGA TOUR website', league_ap_espn_wsj_fox: 'tour, AP, ESPN, WSJ, Fox Sports' };
+  no: 'resolves No', official_winner_per_tour_rules: 'official winner under PGA TOUR rules (playoff)', alphabetical_last_name_wins: 'alphabetically first last name wins; other co-winners No', split_1_over_n: '$1 split equally across co-winners', other_bucket: '"Other": every listed participant resolves No', official_tiebreak: 'official F1 tiebreak (countback)', f1_official: 'Formula 1', open_up_to_2_weeks: 'stays open up to 2 weeks', last_traded_price_or_fair: 'last traded price or a fair allocation', reported_result_stands: 'reported result stands', pga_tour: 'PGA TOUR website', league_ap_espn_wsj_fox: 'tour, AP, ESPN, WSJ, Fox Sports' };
 export const TERM_TOPICS = Object.keys(TOPIC_LABEL);
 export function termLine(t, venue) {
   const topic = TOPIC_LABEL[t?.topic], tr = TREAT_LABEL[t?.treatment];
@@ -118,6 +118,8 @@ export function keyDifferences(rt) {
   const out = [];
   const pc = t('polymarket', 'cancellation'), kc = t('kalshi', 'cancellation');
   if (pc.some((x) => x.treatment === 'settles_as_draw') && kc.some((x) => x.treatment === 'fair_price')) out.push('Cancelled: Polymarket → Draw; Kalshi → fair price.');
+  // F1 race (owner 2026-10-06): the comparable pair's cancellation difference
+  if (kc.some((x) => x.treatment === 'fair_price') && pc.some((x) => x.treatment === 'other_bucket')) out.push('Cancelled: Kalshi → fair price; Polymarket → "Other" (every listed driver No).');
   // golf (owner 2026-10-05): the dead-heat rule changes the payout of the winning golfer itself
   if (t('kalshi', 'dead_heat').some((x) => x.treatment === 'split_1_over_n') && t('polymarket', 'dead_heat').some((x) => x.treatment === 'alphabetical_last_name_wins')) out.push('Dead heat: Kalshi → $1 split across co-winners; Polymarket → alphabetically first last name wins, other co-winners No.');
   return out;
@@ -171,7 +173,7 @@ export function scoreIndex(items = []) {
 }
 export function joinScore(event, index) {
   const sport = event.sport;
-  if (!sport || sport === 'golf') return { state: 'NOT_APPLICABLE', score: null };
+  if (!sport || sport === 'golf' || sport === 'f1') return { state: 'NOT_APPLICABLE', score: null };
   if (!ID_JOIN_SPORTS.has(sport)) return { state: 'UNMATCHED', score: null, reason: sport === 'ufc' ? 'Market lists bouts; the score feed lists cards. No deterministic bout crosswalk yet.' : 'No proven id crosswalk between this sport\'s market and score feed.' };
   const hit = index.get(`${sport}:${String(event.canonical_event_id)}`);
   return hit ? { state: 'LINKED', score: hit } : { state: 'NO_SCORE', score: null };
@@ -186,7 +188,8 @@ export function joinScore(event, index) {
 const fieldPrice = (c) => Math.max(c.kalshi?.mid_bp ?? -1, (c.polymarket || c.related?.find((r) => r.venue === 'polymarket') || c.listed?.find((x) => x?.venue === 'polymarket'))?.mid_bp ?? -1);
 export function normalizeEvent(e, index = new Map()) {
   let contracts = (e.contracts || []).map(normalizeContract);
-  const field = e.sport === 'golf' ? { n: contracts.length } : null;
+  // field events: golf winner, F1 race winner / season champion (one contract per participant)
+  const field = e.sport === 'golf' || e.sport === 'f1' ? { n: contracts.length, noun: e.sport === 'golf' ? 'golfers' : String(e.canonical_event_id).includes('constructors') ? 'teams' : 'drivers' } : null;
   if (field) contracts = contracts.sort((a, b) => fieldPrice(b) - fieldPrice(a));
   const join = joinScore(e, index);
   const status = join.score?.status || null;

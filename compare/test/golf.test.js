@@ -26,7 +26,7 @@ const EV = { canonical_event_id: 'ED', sport: 'golf', title: 'Baycurrent Classic
 test('field event: RULE_MISMATCH, ordered by venue price, NO gap and NO cross on any golfer', () => {
   const e = normalizeEvent(EV);
   assert.equal(e.badge, 'RULE_MISMATCH');
-  assert.deepEqual(e.field, { n: 3 });
+  assert.deepEqual(e.field, { n: 3, noun: 'golfers' });
   assert.deepEqual(e.contracts.map((c) => c.label), ['Xander Schauffele', 'Ryan Gerard', 'Doug Ghim']);
   assert.ok(e.contracts.every((c) => c.gap_pts === null && c.cross === null && !c.comparison));
   assert.equal(e.best_gap, null);

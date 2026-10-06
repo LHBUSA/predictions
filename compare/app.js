@@ -212,16 +212,16 @@ function distribution(e) {
   };
   return `<section class="dists" aria-label="Three-outcome price distribution per venue"><p class="small">${esc(names.join(' · '))}: each venue's own three prices. ${e.badge === 'COMPARABLE' ? '' : 'Rules differ: shown side by side, never compared.'}</p>${bar('kalshi', 'Kalshi')}${bar('polymarket', 'Polymarket')}</section>`;
 }
-const fieldChip = (e) => (e.field ? `<span class="tw" title="Tournament winner: one market per golfer. Top golfers by venue price shown; open for the full field.">FIELD · ${e.field.n}</span>` : '');
+const fieldChip = (e) => (e.field ? `<span class="tw" title="One market per participant. The leaders by venue price are shown; open for the full field.">FIELD · ${e.field.n}</span>` : '');
 function tile(e) {
   const rows = e.contracts.slice(0, e.field ? 5 : 3).map((c) => {
     const p = pmFor(c), rel = !c.polymarket && !!p;
-    return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${e.field ? '<span></span>' : gapCell(c)}</div>`;
+    return `<div class="tr"><span class="who">${avatar(e, c)}<span class="nm">${esc(c.label || '—')}</span>${scoreOf(e, c)}</span>${px(c.kalshi, { small: true })}${px(p, { rel, small: true })}${e.field && e.badge !== 'COMPARABLE' ? '<span></span>' : gapCell(c)}</div>`;
   }).join('');
   return `<button type="button" class="tile tier-${e.tier}${e.live ? ' is-live' : ''}${isOpen(e) ? ' is-open' : ''}" data-open="${esc(e.key)}" aria-label="${esc(`${e.title}: open details`)}">
     <span class="th"><span class="sport">${esc(e.sport ? e.sport.toUpperCase() : 'PREDICTION')}</span>${statusChip(e)}${threeWayChip(e)}${fieldChip(e)}<span class="flex"></span>${badgeFor(e)}</span>
     <span class="tt">${esc(e.title)}</span>
-    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}${e.field ? '<span></span>' : '<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span>'}</span>${rows}</span>
+    <span class="tg"><span class="tr thd"><span></span>${venueHead('kalshi')}${venueHead('polymarket')}${e.field && e.badge !== 'COMPARABLE' ? '<span></span>' : '<span class="vh" title="Mid-price gap (informational). The CROSS line is the top-of-book executable cross.">MID GAP</span>'}</span>${rows}</span>
     <span class="tf">${e.three_way ? `${e.has_pbe ? pbeLine(e) : ''}${bookLine(e)}` : pbeLine(e)}<span class="flex"></span><span class="age">${esc(freshLine(e))}</span></span>
   </button>`;
 }
@@ -498,9 +498,13 @@ function drawerContract(e, c) {
 // Field events: one compact row per golfer (each venue at its own price); never a shared spread.
 function fieldTable(e) {
   const cell = (v, rel) => (v && v.mid_bp != null ? `<td class="num">${fmtCents(v.yes_bp)}${v.market_url ? ` <a href="${esc(v.market_url)}" rel="noopener" target="_blank" aria-label="Open on ${rel ? 'Polymarket' : 'Kalshi'}">↗</a>` : ''}</td>` : '<td class="num muted">—</td>');
-  const rows = e.contracts.map((c) => { const p = pmFor(c); return `<tr><th><span class="ft-g">${avatar(e, c, 'sm')}<span>${esc(c.label || '—')}</span></span></th>${cell(c.kalshi, false)}${cell(p, true)}</tr>`; }).join('');
-  return `<section class="field" aria-label="Field"><p class="small">${esc(`${e.field.n} golfers`)} · YES price on each venue. Settlement rules differ, so the two prices are shown side by side and never compared.</p>
-    <table class="ft"><thead><tr><th>Golfer</th><th class="num"><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12"> Kalshi</th><th class="num"><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12"> Polymarket</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  const cmp = e.badge === 'COMPARABLE';
+  const xcell = (c) => { const x = c.cross; if (c.gap_pts == null) return '<td class="num muted" title="Not aligned within 120 s">—</td><td class="num muted">—</td>'; return `<td class="num">${c.gap_pts.toFixed(1)}¢</td><td class="num${x?.state === 'CROSS' ? ' pos' : ' muted'}" title="${esc(CROSS_TOOLTIP)}">${x?.state === 'CROSS' ? `+${(x.bp / 100).toFixed(1)}¢` : x?.state === 'NO_CROSS' ? 'none' : '—'}</td>`; };
+  const rows = e.contracts.map((c) => { const p = pmFor(c); return `<tr><th><span class="ft-g">${avatar(e, c, 'sm')}<span>${esc(c.label || '—')}</span></span></th>${cell(c.kalshi, false)}${cell(p, true)}${cmp ? xcell(c) : ''}</tr>`; }).join('');
+  const who = e.field.noun === 'golfers' ? 'Golfer' : e.field.noun === 'teams' ? 'Team' : 'Driver';
+  const note = cmp ? 'YES price on each venue. Approved comparable contract: mid gap is informational; the cross is best displayed bid vs the other venue\'s best displayed ask, before fees, size not measured.' : 'YES price on each venue. Settlement rules differ, so the two prices are shown side by side and never compared.';
+  return `<section class="field" aria-label="Field"><p class="small">${esc(`${e.field.n} ${e.field.noun}`)} · ${esc(note)}</p>
+    <table class="ft"><thead><tr><th>${who}</th><th class="num"><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12"> Kalshi</th><th class="num"><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12"> Polymarket</th>${cmp ? '<th class="num">MID GAP</th><th class="num">CROSS</th>' : ''}</tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 function metricsBox(c) {
   if (c.badge !== 'COMPARABLE') return `<div class="dm dm-off"><span><small>SHARED SPREAD</small><b>Not compared</b><em>${esc(c.badge === 'RULE_MISMATCH' ? 'Settlement rules differ: each venue is shown at its own price only.' : c.badge === 'WITHDRAWN' ? BADGES.WITHDRAWN : BADGES.SINGLE_VENUE)}</em></span></div>`;
