@@ -33,8 +33,10 @@ function renderNowcast(n,rh){
   const target=Number(n.window.proxy_open_usd);
   const spot=btc?.mid??fm.btc_spot_usd??null;
   $('target').textContent=usd(target,2);
+  $('hero-reference').textContent=usd(target,2);
   $('spot').textContent=usd(spot,2);
   $('hero-spot').textContent=usd(spot,2);
+  $('hero-price-age').textContent=btc?.timestamp?`Robinhood · ${ago(btc.timestamp)}`:'live execution reference';
   if(spot!=null&&target>0){
     const d=spot-target,p=d/target*100;
     $('distance').textContent=`${d>=0?'+':''}${usd(d,2)}`;
@@ -53,12 +55,15 @@ function renderNowcast(n,rh){
   $('mkt-poly').textContent=pm?.mid==null?'—':pct(pm.mid);
   if(f&&k?.mid!=null){
     const gap=(Number(f.p_up)-Number(k.mid))*100;
-    $('divergence').textContent=`${gap>=0?'+':''}${gap.toFixed(1)} pts`;
-    $('chart-gap').textContent=`${gap>=0?'+':''}${gap.toFixed(1)} pts`;
-    $('hero-signal-copy').textContent=Math.abs(gap)>=10?`PBE differs from Kalshi by ${Math.abs(gap).toFixed(1)} pts`:gap>=0?'PBE is above the market':'PBE is below the market';
+    const gapText=`${gap>=0?'+':''}${gap.toFixed(1)} pts`;
+    $('divergence').textContent=gapText;
+    $('chart-gap').textContent=gapText;
+    $('hero-gap').textContent=gapText;
+    $('hero-signal-copy').textContent=Math.abs(gap)>=10?`PBE sees a ${Math.abs(gap).toFixed(1)} point ${gap>0?'premium to':'discount to'} Kalshi with this window still live.`:gap>=0?'PBE is modestly above the market.':'PBE is modestly below the market.';
   } else {
     $('divergence').textContent='—';
     $('chart-gap').textContent='—';
+    $('hero-gap').textContent='—';
     $('hero-signal-copy').textContent='Waiting for market benchmark';
   }
   $('chart-pbe').textContent=f?pct(f.p_up):'—';
