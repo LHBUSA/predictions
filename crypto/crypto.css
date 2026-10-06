@@ -151,3 +151,14 @@ linear-gradient(180deg,#07111f,#081522)}
   .cx-coin-logo.lg{width:38px;height:38px}
   .cx-tape-copy>.num{font-size:13px!important}
 }
+
+/* fill chart card with decision intelligence */
+.cx-command-chart{display:flex;flex-direction:column}
+.cx-chart-hero{flex:0 0 auto}
+.cx-chart-intel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.cx-chart-intel>div{padding:12px;border:1px solid #1d3957;border-radius:10px;background:linear-gradient(180deg,#0a1828,#07131f)}
+.cx-chart-intel span{display:block;color:#91a6bb;font-size:9px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+.cx-chart-intel strong{display:block;margin-top:4px;color:#fff;font-size:19px;letter-spacing:-.025em}
+.cx-chart-intel small{display:block;margin-top:2px;color:#7f95aa;font-size:9.5px}
+.cx-command-chart .cx-legend{margin-top:10px}
+@media(max-width:760px){.cx-chart-intel{grid-template-columns:1fr 1fr}}
