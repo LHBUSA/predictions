@@ -83,13 +83,13 @@
   <div class="tape" aria-label="Live probability tape" hidden><div class="tape-track" id="tape"></div></div>
 
   <section class="section crypto-rail" id="crypto-markets"><div class="wrap">
-    <div class="section-head"><div><span class="overline">LIVE CRYPTO MARKET RAIL</span><h2>Robinhood market data, normalized for Predictions</h2><p>BTC, ETH and SOL market state from the authenticated Robinhood feed. Crossed top-of-book snapshots are automatically rejected and replaced with the estimated-price lane when available.</p></div><div class="rail-status" id="crypto-rail-status">Connecting…</div></div>
+    <div class="section-head"><div><span class="overline">LIVE CRYPTO MARKET RAIL</span><h2>Robinhood execution economics</h2><p>Size-aware BTC, ETH and SOL pricing from the authenticated Robinhood feed. Net sell proceeds and gross buy cost include Robinhood's estimated fee so the displayed friction reflects the actual quoted economics.</p></div><div class="rail-status" id="crypto-rail-status">Connecting…</div></div>
     <div class="crypto-grid" id="crypto-grid" aria-live="polite">
       <div class="card crypto-card skel" style="height:132px"></div>
       <div class="card crypto-card skel" style="height:132px"></div>
       <div class="card crypto-card skel" style="height:132px"></div>
     </div>
-    <p class="note crypto-note">Market data only. PropBetEdge models remain independent of Robinhood prices; Robinhood is an external execution/market-data venue, not a model input.</p>
+    <p class="note crypto-note">Execution-price intelligence only. PropBetEdge models remain independent of Robinhood prices; Robinhood is an external market-data venue, not a model input.</p>
   </div></section>
 
   <section class="section" hidden><div class="wrap">
