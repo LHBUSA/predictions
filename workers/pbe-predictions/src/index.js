@@ -173,6 +173,33 @@ export default {
           }, 502, 'no-store');
         }
       }
+      if (req.method === 'GET' && p === '/admin/crypto/robinhood/account') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (!robinhoodConfigured(env)) return json({ ok: false, configured: false }, 503, 'no-store');
+        const rh = robinhoodForEnv(env);
+        try {
+          const accounts = await rh.accounts();
+          const account = accounts?.results?.[0] ?? null;
+          if (!account?.account_number) return json({ ok: false, error: 'no_crypto_account' }, 404, 'no-store');
+          const [holdings, orders, pairs] = await Promise.all([
+            rh.holdings(account.account_number),
+            rh.orders(account.account_number),
+            rh.tradingPairs(),
+          ]);
+          const tradable = (pairs?.results || []).filter((x) => x?.is_api_tradable === true).map((x) => x.symbol);
+          return json({
+            ok: true,
+            configured: true,
+            trading_enabled: false,
+            account,
+            holdings,
+            orders,
+            api_tradable_symbols: tradable,
+          }, 200, 'no-store');
+        } catch (e) {
+          return json({ ok: false, configured: true, status: e?.status ?? null, error: e?.message ?? 'robinhood_account_read_failed', detail: e?.detail ?? null }, 502, 'no-store');
+        }
+      }
       if (req.method === 'GET' && p.startsWith('/admin/contract/')) {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         const rec = await contractRecord(storeFor(env), decodeURIComponent(p.slice('/admin/contract/'.length)), { includeShadow: true });
