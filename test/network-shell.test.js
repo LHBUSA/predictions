@@ -28,7 +28,8 @@ test('footer: Predictions, all 10 sports, network, trust, and the All Access lin
   assert.equal(NETWORK.sports.length, 10);
   for (const [label, href] of NETWORK.sports) assert.ok(f.includes(`href="${href}"`), label);
   for (const href of ['https://propbetedge.ai/', 'https://propbetedge.ai/pro', '/insights/', '/models/', '/methodology/', '/insights/rss.xml', '/methodology/#scoring']) assert.ok(f.includes(`href="${href}"`), href);
-  assert.match(f, /PropBetEdge All Access<\/strong><\/a> — 10 sports \+ PropBetEdge Predictions for \$29\/month\./);
+  assert.match(f, /PropBetEdge All Access<\/strong><\/a> — 10 sports \+ Predictions \+ Compare for \$29\/month\./);
+  for (const href of ['https://members.propbetedge.ai/','https://compare.propbetedge.ai/','https://predictions.propbetedge.ai/']) assert.ok(f.includes(`href="${href}"`), href);
   assert.doesNotMatch(f, /11 sports|eleven sports/i);
 });
 
