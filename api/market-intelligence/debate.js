@@ -31,15 +31,40 @@ export default async function handler(req,res){
       const p=PERSONAS[key];
       sendEvent(res,{type:'persona_start',persona:key,name:p.name,role:p.role,emoji:key==='bull'?'▲':key==='bear'?'▼':'◆'});
       const prior=Object.entries(responses).map(([k,v])=>PERSONAS[k].name + ': ' + v).join('\n\n');
+      const stance = key==='bull'
+        ? [
+            '[DEBATE ROLE — AFFIRMATIVE]',
+            'Take the strongest defensible YES / CONSTRUCTIVE side.',
+            'Your job is not to summarize uncertainty. Your job is to prove why the subject can be attractive at the current evidence/price.',
+            'Use at least three subject-specific facts. Explicitly rebut the strongest point from Data and, if present, Bramer.',
+            'Do not use the word "Mixed" as your verdict.'
+          ].join('\n')
+        : key==='bear'
+        ? [
+            '[DEBATE ROLE — NEGATIVE]',
+            'Take the strongest defensible NO / WAIT side.',
+            'Your job is not to summarize uncertainty. Your job is to prove why the subject can be unattractive, overextended, too expensive, too risky, or premature at the current evidence/price.',
+            'Use at least three subject-specific facts. Explicitly rebut Tim\'s strongest point.',
+            'Do not use the word "Mixed" as your verdict.'
+          ].join('\n')
+        : [
+            '[DEBATE ROLE — NEUTRAL DATA]',
+            'Do not take Tim or Bramer\'s side.',
+            'Rank the strongest evidence for and against the subject, then identify the deciding variable.'
+          ].join('\n');
+
       const prompt=[
         ctx,
         '',
         '[DEBATE TOPIC]',
         topic,
+        '',
+        stance,
         prior ? '\n[PRIOR ANALYST READS]\n'+prior : '',
         '',
-        'Give your independent read on the resolved subject. Directly address the strongest conflicting point already raised when applicable.',
-        'For "good buy" questions, end with a clear evidence status such as Constructive / Mixed / Weak, plus the specific fact that would most change your view. Do not issue a personalized trade instruction.'
+        'Use the resolved subject packet as the primary evidence. Broad market context is secondary.',
+        'Directly address the strongest conflicting point already raised when applicable.',
+        'Do not issue a personalized trade instruction.'
       ].join('\n');
       const answer=await askOpenAI({instruction:p.instruction,input:prompt,maxOutput:500});
       responses[key]=answer;
