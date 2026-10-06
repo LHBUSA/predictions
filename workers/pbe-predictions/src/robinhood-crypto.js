@@ -40,11 +40,34 @@ export function robinhoodConfigured(env) {
   return !!(env?.ROBINHOOD_CRYPTO_API_KEY && env?.ROBINHOOD_CRYPTO_PRIVATE_KEY_B64);
 }
 
+function b64urlToBytes(value) {
+  const s = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  return b64ToBytes(s + '='.repeat((4 - (s.length % 4)) % 4));
+}
+
+function hex(bytes) {
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Safe diagnostic only: fingerprint the PUBLIC key derived from the private seed.
+// It never returns the private key, signature material, account data or prices.
+export async function robinhoodCredentialFingerprint(env) {
+  const seed = b64ToBytes(env.ROBINHOOD_CRYPTO_PRIVATE_KEY_B64);
+  const key = await crypto.subtle.importKey('pkcs8', pkcs8FromSeed(seed), { name: 'Ed25519' }, true, ['sign']);
+  const jwk = await crypto.subtle.exportKey('jwk', key);
+  if (!jwk?.x) throw new Error('Robinhood public-key derivation failed');
+  const digest = await crypto.subtle.digest('SHA-256', b64urlToBytes(jwk.x));
+  return {
+    api_key_suffix: String(env.ROBINHOOD_CRYPTO_API_KEY || '').trim().slice(-4),
+    public_key_sha256: hex(digest),
+  };
+}
+
 export class RobinhoodCryptoMarketData {
   constructor({ apiKey, privateKeyB64, fetchImpl = globalThis.fetch, now = () => Math.floor(Date.now() / 1000) } = {}) {
     if (!apiKey) throw new TypeError('Robinhood API key is required');
     if (!privateKeyB64) throw new TypeError('Robinhood private key is required');
-    this.apiKey = String(apiKey);
+    this.apiKey = String(apiKey).trim();
     this.privateKeyB64 = String(privateKeyB64);
     this.fetchImpl = (input, init) => fetchImpl(input, init);
     this.now = now;
