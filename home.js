@@ -356,7 +356,7 @@ function fail(where, e) { console.error(where, e); }
 // network at all; on return, everything due is fetched immediately. One timer, one visibility listener, at most one
 // in-flight request per dataset; a dataset re-renders only when its payload changed (no tape restart, no CLS).
 // The desk refreshes only for members; a failed read keeps what is on screen (never a downgrade, never a free payload).
-const LIVE_MS = { summary: 60e3, desk: 60e3, crypto: 15e3, cryptoLab: 60e3, calendar: 120e3, track: 300e3, models: 300e3 };
+const LIVE_MS = { summary: 60e3, desk: 60e3, calendar: 120e3, track: 300e3, models: 300e3 };
 const live = { last: {}, inflight: new Set(), sig: {}, requests: 0, timer: null, listener: false };
 async function pull(name) {
   if (document.hidden || live.inflight.has(name)) return;
@@ -380,12 +380,7 @@ async function pull(name) {
       featured(); cats(); views(); desk();
       return;
     }
-    const path = { summary: 'summary', crypto: 'crypto/markets', calendar: 'calendar', track: 'track-record', models: 'models' }[name];
-    if (name === 'cryptoLab') {
-      const [ladder, universe] = await Promise.allSettled([getJSON('crypto/execution-ladder'), getJSON('crypto/universe')]);
-      cryptoExecutionLab(ladder.status === 'fulfilled' ? ladder.value : null, universe.status === 'fulfilled' ? universe.value : null);
-      return;
-    }
+    const path = { summary: 'summary', calendar: 'calendar', track: 'track-record', models: 'models' }[name];
     const r = await fetch(`${API}/${path}`, { cache: 'no-store' });
     if (!r.ok) return;
     const body = await r.text();
@@ -396,8 +391,7 @@ async function pull(name) {
       const scoredMoved = live.scored !== undefined && v.resolved_scored !== live.scored;
       live.scored = v.resolved_scored; stats(v);
       if (scoredMoved) { live.last.track = 0; live.last.models = 0; } // newly resolved/scored state -> refresh now
-    } else if (name === 'crypto') cryptoMarkets(v);
-    else if (name === 'calendar') calendar(v);
+    } else if (name === 'calendar') calendar(v);
     else if (name === 'track') trackRecord(v);
     else if (name === 'models') registry(v);
   } catch (e) { fail(`live ${name}`, e); } finally { live.inflight.delete(name); }
@@ -423,16 +417,14 @@ async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
   if (window.PBE_MEMBERSHIP) onMembership(window.PBE_MEMBERSHIP); // access.js may have resolved first
-  const [s, c, t, m, pv, cr, cl, cu] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk'), getJSON('crypto/markets'), getJSON('crypto/execution-ladder'), getJSON('crypto/universe')]);
+  const [s, c, t, m, pv] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk')]);
   if (pv.status === 'fulfilled' && !member) { live.sig.preview = JSON.stringify(pv.value); renderPreview(pv.value); }
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);
   if (c.status === 'fulfilled') calendar(c.value);
   if (t.status === 'fulfilled') trackRecord(t.value);
   if (m.status === 'fulfilled') registry(m.value);
-  if (cr.status === 'fulfilled') cryptoMarkets(cr.value); else cryptoMarkets({ ok: false });
-  cryptoExecutionLab(cl.status === 'fulfilled' ? cl.value : null, cu.status === 'fulfilled' ? cu.value : null);
   if (s.status === 'fulfilled') live.scored = s.value.resolved_scored;
   const t0 = Date.now();
-  startLive({ summary: t0, desk: live.last.desk || t0, crypto: t0, cryptoLab: t0, calendar: t0, track: t0, models: t0 });
+  startLive({ summary: t0, desk: live.last.desk || t0, calendar: t0, track: t0, models: t0 });
 }
 main();
