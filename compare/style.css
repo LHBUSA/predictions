@@ -185,6 +185,11 @@ button:disabled{cursor:default}
 .lc-score{display:grid;grid-template-columns:22px 1fr auto;gap:6px 8px;align-items:center}
 .lc-score span{font:600 14px var(--disp);letter-spacing:.06em;color:var(--muted)}
 .lc-score b{font:700 22px/1 var(--mono)}
+.lc-score>.lc-tennis{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;align-items:start}
+.lc-score>.lc-tennis strong{display:block;font:600 13px/1.28 var(--disp);letter-spacing:.025em;color:var(--paper);overflow-wrap:normal;word-break:normal}
+.lc-score>.lc-tennis i{font:700 9px/1 var(--mono);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.lc-score>.lc-tennis.is-doubles strong{font-size:12.5px}
+.lc-track>.lc-tennis-card{width:340px;flex-basis:340px}
 .lc-plain{border-color:var(--line);background:var(--ink-2);opacity:.9}
 
 /* ---------- drawer ---------- */
