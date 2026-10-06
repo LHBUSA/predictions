@@ -40,18 +40,20 @@ test('brand/network.json network links include every family network destination;
   const urls = brand.network.map(([, url]) => url);
   for (const n of family.network) assert.ok(urls.includes(n.url), `${n.key} ${n.url}`);
   assert.equal(brand.brand.org_id, family.organization);
-  assert.equal(brand.all_access.url, family.network.find((n) => n.key === 'all_access').url);
-  assert.match(brand.all_access.line, /10 sports \+ PropBetEdge Predictions/);
+  assert.equal(brand.all_access.url, family.all_access.find((n) => n.key === 'all_access').url);
+  assert.match(brand.all_access.line, /10 sports \+ Predictions \+ Compare/);
+  assert.deepEqual(brand.all_access_products.map(([, url]) => url), family.all_access.map((p) => p.url));
   assert.doesNotMatch(JSON.stringify(brand), /11 sports|eleven sports/i);
 });
 
-test('rendered footers (Worker shell + static index.html) link each family sport once, no retired hosts, no http://', () => {
+test('rendered footers link each family sport and All Access product once, no retired hosts, no http://', () => {
   const statik = read('index.html');
   const staticFooter = statik.slice(statik.indexOf('<!-- network:footer -->'), statik.indexOf('<!-- /network:footer -->'));
   assert.ok(staticFooter.length > 0, 'index.html network:footer markers present');
   for (const [where, html] of [['worker', siteFooter()], ['index.html', staticFooter]]) {
     const hrefs = hrefsOf(html);
     for (const url of SPORT_URLS) assert.equal(hrefs.filter((h) => h === url).length, 1, `${where}: ${url}`);
+    for (const p of family.all_access) assert.equal(hrefs.filter((h) => h === p.url).length, 1, `${where}: ${p.key}`);
     for (const h of hrefs) {
       for (const host of family.retired_hosts) assert.ok(!h.includes(host), `${where}: retired host ${h}`);
       assert.ok(!h.startsWith('http://'), `${where}: insecure ${h}`);
