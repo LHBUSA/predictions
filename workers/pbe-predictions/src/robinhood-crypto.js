@@ -4,8 +4,9 @@
 //   ROBINHOOD_CRYPTO_API_KEY
 //   ROBINHOOD_CRYPTO_PRIVATE_KEY_B64  (32-byte Ed25519 seed, base64)
 //
-// Security boundary: this module intentionally exposes NO account, holdings, order,
-// preview, cancel, or trading methods. It is market-data only.
+// Security boundary: this module remains non-trading. It exposes market data plus
+// authenticated account, holdings, and order-history reads, but no order placement
+// or cancellation methods.
 
 const BASE = 'https://trading.robinhood.com';
 const enc = new TextEncoder();
@@ -120,6 +121,30 @@ export class RobinhoodCryptoMarketData {
     if (!['bid','ask','both'].includes(side)) throw new TypeError('side must be bid, ask, or both');
     const q = new URLSearchParams({ symbol: sym, side, quantity: String(quantity) }).toString();
     return this.get(`/api/v2/crypto/trading/estimated_price/?${q}`);
+  }
+
+  accounts() {
+    return this.get('/api/v2/crypto/trading/accounts/');
+  }
+
+  holdings(accountNumber, assetCodes = []) {
+    const account = String(accountNumber || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    const q = new URLSearchParams({ account_number: account });
+    for (const code of (Array.isArray(assetCodes) ? assetCodes : [assetCodes]).filter(Boolean)) {
+      q.append('asset_code', String(code).toUpperCase());
+    }
+    return this.get(`/api/v2/crypto/trading/holdings/?${q.toString()}`);
+  }
+
+  orders(accountNumber, filters = {}) {
+    const account = String(accountNumber || '').trim();
+    if (!account) throw new TypeError('account_number is required');
+    const q = new URLSearchParams({ account_number: account });
+    for (const k of ['symbol','side','type','state','created_at_start','created_at_end','updated_at_start','updated_at_end','cursor']) {
+      if (filters?.[k] != null && String(filters[k]).trim() !== '') q.set(k, String(filters[k]));
+    }
+    return this.get(`/api/v2/crypto/trading/orders/?${q.toString()}`);
   }
 }
 
