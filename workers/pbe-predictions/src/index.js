@@ -434,6 +434,82 @@ export default {
           return json({ ok: false, configured: true, authenticated: false, mode: 'READ_ONLY_MARKET_DATA', trading_enabled: false, upstream_status: e?.status ?? null, credential }, 502, 'public, max-age=10');
         }
       }
+      if (p === '/v1/crypto/nowcast') {
+        const now = new Date().toISOString();
+        try {
+          let [window] = await store.select('pred_crypto_windows', {
+            select: 'window_id,asset,horizon_min,open_at,close_at,settle_rule,kalshi_market_ticker,polymarket_slug,proxy_open_usd,created_at',
+            open_at: `lte.${now}`,
+            close_at: `gt.${now}`,
+          }, { limit: 1, order: 'open_at.desc' });
+          let active = true;
+          if (!window) {
+            active = false;
+            [window] = await store.select('pred_crypto_windows', {
+              select: 'window_id,asset,horizon_min,open_at,close_at,settle_rule,kalshi_market_ticker,polymarket_slug,proxy_open_usd,created_at',
+              close_at: `lte.${now}`,
+            }, { limit: 1, order: 'close_at.desc' });
+          }
+          if (!window) return json({ ok: true, active: false, state: 'NO_WINDOW' }, 200, 'public, max-age=10');
+
+          const [forecasts, obs, resolution] = await Promise.all([
+            store.select('pred_crypto_forecasts', {
+              select: 'forecast_id,window_id,model_id,model_version,model_state,captured_at,data_cutoff_at,p_up,features,features_sha256',
+              window_id: `eq.${window.window_id}`,
+            }, { order: 'captured_at.asc' }),
+            store.select('pred_crypto_venue_obs', {
+              select: 'obs_id,window_id,venue,market_id,captured_at,bid,ask,mid,market_status,comparability',
+              window_id: `eq.${window.window_id}`,
+            }, { order: 'captured_at.asc' }),
+            store.select('pred_crypto_resolutions', {
+              select: 'window_id,venue_result,venue_settled_at,proxy_close_usd,proxy_result,proxy_agrees,polymarket_result,resolved_at',
+              window_id: `eq.${window.window_id}`,
+            }, { limit: 1 }),
+          ]);
+          const latestForecast = forecasts.at(-1) || null;
+          const latestVenue = (venue) => obs.filter((x) => x.venue === venue).at(-1) || null;
+          const latestKalshi = latestVenue('kalshi');
+          const latestPolymarket = latestVenue('polymarket');
+
+          const recentScores = await store.select('pred_crypto_scores', {
+            select: 'window_id,designation,method,outcome,pbe_p,pbe_score,kalshi_p,kalshi_score,polymarket_p,polymarket_score,created_at',
+            designation: 'eq.FINAL_PRE_RESOLUTION',
+          }, { limit: 400, order: 'created_at.desc' }).catch(() => []);
+          const avg = (rows, key) => {
+            const vals = rows.map((x) => Number(x[key])).filter(Number.isFinite);
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+          };
+          const brier = recentScores.filter((x) => x.method === 'brier');
+          const log = recentScores.filter((x) => x.method === 'log_loss');
+
+          return json({
+            ok: true,
+            active,
+            state: active ? 'LIVE' : 'LAST_WINDOW',
+            generated_at: now,
+            window,
+            latest_forecast: latestForecast,
+            forecast_path: forecasts.map((x) => ({ t: x.captured_at, p_up: Number(x.p_up) })),
+            venue_path: {
+              kalshi: obs.filter((x) => x.venue === 'kalshi').map((x) => ({ t: x.captured_at, mid: x.mid == null ? null : Number(x.mid) })),
+              polymarket: obs.filter((x) => x.venue === 'polymarket').map((x) => ({ t: x.captured_at, mid: x.mid == null ? null : Number(x.mid) })),
+            },
+            markets: { kalshi: latestKalshi, polymarket: latestPolymarket },
+            resolution: resolution?.[0] || null,
+            record: {
+              designation: 'FINAL_PRE_RESOLUTION',
+              brier_n: brier.length,
+              pbe_brier: avg(brier, 'pbe_score'),
+              kalshi_brier: avg(brier, 'kalshi_score'),
+              log_loss_n: log.length,
+              pbe_log_loss: avg(log, 'pbe_score'),
+              kalshi_log_loss: avg(log, 'kalshi_score'),
+            },
+          }, 200, 'public, max-age=10');
+        } catch (e) {
+          return json({ ok: false, error: 'crypto_nowcast_unavailable', detail: e?.message ?? null }, 502, 'public, max-age=5');
+        }
+      }
       if (p === '/v1/crypto/universe') {
         if (!robinhoodConfigured(env)) return json({ ok: false, configured: false, source: 'Robinhood Crypto' }, 503, 'public, max-age=60');
         try {

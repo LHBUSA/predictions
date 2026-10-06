@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="/pbe-consent-v1.css">
+<script src="/pbe-consent-v1.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BTC 15-Minute Nowcast | PropBetEdge Predictions</title>
+<meta name="description" content="Live BTC 15-minute probability nowcast with PropBetEdge model probability, Kalshi benchmark, Robinhood execution economics, evidence and scored record.">
+<link rel="canonical" href="https://predictions.propbetedge.ai/crypto/">
+<meta name="theme-color" content="#07111f">
+<link rel="stylesheet" href="/site.css?v=20261006crypto1">
+<link rel="stylesheet" href="/crypto/crypto.css?v=20261006c1">
+</head>
+<body class="crypto-page">
+<header class="topbar"><div class="wrap">
+<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>
+<nav class="nav" aria-label="Predictions"><a href="/">Intelligence desk</a><a href="/crypto/" aria-current="page">Crypto</a><a href="/insights/">Insights</a><a href="/models/">Models</a><a href="/#track-record">Track record</a></nav>
+<div class="top-right"><span class="live-dot" id="crypto-live"><i></i><span>Connecting</span></span><a class="net-link" href="https://propbetedge.ai/">PropBetEdge Network ↗</a></div>
+</div></header>
+
+<main>
+<section class="cx-hero"><div class="wrap">
+  <div class="cx-hero-head">
+    <div><span class="overline">PBE CRYPTO NOWCAST · BTC · 15 MIN</span><h1>Probability intelligence for the next 15 minutes.</h1><p>PBE's independent BTC nowcast beside Kalshi's live market probability and Robinhood's fee-adjusted execution economics.</p></div>
+    <div class="cx-state"><span class="badge b-shadow">Research · Shadow</span><strong id="countdown">--:--</strong><small>to window close</small></div>
+  </div>
+  <div class="cx-kpis">
+    <div class="cx-kpi"><span>PBE reference</span><strong class="num" id="target">—</strong><small>derived exchange proxy at window open</small></div>
+    <div class="cx-kpi"><span>Robinhood now</span><strong class="num" id="spot">—</strong><small id="spot-sub">fee-adjusted midpoint</small></div>
+    <div class="cx-kpi"><span>Distance</span><strong class="num" id="distance">—</strong><small id="distance-sub">from PBE reference</small></div>
+    <div class="cx-kpi cx-prob"><span>PBE up</span><strong class="num" id="pbe-up">—</strong><small id="model-meta">awaiting forecast</small></div>
+    <div class="cx-kpi"><span>Kalshi up</span><strong class="num" id="kalshi-up">—</strong><small id="kalshi-meta">same contract benchmark</small></div>
+    <div class="cx-kpi"><span>Model vs market</span><strong class="num" id="divergence">—</strong><small>percentage-point gap</small></div>
+  </div>
+</div></section>
+
+<section class="section"><div class="wrap cx-main">
+  <div class="cx-left">
+    <section class="card cx-panel">
+      <div class="cx-panel-head"><div><span class="overline">LIVE WINDOW</span><h2>Probability path</h2></div><span id="window-times" class="cx-muted">—</span></div>
+      <div class="cx-chart-wrap"><svg id="prob-chart" viewBox="0 0 900 330" role="img" aria-label="PBE and market probability path"></svg></div>
+      <div class="cx-legend"><span><i class="pbe"></i>PBE</span><span><i class="kalshi"></i>Kalshi</span><span><i class="poly"></i>Polymarket</span></div>
+    </section>
+
+    <section class="card cx-panel">
+      <div class="cx-panel-head"><div><span class="overline">EVIDENCE</span><h2>Why the model is here</h2></div><span id="freshness" class="fresh fresh-current">—</span></div>
+      <div class="cx-evidence" id="evidence"></div>
+      <p class="note">Prediction-market prices are benchmarks only and never enter the PBE model.</p>
+    </section>
+
+    <section class="card cx-panel">
+      <div class="cx-panel-head"><div><span class="overline">TRACK RECORD</span><h2>Final pre-resolution scoring</h2></div></div>
+      <div class="cx-record" id="record"></div>
+      <p class="note">Research-stage record. No skill claim is made below the frozen promotion threshold.</p>
+    </section>
+  </div>
+
+  <aside class="cx-right">
+    <section class="card cx-panel cx-market">
+      <span class="overline">MARKETS</span><h2>Live benchmark</h2>
+      <div class="cx-market-row"><span>Kalshi</span><strong class="num" id="mkt-kalshi">—</strong><small>same contract</small></div>
+      <div class="cx-market-row"><span>Polymarket</span><strong class="num" id="mkt-poly">—</strong><small>same window · different index</small></div>
+    </section>
+
+    <section class="card cx-panel cx-rh">
+      <div class="cx-panel-head"><div><span class="overline">ROBINHOOD</span><h2>Execution economics</h2></div><span class="rail-good" id="rh-status">connecting</span></div>
+      <div id="rh-card"></div>
+      <a class="crypto-trade-btn cx-trade" href="https://robinhood.com/us/en/crypto/BTC/" target="_blank" rel="noopener noreferrer">Trade BTC on Robinhood ↗</a>
+      <small class="cx-muted">Opens Robinhood for review and order placement.</small>
+    </section>
+  </aside>
+</div></section>
+
+<section class="section cx-lab-section"><div class="wrap">
+  <div class="section-head"><div><span class="overline">EXECUTION LAB</span><h2>How trading friction changes with size</h2><p>Fee-adjusted Robinhood estimates at four USD sizes.</p></div><span class="cx-universe-count" id="universe-count">Loading universe…</span></div>
+  <div class="cx-ladders" id="ladders"></div>
+  <details class="card cx-universe"><summary>API-tradable Robinhood crypto universe <span id="universe-summary"></span></summary><div id="universe"></div></details>
+</div></section>
+</main>
+
+<footer class="footer"><div class="wrap"><div><strong>PropBetEdge Predictions</strong><p class="note">Independent probability. Auditable decisions.</p></div><div><a href="/">Predictions</a> · <a href="/methodology/">Methodology</a> · <a href="https://propbetedge.ai/terms">Terms</a></div></div></footer>
+<script src="/crypto/crypto.js?v=20261006c1" defer></script>
+</body></html>
