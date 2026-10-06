@@ -18,7 +18,7 @@ test('Market Intelligence premium APIs fail through the shared All Access author
     const src = read(p);
     assert.match(src, /requireAllAccess/);
   }
-  const core = read('src/market-intelligence-server.js');
+  const core = read('api/market-intelligence/_lib/server.js');
   const chart = read('api/market-intelligence/chart.js');
   assert.match(core + chart, /api\.openai\.com\/v1\/responses/);
   assert.match(core + chart, /OPENAI_API_KEY/);
