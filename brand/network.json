@@ -20,6 +20,11 @@
       "desk"
     ],
     [
+      "Market Intelligence",
+      "/markets/",
+      "markets"
+    ],
+    [
       "Insights",
       "/insights/",
       "insights"
@@ -49,6 +54,10 @@
     [
       "Intelligence Desk",
       "/#desk"
+    ],
+    [
+      "Market Intelligence",
+      "/markets/"
     ],
     [
       "Insights",
