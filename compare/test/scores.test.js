@@ -18,7 +18,7 @@ test('drift: api/_lib/scores/adapters.js equals the deterministic transform of t
   assert.equal(read('../api/_lib/scores/adapters.js'), transform(read('./fixtures/members-59de9d2/live.js.txt')));
 });
 
-test('drift: every line outside the four documented patches is unchanged from Members', () => {
+test('drift: every line outside the five documented patches is unchanged from Members', () => {
   const src = read('./fixtures/members-59de9d2/live.js.txt').split('\n');
   const out = new Set(read('../api/_lib/scores/adapters.js').split('\n'));
   const loaderEnd = src.findIndex((l) => l.startsWith('export default async function handler'));
@@ -30,6 +30,7 @@ test('drift: every line outside the four documented patches is unchanged from Me
     '  const body = await getJson(`https://nhl-api.propbetedge.ai/nhl/board?date=${date}`);'
   ]);
   assert.ok(!read('../api/_lib/scores/adapters.js').includes('memberAccess'), 'no second membership check');
+  assert.match(read('../api/_lib/scores/adapters.js'), /meta:\{ sides:m\?\.sides \|\| null \}/, 'tennis live rows preserve canonical player media');
 });
 
 test('NHL adapter sends the NHL product Origin; other sources do not', async () => {
