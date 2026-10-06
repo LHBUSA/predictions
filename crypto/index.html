@@ -22,9 +22,24 @@
 <main>
 <section class="cx-tape-shell" aria-label="Live Robinhood crypto prices"><div class="wrap"><div class="cx-tape-meta"><span class="cx-live-pulse"><i></i> Robinhood live</span><span id="price-updated">waiting for prices</span></div><div class="cx-tape" id="price-tape"></div></div></section>
 <section class="cx-hero"><div class="wrap">
-  <div class="cx-hero-head">
-    <div><span class="overline">PBE CRYPTO NOWCAST · BTC · 15 MIN</span><h1>Probability intelligence for the next 15 minutes.</h1><p>PBE's independent BTC nowcast beside Kalshi's live market probability and Robinhood's fee-adjusted execution economics.</p></div>
-    <div class="cx-state"><span class="badge b-shadow">Research · Shadow</span><strong id="countdown">--:--</strong><small>to window close</small></div>
+  <div class="cx-hero-grid">
+    <div class="cx-hero-copy">
+      <div class="cx-eyebrow-row"><span class="overline">PBE CRYPTO NOWCAST · BTC · 15 MIN</span><span class="cx-live-chip"><i></i> LIVE MODEL</span></div>
+      <h1>See the next 15 minutes<br><span>before the market settles.</span></h1>
+      <p>PBE's independent BTC probability engine, live Kalshi benchmark and Robinhood execution intelligence — fused into one auditable decision surface.</p>
+      <div class="cx-hero-actions"><a href="#live-window" class="cx-primary">Open live window</a><a href="#execution-lab" class="cx-secondary">Execution lab</a></div>
+      <div class="cx-hero-proof"><span><b>1 min</b> model cadence</span><span><b>5 sec</b> Robinhood tape</span><span><b>Market-free</b> model inputs</span></div>
+    </div>
+    <div class="cx-hero-signal">
+      <div class="cx-signal-aura"></div>
+      <div class="cx-signal-card">
+        <div class="cx-signal-top"><span>BTC 15M SIGNAL</span><span class="badge b-shadow">Research · Shadow</span></div>
+        <div class="cx-signal-prob"><small>PBE probability · UP</small><strong class="num" id="hero-pbe-up">—</strong></div>
+        <div class="cx-signal-meter"><span id="hero-meter"></span><i></i></div>
+        <div class="cx-signal-row"><div><span>Robinhood</span><strong class="num" id="hero-spot">—</strong></div><div><span>Kalshi</span><strong class="num" id="hero-kalshi">—</strong></div></div>
+        <div class="cx-signal-bottom"><span id="hero-signal-copy">Waiting for live forecast</span><div class="cx-count"><strong id="countdown">--:--</strong><small>to close</small></div></div>
+      </div>
+    </div>
   </div>
   <div class="cx-kpis">
     <div class="cx-kpi"><span>PBE reference</span><strong class="num" id="target">—</strong><small>derived exchange proxy at window open</small></div>
@@ -46,12 +61,16 @@
   </section>
 </div></section>
 
-<section class="section"><div class="wrap cx-main">
+<section class="section" id="live-window"><div class="wrap cx-main">
   <div class="cx-left">
     <section class="card cx-panel">
       <div class="cx-panel-head"><div><span class="overline">LIVE WINDOW</span><h2>Probability path</h2></div><span id="window-times" class="cx-muted">—</span></div>
-      <div class="cx-chart-wrap"><svg id="prob-chart" viewBox="0 0 900 330" role="img" aria-label="PBE and market probability path"></svg></div>
-      <div class="cx-legend"><span><i class="pbe"></i>PBE</span><span><i class="kalshi"></i>Kalshi</span><span><i class="poly"></i>Polymarket</span></div>
+      <div class="cx-chart-wrap">
+        <div class="cx-chart-hud"><div><span>Live probability</span><strong class="num" id="chart-pbe">—</strong></div><div><span>Kalshi</span><strong class="num" id="chart-kalshi">—</strong></div><div><span>Spread</span><strong class="num" id="chart-gap">—</strong></div></div>
+        <svg id="prob-chart" viewBox="0 0 900 360" role="img" aria-label="PBE and market probability path"></svg>
+        <div class="cx-chart-tooltip" id="chart-tooltip" hidden></div>
+      </div>
+      <div class="cx-legend"><span><i class="pbe"></i>PBE model</span><span><i class="kalshi"></i>Kalshi market</span><span><i class="poly"></i>Polymarket</span><span class="cx-legend-note">Hover the chart for point-in-time values</span></div>
     </section>
 
     <section class="card cx-panel">
@@ -83,7 +102,7 @@
   </aside>
 </div></section>
 
-<section class="section cx-lab-section"><div class="wrap">
+<section class="section cx-lab-section" id="execution-lab"><div class="wrap">
   <div class="section-head"><div><span class="overline">EXECUTION LAB</span><h2>How trading friction changes with size</h2><p>Fee-adjusted Robinhood estimates at four USD sizes.</p></div><span class="cx-universe-count" id="universe-count">Loading universe…</span></div>
   <div class="cx-ladders" id="ladders"></div>
   <details class="card cx-universe"><summary>API-tradable Robinhood crypto universe <span id="universe-summary"></span></summary><div id="universe"></div></details>
