@@ -11,7 +11,11 @@ const SUBJECT_RULES = [
   'Do not confuse similarly named securities or stale/private-company status.',
   'If the user asks about a company that is now public, return its current public ticker.',
   'If the question is general market commentary rather than a specific instrument, return ASSET_TYPE=general and SYMBOL=NONE.',
-  'Return the requested line protocol exactly. Keep RESEARCH to one compact sentence with the most decision-relevant current facts.'
+  'Return the requested line protocol exactly.',
+  'For crypto assets, SYMBOL must be the canonical asset ticker such as BTC, ETH, SOL, XRP — never NONE when the asset is clearly identified.',
+  'For public equities, include current valuation/fundamental evidence when verifiable: market cap or enterprise value, revenue/growth, profitability or cash flow, major operating KPI, and the most important fresh catalyst/risk.',
+  'For crypto, include relative-performance and network evidence when verifiable: dominance, ETH/BTC or relevant cross trend, fees/revenue, active usage, staking/supply, and fresh catalyst/risk.',
+  'Use NONE only when a field truly cannot be verified. Do not fill gaps with guesses.'
 ].join(' ');
 
 export const PERSONAS = {
@@ -20,11 +24,12 @@ export const PERSONAS = {
     role: 'The Bull Case',
     instruction: [
       'You are Tim, the Bull analyst inside PropBetEdge Market Intelligence.',
-      'Build the strongest evidence-based upside case for the RESOLVED SUBJECT, not for the market in general.',
+      'You are the affirmative side of a real debate. For a "buy / undervalued / attractive" question, you MUST take the strongest defensible YES / CONSTRUCTIVE side unless the subject literally cannot be identified or priced.',
       'Evidence hierarchy: (1) subject-specific research and current quote, (2) subject technicals/fundamentals/catalysts, (3) broad market and macro context only as secondary evidence.',
       'Never use broad Fear/Greed, index moves, or generic analyst consensus as if it were evidence about the subject itself.',
       'If the resolved subject is public and a live quote is supplied, use it and do not claim the subject is unpriceable.',
-      'Be concise, specific, numerical, and use at most 4 short sections and roughly 180 words.',
+      'Start with "Verdict: YES / CONSTRUCTIVE" for buy-style questions, then defend it with at least 3 subject-specific facts from the research packet. Do not retreat to "Mixed" merely because risks exist.',
+      'Be concise, specific, numerical, and use at most 4 short sections and roughly 190 words.',
       'Acknowledge material downside risks. Never invent a price, percentage, catalyst, multiple, target, filing, or fact.',
       'This is market analysis, not personalized financial advice.'
     ].join(' ')
@@ -34,12 +39,13 @@ export const PERSONAS = {
     role: 'The Bear Case',
     instruction: [
       'You are Bramer, the Bear analyst inside PropBetEdge Market Intelligence.',
-      'Stress-test the RESOLVED SUBJECT using subject-specific evidence first.',
+      'You are the negative side of a real debate. For a "buy / undervalued / attractive" question, you MUST take the strongest defensible NO / WAIT side unless the subject literally cannot be identified or priced.',
       'Evidence hierarchy: (1) subject-specific research and current quote, (2) subject technicals/fundamentals/catalysts, (3) broad market and macro context only as secondary evidence.',
       'Never use broad Fear/Greed, index moves, or generic analyst consensus as if it were evidence about the subject itself.',
       'If the resolved subject is public and a live quote is supplied, use it and do not claim the subject is unpriceable.',
       'Lead with the clearest valuation, execution, technical, liquidity, or thesis risk actually supported by the evidence.',
-      'Be concise, specific, numerical, and use at most 4 short sections and roughly 180 words.',
+      'Start with "Verdict: NO / WAIT" for buy-style questions, then defend it with at least 3 subject-specific facts from the research packet. Do not converge on Tim's conclusion; directly rebut his strongest evidence.',
+      'Be concise, specific, numerical, and use at most 4 short sections and roughly 190 words.',
       'Never invent a price, percentage, catalyst, multiple, target, filing, or fact. This is market analysis, not personalized financial advice.'
     ].join(' ')
   },
@@ -53,7 +59,8 @@ export const PERSONAS = {
       'Never use broad Fear/Greed, index moves, or generic analyst consensus as if it were evidence about the subject itself.',
       'If the resolved subject is public and a live quote is supplied, use it and do not claim the subject is unpriceable.',
       'Separate observed facts from interpretation. Do not express a personal bullish or bearish preference.',
-      'Be concise, specific, numerical, and use at most 4 short sections and roughly 180 words.',
+      'For buy-style questions, start with "Data verdict: EVIDENCE BALANCE — <bullish|neutral|bearish>" and rank the 3 most decision-relevant subject-specific facts before discussing broad market context.',
+      'Be concise, specific, numerical, and use at most 4 short sections and roughly 190 words.',
       'Never invent a price, percentage, catalyst, multiple, target, filing, or fact. This is market analysis, not personalized financial advice.'
     ].join(' ')
   }
@@ -106,7 +113,15 @@ export async function resolveAndResearchSubject(question) {
     'PUBLIC_STATUS=<public|private|not_applicable|unknown>',
     'EXCHANGE=<exchange name or NONE>',
     'CONFIDENCE=<0.00-1.00>',
-    'RESEARCH=<one compact sentence summarizing the most decision-relevant current company/security facts and any fresh catalyst or valuation context you can verify>'
+    'PRICE_CONTEXT=<current/reference price context, IPO/reference price, recent move, or NONE>',
+    'VALUATION=<market cap/enterprise value/multiples or closest relevant valuation evidence, or NONE>',
+    'FUNDAMENTALS=<revenue/growth/profitability/cash flow or network economics, or NONE>',
+    'OPERATING_KPIS=<company/network-specific operating metrics such as subscribers, launches, usage, staking, fees, or NONE>',
+    'CATALYSTS=<1-3 current subject-specific catalysts>',
+    'RISKS=<1-3 current subject-specific risks>',
+    'RELATIVE=<relevant peer/cross-asset comparison such as ETH/BTC, competitor valuation, dominance, or NONE>',
+    'NEWS=<fresh subject-specific news/catalyst summary>',
+    'RESEARCH=<one sentence synthesizing why the evidence is currently interesting>'
   ].join('\n');
 
   const r = await fetch('https://api.openai.com/v1/responses', {
@@ -117,7 +132,7 @@ export async function resolveAndResearchSubject(question) {
       tools:[{type:'web_search',search_context_size:'low'}],
       reasoning:{effort:'none'},
       input:prompt,
-      max_output_tokens:420
+      max_output_tokens:900
     }),
     signal:AbortSignal.timeout(30000)
   });
@@ -127,13 +142,38 @@ export async function resolveAndResearchSubject(question) {
   const rawSymbol = field(text,'SYMBOL').toUpperCase();
   const symbol = /^[A-Z0-9.-]{1,10}$/.test(rawSymbol) && rawSymbol !== 'NONE' ? rawSymbol : null;
   const confidence = Number(field(text,'CONFIDENCE'));
+  let normalizedSymbol = symbol;
+  if (!normalizedSymbol && String(field(text,'ASSET_TYPE')).toLowerCase()==='crypto') {
+    const q=String(question||'').toLowerCase();
+    const aliases=[
+      ['ETH',['ethereum','ether',' eth ']],
+      ['BTC',['bitcoin',' btc ']],
+      ['SOL',['solana',' sol ']],
+      ['XRP',['xrp','ripple']],
+      ['ADA',['cardano',' ada ']],
+      ['DOGE',['dogecoin',' doge ']],
+      ['LINK',['chainlink',' link ']]
+    ];
+    const padded=' '+q+' ';
+    for (const [ticker,names] of aliases) {
+      if (names.some((name)=>padded.includes(name))) { normalizedSymbol=ticker; break; }
+    }
+  }
   return {
     subject: field(text,'SUBJECT') || 'General market',
-    symbol,
+    symbol: normalizedSymbol,
     asset_type: field(text,'ASSET_TYPE') || 'unknown',
     public_status: field(text,'PUBLIC_STATUS') || 'unknown',
     exchange: field(text,'EXCHANGE') || null,
     confidence: Number.isFinite(confidence) ? Math.max(0,Math.min(1,confidence)) : 0,
+    price_context: field(text,'PRICE_CONTEXT') || '',
+    valuation: field(text,'VALUATION') || '',
+    fundamentals: field(text,'FUNDAMENTALS') || '',
+    operating_kpis: field(text,'OPERATING_KPIS') || '',
+    catalysts: field(text,'CATALYSTS') || '',
+    risks: field(text,'RISKS') || '',
+    relative: field(text,'RELATIVE') || '',
+    news: field(text,'NEWS') || '',
     research: field(text,'RESEARCH') || '',
     sources: extractResponseSources(body)
   };
@@ -170,7 +210,7 @@ export async function buildResearchContext(question, stocks, crypto) {
   try{
     resolved=await resolveAndResearchSubject(question);
   }catch{
-    resolved={subject:'Unresolved subject',symbol:null,asset_type:'unknown',public_status:'unknown',exchange:null,confidence:0,research:'',sources:[]};
+    resolved={subject:'Unresolved subject',symbol:null,asset_type:'unknown',public_status:'unknown',exchange:null,confidence:0,price_context:'',valuation:'',fundamentals:'',operating_kpis:'',catalysts:'',risks:'',relative:'',news:'',research:'',sources:[]};
   }
 
   const stockSymbols = resolved.symbol && ['equity','etf','index'].includes(resolved.asset_type)
@@ -214,7 +254,15 @@ export function contextFromMarket(d, resolved=null, technical=null) {
     'Public status: ' + f(resolved.public_status),
     'Exchange: ' + f(resolved.exchange),
     'Resolution confidence: ' + f(resolved.confidence),
-    'Current subject research: ' + f(resolved.research),
+    'Price context: ' + f(resolved.price_context),
+    'Valuation: ' + f(resolved.valuation),
+    'Fundamentals / economics: ' + f(resolved.fundamentals),
+    'Operating KPIs: ' + f(resolved.operating_kpis),
+    'Catalysts: ' + f(resolved.catalysts),
+    'Risks: ' + f(resolved.risks),
+    'Relative comparison: ' + f(resolved.relative),
+    'Fresh subject news: ' + f(resolved.news),
+    'Research synthesis: ' + f(resolved.research),
     ...(sourceLines.length ? ['Verified research sources:',...sourceLines] : []),
     subjectQuote ? (
       'Live subject quote: ' + f(resolved.symbol) +
