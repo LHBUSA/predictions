@@ -1,5 +1,5 @@
 import { requireAllAccess, send } from '../../compare/api/_lib/access.js';
-import { marketData, contextFromMarket } from './_lib/server.mjs';
+import { marketData, contextFromMarket } from './_lib/server.cjs';
 
 const MODEL='gpt-5.4-mini';
 
