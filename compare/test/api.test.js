@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { verdict, sessionCookie, membership } from '../api/_lib/access.js';
-import { laneResult, laneUrl, parseScope, DESK_PAGE_LIMIT, SPORT_LANES } from '../api/_lib/desk.js';
+import { laneResult, laneUrl, parseScope, DESK_PAGE_LIMIT, SPORT_LANES, mapLimit } from '../api/_lib/desk.js';
 import { composeEvent } from '../api/_lib/event.js';
 
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8'));
@@ -77,4 +77,19 @@ test('event composition: real NBA game — Kalshi book/volume/change rows + Poly
   const down = composeEvent('nba', '401898388', { ok: false, status: 502, body: null }, { ok: false, status: 0, body: null });
   assert.equal(down.sources.kalshi.state, 'unavailable');
   assert.equal(down.contracts.length, 0);
+});
+
+
+test('desk fanout: bounded concurrency preserves lane order', async () => {
+  let active = 0, max = 0;
+  const seen = [];
+  const out = await mapLimit(['nfl','nba','nhl','mlb','wnba','tennis'], 2, async (lane, i) => {
+    active += 1; max = Math.max(max, active); seen.push(['start', lane, active]);
+    await new Promise((resolve) => setTimeout(resolve, 4 + (5 - i)));
+    active -= 1; seen.push(['end', lane, active]);
+    return lane.toUpperCase();
+  });
+  assert.ok(max <= 2, `fanout exceeded bound: ${max}`);
+  assert.deepEqual(out, ['NFL','NBA','NHL','MLB','WNBA','TENNIS']);
+  assert.equal(seen.filter((x) => x[0] === 'start').length, 6);
 });
