@@ -64,6 +64,27 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .section-head p{margin:4px 0 0;color:var(--muted);font-size:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 
+/* live crypto market rail */
+.crypto-rail{padding-top:22px}
+.rail-status{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800;color:var(--pos);white-space:nowrap}
+.rail-status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px rgba(15,122,85,.12)}
+.rail-status.bad{color:var(--neg)}
+.crypto-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crypto-card{padding:16px;min-height:132px}
+.crypto-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.crypto-card-head>div{display:flex;align-items:center;gap:8px}
+.crypto-name{font-size:12px;color:var(--muted);font-weight:750}
+.crypto-mid{font-size:30px;letter-spacing:-.035em;font-weight:850;margin:12px 0 10px}
+.crypto-book{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.crypto-book span{display:block;background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:7px 8px;font-size:10px;color:var(--faint);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.crypto-book b{display:block;color:var(--ink);font-size:13px;margin-top:2px;text-transform:none;letter-spacing:0}
+.crypto-foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:11px;color:var(--muted)}
+.rail-good,.rail-flag{display:inline-flex;align-items:center;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.04em}
+.rail-good{background:var(--pos-bg);color:var(--pos)}
+.rail-flag{background:var(--amber-bg);color:var(--amber)}
+.crypto-note{margin:9px 0 0}
+@media (max-width:900px){.crypto-grid{grid-template-columns:1fr}.crypto-mid{font-size:26px}}
+
 /* featured */
 .featured{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-height:210px}
 .feat{padding:16px;display:flex;flex-direction:column;gap:10px;color:inherit;text-decoration:none!important}
