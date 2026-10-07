@@ -82,7 +82,11 @@ function tableARegion(html) {
 }
 
 function parseTableA(region) {
-  const hasCompound = /compound/i.test(region.text);
+  // Only the column header may declare a compound-annual-rate column; the
+  // same words appear in prose after the table and must not shift columns.
+  const headerEnd = region.text.search(/^\s*All items\b/im);
+  if (headerEnd < 0) throw new Error('Table A: All items row not found');
+  const hasCompound = /compound/i.test(region.text.slice(0, headerEnd));
   const rows = {};
   let pending = '';
   let width = null;
@@ -131,6 +135,35 @@ function parseEmbargo(text, fileDate) {
   return { releaseAt: etToUtcIso(date, hour, Number(m[2])), releaseTimeSource: 'release_embargo_line' };
 }
 
+function checkNarrative(text, series, referenceMonth) {
+  const stated = narrativeHeadline(text);
+  const parsed = series.headline.saMoM[referenceMonth];
+  if (stated === 'NSA') return 'unavailable_text_states_unadjusted_change';
+  if (stated === null || parsed === null) return 'unavailable';
+  if (Math.abs(stated - parsed) > 1e-9) {
+    throw new Error(`Table A headline ${parsed} != release text ${stated} for ${referenceMonth} (column misalignment)`);
+  }
+  return 'match';
+}
+
+// Independent check: the release's first paragraph states the headline SA
+// change ("increased 0.7 percent in February", "was unchanged in May").
+const WORD_NUM = { unchanged: 0 };
+export function narrativeHeadline(text) {
+  const flat = text.replace(/\s+/g, ' ');
+  const i = flat.search(/Consumer Price Index for All Urban Consumers \(CPI-U\)/i);
+  if (i < 0) return null;
+  // the first sentence only; 2008-2009 releases lead with the UNADJUSTED change
+  const s = flat.slice(Math.max(0, i - 60), i + 300).split(/\. (?=[A-Z])/).find((x) => x.includes('(CPI-U)')) ?? '';
+  if (/(before|prior to) seasonal adjustment/i.test(s)) return 'NSA';
+  const m = /\(CPI-U\) (increased|rose|declined|decreased|fell|was unchanged)(?: by)? ?(\d+\.\d)? ?(?:percent)?/i.exec(s);
+  if (!m) return null;
+  if (/unchanged/i.test(m[1])) return WORD_NUM.unchanged;
+  if (!m[2]) return null;
+  const v = Number(m[2]);
+  return /declined|decreased|fell/i.test(m[1]) ? -v : v;
+}
+
 function parseReferenceMonth(text) {
   const flat = text.replace(/\s+/g, ' ');
   const m = /CONSUMER PRICE INDEX ?[^A-Za-z0-9 ]{1,3} ?([A-Za-z]+) (\d{4})/i.exec(flat);
@@ -157,6 +190,7 @@ export function parseRelease(html, fileName) {
     saMonths.forEach((month, i) => { sa[month] = values[i]; });
     series[key] = { saMoM: sa, nsa12m: values[values.length - 1] };
   }
+  const narrativeHeadlineCheck = checkNarrative(text, series, referenceMonth);
   return {
     id: `bls-cpi:${referenceMonth}`,
     referenceMonth,
@@ -167,6 +201,7 @@ export function parseRelease(html, fileName) {
     sourceSha256: createHash('sha256').update(html).digest('hex'),
     tableFormat: region.format,
     compoundColumn: hasCompound,
+    narrativeHeadlineCheck,
     saMonths,
     series
   };
@@ -205,9 +240,29 @@ export function parseReleasePdfText(text, fileName, pdfSha256) {
     sourceSha256: pdfSha256,
     tableFormat: 'pdf-table-1',
     compoundColumn: false,
+    narrativeHeadlineCheck: checkNarrative(text, series, referenceMonth),
     saMonths,
     series
   };
+}
+
+// Column-alignment guard: release M+1 re-prints month M. Outside the release of
+// January data (when BLS revises five years of seasonal factors) the two must
+// agree exactly; a one-column shift breaks this immediately.
+export function vintageConsistency(releases) {
+  const out = [];
+  for (let i = 0; i < releases.length - 1; i += 1) {
+    const a = releases[i];
+    const b = releases[i + 1];
+    if (b.referenceMonth.endsWith('-01')) continue;
+    for (const k of ['headline', 'core', 'food', 'energy']) {
+      const va = a.series[k]?.saMoM?.[a.referenceMonth];
+      const vb = b.series[k]?.saMoM?.[a.referenceMonth];
+      if (va == null || vb == null) continue;
+      if (va !== vb) out.push({ file: b.sourceUrl, error: `${k} ${a.referenceMonth}: ${va} in its own release, ${vb} in the next (not a seasonal-revision release)` });
+    }
+  }
+  return out;
 }
 
 function main() {
@@ -235,6 +290,7 @@ function main() {
     }
   }
   releases.sort((a, b) => a.releaseAt.localeCompare(b.releaseAt));
+  failures.push(...vintageConsistency(releases));
   const dup = releases.filter((r, i) => releases.findIndex((x) => x.referenceMonth === r.referenceMonth) !== i);
   if (dup.length) failures.push(...dup.map((r) => ({ file: r.sourceUrl, error: `duplicate reference month ${r.referenceMonth}` })));
   const payload = {
