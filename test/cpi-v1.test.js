@@ -11,6 +11,7 @@ import { etToUtcIso } from '../src/macro/cpi/timeline.js';
 import { assertMarketFree, MARKET_KEY_PATTERN, VENUE_SOURCE_PATTERN } from '../src/engine/leakage.js';
 import { buildDataset } from '../scripts/research/cpi/build-dataset.mjs';
 import { runTarget, trainingRows, usableRows } from '../scripts/research/cpi/validate.mjs';
+import { vintageConsistency } from '../scripts/research/cpi/parse-bls-releases.mjs';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url)));
 const ledger = read('../data/cpi/bls-cpi-releases-v1.json');
@@ -31,6 +32,12 @@ test('ledger: as-published values parse correctly across all archive formats', (
   assert.equal(by['2025-11'].series.headline.saMoM['2025-11'], null, 'November 2025 SA m/m was not published');
   assert.equal(ledger.failures.length, 0);
   assert.equal(releases.length, 223);
+  // regression: 2009-08..2017-05 were once shifted one column by prose after the table
+  assert.deepEqual(pick('2013-02'), [0.7, 2.0, 0.2, 2.0]);
+  assert.deepEqual(pick('2013-03'), [-0.2, 1.5, 0.1, 1.9]);
+  assert.deepEqual(vintageConsistency(releases), []);
+  assert.ok(releases.filter((r) => r.narrativeHeadlineCheck === 'match').length >= 200);
+  for (const r of releases) assert.notEqual(r.narrativeHeadlineCheck, undefined);
   assert.equal(by['2022-06'].releaseAt, '2022-07-13T12:30:00.000Z');
   assert.equal(by['2017-12'].releaseAt, '2018-01-12T13:30:00.000Z'); // EST
 });
