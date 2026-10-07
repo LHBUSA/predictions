@@ -1,0 +1,246 @@
+{
+ "artifactVersion": "cpi-v1-artifact/1",
+ "modelId": "pbe-cpi-distribution",
+ "modelVersion": "cpi-v1/1.0.0",
+ "family": "RIDGE_T_EWMA",
+ "status": "FROZEN_CANDIDATE_NOT_DEPLOYED",
+ "featureVersion": "cpi-features/1",
+ "contractAdapterVersion": "cpi-contract-adapter/1",
+ "hyper": {
+  "ridgeLambda": 2,
+  "studentNu": 5,
+  "ewmaHalfLifeMonths": 24,
+  "empiricalWindow": 60,
+  "meanWindow": 12,
+  "minTrain": 36
+ },
+ "horizon": "T-1D (20:00 ET the day before the BLS release)",
+ "dataset": {
+  "version": "cpi-v1-dataset/1",
+  "sha256": "bcec5e6de6ca84bd559af0527f6e98c15bc579b7433310268f86cf05ff71e6d8",
+  "builtFrom": {
+   "releases": {
+    "path": "data/cpi/bls-cpi-releases-v1.json",
+    "sha256": "bef950b012f1c74c8988ad8492279460f300fd34cc00ed872f019285d5138f56",
+    "parserVersion": "bls-cpi-table-a/1",
+    "releaseCount": 223
+   },
+   "gasoline": {
+    "path": "data/cpi/eia-gasoline-weekly-v1.json",
+    "sha256": "6749ab1f2acfdd6efb28ba7218bdf756e73d60267a8160edd1bfcc1780e569ae",
+    "series": "EMM_EPM0_PTE_NUS_DPG",
+    "first": "1993-04-05",
+    "last": "2026-10-05"
+   }
+  }
+ },
+ "evidence": {
+  "path": "docs/research/cpi-v1-evidence.json",
+  "sha256": "77ac120548f6eb3355175334e00171e15723f2243ac267ddb30220fcf76309ef",
+  "validationVersion": "cpi-v1-validation/1"
+ },
+ "code": {
+  "gitSha": "81f3ac8f3e21d77a6782ad3ad89d227341ec21f7",
+  "dirtyAtFreeze": false
+ },
+ "sourceManifest": {
+  "bls": "BLS CPI news release archive, Table A (Table 1 for the 2016-05 PDF-only archive entry); as-published values",
+  "eia": "EIA weekly retail gasoline EMM_EPM0_PTE_NUS_DPG; available from week date + 1 day 17:00 ET; no public vintage archive",
+  "features": {
+   "H_L1": "headline SA m/m, month M-1, latest vintage",
+   "H_AVG3": "headline SA m/m, mean M-3..M-1, latest vintage",
+   "C_L1": "core SA m/m, month M-1, latest vintage",
+   "C_AVG3": "core SA m/m, mean M-3..M-1, latest vintage",
+   "C_AVG6": "core SA m/m, mean M-6..M-1, latest vintage",
+   "F_L1": "food SA m/m, month M-1, latest vintage",
+   "E_L1": "energy SA m/m, month M-1, latest vintage",
+   "GAS_SA": "EIA retail gasoline log change M vs M-1 (x100) less 10y same-month norm",
+   "H_YOY_L1": "headline NSA 12-month change, month M-1, as published",
+   "C_YOY_L1": "core NSA 12-month change, month M-1, as published",
+   "H_BASE": "headline SA m/m first print for M-12 (base month leaving the 12-month window)",
+   "C_BASE": "core SA m/m first print for M-12 (base month leaving the 12-month window)"
+  }
+ },
+ "marketInputs": "NONE",
+ "targets": {
+  "headline_mom": {
+   "kalshiSeries": "KXCPI",
+   "shadowEligible": true,
+   "gate": {
+    "verdict": "PASS",
+    "failures": []
+   },
+   "features": [
+    "H_AVG3",
+    "C_AVG3",
+    "GAS_SA",
+    "F_L1",
+    "E_L1"
+   ],
+   "anchor": null,
+   "ridge": {
+    "intercept": 0.20091743119266053,
+    "beta": [
+     -0.004268835399704798,
+     0.0638640850980774,
+     0.2677180758903299,
+     0.05134027742793318,
+     0.027041408816439724
+    ],
+    "featureMean": [
+     0.2038226299694191,
+     0.20489296636085613,
+     -0.1667033982941254,
+     0.236697247706422,
+     0.19357798165137613
+    ],
+    "featureSd": [
+     0.2613734748035666,
+     0.1360947298221874,
+     5.954111165624723,
+     0.28709912559716594,
+     3.2836075257697517
+    ]
+   },
+   "sigma": 0.14117014907915476,
+   "scale": 0.10934992727303694,
+   "nu": 5,
+   "trainingWindow": {
+    "first": "2008-02",
+    "last": "2026-08",
+    "n": 218,
+    "lastReleaseAt": "2026-09-11T12:30:00.000Z"
+   }
+  },
+  "core_mom": {
+   "kalshiSeries": "KXCPICORE",
+   "shadowEligible": false,
+   "gate": {
+    "verdict": "FAIL",
+    "failures": [
+     "brier vs ROLLING_MEAN_GAUSS: 95% CI [-0.0023, 0.0109] does not exclude 0",
+     "logLoss vs ROLLING_MEAN_GAUSS: 95% CI [-0.0056, 0.0917] does not exclude 0"
+    ]
+   },
+   "features": [
+    "C_L1",
+    "C_AVG3",
+    "C_AVG6"
+   ],
+   "anchor": null,
+   "ridge": {
+    "intercept": 0.20327102803738312,
+    "beta": [
+     0.11301211243475245,
+     -0.06314297220848826,
+     0.06102404219529975
+    ],
+    "featureMean": [
+     0.20327102803738314,
+     0.20451713395638615,
+     0.20599688473520247
+    ],
+    "featureSd": [
+     0.16398371441489049,
+     0.1372482775462039,
+     0.11637732056299999
+    ]
+   },
+   "sigma": 0.1334724520923055,
+   "scale": 0.10338731682619329,
+   "nu": 5,
+   "trainingWindow": {
+    "first": "2008-02",
+    "last": "2026-08",
+    "n": 214,
+    "lastReleaseAt": "2026-09-11T12:30:00.000Z"
+   }
+  },
+  "headline_yoy": {
+   "kalshiSeries": "KXCPIYOY",
+   "shadowEligible": true,
+   "gate": {
+    "verdict": "PASS",
+    "failures": []
+   },
+   "features": [
+    "GAS_SA",
+    "C_AVG3",
+    "H_BASE",
+    "F_L1"
+   ],
+   "anchor": "H_YOY_L1",
+   "ridge": {
+    "intercept": 0.01884057971014492,
+    "beta": [
+     0.23838272047506803,
+     0.06338756602107518,
+     -0.2985638666898055,
+     0.05075451793875372
+    ],
+    "featureMean": [
+     0.14233735756043706,
+     0.20692431561996763,
+     0.19420289855072465,
+     0.2207729468599034
+    ],
+    "featureSd": [
+     5.337913093783407,
+     0.13818182198435539,
+     0.33999602709172866,
+     0.27974222121899295
+    ]
+   },
+   "sigma": 0.1520627801492142,
+   "scale": 0.11778732301918128,
+   "nu": 5,
+   "trainingWindow": {
+    "first": "2009-01",
+    "last": "2026-08",
+    "n": 207,
+    "lastReleaseAt": "2026-09-11T12:30:00.000Z"
+   }
+  },
+  "core_yoy": {
+   "kalshiSeries": "KXCPICOREYOY",
+   "shadowEligible": true,
+   "gate": {
+    "verdict": "PASS",
+    "failures": []
+   },
+   "features": [
+    "C_L1",
+    "C_AVG3",
+    "C_BASE"
+   ],
+   "anchor": "C_YOY_L1",
+   "ridge": {
+    "intercept": 0.005314009661835749,
+    "beta": [
+     0.11993545374831344,
+     -0.028999066049943487,
+     -0.14033046528847115
+    ],
+    "featureMean": [
+     0.20724637681159416,
+     0.20692431561996763,
+     0.20241545893719798
+    ],
+    "featureSd": [
+     0.1639786043760571,
+     0.13818182198435539,
+     0.16530043654802595
+    ]
+   },
+   "sigma": 0.15673932511535996,
+   "scale": 0.1214097591735158,
+   "nu": 5,
+   "trainingWindow": {
+    "first": "2009-01",
+    "last": "2026-08",
+    "n": 207,
+    "lastReleaseAt": "2026-09-11T12:30:00.000Z"
+   }
+  }
+ }
+}
