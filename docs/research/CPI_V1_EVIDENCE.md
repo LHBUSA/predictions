@@ -82,7 +82,7 @@ One predictive distribution per release per target; no per-threshold models.
 - **Discretization:** mass on the published 0.1 grid, P(published = k) = F(k + .05) - F(k - .05).
 - **Contracts:** every above / below / range / exact probability is a sum over that one mass vector, so all of them are coherent and monotonic by construction (tested).
 
-Hyperparameters were declared before validation and **not tuned**: lambda = 2, nu = 5, half-life 24, minimum training 36. The one-at-a-time sensitivity check below moves Brier by at most 0.0010.
+Hyperparameters were declared before validation and **not tuned**: lambda = 2, nu = 5, half-life 24, minimum training 36. The one-at-a-time sensitivity check below moves Brier by at most 0.0005.
 
 **Contract adapter** (`src/macro/cpi/contracts.js`, `cpi-contract-adapter/1`) is separate from the model.
 
@@ -191,7 +191,7 @@ No slice breaches the gate's 1.15x limit for period or regime slices with n >= 1
 **Controls:**
 
 - **Random labels.** With training labels permuted (5 seeds), candidate Brier rises to .133 (headline m/m), .071 (core m/m), .229 (headline y/y) and .185 (core y/y), i.e. back to or worse than climatology or persistence. The skill comes from the real labels.
-- **Sensitivity.** Lambda 0.5 / 8, half-life 12 / 48, nu 4 / 10: Brier moves by at most 0.0010 on any target.
+- **Sensitivity.** Lambda 0.5 / 8, half-life 12 / 48, nu 4 / 10: Brier moves by at most 0.0005 on any target (log loss by at most 0.005).
 
 ## 9. SHADOW gate (declared in `validate.mjs`, applied per target on T-1D)
 
