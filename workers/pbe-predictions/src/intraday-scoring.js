@@ -104,3 +104,24 @@ export async function intradayReport(store) {
   for (const d of des) { const k = `${d.model_id}@${d.model_version}`; coverage[k] ||= Object.fromEntries(INTRADAY_DESIGNATIONS.map((x) => [x, 0])); coverage[k][d.designation] += 1; }
   return intradayScoreReport(rows, { coverage: { designations_by_model: coverage, designations_total: des.length, backfilled: des.filter((d) => d.backfilled).length } });
 }
+
+// v2.1 (live) vs v2.2 (SHADOW) on the pre-registered FIXED hourly grid (shadowEvaluationReport, frozen in shadow.js):
+// only contracts that have shadow rows, only grid points where BOTH versions have a row. Outcome = official CLI max on the
+// stored resolution. Readiness (30 resolved climate days, >= 10 stations) is decided inside the frozen report.
+export async function shadowCompareReport(store, { evaluate }) {
+  const shadow = await store.select('pred_forecasts_shadow', { select: 'contract_id,model_version,captured_at,probability,raw_probability,station_id,climate_date,observation_start' }, { order: 'captured_at.asc' });
+  const base = { shadow_rows: shadow.length, first_shadow_capture: shadow[0]?.captured_at ?? null, last_shadow_capture: shadow.at(-1)?.captured_at ?? null,
+    shadow_contracts: new Set(shadow.map((r) => r.contract_id)).size, shadow_stations: new Set(shadow.map((r) => r.station_id)).size };
+  if (!shadow.length) return { ...base, report: null };
+  const ids = [...new Set(shadow.map((r) => r.contract_id))];
+  const [contracts, live, res] = await Promise.all([
+    store.selectIn('pred_contracts', { select: 'contract_id,station_id,observation_start,comparator,threshold_low,threshold_high,detail' }, 'contract_id', ids),
+    store.selectIn('pred_forecasts', { select: 'contract_id,model_version,captured_at,probability,raw_probability:explanation->raw_probability', model_id: 'eq.pbe-weather-maxtemp-intraday', model_version: 'eq.2.1.0', record_type: 'eq.live' }, 'contract_id', ids),
+    store.selectIn('pred_resolutions', { select: 'contract_id,official_value,venue_result' }, 'contract_id', ids),
+  ]);
+  const cBy = new Map(contracts.map((c) => [c.contract_id, c]));
+  const outcomes = new Map();
+  for (const r of res) { const c = cBy.get(r.contract_id); if (c && r.official_value !== null && r.official_value !== undefined) outcomes.set(`${c.station_id}|${c.detail?.climate_date}`, Number(r.official_value)); }
+  const rows = [...live, ...shadow].map((r) => { const c = cBy.get(r.contract_id); return c ? { ...r, raw_probability: r.raw_probability === null || r.raw_probability === undefined ? null : Number(r.raw_probability), probability: Number(r.probability), station_id: c.station_id, climate_date: c.detail?.climate_date, observation_start: c.observation_start, comparator: c.comparator, threshold_low: c.threshold_low, threshold_high: c.threshold_high } : null; }).filter(Boolean);
+  return { ...base, resolved_station_days: outcomes.size, report: evaluate(rows, outcomes), note: 'Descriptive until ready=true (>= 30 resolved climate days, >= 10 stations). Gate = v2.1 vs v2.2 only; the market is not the v2.2 gate.' };
+}

@@ -27,7 +27,8 @@ import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from '.
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
-import { runIntradayScoring, intradayReport, intradayScoringDue } from './intraday-scoring.js';
+import { runIntradayScoring, intradayReport, intradayScoringDue, shadowCompareReport } from './intraday-scoring.js';
+import { shadowEvaluationReport } from '../../../src/weather/intraday/shadow.js';
 import { publishStory, publishedNewsroomStories } from './newsroom/publish.js';
 
 // no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
@@ -88,7 +89,7 @@ export default {
     // never the engine cycle below. Off unless CRYPTO_SHADOW = "true" (sql/009 applied).
     if (event.cron === BTC_SHADOW_CRON) {
       // HOT lane (weather freshness): independent of the BTC gate, its own waitUntil + catch, hard-capped subrequests.
-      if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString(), onNewObservations: env.INTRADAY_LIVE === 'true' ? (st, fresh, { spend, now }) => intradayForStation(storeFor(env), st, { now, spend }).then((r) => console.log(JSON.stringify({ intraday: r }))) : null })
+      if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString(), onNewObservations: env.INTRADAY_LIVE === 'true' ? (st, fresh, { spend, now }) => intradayForStation(storeFor(env), st, { now, spend, shadow: env.INTRADAY_SHADOW_V22 === 'true' }).then((r) => console.log(JSON.stringify({ intraday: r }))) : null })
         .then((r) => console.log(JSON.stringify({ hot_lane: r }))).catch((e) => console.error('hot lane failed', e.stack || e.message)));
       // INTRADAY SCORING (designation-intraday/1, sql/013): :04 and :34, own waitUntil, never inside the core cycle.
       const minuteAt = new Date(event.scheduledTime || Date.now()).toISOString();
@@ -357,8 +358,14 @@ export default {
         return json(await verifyDecisions(storeFor(env)), 200, 'no-store');
       }
       // intraday scoring (designation-intraday/1): aggregate report of stored scores; ?run=1 runs the lane now (POST only writes)
+      // read-only diagnostics accept ADMIN_TOKEN or the narrower DIAGNOSTICS_TOKEN (GET only; never writes)
+      if (req.method === 'GET' && p === '/admin/intraday/shadow-compare') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN)) && !(await tokenMatches(req, env.DIAGNOSTICS_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        return json(await shadowCompareReport(storeFor(env), { evaluate: shadowEvaluationReport }), 200, 'no-store');
+      }
       if (p === '/admin/intraday/scores' && (req.method === 'GET' || req.method === 'POST')) {
-        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const diag = req.method === 'GET' && (await tokenMatches(req, env.DIAGNOSTICS_TOKEN));
+        if (!diag && !(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         if (req.method === 'POST') return json(await runIntradayScoring(storeFor(env), { now: new Date().toISOString(), dryRun: url.searchParams.get('dry_run') !== '0' }), 200, 'no-store');
         return json(await intradayReport(storeFor(env)), 200, 'no-store');
       }

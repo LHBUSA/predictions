@@ -157,3 +157,42 @@ Promotion beyond SHADOW needs **both** of the following. The forward lane is the
 - No network fetches, no DB access, no scheduling.
 - No change to v2.1 dedupe or to `intraday-live.js`, which belongs to the other session.
 - No use of market prices for evaluation weighting or selection. The report takes no market field.
+
+## WIRED 2026-10-07 (Phase 2), model unchanged
+
+The artifact `temp-intraday-v2.2.json`, `temp-v22.js`, `shadow.js` and the forecast/dedupe/evaluation functions are
+used exactly as frozen. Nothing was refit, re-gated or re-selected. The Phase 1 prospective results were not used.
+
+- **Lane:** `workers/pbe-predictions/src/intraday-shadow-live.js`.
+  - It is called by `intradayForStation` after the v2.1 write, with the same stored rows, `now` and NBM fetch.
+  - Kill switch: `INTRADAY_SHADOW_V22`.
+- **Storage:** its own table `pred_forecasts_shadow` (`sql/014`), never `pred_forecasts`. This was the owner-schema
+  option above, chosen because:
+  - no public read path can reach the rows;
+  - the v2.1 write-dedupe (newest prior `pred_forecasts` row by model_id) can never see a 2.2.0 row.
+
+  The DB enforces:
+  - `model_state = 'SHADOW'`, `record_type = 'shadow'`, `public = false`;
+  - every market column NULL;
+  - a market-free feature vector;
+  - append-only.
+- **Observations:** `engineObservationsV22` adds `wxcodes` / `sky` decoded from the stored raw METAR, with the same
+  `available_at`. A row without raw text gets no wx keys, so the model returns `INCOMPLETE_OBSERVATIONS`.
+- **Guidance:** the v2.1 NBS run plus the NBS cycle 6 h earlier, one extra request, edge-cached by IEM URL.
+  - If the earlier cycle is unavailable, only the one run is passed. That leaves `nbm_run_change_f`, an evidence-only
+    field, null.
+  - Without a TMP path, the model returns `INCOMPLETE_GUIDANCE`.
+- **One deviation from the plan, in the row id only:** `record_id` = `<plan record_id>|<captured_at>`.
+  - The plan's id was content-addressed by the predictive hash. That would have silently dropped a legitimate
+    A → B → A return to an earlier predictive state.
+  - Retries at the same `now` remain no-ops.
+  - The write decision is still `shadowWriteDecision`: the newest prior row's predictive hash, with no clock-only rows.
+- **v2.1 parity:**
+  - `test/intraday-shadow-live.test.js`: v2.1 rows are byte-identical with the lane on and off.
+  - `scripts/research/intraday/v21-parity-replay.mjs`: 84 production v2.1 rows (7 stations, 4 climate days) recomputed
+    from stored observations and archived guidance. All 84 match probability, raw probability and input hash exactly,
+    with the lane on and off. v2.2 evaluated OK on all 84 states. Nothing was written: the forward record starts at
+    deploy.
+- **Comparison:** `GET /admin/intraday/shadow-compare` = `shadowEvaluationReport` (fixed hourly grid, paired points,
+  date-clustered bootstrap). The outcome is the official CLI max on the stored resolution. The gate is v2.1 vs v2.2; the
+  market is not the gate.

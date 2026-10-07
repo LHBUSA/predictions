@@ -8,7 +8,8 @@ import { forecastIntraday, INTRADAY_MODELS } from '../../../src/weather/intraday
 import { CLI_STATIONS } from '../../../src/weather/stations.js';
 import { sha256Hex } from '../../../src/engine/contracts.js';
 import { assertMarketFree } from '../../../src/engine/leakage.js';
-import { weatherSources } from './cycle.js';
+import { weatherSources, USER_AGENT } from './cycle.js';
+import { shadowForStation } from './intraday-shadow-live.js';
 import { canonicalJson } from '../../../src/engine/evidence.js';
 
 // THREE STATES (Phase A, owner 2026-10-04) — never one hash with three meanings:
@@ -45,7 +46,7 @@ export function engineObservations(rows, icao) {
     .sort((a, b) => a.valid_at.localeCompare(b.valid_at));
 }
 
-export async function intradayForStation(store, st, { now, fetchImpl = globalThis.fetch, spend = () => {}, sources = null } = {}) {
+export async function intradayForStation(store, st, { now, fetchImpl = globalThis.fetch, spend = () => {}, sources = null, shadow = false } = {}) {
   const out = { station: st.icao, considered: 0, written: 0, unchanged: 0, skipped: {} };
   const ids = st.contracts.filter((c) => Date.parse(c.observation_start) <= Date.parse(now) && Date.parse(now) < Date.parse(c.observation_end)).map((c) => c.contract_id);
   if (!ids.length) return out;
@@ -98,5 +99,10 @@ export async function intradayForStation(store, st, { now, fetchImpl = globalThi
     });
   }
   if (forecasts.length) { spend(2); await store.insertFeatureRows(features); await store.insertForecastRows(forecasts); out.written = forecasts.length; }
+  // maxtemp-intraday 2.2.0 PRIVATE SHADOW (INTRADAY_SHADOW_V22): after the v2.1 write, same rows / now / guidance;
+  // writes only pred_forecasts_shadow. A shadow failure never touches the v2.1 result above.
+  if (shadow) {
+    try { out.shadow = await shadowForStation(store, { contracts, obsRows, icao: st.icao, src, now, spend, fetchImpl, userAgent: USER_AGENT }); } catch (e) { out.shadow = { error: e.message }; if (/budget exhausted/.test(e.message)) throw e; }
+  }
   return out;
 }

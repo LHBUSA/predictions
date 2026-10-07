@@ -45,9 +45,13 @@
     // intraday scoring (designation-intraday/1, sql/013 applied 2026-10-07): :04/:34 lane, writes pred_intraday_* only.
     // Kill switch: anything but "true" (tables stay; designations/scores are re-derivable from the ledger by rule).
     "INTRADAY_SCORING": "true",
+    // maxtemp-intraday 2.2.0 PRIVATE SHADOW forward lane (sql/014 pred_forecasts_shadow). Never public, never a market input.
+    // Kill switch: anything but "true" (v2.1 is unaffected either way).
+    "INTRADAY_SHADOW_V22": "true",
     "CRYPTO_SHADOW": "true",
     "CRYPTO_SETTLEMENTS": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
+  // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),
   // ROBINHOOD_CRYPTO_API_KEY + ROBINHOOD_CRYPTO_PRIVATE_KEY_B64 (read-only crypto market-data authentication; no trading endpoints wired)
 }
