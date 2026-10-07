@@ -1,3 +1,7 @@
+// QUARANTINED 2026-10-07: energyMoM: 0 and shelterYoY: coreYoY below are
+// manufactured values. They feed only the quarantined inflation-v0 baseline.
+// CPI V1 features are built by src/macro/cpi/features.js, which reports a
+// missing input as missing.
 import {
   latestMonthlyObservation,
   percentChangeCalendarMonths

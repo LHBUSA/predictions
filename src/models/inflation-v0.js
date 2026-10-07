@@ -1,9 +1,16 @@
 import { assertProbability } from '../domain.js';
 
+// QUARANTINED 2026-10-07 (CPI V1, Phase 3). This baseline defaults a missing
+// energyMoM to 0 and a missing shelterYoY to coreYoY, and scores each threshold
+// with an independent uncalibrated sigmoid. It is kept unchanged ONLY as a
+// comparison baseline for CPI V1 (scripts/research/cpi/validate.mjs). It must
+// not produce a published, SHADOW or CALL probability. CPI V1 lives in
+// src/macro/cpi/.
 export const INFLATION_MODEL = Object.freeze({
   id: 'inflation-threshold-baseline',
   version: '0.1.0',
-  status: 'research'
+  status: 'quarantined',
+  quarantine: 'Fake-default features (energyMoM=0, shelterYoY=coreYoY); incoherent per-threshold sigmoids. Baseline use only. See docs/research/CPI_V1_EVIDENCE.md.'
 });
 
 function num(value, field) {
