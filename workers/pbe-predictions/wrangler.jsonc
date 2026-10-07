@@ -42,6 +42,9 @@
     "DECISIONS_DB": "true",
     // sql/011 run ledger + atomic core/newsroom lease (Phases 2-3). Anything but "true" = run lanes without lease/heartbeat.
     "ENGINE_RUNS": "true",
+    // intraday scoring (designation-intraday/1, sql/013 applied 2026-10-07): :04/:34 lane, writes pred_intraday_* only.
+    // Kill switch: anything but "true" (tables stay; designations/scores are re-derivable from the ledger by rule).
+    "INTRADAY_SCORING": "true",
     "CRYPTO_SHADOW": "true",
     "CRYPTO_SETTLEMENTS": "true"
   }

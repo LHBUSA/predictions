@@ -27,6 +27,7 @@ import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from '.
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
+import { runIntradayScoring, intradayReport, intradayScoringDue } from './intraday-scoring.js';
 import { publishStory, publishedNewsroomStories } from './newsroom/publish.js';
 
 // no-transform + Vary: Vercel's external-rewrite cache ignores Accept-Encoding (network incident 2026-10-02).
@@ -89,6 +90,10 @@ export default {
       // HOT lane (weather freshness): independent of the BTC gate, its own waitUntil + catch, hard-capped subrequests.
       if (env.HOT_LANE === 'true') ctx.waitUntil(runHotLane(env, { store: storeFor(env), now: new Date(event.scheduledTime || Date.now()).toISOString(), onNewObservations: env.INTRADAY_LIVE === 'true' ? (st, fresh, { spend, now }) => intradayForStation(storeFor(env), st, { now, spend }).then((r) => console.log(JSON.stringify({ intraday: r }))) : null })
         .then((r) => console.log(JSON.stringify({ hot_lane: r }))).catch((e) => console.error('hot lane failed', e.stack || e.message)));
+      // INTRADAY SCORING (designation-intraday/1, sql/013): :04 and :34, own waitUntil, never inside the core cycle.
+      const minuteAt = new Date(event.scheduledTime || Date.now()).toISOString();
+      if (env.INTRADAY_SCORING === 'true' && intradayScoringDue(minuteAt)) ctx.waitUntil(runIntradayScoring(storeFor(env), { now: minuteAt })
+        .then((r) => console.log(JSON.stringify({ intraday_scoring: r }))).catch((e) => console.error('intraday scoring failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })
         .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
@@ -350,6 +355,12 @@ export default {
       if (req.method === 'GET' && p === '/admin/decisions/verify') {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         return json(await verifyDecisions(storeFor(env)), 200, 'no-store');
+      }
+      // intraday scoring (designation-intraday/1): aggregate report of stored scores; ?run=1 runs the lane now (POST only writes)
+      if (p === '/admin/intraday/scores' && (req.method === 'GET' || req.method === 'POST')) {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (req.method === 'POST') return json(await runIntradayScoring(storeFor(env), { now: new Date().toISOString(), dryRun: url.searchParams.get('dry_run') !== '0' }), 200, 'no-store');
+        return json(await intradayReport(storeFor(env)), 200, 'no-store');
       }
       if (req.method === 'GET' && p === '/admin/decisions/prospective') {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');

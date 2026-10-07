@@ -31,3 +31,30 @@ Separate model generation. It never edits, replaces or re-designates pre-window 
 "previous-day station guidance error" may only be added in a new version after a strict point-in-time holdout shows
 incremental skill over v1.1, using the value actually available before the next window opened (preliminary ASOS /
 publication timestamps — the final CLI for D-1 is often issued after the D window opens).
+
+## designation-intraday/1 — BUILT and FROZEN 2026-10-07
+
+Code: `src/engine/intraday-designations.js` (pure), lane `workers/pbe-predictions/src/intraday-scoring.js` (:04/:34 off the
+one-minute cron, `INTRADAY_SCORING=true`), tables `pred_intraday_designations` / `pred_intraday_scores` (`sql/013`, with
+ROLLBACK and an always-aborting PROOF). Never inside the core cycle; never writes `pred_forecast_designations` / `pred_scores`.
+
+| Designation | Reference time R | Forecast |
+|---|---|---|
+| `WINDOW_OPEN` | observation_start + 2 h (02:00 LST) | newest live row of (contract, model, version) captured in [start, R] |
+| `MIDDAY_LOCAL` | observation_start + 12 h (12:00 LST) | newest live row captured in [start, R] |
+| `FINAL_INTRADAY` | min(observation_end, resolved_at) | newest live row captured in [start, R) |
+
+- Written once, only after R + 10 min. No standing row at R = no designation (counted as missing, never substituted).
+- The DB trigger re-checks the choice (newest row at R, frozen reference offsets, live rows only, no pre-window rows).
+- Per model **version**: a version change mid-window gives each version its own designations.
+- Outcome: the stored venue settlement (as designation/1); official CLI agreement kept as data quality.
+- Benchmark: the venue mid stored on the designated row at capture, VALID only if the snapshot was `active` and a core
+  run COMPLETED within 10 min before capture with zero market HTTP/backoff errors (venue snapshots are change-only).
+  Otherwise `benchmark_state` says why and no market score is stored.
+- Quality: `SOURCE_GAP` if no exact-station ob became available in the 90 min before R; `RESOLUTION_SOURCES_DISAGREE`
+  / `OFFICIAL_UNVERIFIED` from the resolution row. Scored either way; reports slice by it.
+- Report: `GET /admin/intraday/scores` (admin token) — by model version, designation, station, station group, hour bucket
+  (capture LST 00-06/07-12/13-16/17-23), probability bucket, benchmark state, quality state.
+  `node scripts/ops/intraday-score-report.mjs`.
+- Backfill: the first runs designate rows captured since the hot lane started (2026-10-04 18:16Z), all genuinely
+  prospective; such rows carry `backfilled=true` (designated > 1 h after R). No forecast is ever created.
