@@ -63,6 +63,7 @@ button:disabled{cursor:default}
 .notices:empty{display:none}
 .notice{font-size:12.5px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--ink-2);border-left:3px solid var(--faint)}
 .n-error{border-left-color:var(--err)}.n-warn{border-left-color:var(--warn)}.n-auth{border-left-color:var(--gold)}.n-info{color:var(--muted)}
+.n-quiet{color:var(--faint);background:transparent;border-color:transparent;border-left-color:var(--line-2);font-size:12px;padding:4px 12px}
 
 /* ---------- gate ---------- */
 .gate{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;padding:40px 0 56px}

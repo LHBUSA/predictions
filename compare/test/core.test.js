@@ -126,15 +126,15 @@ test('membership states: 401 anonymous, 403 forbidden, 503 unverified, owner/all
   assert.equal(membershipState(200, { membership: { state: 'anonymous', entitled: false } }), 'anonymous');
 });
 
-test('notices: upstream failure is never an empty board', () => {
-  const desk = { page_limit: 50, lanes: [{ lane: 'nba', state: 'unavailable', upstream_status: 502 }, { lane: 'soccer', state: 'not_connected', upstream_status: 404 }, { lane: 'nhl', state: 'ok', events: 50, capped: true }], events: [] };
-  const n = screenNotices({ desk, deskStatus: 200, live: { sources: [{ key: 'nhl', state: 'unavailable', error: 'HTTP_403' }, { key: 'nba', state: 'ok', fetched_at: '2026-10-05T20:00:00Z' }] }, liveStatus: 200, scope: 'soccer', events: [], now: Date.parse('2026-10-05T20:10:00Z') });
-  const codes = n.map((x) => x.code);
-  assert.ok(codes.includes('lane_unavailable'));
-  assert.ok(codes.includes('lane_not_connected'));
+test('notices: opened hub explains its own lane and score state', () => {
+  const now = Date.parse('2026-10-05T20:10:00Z');
+  const desk = { page_limit: 50, lanes: [{ lane: 'nhl', state: 'ok', events: 50, capped: true }], events: [] };
+  const live = { items: [{ sport: 'nhl', source_id: '1', status: 'live' }], sources: [{ key: 'nhl', state: 'ok', fetched_at: '2026-10-05T20:00:00Z' }] };
+  const codes = screenNotices({ desk, deskStatus: 200, live, liveStatus: 200, scope: 'nhl', events: [], now }).map((x) => x.code);
   assert.ok(codes.includes('lane_capped'), 'single-sport scope explains the cap (ALL SPORTS shows it as "50+" on the lane chip)');
-  assert.ok(codes.includes('score_source_down'));
   assert.ok(codes.includes('score_delayed'), '10-minute-old score feed is delayed');
+  const nc = screenNotices({ desk: { lanes: [{ lane: 'soccer', state: 'not_connected', upstream_status: 404 }] }, deskStatus: 200, scope: 'soccer', events: [] });
+  assert.ok(nc.some((x) => x.code === 'lane_not_connected'));
   assert.equal(screenNotices({ desk: null, deskStatus: 401, scope: 'sports' })[0].code, 'auth_expired');
   assert.equal(screenNotices({ desk: null, deskStatus: 503, scope: 'sports' })[0].code, 'access_check');
   assert.ok(screenNotices({ desk: null, deskStatus: 200, liveStatus: 502, scope: 'nba' }).some((x) => x.code === 'score_feed_down'));
@@ -156,27 +156,4 @@ test('default view is TOP SPREADS over active events (not LIVE NOW)', () => {
   const top = rankEvents(nba).filter(VIEWS.top.filter);
   assert.ok(top.length > 0, 'real NBA desk yields an active board with nothing live');
   assert.ok(top.every((e) => e.active));
-});
-
-
-test('ALL SPORTS collapses multiple lane timeouts into one incident notice', () => {
-  const desk = { lanes: [
-    { lane:'nfl', state:'unavailable', error:'timeout' },
-    { lane:'nba', state:'unavailable', error:'timeout' },
-    { lane:'nhl', state:'unavailable', error:'timeout' },
-    { lane:'mlb', state:'ok', events:3 }
-  ], events: [] };
-  const n = screenNotices({ desk, deskStatus:200, scope:'sports', events:[], live:{items:[],sources:[]}, liveStatus:200 });
-  const group = n.filter((x) => x.code === 'lanes_unavailable');
-  assert.equal(group.length, 1);
-  assert.deepEqual(group[0].lanes, ['nfl','nba','nhl']);
-  assert.match(group[0].text, /3 market lanes are delayed upstream/);
-  assert.equal(n.filter((x) => x.code === 'lane_unavailable').length, 0);
-});
-
-test('single sport still shows its specific lane failure', () => {
-  const desk = { lanes:[{ lane:'nba', state:'unavailable', error:'timeout' }], events:[] };
-  const n = screenNotices({ desk, deskStatus:200, scope:'nba', events:[], live:{items:[],sources:[]}, liveStatus:200 });
-  assert.equal(n.filter((x) => x.code === 'lane_unavailable').length, 1);
-  assert.equal(n.filter((x) => x.code === 'lanes_unavailable').length, 0);
 });

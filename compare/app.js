@@ -5,7 +5,8 @@
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
-  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, LIVE_MARKET_CHIP, ID_JOIN_SPORTS
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, LIVE_MARKET_CHIP, ID_JOIN_SPORTS,
+  carryDesk, sourceDiagnostics
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -79,7 +80,8 @@ async function loadMembership() {
 async function loadDesk(signal) {
   const r = await getJson(`/api/desk?scope=${encodeURIComponent(S.scope)}`, signal);
   S.deskStatus = r.status === 200 || (r.status === 502 && r.body?.lanes) ? 200 : r.status;
-  if (r.body?.lanes) { S.desk = r.body; S.deskAt = Date.now(); }
+  // A lane that fails this read keeps its last-known cards (core.carryDesk); its state stays 'unavailable'.
+  if (r.body?.lanes) { S.desk = carryDesk(S.desk, S.deskAt, r.body); S.deskAt = Date.now(); }
   else if (r.status === 401 || r.status === 403) { S.desk = null; S.memberState = r.status === 401 ? 'anonymous' : 'forbidden'; render(); unmount(); return; }
   rebuild();
   const e = openEvent();
@@ -345,10 +347,14 @@ function renderHealth() {
   }
   if (document.hidden) parts.push('paused while hidden');
   hb.textContent = parts.join('  ·  ');
-  dot.dataset.level = (S.desk?.lanes || []).some((l) => l.state === 'unavailable') || (S.liveStatus && S.liveStatus !== 200) || (S.live?.sources || []).some((x) => x.state !== 'ok') ? 'warn' : 'ok';
+  // Full backend health stays here (tooltip + data attribute); the notice stack only shows what affects the screen.
+  const diag = sourceDiagnostics({ desk: S.desk, live: S.live, liveStatus: S.liveStatus });
+  hb.title = diag.length ? diag.join('\n') : 'All sources answered';
+  hb.dataset.diagnostics = diag.join(' | ');
+  dot.dataset.level = diag.length ? 'warn' : 'ok';
 }
 function renderNotices() {
-  const list = S.memberState === 'entitled' ? screenNotices({ desk: S.desk, deskStatus: S.deskStatus, live: S.live, liveStatus: S.liveStatus, scope: S.scope, events: S.events }) : [];
+  const list = S.memberState === 'entitled' ? screenNotices({ desk: S.desk, deskStatus: S.deskStatus, deskAt: S.deskAt, live: S.live, liveStatus: S.liveStatus, scope: S.scope, events: S.events }) : [];
   $('#notices').innerHTML = list.filter((n) => n.code !== 'loading').map((n) => `<div class="notice n-${n.level}" data-code="${esc(n.code)}">${esc(n.text)}</div>`).join('');
 }
 function renderGate() {
@@ -615,7 +621,7 @@ function renderBoard() {
     return;
   }
   const allDown = (S.desk.lanes || []).length && S.desk.lanes.every((l) => l.state === 'unavailable');
-  if (allDown) { box.innerHTML = `<div class="empty empty-fail"><b>${esc(boardEmpty({ desk: S.desk, viewKey: 'top', events: [] }).text)}</b>${upcomingHint()}</div>`; return; }
+  if (allDown && !S.events.length) { box.innerHTML = `<div class="empty empty-fail"><b>${esc(boardEmpty({ desk: S.desk, viewKey: 'top', events: [] }).text)}</b>${upcomingHint()}</div>`; return; }
   if (S.scope === 'sports') renderOverview(box); else renderHub(box);
 }
 

@@ -385,46 +385,127 @@ export function scoreSourceState(src, now = Date.now()) {
   return 'ok';
 }
 
-// Returns banners (ordered, most severe first) + the board state for the requested scope.
-export function screenNotices({ desk, deskStatus, live, liveStatus, scope, events, now = Date.now() }) {
+// ---------------------------------------------------------------------------------------------------------
+// Alert relevance (2026-10-06). Backend health stays truthful (lane/source states, Source Health line,
+// sourceDiagnostics); the notice stack only answers "is what I'm looking at usable?". A sport is RELEVANT when it
+// has a live game, a game starting within SOON_MS, usable market cards on screen, or the user opened its hub.
+// A failure for an irrelevant sport never reaches the customer. A failed refresh with last-known data on screen
+// is a quiet status at most (and none until MARKET_STALE_MS), never an incident banner.
+export const SOON_MS = 2 * 3600e3;
+export const IN_PLAY_MS = 4 * 3600e3;
+export const MARKET_STALE_MS = 150e3;
+export const DESK_CARRY_MS = 15 * 60e3;
+const laneName = (l) => (l === 'nonsports' ? 'Prediction markets' : String(l).toUpperCase());
+const eventLane = (e) => e.lane || e.sport || 'nonsports';
+
+// Stale-while-revalidate for the desk: a lane that fails this read keeps its last-known events (up to
+// DESK_CARRY_MS from its last good read). Lane state stays 'unavailable' (truth); cached_at marks the carry.
+export function carryDesk(prev, prevAt, next, now = Date.now()) {
+  if (!next?.lanes || !prev?.lanes) return next;
+  const before = new Map(prev.lanes.map((l) => [l.lane, l]));
+  const carried = [];
+  const lanes = next.lanes.map((l) => {
+    if (l.state !== 'unavailable') return l;
+    const p = before.get(l.lane);
+    const at = p?.state === 'ok' ? (prevAt ? new Date(prevAt).toISOString() : null) : p?.cached_at || null;
+    if (!at || now - Date.parse(at) > DESK_CARRY_MS) return l;
+    const evs = (prev.events || []).filter((e) => eventLane(e) === l.lane);
+    if (!evs.length) return l;
+    carried.push(...evs);
+    return { ...l, cached_at: at, cached_events: evs.length };
+  });
+  return carried.length ? { ...next, lanes, events: [...(next.events || []), ...carried] } : { ...next, lanes };
+}
+
+// Relevance per sport from score items, rendered events and the selected scope.
+export function relevance({ scope, live, events = [], now = Date.now() }) {
+  const inPlay = new Set(), usable = new Set();
+  for (const x of live?.items || []) {
+    const t = Date.parse(x.starts_at || x.start_at || '');
+    if (x.status === 'live' || (x.status === 'scheduled' && Number.isFinite(t) && t - now <= SOON_MS && now - t <= IN_PLAY_MS)) inPlay.add(x.sport);
+  }
+  for (const e of events) {
+    const lane = eventLane(e);
+    if (e.contracts?.some((c) => c.priced)) usable.add(lane);
+    const t = Date.parse(e.start_at || '');
+    if (e.live || (e.active && e.sport && Number.isFinite(t) && t - now <= SOON_MS && now - t <= IN_PLAY_MS)) inPlay.add(lane);
+  }
+  const explicit = scope && scope !== 'sports' ? scope : null;
+  return { inPlay, usable, explicit, relevant: (s) => s === explicit || inPlay.has(s) || usable.has(s) };
+}
+
+// Returns banners, most severe first. Levels: error (critical) > auth > warn (relevant) > quiet > info.
+export function screenNotices({ desk, deskStatus, deskAt = null, live, liveStatus, scope, events = [], now = Date.now() }) {
   const n = [];
+  const rel = relevance({ scope, live, events, now });
+  const anyUsable = rel.usable.size > 0;
+  const stale = [];
   if (deskStatus === 'loading') n.push({ level: 'info', code: 'loading', text: 'Loading market desk…' });
   else if (deskStatus === 401) n.push({ level: 'auth', code: 'auth_expired', text: 'Your session ended. Sign in again to load the comparison desk.' });
   else if (deskStatus === 403) n.push({ level: 'auth', code: 'forbidden', text: 'Compare is part of PropBetEdge All Access. This account does not include it.' });
   else if (deskStatus === 503) n.push({ level: 'error', code: 'access_check', text: 'We could not verify your membership right now. Nothing is shown until access is verified; retrying automatically.' });
-  else if (deskStatus === 0) n.push({ level: 'error', code: 'network', text: 'Network error reaching Compare. Retrying automatically.' });
-  const unavailable = (desk?.lanes || []).filter((l) => l.state === 'unavailable');
-  if (scope === 'sports' && unavailable.length > 1) {
-    const names = unavailable.map((l) => l.lane.toUpperCase());
-    n.push({ level: 'error', code: 'lanes_unavailable', lanes: unavailable.map((l) => l.lane),
-      text: `${unavailable.length} market lanes are delayed upstream (${names.join(', ')}). Loaded lanes remain live; missing lanes retry automatically.` });
+  else if (deskStatus === 0 || deskStatus >= 500) {
+    // The desk read itself failed. Last-known cards on screen = a refresh delay, not an outage.
+    if (anyUsable && deskAt) stale.push(deskAt);
+    else n.push({ level: 'error', code: 'network', text: 'Network error reaching Compare. Retrying automatically.' });
   }
-  for (const l of desk?.lanes || []) {
-    const name = l.lane === 'nonsports' ? 'Prediction markets' : l.lane.toUpperCase();
-    if (l.state === 'unavailable' && !(scope === 'sports' && unavailable.length > 1)) n.push({ level: 'error', code: 'lane_unavailable', lane: l.lane, text: `${name} market feed unavailable (upstream ${l.upstream_status || l.error || 'error'}). Its markets are missing from this board until it recovers.` });
-    else if (l.state === 'not_connected' && scope !== 'sports') n.push({ level: 'info', code: 'lane_not_connected', lane: l.lane, text: `${name} comparison lane is not connected yet. No Kalshi ↔ Polymarket desk exists for this sport.` });
-    else if (l.capped && scope !== 'sports') n.push({ level: 'info', code: 'lane_capped', lane: l.lane, text: `${name}: showing the first ${desk.page_limit} events (upstream page limit; no further pages exist yet).` });
+  const lanes = desk?.lanes || [];
+  const down = lanes.filter((l) => l.state === 'unavailable');
+  if (deskStatus === 200 && lanes.length && down.length === lanes.length && !anyUsable) {
+    n.push({ level: 'error', code: 'no_market_data', text: `${rel.explicit ? `${laneName(rel.explicit)} market data` : 'Market data'} is unavailable right now. Retrying automatically.` });
+  } else {
+    for (const l of down) {
+      if (!rel.relevant(l.lane)) continue; // idle sport: Source Health / diagnostics only
+      if (rel.usable.has(l.lane)) { if (l.cached_at) stale.push(Date.parse(l.cached_at)); continue; }
+      n.push({ level: 'warn', code: 'lane_unavailable', lane: l.lane, text: `${laneName(l.lane)} markets can't be loaded right now. Retrying automatically.` });
+    }
   }
-  const ok = (desk?.lanes || []).some((l) => l.state === 'ok');
-  if (ok && events?.length && !events.some((e) => e.badge === 'COMPARABLE')) {
+  if (rel.explicit) for (const l of lanes) {
+    if (l.state === 'not_connected') n.push({ level: 'info', code: 'lane_not_connected', lane: l.lane, text: `${laneName(l.lane)} comparison lane is not connected yet. No Kalshi ↔ Polymarket desk exists for this sport.` });
+    else if (l.state === 'ok' && l.capped) n.push({ level: 'info', code: 'lane_capped', lane: l.lane, text: `${laneName(l.lane)}: showing the first ${desk.page_limit} events (upstream page limit; no further pages exist yet).` });
+  }
+  const oldest = stale.filter(Number.isFinite).sort((a, b) => a - b)[0];
+  if (oldest != null && now - oldest > MARKET_STALE_MS) {
+    n.push({ level: 'quiet', code: 'market_refresh_delayed', text: `Market refresh delayed · showing prices from ${ageText(new Date(oldest).toISOString(), now)}` });
+  }
+  if (lanes.some((l) => l.state === 'ok') && events.length && !events.some((e) => e.badge === 'COMPARABLE')) {
     const liveN = (live?.items || []).filter((x) => x.status === 'live').length;
     n.push({ level: 'info', code: 'no_comparable', text: `${liveN ? `${liveN} game${liveN > 1 ? 's are' : ' is'} live, but no` : 'No'} market in this scope has an approved Kalshi ↔ Polymarket comparable contract right now. Single-venue and rule-mismatch markets are shown below with their own prices.` });
   }
   if (scope !== 'nonsports') {
-    if (liveStatus === 0 || (liveStatus >= 500)) n.push({ level: 'warn', code: 'score_feed_down', text: 'Score feed unavailable. Markets are shown without live game state.' });
-    for (const s of live?.sources || []) {
-      const st = scoreSourceState(s, now);
-      if (st === 'unavailable') n.push({ level: 'warn', code: 'score_source_down', sport: s.key, text: `${s.key.toUpperCase()} score feed unavailable (${s.error || 'error'}). ${s.key.toUpperCase()} markets show without game state.` });
-      else if (st === 'delayed') n.push({ level: 'warn', code: 'score_delayed', sport: s.key, text: `${s.key.toUpperCase()} score feed delayed (last update ${ageText(s.fetched_at, now)}).` });
+    // Score state matters for in-play sports (warn) and, muted, for the hub the user opened. Never for idle sports.
+    const scoreLevel = (s) => (rel.inPlay.has(s) ? 'warn' : s === rel.explicit ? 'quiet' : null);
+    if (liveStatus === 0 || liveStatus >= 500) {
+      const hit = rel.explicit ? [rel.explicit] : [...rel.inPlay].filter((s) => s !== 'nonsports');
+      if (hit.length) n.push({ level: hit.some((s) => rel.inPlay.has(s)) ? 'warn' : 'quiet', code: 'score_feed_down', sports: hit, text: `${rel.explicit ? `${laneName(rel.explicit)} live` : 'Live'} game state unavailable right now. Markets are shown without it; retrying automatically.` });
+    } else {
+      const cached = new Set((live?.items || []).filter((x) => x.meta?.delayed_cached).map((x) => x.sport));
+      for (const s of live?.sources || []) {
+        const st = scoreSourceState(s, now), level = scoreLevel(s.key);
+        if (st === 'ok' || !level) continue;
+        const name = laneName(s.key);
+        if (st === 'unavailable' && !cached.has(s.key)) n.push({ level, code: 'score_source_down', sport: s.key, text: `${name} game state unavailable right now. ${name} markets show without it; retrying automatically.` });
+        else n.push({ level: 'quiet', code: 'score_delayed', sport: s.key, text: `${name} scores delayed · showing last known game state${s.fetched_at ? ` from ${ageText(s.fetched_at, now)}` : ''}` });
+      }
     }
   }
-  return n;
+  const rank = { error: 0, auth: 1, warn: 2, quiet: 3, info: 4 };
+  return n.map((x, i) => [x, i]).sort((a, b) => rank[a[0].level] - rank[b[0].level] || a[1] - b[1]).map(([x]) => x);
+}
+
+// Full backend health for the Source Health line (tooltip) and internal QA. Never rendered as customer notices.
+export function sourceDiagnostics({ desk, live, liveStatus, now = Date.now() }) {
+  const out = [];
+  for (const l of desk?.lanes || []) if (l.state !== 'ok') out.push(`market:${l.lane}=${l.state}${l.upstream_status ? ` ${l.upstream_status}` : ''}${l.error ? ` ${l.error}` : ''}${l.cached_at ? ` cached ${ageText(l.cached_at, now)}` : ''}`);
+  if (liveStatus && liveStatus !== 200) out.push(`scores=HTTP ${liveStatus}`);
+  for (const s of live?.sources || []) { const st = scoreSourceState(s, now); if (st !== 'ok') out.push(`score:${s.key}=${st}${s.error ? ` ${s.error}` : ''}`); }
+  return out;
 }
 
 // Board-level empty state, only when every requested source answered.
 export function boardEmpty({ desk, viewKey, events, scope, liveItems = [] }) {
   if (!desk) return null;
-  const okLanes = (desk.lanes || []).filter((l) => l.state === 'ok');
+  const okLanes = (desk.lanes || []).filter((l) => l.state === 'ok' || l.cached_at); // cached = last-known cards
   if (!okLanes.length) {
     if ((desk.lanes || []).every((l) => l.state === 'not_connected')) return { code: 'not_connected', text: 'This comparison lane is not connected yet. No Kalshi ↔ Polymarket desk exists for this sport.' };
     return { code: 'upstream_error', failure: true, text: 'The market feed for this scope did not answer. This is a feed failure, not an empty market; retrying every 60 seconds.' };
