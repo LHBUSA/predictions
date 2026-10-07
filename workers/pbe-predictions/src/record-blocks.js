@@ -1,6 +1,7 @@
 // Event record blocks (Predictions V4): THE CALL -> THE FACTS -> MARKET VIEW -> PBE VS MARKET -> THE GRADE ->
 // PERMANENT RECORD. Every number is read from the stored record: the PBE forecast + its frozen evidence packet,
 // and venue observations (benchmarks, never inputs). No text is generated beyond fixed templates over those values.
+import { partnerCta, PARTNER_DISABLED } from './vendor/kalshi-partner.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const utc = (iso) => (iso ? `${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '—');
 const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
@@ -74,7 +75,9 @@ function venueRow(v) {
 }
 
 // MARKET VIEW: venues independently (no consensus), each with its observation time; divergence only where comparable.
-export function marketView(h) {
+// partner = kalshi-partner/1 config: one quiet "New to Kalshi?" line under the venues when a real Kalshi market is shown.
+// The Kalshi row's ↗ keeps the canonical market URL; the CTA goes through the first-party /go/kalshi router.
+export function marketView(h, { partner = PARTNER_DISABLED, event = null, page = null } = {}) {
   const vs = venues(h);
   if (!vs.length) return '';
   const pbe = h.call ? `<li class="v4-vrow pbe"><span class="v4-vname">PBE</span><strong class="num">${pctTxt(h.call.pbe_pct)}</strong><span class="v4-vmeta">${esc(h.call.model)} · published ${utc(h.call.published_at)}</span><span></span></li>` : '';
@@ -82,7 +85,13 @@ export function marketView(h) {
   return `<section class="card panel" aria-labelledby="mv-h"><h2 id="mv-h">Market view — ${esc(h.label)}</h2>
 <ul class="v4-venues">${pbe}${vs.map(venueRow).join('')}</ul>
 ${divs ? `<ul class="v4-divs">${divs}</ul>` : ''}
+${h?.venues?.kalshi?.url ? partnerLine(partner, { placement: 'predictions_contract', sport: 'predictions', event, contract: h.market_id ?? null, page }) : ''}
 <p class="note">Venue prices are PropBetEdge's own timestamped observations, shown as independent benchmarks after the PBE forecast exists — never averaged, never a model input. A PBE-vs-venue gap is shown only where the venue contract resolves exactly like the contract PBE models.</p></section>`;
+}
+
+function partnerLine(cfg, ctx) {
+  const html = partnerCta(cfg, ctx);
+  return html ? `<p class="kxp-row">${html}</p>` : '';
 }
 
 // PBE VS MARKET: each public PBE checkpoint against each venue's latest observation AT OR BEFORE it, then movement.

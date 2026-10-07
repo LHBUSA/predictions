@@ -11,6 +11,7 @@ import { CRONS, laneFor, runLane, countingFetch, countingBinding, coreCounts, NE
 import { runHotLane } from './hot-lane.js';
 import { intradayForStation } from './intraday-live.js';
 import { callBlock, stationBlock, marketView } from './record-blocks.js';
+import { partnerConfigFor } from './partner-config.js';
 import { liveWeatherBlock } from './weather-blocks.js';
 import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
@@ -713,7 +714,7 @@ export default {
         if (!/^[a-z0-9-]{3,140}$/.test(slug)) return privateJson({ error: 'not_found' }, 404);
         const full = await eventRecord(store, slug);
         if (!full) return privateJson({ error: 'not_found' }, 404);
-        return privateJson({ at: full.generated_at, ...eventIntel(premiumEventView(full), { multiVenue: true }) });
+        return privateJson({ at: full.generated_at, ...eventIntel(premiumEventView(full), { multiVenue: true, partner: await partnerConfigFor(env) }) });
       }
       if (p.startsWith('/v1/premium/event/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
@@ -750,7 +751,7 @@ export default {
         const full = await eventRecord(store, slug);
         if (!full) return privateJson({ error: 'not_found' }, 404);
         const rec = premiumEventView(full); const h = headlineOutcome(rec);
-        return privateJson({ at: rec.generated_at, atmosphere: h?.intel?.atmosphere ?? null, regions: { call: h?.call ? callBlock(h) : null, station: h?.intel ? liveWeatherBlock(h) : stationBlock(h), market: marketView(h) } });
+        return privateJson({ at: rec.generated_at, atmosphere: h?.intel?.atmosphere ?? null, regions: { call: h?.call ? callBlock(h) : null, station: h?.intel ? liveWeatherBlock(h) : stationBlock(h), market: marketView(h, { partner: await partnerConfigFor(env), event: rec.event.event_id, page: `/events/${rec.event.slug}` }) } });
       }
       if (p.startsWith('/v1/contract/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;

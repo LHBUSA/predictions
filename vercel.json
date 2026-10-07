@@ -14,6 +14,10 @@
   ],
   "rewrites": [
     {
+      "source": "/go/kalshi",
+      "destination": "https://propsports-markets.sales-fd3.workers.dev/go/kalshi"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://pbe-predictions.sales-fd3.workers.dev/v1/:path*"
     },

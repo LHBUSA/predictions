@@ -12,7 +12,7 @@ const src = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
 test('event page: production handler renders the multi-venue panel without any URL flag', () => {
   const idx = src('../workers/pbe-predictions/src/index.js');
-  assert.match(idx, /eventIntel\(premiumEventView\(full\), \{ multiVenue: true \}\)/);
+  assert.match(idx, /eventIntel\(premiumEventView\(full\), \{ multiVenue: true(?: \}\)|, partner: )/);
   assert.match(src('../access.js'), /if \(d\.multi_venue\) import\('\/multivenue\.js\?v=20261004mv4'\)/, 'the member page loads the module');
   assert.ok(!/searchParams\.get\('mv'\)/.test(idx), 'no ?mv gate left');
 });

@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261005aa4';
+export const ASSET_V = '20261007kp';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
@@ -143,7 +143,7 @@ export function gatePanel({ heading, features = GATE_FEATURES, placement }) {
 
 // ALL ACCESS: the intelligence of one event (served only through /v1/premium/event-page/<slug>, private, no-store).
 // `rec` = premiumEventView. Returns the main-column and aside HTML that access.js swaps into the public shell.
-export function eventIntel(rec, { multiVenue = false } = {}) {
+export function eventIntel(rec, { multiVenue = false, partner } = {}) {
   const e = rec.event; const h = headlineOutcome(rec);
   const canonical = `${SITE}/events/${e.slug}`;
   const kpis = h ? `<div class="kpis">
@@ -162,7 +162,7 @@ ${o.history.map((s) => `<tr><td class="num">${utc(s.t)}</td><td class="num"><b>$
   const main = `<p class="prem-active">ALL ACCESS · ${esc(e.latest_forecast_at ? `${h?.live?.pbe_frozen ? 'pre-window PBE forecast (frozen)' : 'latest PBE forecast'} ${utc(e.latest_forecast_at)}` : 'market monitoring')}${e.latest_market_at ? ` · market observed ${utc(e.latest_market_at)}` : ''}</p>
 <div data-live-region="call">${h?.call ? callBlock(h) : `<section class="card panel">${kpis}</section>`}</div>
 <div data-live-region="station">${h?.intel ? liveWeatherBlock(h) : stationBlock(h)}</div>
-<div data-live-region="market">${marketView(h)}</div>
+<div data-live-region="market">${marketView(h, { partner, event: e.event_id, page: `/events/${e.slug}` })}</div>
 <section class="card panel"><h2>${rec.distribution?.kind === 'exclusive' ? 'Outcome distribution — PBE vs market' : rec.distribution?.kind === 'threshold' ? 'Threshold curve — PBE vs market' : 'Outcomes — PBE vs market'}</h2>${distributionBlock(rec)}</section>
 <section class="card panel prem" id="pbe-premium" data-slug="${esc(e.slug)}" aria-labelledby="prem-h"><span class="prem-kicker">ALL ACCESS</span><h2 id="prem-h">Full forecast archive</h2><div class="prem-body" data-prem-body hidden></div></section>
 ${h?.call ? `${factsBlock(h)}

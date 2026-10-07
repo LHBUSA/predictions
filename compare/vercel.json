@@ -1,5 +1,9 @@
 {
   "cleanUrls": true,
+  "rewrites": [
+    {"source":"/go/kalshi","destination":"https://propsports-markets.sales-fd3.workers.dev/go/kalshi"},
+    {"source":"/go/kalshi/config","destination":"https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi"}
+  ],
   "headers": [
     {"source":"/api/(.*)","headers":[
       {"key":"Cache-Control","value":"private, no-store, max-age=0"},
