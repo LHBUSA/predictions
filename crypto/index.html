@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#07111f">
 <link rel="stylesheet" href="/site.css?v=20261006nav3">
 <link rel="stylesheet" href="/crypto/crypto.css?v=20261007f1">
+<link rel="stylesheet" href="/kalshi-offer.css?v=20261008kxo">
 </head>
 <body class="crypto-page">
 <!-- network:header -->
@@ -126,6 +127,7 @@
     </div>
     <div class="cx-board" id="market-board"></div>
   </section>
+  <div id="kxo-crypto" class="kxo-slot" hidden></div>
 </div></section>
 
 <section class="section cx-lab-section" id="execution-lab"><div class="wrap">
@@ -148,4 +150,13 @@
 </div></footer>
 <!-- /network:footer -->
 <script src="/crypto/crypto.js?v=20261006c5" defer></script>
+<script type="module">
+// Kalshi PERPETUALS partner offer (kalshi-partner/2): one module; copy + link from /kalshi-partner.js only.
+import { loadPartnerConfig, partnerOffer } from '/kalshi-partner.js?v=20261008kxo';
+loadPartnerConfig('/go/kalshi-perps/config').then((cfg) => {
+  const slot = document.getElementById('kxo-crypto');
+  const html = slot ? partnerOffer(cfg, { placement: 'predictions_crypto', product: 'predictions' }, { variant: 'module' }) : '';
+  if (html) { slot.innerHTML = html; slot.hidden = false; }
+});
+</script>
 </body></html>

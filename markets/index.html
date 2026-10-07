@@ -481,6 +481,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
 .access-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 12px;background:#151d27;border-bottom:1px solid var(--bdr2);font-size:9px;color:var(--txt2);flex-shrink:0}.access-preview>div{display:flex;align-items:center;gap:9px}.access-preview b{color:var(--glod);letter-spacing:.12em}.access-preview button,.access-preview a{font:600 9px var(--mono);padding:5px 8px;border:1px solid var(--bdr2);border-radius:4px;background:var(--bg3);color:var(--txt);text-decoration:none;cursor:pointer}.access-preview a{color:var(--glod);border-color:var(--dat-b)}.market-member .access-preview{display:none}.market-preview .send,.market-preview .qt-chip,.market-preview .w-card,.market-preview .pp-tab{position:relative}.market-preview .send::after,.market-preview .qt-chip::after,.market-preview .w-card::after,.market-preview .pp-tab::after{content:'ALL ACCESS';position:absolute;inset:0;display:grid;place-items:center;background:rgba(11,15,21,.76);color:var(--glod);font-size:7px;letter-spacing:.08em;border-radius:inherit}.db-body h1,.db-body h2,.db-body h3,.m-bub h1,.m-bub h2,.m-bub h3{font-size:13px;margin:10px 0 5px;color:var(--txt)}.db-body ul,.db-body ol,.m-bub ul,.m-bub ol{padding-left:18px;margin:6px 0}.db-body li,.m-bub li{margin:3px 0}@media(max-width:760px){.access-preview{align-items:flex-start;flex-direction:column}.access-preview>div{flex-wrap:wrap}}
 </style>
 <link rel="stylesheet" href="/markets/premium-workspace.css">
+<link rel="stylesheet" href="/kalshi-offer.css?v=20261008kxo">
 <script src="/markets/premium-workspace.js" defer></script>
 </head>
 <body>
@@ -699,6 +700,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
           <div class="signal-card"><small>CONSENSUS CHECK</small><b id="signal-sentiment">Read the context</b><p id="signal-sentiment-note">Sentiment informs the question; it does not prove the thesis.</p></div>
           <div class="signal-card"><small>VENUE DIVERGENCE</small><b>Compare the contract</b><p>Check settlement rules and liquidity before treating a price gap as an edge.</p><a href="https://compare.propbetedge.ai/" class="wire-source">Open venue comparison ↗</a></div>
         </div>
+        <div id="kxo-markets" class="kxo-slot" hidden></div>
         <div class="prompt-heading">Start with a better question</div>
         <div class="qt-chips">
           <button class="qt-chip" onclick="quickDebate('Is BTC overextended here?')">Is BTC overextended here?</button>
@@ -757,6 +759,15 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mo
     <div id="earn-list"><div class="earn-item"><span class="earn-sym sk" style="width:36px">&nbsp;</span></div></div>
   </div>
 </div>
+<script type="module">
+// Kalshi PERPETUALS partner offer (kalshi-partner/2): one module; copy + link from /kalshi-partner.js only.
+import { loadPartnerConfig, partnerOffer } from '/kalshi-partner.js?v=20261008kxo';
+loadPartnerConfig('/go/kalshi-perps/config').then((cfg) => {
+  const slot = document.getElementById('kxo-markets');
+  const html = slot ? partnerOffer(cfg, { placement: 'predictions_markets', product: 'predictions' }, { variant: 'module' }) : '';
+  if (html) { slot.innerHTML = html; slot.hidden = false; }
+});
+</script>
 <footer class="market-footer">
   <div class="mf-brand"><img src="/brand/predictions-mark.svg" width="20" height="20" alt=""><span><b>PropBetEdge Predictions</b><small>Market Intelligence · informational only</small></span></div>
   <nav aria-label="Market Intelligence footer">

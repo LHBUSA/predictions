@@ -1,8 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    {"source":"/go/kalshi","destination":"https://propsports-markets.sales-fd3.workers.dev/go/kalshi"},
-    {"source":"/go/kalshi/config","destination":"https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi"}
+    {"source":"/go/kalshi-perps","destination":"https://propsports-markets.sales-fd3.workers.dev/go/kalshi-perps"},
+    {"source":"/go/kalshi-perps/config","destination":"https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi"}
   ],
   "headers": [
     {"source":"/api/(.*)","headers":[

@@ -1,7 +1,6 @@
 // Compare core: pure functions shared by the browser (app.js) and node tests. No DOM, no fetch.
 // Every number keeps its source timestamp; nothing is interpolated; absence is labelled, never zero.
-import { partnerCta } from './kalshi-partner.js';
-export { loadPartnerConfig, PARTNER_DISABLED } from './kalshi-partner.js';
+export { loadPartnerConfig, partnerOffer, PARTNER_DISABLED } from './kalshi-partner.js';
 
 export const SPORTS = [
   { key: 'nfl', label: 'NFL' }, { key: 'nba', label: 'NBA' }, { key: 'nhl', label: 'NHL' }, { key: 'mlb', label: 'MLB' },
@@ -584,13 +583,4 @@ export function hubStats(events) {
     crosses: active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS')).length,
     best: active.reduce((m, e) => (e.best_gap != null && e.best_gap > (m?.best_gap ?? -1) ? e : m), null)
   };
-}
-
-// Kalshi partner CTA (kalshi-partner/1): ONE quiet line per drawer, only when a real Kalshi market is displayed.
-// "Open on Kalshi ↗" keeps the canonical market URL; this line goes through the first-party /go/kalshi router.
-export function partnerLine(e, cfg, focus = '', page = '/') {
-  const k = e.contracts.filter((c) => c.kalshi?.market_url && c.kalshi.mid_bp != null);
-  if (!k.length) return '';
-  const html = partnerCta(cfg, { placement: e.field ? 'compare_field' : 'compare_drawer', sport: e.sport || 'predictions', event: e.canonical_event_id, contract: k.some((c) => c.id === focus) ? focus : null, page });
-  return html ? `<div class="kxp-row">${html}</div>` : '';
 }

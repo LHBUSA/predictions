@@ -6,7 +6,7 @@ import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
   CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, LIVE_MARKET_CHIP, ID_JOIN_SPORTS,
-  carryDesk, sourceDiagnostics, partnerLine, loadPartnerConfig, PARTNER_DISABLED
+  carryDesk, sourceDiagnostics, loadPartnerConfig, partnerOffer
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -25,7 +25,7 @@ const life = createLifecycle({ doc: document });
 window.__compareLedger = life.ledger;
 
 const S = {
-  scope: 'sports', view: 'top', when: 'all', page: 1, open: '', focusMarket: '', partner: PARTNER_DISABLED,
+  scope: 'sports', view: 'top', when: 'all', page: 1, open: '', focusMarket: '',
   member: null, memberState: 'loading',
   desk: null, deskStatus: 'loading', deskAt: 0,
   live: null, liveStatus: null, liveAt: 0,
@@ -732,7 +732,6 @@ function renderDrawer() {
     <div class="drawer-body" id="drawer-body"><h2>${esc(e.title)}</h2>
       ${distribution(e)}
       ${e.field ? `${whyDiffer(e)}${fieldTable(e)}` : e.contracts.map((c) => drawerContract(e, c)).join('')}
-      ${partnerLine(e, S.partner, S.focusMarket, location.pathname)}
       <div class="acts">${cast ? `<a class="act" href="${esc(cast)}">${e.join.score?.pbecast_url ? 'PBECAST ↗' : 'GAME PAGE ↗'}</a>` : ''}<a class="act" href="${esc(cmd.toString())}">+ COMMAND CENTER</a></div>
       ${e.field ? '' : `<section class="dsec">${movesPanel(e)}</section>`}
       ${e.field ? '' : whyDiffer(e)}
@@ -795,10 +794,14 @@ async function boot() {
   S.memberState = 'loading'; render();
   await loadMembership();
   render();
-  if (S.memberState === 'entitled') {
-    mount();
-    loadPartnerConfig('/go/kalshi/config').then((cfg) => { S.partner = cfg; if (cfg.enabled) renderDrawer(); });
-  }
+  if (S.memberState === 'entitled') mount();
   ageTick();
 }
 boot();
+// Kalshi PERPETUALS partner offer (kalshi-partner/2): ONE footer card for the page, never inside a market drawer or beside
+// a sports YES/NO price (the offer qualifies on perps trading only). "Open on Kalshi" links stay the canonical markets.
+loadPartnerConfig('/go/kalshi-perps/config').then((cfg) => {
+  const slot = document.getElementById('kxo-compare');
+  const html = slot ? partnerOffer(cfg, { placement: 'compare_footer', product: 'compare' }, { variant: 'footer' }) : '';
+  if (html) { slot.innerHTML = html; slot.hidden = false; }
+});
