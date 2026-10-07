@@ -180,6 +180,109 @@ export function joinScore(event, index) {
 }
 
 // ---------------------------------------------------------------------------------------------------------
+// Live score card -> market inventory state (2026-10-06). The join stays ID-ONLY; this decides what a live score
+// card may CLAIM. "NO MARKETS" (NONE) needs a positive check: a targeted desk read (events=<id>) that answered
+// without the id, or a complete (uncapped) ok lane, with no same-matchup candidate under another id. Desk still
+// loading, lane down/capped, targeted read failed, or a same-matchup candidate = never NONE.
+export const LIVE_MARKET = {
+  MARKETS: 'markets', NONE: 'none', CHECKING: 'checking', UNAVAILABLE: 'market_source_unavailable',
+  MATCH_FAILED: 'market_match_failed', NOT_LINKED: 'not_linked'
+};
+export const LIVE_MARKET_CHIP = {
+  none: 'NO MARKETS', checking: 'CHECKING MARKETS', market_source_unavailable: 'MARKETS DELAYED',
+  market_match_failed: 'MARKET CHECK PENDING', not_linked: 'BOUT MARKETS IN UFC HUB'
+};
+
+// Team-code aliases across ESPN / NHL / MLB StatsAPI / desk titles -> one code per team (diagnostics only).
+const TEAM_ALIAS = {
+  nba: { BRK: 'BKN', NJN: 'BKN', GS: 'GSW', NO: 'NOP', NOR: 'NOP', NY: 'NYK', SA: 'SAS', UTAH: 'UTA', UTH: 'UTA', WSH: 'WAS', PHO: 'PHX', CHO: 'CHA', CHH: 'CHA' },
+  wnba: { CONN: 'CON', GS: 'GSV', LV: 'LVA', LA: 'LAS', NY: 'NYL', PHO: 'PHX', WSH: 'WAS', WSN: 'WAS' },
+  nhl: { NJ: 'NJD', TB: 'TBL', LA: 'LAK', SJ: 'SJS', UTAH: 'UTA', UTH: 'UTA', MON: 'MTL', WAS: 'WSH', CLB: 'CBJ', CLS: 'CBJ', VEG: 'VGK', VGS: 'VGK', NAS: 'NSH', CAL: 'CGY', WIN: 'WPG', WPJ: 'WPG' },
+  mlb: { CHW: 'CWS', KCR: 'KC', SDP: 'SD', SFG: 'SF', TBR: 'TB', WSN: 'WSH', WAS: 'WSH', ARI: 'AZ', OAK: 'ATH' },
+  nfl: { JAC: 'JAX', LA: 'LAR', WAS: 'WSH', ARZ: 'ARI', BLT: 'BAL', CLV: 'CLE', HST: 'HOU' }
+};
+export function teamCode(sport, raw) {
+  const c = String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return c ? (TEAM_ALIAS[sport]?.[c] || c) : null;
+}
+// "AWAY @ HOME" / "AWAY at HOME" / "HOME vs AWAY" titles, or explicit sides. Returns canonical codes or null.
+export function matchupSides(sport, { title = null, away = null, home = null } = {}) {
+  let a = away, h = home;
+  if ((!a || !h) && title) {
+    const at = String(title).split(/\s+(?:@|at)\s+/i);
+    if (at.length === 2) [a, h] = at;
+    else { const vs = String(title).split(/\s+(?:vs\.?|v)\s+/i); if (vs.length === 2) [h, a] = vs; }
+  }
+  a = teamCode(sport, a); h = teamCode(sport, h);
+  return a && h && a !== h ? { away: a, home: h } : null;
+}
+// Canonical matchup key: sport|away@home|US slate day. US slates are scheduled in ET: an 8:00 pm ET puck drop is
+// 00:00Z the next day, so a UTC date would split one slate across two keys. Day boundary = 06:00Z (UTC-6 cut).
+const etDay = (iso) => { const t = Date.parse(iso || ''); return Number.isFinite(t) ? new Date(t - 6 * 3600e3).toISOString().slice(0, 10) : null; };
+export function matchupKey(sport, sides, startAt) {
+  return sides ? `${sport}|${sides.away}@${sides.home}|${etDay(startAt) || '?'}` : null;
+}
+const scoreSides = (sport, x) => matchupSides(sport, { title: x.title, away: x.score?.away?.abbr, home: x.score?.home?.abbr });
+const deskSides = (sport, e) => matchupSides(sport, {
+  title: e.title,
+  away: e.contracts?.find((c) => c.role === 'away')?.label, home: e.contracts?.find((c) => c.role === 'home')?.label
+});
+// Same-matchup desk events under a DIFFERENT id (unordered team pair, so swapped home/away still counts; start
+// within 18 h, or any start when either side has none). Never attaches a market: it only blocks a NONE verdict
+// and names the candidate in the diagnostics.
+export function matchupCandidates(item, deskEvents = []) {
+  const s = scoreSides(item.sport, item);
+  if (!s) return [];
+  const pair = [s.away, s.home].sort().join('|');
+  const t = Date.parse(item.starts_at || item.start_at || '');
+  const out = [];
+  for (const e of deskEvents) {
+    if ((e.sport || null) !== item.sport || String(e.canonical_event_id) === String(item.source_id)) continue;
+    const d = deskSides(item.sport, e);
+    if (!d || [d.away, d.home].sort().join('|') !== pair) continue;
+    const et = Date.parse(e.start_at || '');
+    if (Number.isFinite(t) && Number.isFinite(et) && Math.abs(et - t) > 18 * 3600e3) continue;
+    out.push({ canonical_event_id: String(e.canonical_event_id), title: e.title || null, start_at: e.start_at || null, key: matchupKey(item.sport, d, e.start_at), swapped: d.away !== s.away });
+  }
+  return out;
+}
+
+// items: live score rows; events: normalized events (desk + targeted reads); lanes: desk lane states;
+// targeted: Map `${sport}:${id}` -> { state: 'found'|'missing'|'unavailable' }; rawEvents: raw desk events.
+export function liveMarketStates(items = [], { events = [], lanes = null, targeted = new Map(), rawEvents = [] } = {}) {
+  const byKey = new Map(events.map((e) => [e.key, e]));
+  const laneOf = new Map((lanes || []).map((l) => [l.lane, l]));
+  return items.map((x) => {
+    const key = `${x.sport}:${x.source_id}`;
+    const base = { key, sport: x.sport, source_id: String(x.source_id), title: x.title || null, matchup_key: matchupKey(x.sport, scoreSides(x.sport, x), x.starts_at || x.start_at) };
+    const ev = byKey.get(key);
+    if (ev && ev.contracts.length) {
+      const venues = new Set();
+      for (const c of ev.contracts) {
+        if (c.kalshi) venues.add('kalshi');
+        if (c.polymarket || c.related.some((r) => r.venue === 'polymarket') || c.listed.some((l) => l?.venue === 'polymarket')) venues.add('polymarket');
+      }
+      return { ...base, state: LIVE_MARKET.MARKETS, event: ev, market_count: ev.contracts.length, venues: [...venues], priced: ev.contracts.some((c) => c.priced) };
+    }
+    const lane = laneOf.get(x.sport);
+    if (!ID_JOIN_SPORTS.has(x.sport)) {
+      if (lane?.state === 'ok' && lane.events > 0) return { ...base, state: LIVE_MARKET.NOT_LINKED, reason: 'score_feed_lists_cards_desk_lists_bouts' };
+      if (lane?.state === 'ok' && !lane.capped) return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'complete_lane_empty' };
+      if (lane?.state === 'not_connected') return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'sport_not_connected' };
+      return { ...base, state: lane?.state === 'unavailable' ? LIVE_MARKET.UNAVAILABLE : LIVE_MARKET.CHECKING, reason: lane ? `lane_${lane.state}` : 'desk_not_loaded' };
+    }
+    const candidates = matchupCandidates(x, rawEvents);
+    if (candidates.length) return { ...base, state: LIVE_MARKET.MATCH_FAILED, candidates, reason: 'same_matchup_under_another_id' };
+    if (lane?.state === 'not_connected') return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'sport_not_connected' };
+    const t = targeted.get(key);
+    if (t?.state === 'missing') return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'targeted_read_empty' };
+    if (lane?.state === 'ok' && !lane.capped) return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'complete_lane_empty' };
+    if (t?.state === 'unavailable' || lane?.state === 'unavailable') return { ...base, state: LIVE_MARKET.UNAVAILABLE, reason: t?.state === 'unavailable' ? 'targeted_read_failed' : 'lane_unavailable' };
+    return { ...base, state: LIVE_MARKET.CHECKING, reason: lane ? 'lane_capped_awaiting_targeted_read' : 'desk_not_loaded' };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------
 // Event normalization + ranking. Primary view = actionable price discrepancy:
 //   tier 0  comparable, aligned, gap > 0 (sorted by gap)      tier 1  comparable aligned, gap 0
 //   tier 2  both quoted but not aligned / rule mismatch / single venue (fresh)

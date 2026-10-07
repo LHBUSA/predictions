@@ -1,0 +1,2238 @@
+{
+ "captured_at": "2026-10-07T00:43:00.593Z",
+ "note": "Real production rows: Compare /api/live adapters (live only) + propsports-markets /v1/market-desk?events= for the same ids.",
+ "items": [
+  {
+   "sport": "nhl",
+   "source_id": "2026020044",
+   "title": "NSH @ TOR",
+   "status": "live",
+   "detail": "INTERMISSION · 16:06",
+   "score": {
+    "away": {
+     "abbr": "NSH",
+     "score": 4
+    },
+    "home": {
+     "abbr": "TOR",
+     "score": 3
+    }
+   },
+   "starts_at": "2026-10-06T23:00:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020045",
+   "title": "CAR @ MTL",
+   "status": "live",
+   "detail": "P2 · 06:39",
+   "score": {
+    "away": {
+     "abbr": "CAR",
+     "score": 3
+    },
+    "home": {
+     "abbr": "MTL",
+     "score": 3
+    }
+   },
+   "starts_at": "2026-10-06T23:00:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020046",
+   "title": "OTT @ DET",
+   "status": "live",
+   "detail": "P2 · 20:11",
+   "score": {
+    "away": {
+     "abbr": "OTT",
+     "score": 2
+    },
+    "home": {
+     "abbr": "DET",
+     "score": 4
+    }
+   },
+   "starts_at": "2026-10-06T23:00:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020047",
+   "title": "UTA @ NJD",
+   "status": "live",
+   "detail": "P2 · 05:09",
+   "score": {
+    "away": {
+     "abbr": "UTA",
+     "score": 3
+    },
+    "home": {
+     "abbr": "NJD",
+     "score": 2
+    }
+   },
+   "starts_at": "2026-10-06T23:00:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020049",
+   "title": "MIN @ BUF",
+   "status": "live",
+   "detail": "INTERMISSION · 11:01",
+   "score": {
+    "away": {
+     "abbr": "MIN",
+     "score": 2
+    },
+    "home": {
+     "abbr": "BUF",
+     "score": 0
+    }
+   },
+   "starts_at": "2026-10-06T23:00:00Z"
+  },
+  {
+   "sport": "nba",
+   "source_id": "401901820",
+   "title": "BKN @ CHA",
+   "status": "live",
+   "detail": "Q3 · 4:29",
+   "score": {
+    "away": {
+     "abbr": "BKN",
+     "score": 76
+    },
+    "home": {
+     "abbr": "CHA",
+     "score": 63
+    }
+   },
+   "starts_at": "2026-10-06T23:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020048",
+   "title": "NYI @ NYR",
+   "status": "live",
+   "detail": "P2 · 17:11",
+   "score": {
+    "away": {
+     "abbr": "NYI",
+     "score": 0
+    },
+    "home": {
+     "abbr": "NYR",
+     "score": 2
+    }
+   },
+   "starts_at": "2026-10-06T23:30:00Z"
+  },
+  {
+   "sport": "nhl",
+   "source_id": "2026020050",
+   "title": "STL @ CHI",
+   "status": "live",
+   "detail": "P1 · 07:20",
+   "score": {
+    "away": {
+     "abbr": "STL",
+     "score": 0
+    },
+    "home": {
+     "abbr": "CHI",
+     "score": 0
+    }
+   },
+   "starts_at": "2026-10-07T00:00:00Z"
+  },
+  {
+   "sport": "nba",
+   "source_id": "401898389",
+   "title": "NO @ OKC",
+   "status": "live",
+   "detail": "Q2 · 11:18",
+   "score": {
+    "away": {
+     "abbr": "NO",
+     "score": 31
+    },
+    "home": {
+     "abbr": "OKC",
+     "score": 36
+    }
+   },
+   "starts_at": "2026-10-07T00:00:00+00:00"
+  }
+ ],
+ "events": [
+  {
+   "canonical_event_id": "2026020044",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "NSH @ TOR",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020044"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994276",
+     "market_url": "https://polymarket.com/event/nhl-nsh-tor-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020044|team:18",
+     "label": "NSH",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 6750,
+       "bid_bp": 6700,
+       "ask_bp": 6800,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06nshtor",
+       "venue_market_id": "KXNHLGAME-26OCT06NSHTOR-NSH",
+       "outcome_id": "KXNHLGAME-26OCT06NSHTOR-NSH"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 6750,
+       "bid_bp": 6700,
+       "ask_bp": 6800,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.736Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-nsh-tor-2026-10-06",
+       "venue_market_id": "4409654",
+       "outcome_id": "23386031526083333199948637110470330285805480897552822833174027877699112770259",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4600,
+        "delta_mid_bp": 2150,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       67.5,
+       67.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020044|team:10",
+     "label": "TOR",
+     "role": "home",
+     "pbe": {
+      "probability": 0.519173897560277,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:15:12+00:00",
+      "selection": "home"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 3250,
+       "bid_bp": 3200,
+       "ask_bp": 3300,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06nshtor",
+       "venue_market_id": "KXNHLGAME-26OCT06NSHTOR-TOR",
+       "outcome_id": "KXNHLGAME-26OCT06NSHTOR-TOR"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 3250,
+       "bid_bp": 3200,
+       "ask_bp": 3300,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.736Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-nsh-tor-2026-10-06",
+       "venue_market_id": "4409654",
+       "outcome_id": "90186934599193249042221468323169466373248487545319534613763788757155608908637",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5400,
+        "delta_mid_bp": -2150,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       32.5,
+       32.5
+      ],
+      "pbe_vs_venues_pts": [
+       19.42,
+       19.42
+      ],
+      "pbe_position": "outside_above",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020045",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "CAR @ MTL",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020045"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994279",
+     "market_url": "https://polymarket.com/event/nhl-car-mon-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020045|team:12",
+     "label": "CAR",
+     "role": "away",
+     "pbe": {
+      "probability": 0.559701933842759,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:15:12+00:00",
+      "selection": "away"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 5200,
+       "bid_bp": 5100,
+       "ask_bp": 5300,
+       "spread_bp": 200,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06carmtl",
+       "venue_market_id": "KXNHLGAME-26OCT06CARMTL-CAR",
+       "outcome_id": "KXNHLGAME-26OCT06CARMTL-CAR"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 5150,
+       "bid_bp": 5100,
+       "ask_bp": 5200,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.707Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-car-mon-2026-10-06",
+       "venue_market_id": "4409693",
+       "outcome_id": "84391935919367187860879262517470414911455933040432682658483596286596218255120",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5050,
+        "delta_mid_bp": 100,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0.5,
+      "venue_range_pts": [
+       51.5,
+       52
+      ],
+      "pbe_vs_venues_pts": [
+       3.97,
+       4.47
+      ],
+      "pbe_position": "outside_above",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020045|team:8",
+     "label": "MTL",
+     "role": "home",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 4750,
+       "bid_bp": 4700,
+       "ask_bp": 4800,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06carmtl",
+       "venue_market_id": "KXNHLGAME-26OCT06CARMTL-MTL",
+       "outcome_id": "KXNHLGAME-26OCT06CARMTL-MTL"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 4850,
+       "bid_bp": 4800,
+       "ask_bp": 4900,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.707Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-car-mon-2026-10-06",
+       "venue_market_id": "4409693",
+       "outcome_id": "96621055182691399728752666842915554070237663241963457381872611749346332126175",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4950,
+        "delta_mid_bp": -100,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 1,
+      "venue_range_pts": [
+       47.5,
+       48.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020046",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "OTT @ DET",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020046"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994280",
+     "market_url": "https://polymarket.com/event/nhl-ott-det-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020046|team:17",
+     "label": "DET",
+     "role": "home",
+     "pbe": {
+      "probability": 0.527565914724224,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:15:12+00:00",
+      "selection": "home"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 9150,
+       "bid_bp": 9100,
+       "ask_bp": 9200,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06ottdet",
+       "venue_market_id": "KXNHLGAME-26OCT06OTTDET-DET",
+       "outcome_id": "KXNHLGAME-26OCT06OTTDET-DET"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 9150,
+       "bid_bp": 9100,
+       "ask_bp": 9200,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.556Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-ott-det-2026-10-06",
+       "venue_market_id": "4409705",
+       "outcome_id": "49326941046810572222222095182862293477541346696050365086272713216590327437736",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5150,
+        "delta_mid_bp": 4000,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       91.5,
+       91.5
+      ],
+      "pbe_vs_venues_pts": [
+       -38.74,
+       -38.74
+      ],
+      "pbe_position": "outside_below",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020046|team:9",
+     "label": "OTT",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 850,
+       "bid_bp": 800,
+       "ask_bp": 900,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06ottdet",
+       "venue_market_id": "KXNHLGAME-26OCT06OTTDET-OTT",
+       "outcome_id": "KXNHLGAME-26OCT06OTTDET-OTT"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 850,
+       "bid_bp": 800,
+       "ask_bp": 900,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.556Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-ott-det-2026-10-06",
+       "venue_market_id": "4409705",
+       "outcome_id": "115125528612332873855300893530905033417509090087913135445114896199898196949090",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4850,
+        "delta_mid_bp": -4000,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       8.5,
+       8.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020047",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "UTA @ NJD",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020047"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994278",
+     "market_url": "https://polymarket.com/event/nhl-utah-nj-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020047|team:1",
+     "label": "NJD",
+     "role": "home",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 3050,
+       "bid_bp": 3000,
+       "ask_bp": 3100,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06utanj",
+       "venue_market_id": "KXNHLGAME-26OCT06UTANJ-NJ",
+       "outcome_id": "KXNHLGAME-26OCT06UTANJ-NJ"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 3050,
+       "bid_bp": 3000,
+       "ask_bp": 3100,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.843Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-utah-nj-2026-10-06",
+       "venue_market_id": "4409679",
+       "outcome_id": "68206315829220275506799384342490817107629273710950106395793347339398528780787",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5050,
+        "delta_mid_bp": -2000,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       30.5,
+       30.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020047|team:68",
+     "label": "UTA",
+     "role": "away",
+     "pbe": {
+      "probability": 0.55028820385959,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:15:12+00:00",
+      "selection": "away"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 6850,
+       "bid_bp": 6800,
+       "ask_bp": 6900,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06utanj",
+       "venue_market_id": "KXNHLGAME-26OCT06UTANJ-UTA",
+       "outcome_id": "KXNHLGAME-26OCT06UTANJ-UTA"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 6950,
+       "bid_bp": 6900,
+       "ask_bp": 7000,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.843Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-utah-nj-2026-10-06",
+       "venue_market_id": "4409679",
+       "outcome_id": "48868413873614866045033584733687753811404253331792874209133240925264049796554",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4950,
+        "delta_mid_bp": 2000,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 1,
+      "venue_range_pts": [
+       68.5,
+       69.5
+      ],
+      "pbe_vs_venues_pts": [
+       -13.47,
+       -14.47
+      ],
+      "pbe_position": "outside_below",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020048",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "NYI @ NYR",
+   "start_at": "2026-10-06T23:30:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020048"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994277",
+     "market_url": "https://polymarket.com/event/nhl-nyi-nyr-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020048|team:2",
+     "label": "NYI",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 1350,
+       "bid_bp": 1300,
+       "ask_bp": 1400,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06nyinyr",
+       "venue_market_id": "KXNHLGAME-26OCT06NYINYR-NYI",
+       "outcome_id": "KXNHLGAME-26OCT06NYINYR-NYI"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 1550,
+       "bid_bp": 1500,
+       "ask_bp": 1600,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.844Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-nyi-nyr-2026-10-06",
+       "venue_market_id": "4409667",
+       "outcome_id": "14102317338733912878494018662686044513925653571888985107954819682855041408087",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4850,
+        "delta_mid_bp": -3300,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 2,
+      "venue_range_pts": [
+       13.5,
+       15.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020048|team:3",
+     "label": "NYR",
+     "role": "home",
+     "pbe": {
+      "probability": 0.507745753507147,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:45:12+00:00",
+      "selection": "home"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 8650,
+       "bid_bp": 8600,
+       "ask_bp": 8700,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06nyinyr",
+       "venue_market_id": "KXNHLGAME-26OCT06NYINYR-NYR",
+       "outcome_id": "KXNHLGAME-26OCT06NYINYR-NYR"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 8450,
+       "bid_bp": 8400,
+       "ask_bp": 8500,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.844Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-nyi-nyr-2026-10-06",
+       "venue_market_id": "4409667",
+       "outcome_id": "69783939066532125081819844281730086972189978949225449809788473268429786339688",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5150,
+        "delta_mid_bp": 3300,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 2,
+      "venue_range_pts": [
+       84.5,
+       86.5
+      ],
+      "pbe_vs_venues_pts": [
+       -35.73,
+       -33.73
+      ],
+      "pbe_position": "outside_below",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020049",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "MIN @ BUF",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020049"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994282",
+     "market_url": "https://polymarket.com/event/nhl-min-buf-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020049|team:7",
+     "label": "BUF",
+     "role": "home",
+     "pbe": {
+      "probability": 0.51983150635886,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T21:15:12+00:00",
+      "selection": "home"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 1050,
+       "bid_bp": 1000,
+       "ask_bp": 1100,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06minbuf",
+       "venue_market_id": "KXNHLGAME-26OCT06MINBUF-BUF",
+       "outcome_id": "KXNHLGAME-26OCT06MINBUF-BUF"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 1050,
+       "bid_bp": 1000,
+       "ask_bp": 1100,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.000Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-min-buf-2026-10-06",
+       "venue_market_id": "4409732",
+       "outcome_id": "6721992158293716393565834228241234761063297707204684003950430197683268988543",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4800,
+        "delta_mid_bp": -3750,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       10.5,
+       10.5
+      ],
+      "pbe_vs_venues_pts": [
+       41.48,
+       41.48
+      ],
+      "pbe_position": "outside_above",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020049|team:30",
+     "label": "MIN",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 8950,
+       "bid_bp": 8900,
+       "ask_bp": 9000,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06minbuf",
+       "venue_market_id": "KXNHLGAME-26OCT06MINBUF-MIN",
+       "outcome_id": "KXNHLGAME-26OCT06MINBUF-MIN"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 8950,
+       "bid_bp": 8900,
+       "ask_bp": 9000,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:12.000Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-min-buf-2026-10-06",
+       "venue_market_id": "4409732",
+       "outcome_id": "47539663254068853482714949749429626892919881300735157379047889544357093059398",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5200,
+        "delta_mid_bp": 3750,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       89.5,
+       89.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "2026020050",
+   "domain": "sports",
+   "sport": "nhl",
+   "title": "STL @ CHI",
+   "start_at": "2026-10-07T00:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nhl.propbetedge.ai/#/cast/2026020050"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "994281",
+     "market_url": "https://polymarket.com/event/nhl-stl-chi-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020050|team:16",
+     "label": "CHI",
+     "role": "home",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 4350,
+       "bid_bp": 4300,
+       "ask_bp": 4400,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06stlchi",
+       "venue_market_id": "KXNHLGAME-26OCT06STLCHI-CHI",
+       "outcome_id": "KXNHLGAME-26OCT06STLCHI-CHI"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 4350,
+       "bid_bp": 4300,
+       "ask_bp": 4400,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:10.419Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-stl-chi-2026-10-06",
+       "venue_market_id": "4409719",
+       "outcome_id": "23469738580183891659992524283996695364962043523731979687395511250279883188925",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 4850,
+        "delta_mid_bp": -500,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       43.5,
+       43.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nhl:2026020050|team:19",
+     "label": "STL",
+     "role": "away",
+     "pbe": {
+      "probability": 0.557743021387002,
+      "model": "nhl:pbe-nhl-model",
+      "version": null,
+      "state": "FROZEN_AT_LOCK",
+      "issued_at": "2026-10-06T22:15:12+00:00",
+      "selection": "away"
+     },
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 5650,
+       "bid_bp": 5600,
+       "ask_bp": 5700,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-09-30T01:06:00.617419Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnhlgame/nhl-game/kxnhlgame-26oct06stlchi",
+       "venue_market_id": "KXNHLGAME-26OCT06STLCHI-STL",
+       "outcome_id": "KXNHLGAME-26OCT06STLCHI-STL"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 5650,
+       "bid_bp": 5600,
+       "ask_bp": 5700,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.920Z",
+       "venue_ts": "2026-10-07T00:42:10.419Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nhl-stl-chi-2026-10-06",
+       "venue_market_id": "4409719",
+       "outcome_id": "71690039484166477961819284040741562666287083022037330580585283646891858977041",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:05.911Z",
+        "first_mid_bp": 5150,
+        "delta_mid_bp": 500,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 0,
+      "venue_range_pts": [
+       56.5,
+       56.5
+      ],
+      "pbe_vs_venues_pts": [
+       -0.73,
+       -0.73
+      ],
+      "pbe_position": "outside_below",
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "401898389",
+   "domain": "sports",
+   "sport": "nba",
+   "title": "NO @ OKC",
+   "start_at": "2026-10-07T00:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nba.propbetedge.ai/matchups/401898389"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "1106105",
+     "market_url": "https://polymarket.com/event/nba-nop-okc-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nba:401898389|team:3",
+     "label": "NO",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 4050,
+       "bid_bp": 4000,
+       "ask_bp": 4100,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-10-01T00:04:13.535688Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26oct06nopokc",
+       "venue_market_id": "KXNBAGAME-26OCT06NOPOKC-NOP",
+       "outcome_id": "KXNBAGAME-26OCT06NOPOKC-NOP"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 3900,
+       "bid_bp": 3800,
+       "ask_bp": 4000,
+       "spread_bp": 200,
+       "observed_at": "2026-10-07T00:42:12.264Z",
+       "venue_ts": "2026-10-07T00:42:11.824Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nba-nop-okc-2026-10-06",
+       "venue_market_id": "5144653",
+       "outcome_id": "54898729274188458212199881640110151427688357289939379346441508405457495939844",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:04.222Z",
+        "first_mid_bp": 2450,
+        "delta_mid_bp": 1450,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 1.5,
+      "venue_range_pts": [
+       39,
+       40.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nba:401898389|team:25",
+     "label": "OKC",
+     "role": "home",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 5950,
+       "bid_bp": 5900,
+       "ask_bp": 6000,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-10-01T00:04:13.535688Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26oct06nopokc",
+       "venue_market_id": "KXNBAGAME-26OCT06NOPOKC-OKC",
+       "outcome_id": "KXNBAGAME-26OCT06NOPOKC-OKC"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 6100,
+       "bid_bp": 6000,
+       "ask_bp": 6200,
+       "spread_bp": 200,
+       "observed_at": "2026-10-07T00:42:12.264Z",
+       "venue_ts": "2026-10-07T00:42:11.824Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nba-nop-okc-2026-10-06",
+       "venue_market_id": "5144653",
+       "outcome_id": "106105098799833910320980574670175158064147443385780523321611660941355198681685",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:04.222Z",
+        "first_mid_bp": 7550,
+        "delta_mid_bp": -1450,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 1.5,
+      "venue_range_pts": [
+       59.5,
+       61
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  },
+  {
+   "canonical_event_id": "401901820",
+   "domain": "sports",
+   "sport": "nba",
+   "title": "BKN @ CHA",
+   "start_at": "2026-10-06T23:00:00+00:00",
+   "destination": {
+    "kind": "event",
+    "url": "https://nba.propbetedge.ai/matchups/401901820"
+   },
+   "venues_listed": [
+    "kalshi",
+    "polymarket"
+   ],
+   "related_events": [
+    {
+     "venue": "polymarket",
+     "venue_event_id": "1106106",
+     "market_url": "https://polymarket.com/event/nba-bkn-cha-2026-10-06"
+    }
+   ],
+   "contracts": [
+    {
+     "canonical_contract_id": "sports_winner|nba:401901820|team:17",
+     "label": "BKN",
+     "role": "away",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 8150,
+       "bid_bp": 8100,
+       "ask_bp": 8200,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-10-01T00:04:09.541043Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26oct06bkncha",
+       "venue_market_id": "KXNBAGAME-26OCT06BKNCHA-BKN",
+       "outcome_id": "KXNBAGAME-26OCT06BKNCHA-BKN"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 8450,
+       "bid_bp": 8400,
+       "ask_bp": 8500,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.264Z",
+       "venue_ts": "2026-10-07T00:42:12.219Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nba-bkn-cha-2026-10-06",
+       "venue_market_id": "5144656",
+       "outcome_id": "68433342847482927693592298744164611098558297571031576285062122798846131955963",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:04.222Z",
+        "first_mid_bp": 2800,
+        "delta_mid_bp": 5650,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 3,
+      "venue_range_pts": [
+       81.5,
+       84.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    },
+    {
+     "canonical_contract_id": "sports_winner|nba:401901820|team:30",
+     "label": "CHA",
+     "role": "home",
+     "pbe": null,
+     "venues": [
+      {
+       "venue": "kalshi",
+       "match": "EXACT_MATCH",
+       "mid_bp": 1950,
+       "bid_bp": 1900,
+       "ask_bp": 2000,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:41:58.615Z",
+       "venue_ts": "2026-10-01T00:04:09.541043Z",
+       "freshness": "live",
+       "market_url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26oct06bkncha",
+       "venue_market_id": "KXNBAGAME-26OCT06BKNCHA-CHA",
+       "outcome_id": "KXNBAGAME-26OCT06BKNCHA-CHA"
+      },
+      {
+       "venue": "polymarket",
+       "match": "COMPARABLE_EXCEPT_EXCEPTIONS",
+       "mid_bp": 1550,
+       "bid_bp": 1500,
+       "ask_bp": 1600,
+       "spread_bp": 100,
+       "observed_at": "2026-10-07T00:42:12.264Z",
+       "venue_ts": "2026-10-07T00:42:12.219Z",
+       "freshness": "live",
+       "market_url": "https://polymarket.com/event/nba-bkn-cha-2026-10-06",
+       "venue_market_id": "5144656",
+       "outcome_id": "66962947804917361640332897189506772023198459043127263932871586352875433806692",
+       "disclosure": "Postponement/cancellation settlement rules differ between venues",
+       "movement": {
+        "first_observed_at": "2026-10-03T21:54:04.222Z",
+        "first_mid_bp": 7200,
+        "delta_mid_bp": -5650,
+        "points": []
+       },
+       "rule_terms": {
+        "version": "rule-terms/1",
+        "kalshi": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "starts_within_48h",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "cancelled_or_not_started_within_48h",
+           "treatment": "fair_price"
+          }
+         ]
+        },
+        "polymarket": {
+         "complete": true,
+         "terms": [
+          {
+           "topic": "postponement",
+           "condition": "postponed",
+           "treatment": "open_until_completed"
+          },
+          {
+           "topic": "cancellation",
+           "condition": "no_makeup",
+           "treatment": "split_50_50"
+          }
+         ]
+        },
+        "differs": [
+         "postponement",
+         "cancellation"
+        ]
+       }
+      }
+     ],
+     "related": [],
+     "listed": [],
+     "comparison": {
+      "venues": [
+       "kalshi",
+       "polymarket"
+      ],
+      "aligned_within_s": 14,
+      "tolerance_s": 120,
+      "venue_gap_pts": 4,
+      "venue_range_pts": [
+       15.5,
+       19.5
+      ],
+      "pbe_vs_venues_pts": null,
+      "pbe_position": null,
+      "match_class": "COMPARABLE_EXCEPT_EXCEPTIONS",
+      "disclosure": "Postponement/cancellation settlement rules differ between venues"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -5,7 +5,7 @@
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
-  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, LIVE_MARKET_CHIP, ID_JOIN_SPORTS
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -28,7 +28,8 @@ const S = {
   member: null, memberState: 'loading',
   desk: null, deskStatus: 'loading', deskAt: 0,
   live: null, liveStatus: null, liveAt: 0,
-  events: [], detail: new Map(), mounted: false
+  events: [], detail: new Map(), mounted: false,
+  targeted: new Map(), extra: new Map(), checking: false
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -84,6 +85,7 @@ async function loadDesk(signal) {
   const e = openEvent();
   if (e) await loadDetail(e, signal);
   render();
+  await checkLiveMarkets(signal);
 }
 async function loadLive(signal) {
   const sports = scopeLiveSports();
@@ -126,6 +128,7 @@ async function loadLive(signal) {
     S.memberState = r.status === 401 ? 'anonymous' : 'forbidden'; render(); unmount(); return;
   }
   rebuild(); render();
+  await checkLiveMarkets(signal);
 }
 async function loadDetail(e, signal) {
   const cur = S.detail.get(e.key) || {};
@@ -141,7 +144,52 @@ async function loadDetail(e, signal) {
 
 function rebuild() {
   const idx = scoreIndex(S.live?.items || []);
-  S.events = rankEvents((S.desk?.events || []).map((e) => normalizeEvent(e, idx)));
+  const desk = S.desk?.events || [];
+  const onDesk = new Set(desk.map((e) => `${e.sport || 'nonsports'}:${e.canonical_event_id}`));
+  for (const k of S.extra.keys()) if (onDesk.has(k)) S.extra.delete(k);
+  S.events = rankEvents([...desk, ...S.extra.values()].map((e) => normalizeEvent(e, idx)));
+}
+
+// Live score cards that are not on the loaded board (lane capped at 50, timed out, or still loading) are checked by
+// id against the desk (/api/desk?scope=<sport>&events=<ids>). Found events join S.events like any desk event;
+// "NO MARKETS" is only shown after a positive check (core.js liveMarketStates). Found/missing re-checked every 30 s
+// while live; a failed check retries on the next score tick (15 s).
+const TARGETED_TTL_MS = { found: 30e3, missing: 30e3, unavailable: 12e3 };
+const liveItemsNow = () => (S.live?.items || []).filter((x) => x.status === 'live');
+const liveStatesNow = () => liveMarketStates(liveItemsNow(), { events: S.events, lanes: S.desk?.lanes || null, targeted: S.targeted, rawEvents: S.desk?.events || [] });
+async function checkLiveMarkets(signal) {
+  // Runs as soon as scores exist: it must not wait for the whole-sport desk (10 lane reads, each up to 12 s).
+  if (S.checking || S.memberState !== 'entitled' || !S.live) return;
+  const onDesk = new Set((S.desk?.events || []).map((e) => `${e.sport}:${e.canonical_event_id}`));
+  const live = new Set(liveItemsNow().map((x) => `${x.sport}:${x.source_id}`));
+  for (const k of S.extra.keys()) if (!live.has(k)) S.extra.delete(k);
+  const now = Date.now();
+  const bySport = new Map();
+  for (const st of liveStatesNow()) {
+    if (onDesk.has(st.key) || !ID_JOIN_SPORTS.has(st.sport) || st.reason === 'sport_not_connected') continue;
+    const prev = S.targeted.get(st.key);
+    if (prev && now - prev.at < (TARGETED_TTL_MS[prev.state] || 30e3)) continue;
+    const list = bySport.get(st.sport) || [];
+    if (list.length < 12) list.push(st);
+    bySport.set(st.sport, list);
+  }
+  if (!bySport.size) return;
+  S.checking = true;
+  try {
+    await Promise.all([...bySport].map(async ([sport, list]) => {
+      const diag = list.map((st) => ({ id: st.source_id, title: st.title, key: st.matchup_key, state: st.state, reason: st.reason || null, candidates: st.candidates }));
+      const r = await getJson(`/api/desk?scope=${sport}&events=${encodeURIComponent(list.map((st) => st.source_id).join(','))}&diag=${encodeURIComponent(JSON.stringify(diag))}`, signal);
+      const at = Date.now();
+      if (r.status === 200 && r.body?.state === 'ok') {
+        for (const e of r.body.events || []) { S.extra.set(`${sport}:${e.canonical_event_id}`, e); S.targeted.set(`${sport}:${e.canonical_event_id}`, { state: 'found', at }); }
+        for (const id of r.body.missing || []) { S.extra.delete(`${sport}:${id}`); S.targeted.set(`${sport}:${id}`, { state: 'missing', at }); }
+      } else {
+        // a failed check keeps the last found event (its prices age normally) and never becomes "no markets"
+        for (const st of list) S.targeted.set(st.key, { state: S.extra.has(st.key) ? 'found' : 'unavailable', at });
+      }
+    }));
+  } finally { S.checking = false; }
+  rebuild(); render();
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -409,7 +457,7 @@ function liveCard(e) {
   </button>`;
 }
 
-function plainLiveCard(x) {
+function plainLiveCard(x, st) {
   const tennis = x.sport === 'tennis';
   const doubles = tennis && String(x.title || '').includes(' / ');
   let body;
@@ -419,13 +467,18 @@ function plainLiveCard(x) {
   return `<a class="lc lc-plain ticker-game lc-score-only${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     ${body}
-    <small class="no-market-chip">NO MARKETS</small></a>`;
+    <small class="no-market-chip${st.state === LIVE_MARKET.NONE ? '' : ' is-pending'}" data-market-state="${esc(st.state)}">${esc(LIVE_MARKET_CHIP[st.state] || 'CHECKING MARKETS')}</small></a>`;
 }
 
 function renderLive() {
   const sec = $('#live');
-  const marketEvents = S.events.filter((e) => e.live && e.contracts.some((c) => c.priced));
-  const liveItems = (S.live?.items || []).filter((x) => x.status === 'live');
+  // Every linked live event with contracts is a market card (liveCard labels a missing price). Score-only cards
+  // carry their checked market state, never a default "NO MARKETS".
+  const marketEvents = S.events.filter((e) => e.live && e.contracts.length);
+  const liveItems = liveItemsNow();
+  const states = liveStatesNow();
+  window.__compareLiveMarkets = states.map(({ event, ...st }) => st);
+  const stateOf = new Map(states.map((st) => [st.key, st]));
   const ids = new Set(marketEvents.map((e) => `${e.sport}:${e.canonical_event_id}`));
   const scoreOnly = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
   sec.hidden = S.memberState !== 'entitled' || (!marketEvents.length && !scoreOnly.length);
@@ -436,9 +489,11 @@ function renderLive() {
   marketBlock.hidden = !marketEvents.length;
   scoreBlock.hidden = !scoreOnly.length;
   $('#live-market-meta').textContent = marketEvents.length ? `${marketEvents.length} LIVE EVENT${marketEvents.length === 1 ? '' : 'S'} · PRICES SHOWN` : '';
-  $('#live-score-meta').textContent = scoreOnly.length ? `${scoreOnly.length} SCORE-ONLY · NO MARKETS` : '';
+  const none = scoreOnly.filter((x) => stateOf.get(`${x.sport}:${x.source_id}`)?.state === LIVE_MARKET.NONE).length;
+  const pending = scoreOnly.length - none;
+  $('#live-score-meta').textContent = scoreOnly.length ? `${scoreOnly.length} SCORE-ONLY${none ? ` · ${none} NO MARKETS` : ''}${pending ? ` · ${pending} MARKET CHECK${pending === 1 ? '' : 'S'} PENDING` : ''}` : '';
   liveRail('live-market-cards', marketEvents.map(liveCard), 'market');
-  liveRail('live-score-cards', scoreOnly.slice(0, 24).map(plainLiveCard), 'scores');
+  liveRail('live-score-cards', scoreOnly.slice(0, 24).map((x) => plainLiveCard(x, stateOf.get(`${x.sport}:${x.source_id}`) || { state: LIVE_MARKET.CHECKING })), 'scores');
 }
 
 // Each rail keeps its own scroll/marquee state. Market cards always render first; score-only games never displace them.
@@ -680,7 +735,7 @@ function render() {
 function setScope(k) {
   if (S.scope === k) return;
   S.scope = k; S.view = 'top'; S.when = 'all'; S.page = 1; S.open = '';
-  S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.deskAt = S.liveAt = 0; S.events = [];
+  S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.deskAt = S.liveAt = 0; S.events = []; S.targeted.clear(); S.extra.clear();
   writeUrl(); render(); mount(); window.scrollTo({ top: 0 });
 }
 function openDrawer(key) {
@@ -709,7 +764,7 @@ window.addEventListener('popstate', () => {
   const prevScope = S.scope;
   readUrl();
   if (S.memberState !== 'entitled') { render(); return; }
-  if (S.scope !== prevScope) { S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.events = []; render(); mount(); return; }
+  if (S.scope !== prevScope) { S.desk = null; S.live = null; S.deskStatus = 'loading'; S.liveStatus = null; S.events = []; S.targeted.clear(); S.extra.clear(); render(); mount(); return; }
   render();
   const e = openEvent();
   if (e && !S.detail.get(e.key)) loadDetail(e).then(render, () => {});

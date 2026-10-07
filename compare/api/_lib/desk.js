@@ -11,11 +11,12 @@ export const SPORT_LANES = ['nfl', 'nba', 'nhl', 'mlb', 'wnba', 'tennis', 'ufc',
 // Compare asks for exactly the cap and flags `capped` instead of pretending more pages exist.
 export const DESK_PAGE_LIMIT = 50;
 
-export function laneUrl(lane, { event = null } = {}) {
+export function laneUrl(lane, { event = null, events = null } = {}) {
   const u = new URL(MARKET_DESK_URL);
   if (lane === 'nonsports') u.searchParams.set('domain', 'nonsports');
   else u.searchParams.set('sport', lane);
   if (event) u.searchParams.set('event', event);
+  else if (events?.length) u.searchParams.set('events', events.join(','));
   else u.searchParams.set('limit', String(DESK_PAGE_LIMIT));
   return u.toString();
 }
@@ -73,4 +74,38 @@ export function parseScope(q = {}) {
   if (scope === 'nonsports' || scope === 'predictions') return { lanes: ['nonsports'], scope: 'nonsports' };
   if (SPORT_LANES.includes(scope)) return { lanes: [scope], scope };
   return null;
+}
+
+// Targeted live-market check (2026-10-06). The whole-sport lane is capped at 50 events and can time out, so a live
+// score card whose id is not on the loaded board is checked by id: /v1/market-desk?sport=X&events=<ids> filters
+// market_venue_contract_map by canonical_event_id in the DB request (max 12 ids, propsports-markets DESK_MAX_EVENTS).
+//   found        the desk returned the event (markets exist)
+//   missing      the desk answered 200 and the id is absent = positively checked, no markets
+//   unavailable  the read failed (never reported as "no markets")
+export const TARGETED_MAX_EVENTS = 12;
+export const TARGETED_SPORTS = new Set(['nfl', 'nba', 'nhl', 'mlb', 'wnba', 'soccer', 'tennis']);
+const ID_RE = /^[A-Za-z0-9._:-]{1,80}$/;
+export function parseTargetedIds(raw) {
+  const ids = [...new Set(String(raw || '').split(',').map((x) => x.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > TARGETED_MAX_EVENTS || ids.some((x) => !ID_RE.test(x))) return null;
+  return ids;
+}
+export function targetedResult(sport, ids, r) {
+  if (!(r.ok && Array.isArray(r.body?.events))) {
+    return { contract: 'compare-live-markets/1', sport, state: 'unavailable', upstream_status: r.status, error: r.error || r.body?.error || null, ms: r.ms,
+      requested: ids, found: [], missing: [], unavailable: ids, events: [] };
+  }
+  const events = r.body.events.filter((e) => ids.includes(String(e.canonical_event_id))).map((e) => ({ ...e, sport: e.sport || sport, lane: sport }));
+  const found = new Set(events.map((e) => String(e.canonical_event_id)));
+  return { contract: 'compare-live-markets/1', sport, state: 'ok', upstream_status: r.status, ms: r.ms, generated_at: r.body.generated_at || null,
+    requested: ids, found: ids.filter((x) => found.has(x)), missing: ids.filter((x) => !found.has(x)), unavailable: [], events };
+}
+export async function loadTargeted(sport, ids, opts = {}) {
+  const { noMedia, media, ...upstreamOpts } = opts;
+  const out = targetedResult(sport, ids, await upstreamJson(laneUrl(sport, { events: ids }), { timeoutMs: 8000, ...upstreamOpts }));
+  if (!noMedia && out.events.length) {
+    if (sport === 'ufc') await enrichUfc(out.events, media || {});
+    if (sport === 'soccer') await enrichSoccer(out.events, media || {});
+  }
+  return out;
 }
