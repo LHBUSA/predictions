@@ -30,7 +30,7 @@ const S = {
   desk: null, deskStatus: 'loading', deskAt: 0,
   live: null, liveStatus: null, liveAt: 0,
   events: [], detail: new Map(), mounted: false,
-  targeted: new Map(), extra: new Map(), checking: false
+  targeted: new Map(), extra: new Map(), checking: false, deskLoading: false
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -78,7 +78,9 @@ async function loadMembership() {
   S.member = r.body; S.memberState = membershipState(r.status, r.body);
 }
 async function loadDesk(signal) {
-  const r = await getJson(`/api/desk?scope=${encodeURIComponent(S.scope)}`, signal);
+  S.deskLoading = true;
+  let r;
+  try { r = await getJson(`/api/desk?scope=${encodeURIComponent(S.scope)}`, signal); } finally { S.deskLoading = false; }
   S.deskStatus = r.status === 200 || (r.status === 502 && r.body?.lanes) ? 200 : r.status;
   // A lane that fails this read keeps its last-known cards (core.carryDesk); its state stays 'unavailable'.
   if (r.body?.lanes) { S.desk = carryDesk(S.desk, S.deskAt, r.body); S.deskAt = Date.now(); }
@@ -154,14 +156,17 @@ function rebuild() {
 
 // Live score cards that are not on the loaded board (lane capped at 50, timed out, or still loading) are checked by
 // id against the desk (/api/desk?scope=<sport>&events=<ids>). Found events join S.events like any desk event;
-// "NO MARKETS" is only shown after a positive check (core.js liveMarketStates). Found/missing re-checked every 30 s
-// while live; a failed check retries on the next score tick (15 s).
-const TARGETED_TTL_MS = { found: 30e3, missing: 30e3, unavailable: 12e3 };
+// "NO MARKETS" is only shown after a positive check (core.js liveMarketStates). Found/missing are re-checked every
+// 30 s while live. A failed check backs off 15 s, 30 s, 60 s ... 5 min (or the server's circuit-breaker hint), so a
+// slow desk never turns live-score polling into a retry storm. No check runs while the board read is in flight
+// (the server answers most checks from that read's lane cache once it lands).
+const TARGETED_TTL_MS = { found: 30e3, missing: 30e3 };
+const backoffMs = (t) => Math.max(t.retry_in_ms || 0, Math.min(300e3, 15e3 * 2 ** Math.max(0, (t.fails || 1) - 1)));
 const liveItemsNow = () => (S.live?.items || []).filter((x) => x.status === 'live');
 const liveStatesNow = () => liveMarketStates(liveItemsNow(), { events: S.events, lanes: S.desk?.lanes || null, targeted: S.targeted, rawEvents: S.desk?.events || [] });
 async function checkLiveMarkets(signal) {
   // Runs as soon as scores exist: it must not wait for the whole-sport desk (10 lane reads, each up to 12 s).
-  if (S.checking || S.memberState !== 'entitled' || !S.live) return;
+  if (S.checking || S.deskLoading || S.memberState !== 'entitled' || !S.live) return;
   const onDesk = new Set((S.desk?.events || []).map((e) => `${e.sport}:${e.canonical_event_id}`));
   const live = new Set(liveItemsNow().map((x) => `${x.sport}:${x.source_id}`));
   for (const k of S.extra.keys()) if (!live.has(k)) S.extra.delete(k);
@@ -170,7 +175,7 @@ async function checkLiveMarkets(signal) {
   for (const st of liveStatesNow()) {
     if (onDesk.has(st.key) || !ID_JOIN_SPORTS.has(st.sport) || st.reason === 'sport_not_connected') continue;
     const prev = S.targeted.get(st.key);
-    if (prev && now - prev.at < (TARGETED_TTL_MS[prev.state] || 30e3)) continue;
+    if (prev && now - prev.at < (prev.state === 'unavailable' ? backoffMs(prev) : TARGETED_TTL_MS[prev.state] || 30e3)) continue;
     const list = bySport.get(st.sport) || [];
     if (list.length < 12) list.push(st);
     bySport.set(st.sport, list);
@@ -187,7 +192,10 @@ async function checkLiveMarkets(signal) {
         for (const id of r.body.missing || []) { S.extra.delete(`${sport}:${id}`); S.targeted.set(`${sport}:${id}`, { state: 'missing', at }); }
       } else {
         // a failed check keeps the last found event (its prices age normally) and never becomes "no markets"
-        for (const st of list) S.targeted.set(st.key, { state: S.extra.has(st.key) ? 'found' : 'unavailable', at });
+        for (const st of list) {
+          const prev = S.targeted.get(st.key);
+          S.targeted.set(st.key, S.extra.has(st.key) ? { state: 'found', at } : { state: 'unavailable', at, fails: (prev?.state === 'unavailable' ? prev.fails || 1 : 0) + 1, retry_in_ms: r.body?.retry_in_ms || 0 });
+        }
       }
     }));
   } finally { S.checking = false; }

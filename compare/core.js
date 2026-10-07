@@ -464,6 +464,8 @@ export function screenNotices({ desk, deskStatus, deskAt = null, live, liveStatu
     if (l.state === 'not_connected') n.push({ level: 'info', code: 'lane_not_connected', lane: l.lane, text: `${laneName(l.lane)} comparison lane is not connected yet. No Kalshi ↔ Polymarket desk exists for this sport.` });
     else if (l.state === 'ok' && l.capped) n.push({ level: 'info', code: 'lane_capped', lane: l.lane, text: `${laneName(l.lane)}: showing the first ${desk.page_limit} events (upstream page limit; no further pages exist yet).` });
   }
+  // lanes the server answered from its stale-while-revalidate cache (state ok, age_ms at response time)
+  if (deskAt) for (const l of lanes) if (l.state === 'ok' && l.stale && Number.isFinite(l.age_ms) && rel.relevant(l.lane)) stale.push(deskAt - l.age_ms);
   const oldest = stale.filter(Number.isFinite).sort((a, b) => a - b)[0];
   if (oldest != null && now - oldest > MARKET_STALE_MS) {
     n.push({ level: 'quiet', code: 'market_refresh_delayed', text: `Market refresh delayed · showing prices from ${ageText(new Date(oldest).toISOString(), now)}` });
@@ -496,6 +498,7 @@ export function screenNotices({ desk, deskStatus, deskAt = null, live, liveStatu
 // Full backend health for the Source Health line (tooltip) and internal QA. Never rendered as customer notices.
 export function sourceDiagnostics({ desk, live, liveStatus, now = Date.now() }) {
   const out = [];
+  for (const l of desk?.lanes || []) if (l.state === 'ok' && l.stale) out.push(`market:${l.lane}=stale ${Math.round((l.age_ms || 0) / 1000)}s (refreshing)`);
   for (const l of desk?.lanes || []) if (l.state !== 'ok') out.push(`market:${l.lane}=${l.state}${l.upstream_status ? ` ${l.upstream_status}` : ''}${l.error ? ` ${l.error}` : ''}${l.cached_at ? ` cached ${ageText(l.cached_at, now)}` : ''}`);
   if (liveStatus && liveStatus !== 200) out.push(`scores=HTTP ${liveStatus}`);
   for (const s of live?.sources || []) { const st = scoreSourceState(s, now); if (st !== 'ok') out.push(`score:${s.key}=${st}${s.error ? ` ${s.error}` : ''}`); }
