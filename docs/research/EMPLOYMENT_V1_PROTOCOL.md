@@ -66,6 +66,50 @@ T-1D, identical to CPI: cutoff 20:00 ET the day before the 08:30 ET release. Rel
 A passing target gets a frozen artifact (code sha, dataset sha, evidence sha) and an evidence packet. SHADOW needs the
 owner's approval, as CPI did.
 
+## Amendment A1 (2026-10-08, before any model fit)
+
+Reason: section 5 names "mean log loss" without defining it, and the model specification was not fixed. Both are fixed
+here before any fit, from the CPI V1 definitions, so nothing below is chosen on Employment validation scores. Only the
+ledgers' integrity has been inspected so far (parse guards, gaps); no model, baseline or score has been computed.
+
+1. **Gate metric.** Per forecast origin, the mean binary log loss over the threshold ladder (item 2), with the common
+   1e-4 probability floor (as CPI V1). The gate compares the candidate with the best baseline on the mean of that
+   per-origin score. 95% CI: moving-block bootstrap of the per-origin score difference, block 12, 2,000 replicates, seed
+   20261008. PASS needs: CI lower bound > 0 against the best baseline, AND 80% central-interval coverage within
+   [0.72, 0.88]. Brier, RPS over the full grid, exact-bucket log score, PIT, ECE and the 2020 split are reported but
+   do not change the verdict.
+2. **Ladders** (strictly-above events, matching Kalshi `greater`):
+   - U-3: t = A - 0.6 ... A + 0.6 in 0.1 steps (13 events), A = the anchor in item 4 (Kalshi lists about A +/- 0.7).
+   - Payrolls: t = -100,000 ... +300,000 in 25,000 steps (17 events; covers Kalshi's -25,000 ... 125,000 grid).
+3. **Hyperparameters**: the CPI V1 values, unchanged and never tuned here: ridge lambda 2, Student-t nu 5, EWMA
+   half-life 24 months, empirical window 60, rolling-mean window 12, minimum 36 training months.
+4. **U-3 candidate `RIDGE_T_EWMA`**. Response: dU = U3(M) - A, where A = U3(M-1) as latest published at the cutoff.
+   Features, each from first-published values available at the cutoff:
+   - `CC_LOGCHG_REF`: log change in advance SA continuing claims, reference week of M vs reference week of M-1.
+   - `IC4_LOGCHG_REF`: log change in the 4-week average of advance SA initial claims ending at the reference week,
+     M vs M-1.
+   - `DU_L1`: A - U3(M-2), both as latest published at the cutoff.
+   The reference week is the Sunday-Saturday week containing the 12th (BLS survey reference week), named by its Saturday.
+   A weekly value is the advance figure in the release for that week; its `available_at` is that release's embargo time.
+   Distribution: discretized Student-t on the 0.1 published grid, as CPI V1.
+5. **Payroll candidate `RIDGE_T_EWMA`** (fit only after U-3 is decided). Response: the first-print change (thousands).
+   Features: `PAY_L1` (latest published change for M-1), `PAY_AVG3` (mean of the latest published changes for M-1..M-3),
+   `IC4_LOGCHG_REF`, `CC_LOGCHG_REF`. Grid: 1,000 persons.
+6. **Baselines** (identical origins, identical grid):
+   - `PERSISTENCE_EMPIRICAL`: U-3 unchanged from A / payrolls = `PAY_L1`, with the 60-month empirical error kernel.
+   - `ROLLING_MEAN_GAUSS`: 12-month rolling mean of the response.
+   - `CLAIMS_ONLY`: `RIDGE_GAUSS` on `CC_LOGCHG_REF` and `IC4_LOGCHG_REF` only.
+   - `employment-v0` (quarantined), U-3 only: fed every input explicitly from the as-published ledgers; an origin where
+     any v0 input is missing is not scored for v0, and its fabricated defaults can never be reached. Scored on the
+     ladder (Brier, log loss) only; eligible as "best baseline".
+7. **Origins and folds.** Every Employment Situation reference month whose release is in the ledger, from the first
+   month with 36 trainable prior months. Expanding window, refit at every origin. A training row is usable only if its
+   own target release is at or before the origin's cutoff (fold guard throws otherwise).
+8. **NO_FORECAST.** An origin where the anchor or any candidate feature is unavailable at the cutoff is excluded for
+   every model and listed with its reason (shutdown months included). Nothing is imputed.
+9. **Regime split.** 2020-03 .. 2021-12 vs all other origins, reported for every model.
+
 ## Change log
 
 - 2026-10-08: protocol written before any fit.
+- 2026-10-08: Amendment A1 (metric definition, ladders, model and baseline specification), before any fit.
