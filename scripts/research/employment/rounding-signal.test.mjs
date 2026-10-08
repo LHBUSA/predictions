@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {calendarMonthIndex,nextRatePairs,bucketSummary,upRateDifference,bootstrapGap} from './rounding-signal-core.mjs';
+const mk=(month,rate,gap,releaseDate,releaseAt)=>({reference_month:month,release_date:releaseDate,release_at:releaseAt,rate_check:'MATCH',reference_levels:{civilian_labor_force_k:10000,unemployed_k:(rate+gap)*100,u3_published:rate,u3_unrounded:rate+gap}});
+const cs=day=>day+'T13:30:00.000Z', c=day=>day+'T00:00:00.000Z';
+test('calendar index handles year boundary and rejects bad months',()=>{assert.equal(calendarMonthIndex('2025-12')+1,calendarMonthIndex('2026-01'));assert.throws(()=>calendarMonthIndex('2026-13'));});
+test('shutdown missing month is not adjacent',()=>{const a=[mk('2025-09',4.3,.01,'2025-11-20',cs('2025-11-20')),mk('2025-11',4.6,-.01,'2025-12-16',cs('2025-12-16'))];const x=nextRatePairs(a,c);assert.equal(x.pairs.length,0);assert.equal(x.rejected[0].reason,'NONADJACENT_MONTH');});
+test('late prior release cannot leak',()=>{const a=[mk('2026-01',4.2,.01,'2026-03-08',cs('2026-03-08')),mk('2026-02',4.3,.01,'2026-03-05',cs('2026-03-05'))];const x=nextRatePairs(a,c);assert.equal(x.pairs.length,0);assert.equal(x.rejected[0].reason,'PRIOR_PRINT_AFTER_FORECAST_CUTOFF');});
+test('invalid rounding gap refused',()=>{const a=[mk('2026-01',4.2,.09,'2026-02-05',cs('2026-02-05')),mk('2026-02',4.3,.01,'2026-03-05',cs('2026-03-05'))];assert.throws(()=>nextRatePairs(a,c),/rounding bucket/);});
+test('predeclared bins classify changes',()=>{const a=[mk('2026-01',4.2,.035,'2026-02-05',cs('2026-02-05')),mk('2026-02',4.3,-.045,'2026-03-05',cs('2026-03-05')),mk('2026-03',4.1,0,'2026-04-05',cs('2026-04-05'))];const b=bucketSummary(nextRatePairs(a,c).pairs);assert.equal(b.high.up,1);assert.equal(b.low.down,1);});
+test('block bootstrap is deterministic',()=>{const a=Array.from({length:100},(_,i)=>({priorGap:i%2?-.035:.035,delta:i%3?-.1:.1}));assert.deepEqual(bootstrapGap(a,{reps:100}),bootstrapGap(a,{reps:100}));});
