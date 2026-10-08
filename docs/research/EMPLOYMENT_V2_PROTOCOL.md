@@ -115,4 +115,11 @@ with sha256 recorded in this file's amendments.
   SA rate only in its table, with no narrative sentence. It is refused (week 2021-10-16 = INPUT_UNAVAILABLE) and not
   read by another extraction path. Manual proof 20/20 (`employment-v2-extension-manual-proof.json`). V1 ledgers and V1
   freeze unchanged. Status remains HOLD.
+- 2026-10-08 (Amendment B0, before any V2 forecast exists; tightens section 6.2 only): the commercial gate's market
+  price must be FRESH. Use the mid of the last hourly candle with both quotes that ends at or before the cutoff AND no
+  earlier than cutoff - 2 h. Otherwise the contract is NO_PRICE for every source. Reason: commit b2ae835 found that the V1
+  comparison had no quote-age cap (U-3: 106/316 priced contracts older than 2 h, maximum 71 h). Also required alongside
+  the gate, never in place of it: an executable sensitivity (YES at ask, NO at 1 - bid, after Kalshi fees), quote-age
+  distribution, spread and volume per event. A model that beats the mid but not the executable price has no tradable
+  edge. The V1 comparison and its JSON are not changed (V1 is closed).
 
