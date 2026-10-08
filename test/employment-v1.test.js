@@ -6,7 +6,7 @@ import { parseEmpsitRelease } from '../src/macro/employment/bls-empsit.js';
 import { parseClaimsRelease } from '../src/macro/employment/dol-claims.js';
 import { firstPrints, releaseAtUtc, u3ReprintConsistency } from '../src/macro/employment/ledger.js';
 import { buildFeatureRow, claimsIndex, cutoffFor, referenceSaturday } from '../src/macro/employment/features.js';
-import { employmentTerms, probabilityAbove, yesOutcome } from '../src/macro/employment/employment-contract.js';
+import { employmentTerms, parseEmploymentTicker, probabilityAbove, yesOutcome } from '../src/macro/employment/employment-contract.js';
 import { PAY_FAMILIES, PAY_FEATURES, PAY_CLAIMS_FEATURES, payLadder, toPayUnits, U3_FAMILIES, U3_FEATURES, U3_CLAIMS_FEATURES, u3Ladder } from '../src/macro/employment/models.js';
 import { scoreThresholds } from '../src/macro/cpi/scoring.js';
 import { makeDistribution } from '../src/macro/cpi/distribution.js';
@@ -211,4 +211,15 @@ test('no hard-coded UTC offset in Employment code: Eastern time is resolved by n
   }
   const tl = readFileSync(new URL('../src/macro/cpi/timeline.js', import.meta.url), 'utf8');
   assert.match(tl, /America\/New_York/);
+});
+
+test('legacy Kalshi tickers map to the same series; the rules checks still fail closed', () => {
+  assert.deepEqual(parseEmploymentTicker('U3-24MAY-T4.0'), { series: 'KXU3', ticker_prefix: 'U3', reference_month: '2024-05', ticker_strike: 4 });
+  assert.equal(parseEmploymentTicker('PROLLS-23SEP-T150000').series, 'KXPAYROLLS');
+  assert.equal(parseEmploymentTicker('PAYROLLS-24MAY-T175000').series, 'KXPAYROLLS');
+  assert.equal(parseEmploymentTicker('ADP-24MAY-T175000'), null);
+  const legacy = { ticker: 'U3-24MAY-T4.0', strike_type: 'greater', floor_strike: 4.0, rules_primary: 'If the seasonally adjusted unemployment rate (U-3) reported by the Bureau of Labor Statistics in the Employment Situation Report is above 4.0% in May 2024, then the market resolves to Yes.' };
+  assert.ok(employmentTerms(legacy).ok);
+  assert.equal(employmentTerms({ ...legacy, rules_primary: 'If the unemployment rate (U-3) is above 4.0% in May 2024 then the market resolves to Yes.' }).ok, false);
+  assert.equal(employmentTerms({ ...legacy, floor_strike: 3.999999 }).reason, 'STRIKE_FIELDS_DISAGREE_WITH_RULES');
 });

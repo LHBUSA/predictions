@@ -124,3 +124,42 @@ KXADP is out of scope (proprietary ADP data, not purchased or ingested).
 
 Research evidence only. No Employment production table, cron lane, Worker path, public model row or SHADOW forecast exists.
 Both targets stay RESEARCH. A next step, if any, needs the owner.
+
+## Post-gate addenda (2026-10-08, after the verdicts; the verdicts are unchanged and final per the owner)
+
+**Data integrity: PASS.**
+- DOL reconciliation: 1,028 archived files = 1,022 releases + 2 identical duplicates (the same release listed under two
+  years: 2013-01-03 in 2012/ and 2013/, 2013-08-01 in 2012/ and 2013/) + 4 refused defective documents. All 1,028 have
+  HTTP 200 and their sha256 matches the manifest (382 .asp, 646 .pdf). No other category exists.
+- Independent truth check against Kalshi's own settlements (`employment-v1-kalshi-comparison.json`): **810 / 810**
+  checkable contracts agree with our first-print ledger (KXU3 461/461, KXPAYROLLS 349/349, 2021-2026). This includes
+  November 2025 U-3: Kalshi `expiration_value` 4.6 = our first print, not the 4.5 January revision.
+- Not checkable: the 9 October 2025 KXU3 contracts. Kalshi settled them with `expiration_value` 4.4, but BLS never
+  published an October 2025 U-3 (the release prints it as not available). The ledger keeps INPUT_UNAVAILABLE. This is a
+  settlement-source risk to note for any future U-3 lane.
+- Reproducibility: rebuilding both ledgers from the raw archive into a clean directory and re-running both gates gives
+  byte-identical ledgers (3/3 hashes) and evidence (both sha256 identical).
+
+**April 2020 provenance limitation.** The only source for the -20,500k first print is the correction note inside the
+archived, corrected BLS file. An independent copy of the original release was not retrievable (Wayback 429). Kalshi has
+no April 2020 market. The figure is used as-is and flagged.
+
+**The four full-suite failures** (identical before and after all Employment commits; none touch Employment code):
+1. `test/entitlement.test.js`: environmental. `@resvg/resvg-wasm` is not installed in this dependency-free worktree; the
+   test passes 14/14 in `D:\Workers\predictions`, which has node_modules.
+2. `home-truth`, "asset version bumped consistently": `index.html` mixes `?v=20261006nav3` and `20261005aa4` (main content drift).
+3. `network-family-parity`, rendered footers: the Worker footer lacks the expected All Access link (`worker: all_access`).
+4. `network-shell`, single publisher identity: the expected copy "10 sports + PropBetEdge Predictions for $29/month" no
+   longer matches the page.
+Items 2-4 fail on main too. They belong to the network/All Access work, not to Predictions research.
+
+**V1 vs Kalshi, descriptive only** (T-1D 20:00 ET mid of the last hourly candle with both quotes; every source scored on
+the same priced contracts; fail-closed term refusals excluded for all sources; block-3 bootstrap):
+| | Events | Contracts | Market LL / Brier | V1 candidate | Best V1 baseline | Candidate minus market (LL), 95% CI |
+|---|---|---|---|---|---|---|
+| KXU3 | 39 (2022-12 .. 2026-07) | 316 | **0.2654 / 0.0824** | 0.3654 / 0.1154 | claims-only 0.3731 / 0.1185 | -0.100 [-0.168, -0.039] |
+| KXPAYROLLS | 31 (2023-03 .. 2026-07) | 279 | **0.4136 / 0.1365** | 0.6878 / 0.2331 | rolling mean 0.6518 / 0.2294 | -0.274 [-0.444, -0.011] |
+The market beats every V1 model on both targets, with confidence intervals excluding zero. Median quoted spread: 3 cents.
+Contracts refused by the fail-closed terms check (missing `strike_type`, `4.099999` floors, a double space in a month,
+off-grid strikes like 215,999, and 2022 rules that do not name the Employment Situation): KXU3 129, KXPAYROLLS 47.
+

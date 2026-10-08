@@ -21,9 +21,11 @@ const mkey = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
 const fail = (reason, extra = {}) => ({ ok: false, status: 'HOLD_RESOLUTION_AMBIGUOUS', reason, ...extra });
 
 export function parseEmploymentTicker(ticker) {
-  const m = /^(KXU3|KXPAYROLLS)-(\d{2})([A-Z]{3})-T(-?\d+(?:\.\d+)?)$/.exec(String(ticker || ''));
+  // legacy pre-2024 tickers (U3-24MAY-T4.0, PROLLS-23SEP-T...) belong to the same series; the rules checks below are unchanged
+  const m = /^(KXU3|U3|KXPAYROLLS|PROLLS|PAYROLLS)-(\d{2})([A-Z]{3})-T(-?\d+(?:\.\d+)?)$/.exec(String(ticker || ''));
   if (!m || !MONTHS[m[3]]) return null;
-  return { series: m[1], reference_month: mkey(2000 + Number(m[2]), MONTHS[m[3]]), ticker_strike: Number(m[4]) };
+  const series = m[1].endsWith('U3') ? 'KXU3' : 'KXPAYROLLS';
+  return { series, ticker_prefix: m[1], reference_month: mkey(2000 + Number(m[2]), MONTHS[m[3]]), ticker_strike: Number(m[4]) };
 }
 
 const FAMILY = {
