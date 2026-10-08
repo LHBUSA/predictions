@@ -71,7 +71,7 @@ TICK_ERROR, SCHEDULE_*.
 ```
 node D:\Workers\employment-collector\scripts\research\employment\collector\collect.mjs status
 node D:\Workers\employment-collector\scripts\research\employment\collector\collect.mjs verify
-type D:\Workers\employment-evidence\.state\ticks.log
+type E:\Workers\employment-evidence\.state\ticks.log
 Get-ScheduledTaskInfo -TaskPath \PropBetEdge-Research\ -TaskName EmploymentCollector-Tick
 Disable-ScheduledTask -TaskPath \PropBetEdge-Research\ -TaskName EmploymentCollector-Tick   # stop collection
 ```
