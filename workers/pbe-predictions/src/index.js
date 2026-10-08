@@ -28,6 +28,8 @@ import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
 import { runIntradayScoring, intradayReport, intradayScoringDue, shadowCompareReport } from './intraday-scoring.js';
+import { runCpiShadow, cpiShadowDue } from './cpi-shadow.js';
+import { cpiShadowReport, renderCpiShadowHtml } from './cpi-shadow-report.js';
 import { shadowEvaluationReport } from '../../../src/weather/intraday/shadow.js';
 import { publishStory, publishedNewsroomStories } from './newsroom/publish.js';
 
@@ -95,6 +97,9 @@ export default {
       const minuteAt = new Date(event.scheduledTime || Date.now()).toISOString();
       if (env.INTRADAY_SCORING === 'true' && intradayScoringDue(minuteAt)) ctx.waitUntil(runIntradayScoring(storeFor(env), { now: minuteAt })
         .then((r) => console.log(JSON.stringify({ intraday_scoring: r }))).catch((e) => console.error('intraday scoring failed', e.stack || e.message)));
+      // CPI V1 PRIVATE SHADOW (sql/015): :09 and :39, own waitUntil, never inside the core cycle. Kill switch CPI_SHADOW.
+      if (env.CPI_SHADOW === 'true' && cpiShadowDue(minuteAt)) ctx.waitUntil(runCpiShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), now: minuteAt })
+        .then((r) => console.log(JSON.stringify({ cpi_shadow: r }))).catch((e) => console.error('cpi shadow failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })
         .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
@@ -359,6 +364,18 @@ export default {
       }
       // intraday scoring (designation-intraday/1): aggregate report of stored scores; ?run=1 runs the lane now (POST only writes)
       // read-only diagnostics accept ADMIN_TOKEN or the narrower DIAGNOSTICS_TOKEN (GET only; never writes)
+      // CPI V1 private SHADOW report (read-only; ?format=html). POST /admin/cpi/shadow/run runs the lane now (ADMIN_TOKEN).
+      if (req.method === 'GET' && p === '/admin/cpi/shadow') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN)) && !(await tokenMatches(req, env.DIAGNOSTICS_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        const rep = await cpiShadowReport(storeFor(env));
+        if (url.searchParams.get('format') === 'html') return new Response(renderCpiShadowHtml(rep), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+        return json(rep, 200, 'no-store');
+      }
+      if (req.method === 'POST' && p === '/admin/cpi/shadow/run') {
+        if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+        if (env.CPI_SHADOW !== 'true') return json({ error: 'CPI_SHADOW is off' }, 409, 'no-store');
+        return json(await runCpiShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), now: new Date().toISOString() }), 200, 'no-store');
+      }
       if (req.method === 'GET' && p === '/admin/intraday/shadow-compare') {
         if (!(await tokenMatches(req, env.ADMIN_TOKEN)) && !(await tokenMatches(req, env.DIAGNOSTICS_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
         return json(await shadowCompareReport(storeFor(env), { evaluate: shadowEvaluationReport }), 200, 'no-store');

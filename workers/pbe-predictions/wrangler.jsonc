@@ -48,6 +48,9 @@
     // maxtemp-intraday 2.2.0 PRIVATE SHADOW forward lane (sql/014 pred_forecasts_shadow). Never public, never a market input.
     // Kill switch: anything but "true" (v2.1 is unaffected either way).
     "INTRADAY_SHADOW_V22": "true",
+    // CPI V1 PRIVATE SHADOW lane (sql/015): KXCPI / KXCPIYOY / KXCPICOREYOY forecasts to pred_forecasts_shadow +
+    // pred_cpi_shadow_runs, EIA/BLS first-seen capture. Never public, never a market input. Kill switch: anything but "true".
+    "CPI_SHADOW": "true",
     "CRYPTO_SHADOW": "true",
     "CRYPTO_SETTLEMENTS": "true"
   }

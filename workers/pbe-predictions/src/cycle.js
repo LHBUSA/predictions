@@ -51,7 +51,7 @@ export function lifecycleFor(states, windowStart, nowMs) {
   return lifecycleOf(link, nowMs);
 }
 
-function venueRow(n, contractId, eventId, lifecycle) {
+export function venueRow(n, contractId, eventId, lifecycle) {
   const prob = bpToProb(n.mid_bp);
   return {
     snapshot_key: `kalshi|${n.market_ticker}|${n.yes_bid_bp}|${n.yes_ask_bp}|${n.last_price_bp}|${n.status_raw}|${hourBucket(n.captured_at)}`,

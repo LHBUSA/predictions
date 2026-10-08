@@ -109,7 +109,8 @@ export async function intradayReport(store) {
 // only contracts that have shadow rows, only grid points where BOTH versions have a row. Outcome = official CLI max on the
 // stored resolution. Readiness (30 resolved climate days, >= 10 stations) is decided inside the frozen report.
 export async function shadowCompareReport(store, { evaluate }) {
-  const shadow = await store.select('pred_forecasts_shadow', { select: 'contract_id,model_version,captured_at,probability,raw_probability,station_id,climate_date,observation_start' }, { order: 'captured_at.asc' });
+  // weather rows only: pred_forecasts_shadow also holds CPI V1 SHADOW rows (sql/015), which never enter this comparison
+  const shadow = await store.select('pred_forecasts_shadow', { select: 'contract_id,model_version,captured_at,probability,raw_probability,station_id,climate_date,observation_start', model_id: 'eq.pbe-weather-maxtemp-intraday' }, { order: 'captured_at.asc' });
   const base = { shadow_rows: shadow.length, first_shadow_capture: shadow[0]?.captured_at ?? null, last_shadow_capture: shadow.at(-1)?.captured_at ?? null,
     shadow_contracts: new Set(shadow.map((r) => r.contract_id)).size, shadow_stations: new Set(shadow.map((r) => r.station_id)).size };
   if (!shadow.length) return { ...base, report: null };

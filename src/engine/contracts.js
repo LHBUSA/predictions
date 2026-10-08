@@ -7,6 +7,7 @@ import { normalizeRates } from '../rates/rates-contract.js';
 import { cliStation } from '../weather/stations.js';
 import { cliWindow } from '../weather/time.js';
 import { normalizeFed } from '../macro/fed-contract.js';
+import { normalizeCpi } from '../macro/cpi/cpi-contract.js';
 
 export const NORMALIZER_VERSION = 'contract-norm/1';
 
@@ -174,6 +175,14 @@ function macroFed(ctx) {
   return { ...base(ctx), ...r };
 }
 
+// CPI V1 (KXCPI / KXCPIYOY / KXCPICOREYOY; KXCPICORE monitoring): normalized by the CPI SHADOW lane only.
+function macroCpi(ctx) {
+  const r = normalizeCpi(ctx);
+  if (!r) return null;
+  if (r.__fail) return fail(r.status, r.reason, ctx, r.extra);
+  return { ...base(ctx), ...r };
+}
+
 function ratesPath(ctx) {
   const r = normalizeRates(ctx);
   if (!r) return null;
@@ -182,7 +191,7 @@ function ratesPath(ctx) {
 }
 
 // Normalizers by product category. Each returns null when its template does not match.
-const CATEGORY_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [macroFed], RATES: [ratesPath] };
+const CATEGORY_NORMALIZERS = { WEATHER: WEATHER_NORMALIZERS, MACRO: [macroFed, macroCpi], RATES: [ratesPath] };
 
 export function registerNormalizer(category, fn) {
   if (!CATEGORY_NORMALIZERS[category]) CATEGORY_NORMALIZERS[category] = [];
