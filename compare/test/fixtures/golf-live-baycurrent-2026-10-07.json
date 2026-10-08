@@ -1,0 +1,2020 @@
+{
+"availability": "available",
+"source": "PropSports",
+"as_of": "2026-10-08T00:16:46.541Z",
+"freshness_seconds": 12,
+"contract": {
+"fresh_seconds": 1200,
+"live_fresh_seconds": 300,
+"stale_seconds": 3600,
+"live_requires": "verified in-progress status + posted scores + snapshot within fresh_seconds"
+},
+"events": [
+{
+"edition": {
+"id": "47367161-7c6e-5ca5-a1fa-ffd8213868cb",
+"slug": "baycurrent-classic-q60987711-2026",
+"name": "2026 Baycurrent Classic",
+"starts_on": "2026-10-08",
+"ends_on": "2026-10-11",
+"division": "men",
+"is_major": false
+},
+"tour": "PGA TOUR",
+"league": "pga",
+"course": {
+"slug": "yokohama-country-club-ec11328",
+"name": "Yokohama Country Club",
+"city": "Yokohama",
+"state": null,
+"country": "Japan"
+},
+"state": "live",
+"label": "LIVE SCORING \u00c2\u00b7 ROUND 1",
+"round": 1,
+"first_tee": null,
+"freshness": "fresh",
+"age_seconds": 12,
+"fetched_at": "2026-10-08T00:16:45.667Z",
+"status_detail": "Round 1 - In Progress",
+"status_name": "STATUS_IN_PROGRESS",
+"status_since": null,
+"status_notes": [],
+"leaders": [
+{
+"slug": "beau-hossler-q1902511",
+"name": "Beau Hossler",
+"total_to_par": -1,
+"thru": 2
+},
+{
+"slug": "keith-mitchell-q55367851",
+"name": "Keith Mitchell",
+"total_to_par": -1,
+"thru": 1
+},
+{
+"slug": "michael-kim-q13475927",
+"name": "Michael Kim",
+"total_to_par": -1,
+"thru": 1
+},
+{
+"slug": "sanghee-lee-e6734",
+"name": "Sanghee Lee",
+"total_to_par": -1,
+"thru": 1
+}
+],
+"within_two": 12,
+"leaderboard": [
+{
+"slug": "beau-hossler-q1902511",
+"name": "Beau Hossler",
+"position": "T1",
+"tied": true,
+"status": "active",
+"total_to_par": -1,
+"today_to_par": -1,
+"today_strokes": 7,
+"thru": 2,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 7,
+"to_par": -1,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "keith-mitchell-q55367851",
+"name": "Keith Mitchell",
+"position": "T1",
+"tied": true,
+"status": "active",
+"total_to_par": -1,
+"today_to_par": -1,
+"today_strokes": 3,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 3,
+"to_par": -1,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "michael-kim-q13475927",
+"name": "Michael Kim",
+"position": "T1",
+"tied": true,
+"status": "active",
+"total_to_par": -1,
+"today_to_par": -1,
+"today_strokes": 3,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 3,
+"to_par": -1,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "sanghee-lee-e6734",
+"name": "Sanghee Lee",
+"position": "T1",
+"tied": true,
+"status": "active",
+"total_to_par": -1,
+"today_to_par": -1,
+"today_strokes": 3,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 3,
+"to_par": -1,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "ben-kohles-q4886014",
+"name": "Ben Kohles",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "denny-mccarthy-q20713239",
+"name": "Denny McCarthy",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 1,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "keita-nakajima-q111112220",
+"name": "Keita Nakajima",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 1,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "kristoffer-ventura-e4351896",
+"name": "Kristoffer Ventura",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "max-greyserman-q127471875",
+"name": "Max Greyserman",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 1,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "pierceson-coody-q120861669",
+"name": "Pierceson Coody",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 8,
+"thru": 2,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 8,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "ren-yonezawa-e4699328",
+"name": "Ren Yonezawa",
+"position": "T5",
+"tied": true,
+"status": "active",
+"total_to_par": 0,
+"today_to_par": 0,
+"today_strokes": 4,
+"thru": 2,
+"start_hole": 1,
+"tee_time": "2026-10-07T23:45Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 4,
+"to_par": 0,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": null,
+"name": "Mac Meissner",
+"position": "12",
+"tied": false,
+"status": "active",
+"total_to_par": 1,
+"today_to_par": 1,
+"today_strokes": 5,
+"thru": 1,
+"start_hole": 10,
+"tee_time": "2026-10-07T23:56Z",
+"rounds": [
+{
+"round": 1,
+"strokes": 5,
+"to_par": 1,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "adam-scott-q350869",
+"name": "Adam Scott",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "aguri-iwasaki-e4867363",
+"name": "Aguri Iwasaki",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "aldrich-potgieter-q120378460",
+"name": "Aldrich Potgieter",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "alex-smalley-q122083425",
+"name": "Alex Smalley",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "andrew-putnam-q16738906",
+"name": "Andrew Putnam",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "billy-horschel-q4912734",
+"name": "Billy Horschel",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "brian-harman-q16209366",
+"name": "Brian Harman",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "chandler-phillips-e4587989",
+"name": "Chandler Phillips",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "christiaan-bezuidenhout-q65030764",
+"name": "Christiaan Bezuidenhout",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "collin-morikawa-q25316367",
+"name": "Collin Morikawa",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "david-lipsky-q2746155",
+"name": "David Lipsky",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "davis-thompson-q116373107",
+"name": "Davis Thompson",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "doug-ghim-q51548031",
+"name": "Doug Ghim",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "hideki-matsuyama-q5956645",
+"name": "Hideki Matsuyama",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "hiroshi-iwata-q11475473",
+"name": "Hiroshi Iwata",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "im-sung-jae-q56224042",
+"name": "Im Sung-jae",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": null,
+"name": "Jackson Suber",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "jacob-bridgeman-q134986006",
+"name": "Jacob Bridgeman",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "jin-ichiro-kozuma-q60986164",
+"name": "Jin'ichir\u00c5\udc8d K\u00c5\udc8dzuma",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "john-parry-q13639726",
+"name": "John Parry",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "johnny-keefer-q136996703",
+"name": "Johnny Keefer",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "jordan-smith-q18088815",
+"name": "Jordan Smith",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "jordan-spieth-q2287947",
+"name": "Jordan Spieth",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "justin-thomas-q15877245",
+"name": "Justin Thomas",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "keegan-bradley-q1353905",
+"name": "Keegan Bradley",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "kevin-roy-e4408320",
+"name": "Kevin Roy",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "kevin-yu-q47667866",
+"name": "Kevin Yu",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "koshin-nagasaki-e5455776",
+"name": "Koshin Nagasaki",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "kosuke-sunagawa-e5240165",
+"name": "Kosuke Sunagawa",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "kurt-kitayama-q59655960",
+"name": "Kurt Kitayama",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "lee-hodges-q121071638",
+"name": "Lee Hodges",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "matt-mccarty-q130377297",
+"name": "Matt McCarty",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "matt-wallace-q30122765",
+"name": "Matt Wallace",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "maverick-mcnealy-q24572718",
+"name": "Maverick McNealy",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "max-homa-q16910142",
+"name": "Max Homa",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "michael-brennan-q136746853",
+"name": "Michael Brennan",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "michael-thorbjornsen-q64746234",
+"name": "Michael Thorbjornsen",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "min-woo-lee-q84691167",
+"name": "Min Woo Lee",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "nick-taylor-q7028025",
+"name": "Nick Taylor",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "nico-echavarria-q116996137",
+"name": "Nico Echavarr\u00c3\u00ada",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:18Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "patrick-rodgers-q17381297",
+"name": "Patrick Rodgers",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "rasmus-neergaard-petersen-q126125602",
+"name": "Rasmus Neergaard-Petersen",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "rickie-fowler-q1364348",
+"name": "Rickie Fowler",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "ricky-castillo-q133277048",
+"name": "Ricky Castillo",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "ryan-gerard-q133856984",
+"name": "Ryan Gerard",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "ryo-hisatsune-q122852012",
+"name": "Ryo Hisatsune",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "sahith-theegala-q96198068",
+"name": "Sahith Theegala",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "stephan-jaeger-e6937",
+"name": "Stephan Jaeger",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:07Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "steven-fisk-q136442908",
+"name": "Steven Fisk",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "takumi-kanaya-q100604640",
+"name": "Takumi Kanaya",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:40Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "taylor-moore-q117390759",
+"name": "Taylor Moore",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "taylor-pendrith-q99772620",
+"name": "Taylor Pendrith",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "tom-hoge-q47370858",
+"name": "Tom Hoge",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:35Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "tomohiro-ishizaka-e4705834",
+"name": "Tomohiro Ishizaka",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:13Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "tony-finau-q17505091",
+"name": "Tony Finau",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "wyndham-clark-q61948301",
+"name": "Wyndham Clark",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:24Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "xander-schauffele-q27306341",
+"name": "Xander Schauffele",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 10,
+"tee_time": "2026-10-08T00:29Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "yoshinori-fujimoto-q2370687",
+"name": "Yoshinori Fujimoto",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T00:51Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "yusaku-hosono-e5145590",
+"name": "Yusaku Hosono",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:02Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+},
+{
+"slug": "zach-bauchou-q140946391",
+"name": "Zach Bauchou",
+"position": "-",
+"tied": false,
+"status": "active",
+"total_to_par": null,
+"today_to_par": null,
+"today_strokes": null,
+"thru": 0,
+"start_hole": 1,
+"tee_time": "2026-10-08T01:46Z",
+"rounds": [
+{
+"round": 1,
+"strokes": null,
+"to_par": null,
+"complete": false
+},
+{
+"round": 2,
+"strokes": null,
+"to_par": null,
+"complete": false
+}
+]
+}
+],
+"holes_available": true,
+"players": 72
+}
+]
+}

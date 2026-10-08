@@ -54,7 +54,9 @@ test('NO MARKETS still works after a positive check', () => {
   assert.equal(LIVE_MARKET_CHIP[viaTargeted.state], 'NO MARKETS');
   const nba = { ...item, sport: 'nba', source_id: '401999999', title: 'SAC @ POR', score: { away: { abbr: 'SAC' }, home: { abbr: 'POR' } } };
   const viaCompleteLane = liveMarketStates([nba], { events: [], lanes: okLanes(), rawEvents: real.events })[0];
-  assert.equal(viaCompleteLane.state, LIVE_MARKET.NONE, 'uncapped ok lane = whole inventory checked');
+  assert.equal(viaCompleteLane.state, LIVE_MARKET.CHECKING, 'an uncapped lane can omit a live game: NONE waits for the targeted read by id');
+  const nbaChecked = liveMarketStates([nba], { events: [], lanes: okLanes(), targeted: new Map([['nba:401999999', { state: 'missing' }]]), rawEvents: real.events })[0];
+  assert.equal(nbaChecked.state, LIVE_MARKET.NONE);
   const notConnected = liveMarketStates([{ ...item, sport: 'wnba', source_id: '1' }], { events: [], lanes: [{ lane: 'wnba', state: 'not_connected', events: 0 }] })[0];
   assert.equal(notConnected.state, LIVE_MARKET.NONE);
 });

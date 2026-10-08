@@ -156,7 +156,7 @@ export function parseScope(q = {}) {
 //   missing      the desk answered 200 and the id is absent = positively checked, no markets
 //   unavailable  the read failed (never reported as "no markets")
 export const TARGETED_MAX_EVENTS = 12;
-export const TARGETED_SPORTS = new Set(['nfl', 'nba', 'nhl', 'mlb', 'wnba', 'soccer', 'tennis']);
+export const TARGETED_SPORTS = new Set(['nfl', 'nba', 'nhl', 'mlb', 'wnba', 'soccer', 'tennis', 'golf']);
 const ID_RE = /^[A-Za-z0-9._:-]{1,80}$/;
 export function parseTargetedIds(raw) {
   const ids = [...new Set(String(raw || '').split(',').map((x) => x.trim()).filter(Boolean))];
@@ -199,7 +199,10 @@ export async function loadTargeted(sport, ids, opts = {}) {
   const lc = laneCache.get(sport);
   if (lc && now() - lc.at <= TARGETED_LANE_MAX_AGE_MS && lc.result.lane.state === 'ok') {
     const inLane = new Set(lc.result.events.map((e) => String(e.canonical_event_id)));
-    if (ids.every((x) => inLane.has(x)) || !lc.result.lane.capped) {
+    // Only ids the cached lane actually contains are answered from it. An uncapped lane is NOT the whole inventory:
+    // 2026-10-08 00:20Z the uncapped WNBA lane (7 events) omitted live NY @ ATL 401918297, which events=401918297
+    // returned with Kalshi prices. Absent ids get the real targeted read (cached, single-flight, breaker).
+    if (ids.every((x) => inLane.has(x))) {
       stats.targeted_from_lane += 1;
       return { ...targetedResult(sport, ids, { ok: true, status: 200, body: { events: lc.result.events, generated_at: lc.result.lane.generated_at }, ms: 0 }), source: 'lane_cache', age_ms: now() - lc.at };
     }

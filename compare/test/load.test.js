@@ -102,11 +102,16 @@ test('targeted: answered from the lane cache (no upstream); identical sets coale
   const f = fakeDesk({ events: { nhl: [ev('1'), ev('2'), ev('3')] } });
   await loadLanes(['nhl'], opts(f, { budgetMs: 1000 }));
   const before = f.calls.length;
-  const a = await loadTargeted('nhl', ['1', '9'], opts(f));
-  assert.equal(a.source, 'lane_cache', 'uncapped lane = complete inventory');
-  assert.deepEqual(a.found, ['1']);
-  assert.deepEqual(a.missing, ['9']);
+  const a = await loadTargeted('nhl', ['1', '2'], opts(f));
+  assert.equal(a.source, 'lane_cache', 'ids the cached lane contains are answered from it');
+  assert.deepEqual(a.found, ['1', '2']);
   assert.equal(f.calls.length, before);
+  // an id the (uncapped) lane does not list is NOT presumed missing: one real targeted read decides (2026-10-08:
+  // the uncapped WNBA lane omitted live 401918297 that events=401918297 returned)
+  const b = await loadTargeted('nhl', ['1', '9'], opts(f));
+  assert.equal(b.source, 'upstream');
+  assert.equal(f.calls.length, before + 1);
+  assert.deepEqual(b.missing, ['9']);
   // capped lane without the id -> one targeted upstream read, shared by concurrent callers, then cached
   _resetLaneState();
   const g = fakeDesk({ delay: { nba: 50 }, events: { nba: Array.from({ length: 50 }, (_, i) => ev(i)).concat([ev('x')]) } });

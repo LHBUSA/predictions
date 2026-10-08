@@ -14,7 +14,13 @@ export const SPORT_KEYS = SPORTS.map((s) => s.key);
 // Soccer (2026-10-05): market canonical_event_id and the score feed's source_id are both the soccer-api match UUID.
 // Tennis (2026-10-06): the market registry and tennis live feed both use our canonical match UUID; exact-id proof
 // captured on live Muchova v Osaka. UFC remains UNMATCHED because the desk lists bouts while its live feed lists cards.
-export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'mlb', 'nhl', 'soccer', 'tennis']);
+// Proven deterministic id joins (score feed id == market-desk canonical_event_id). WNBA: ESPN game id on both sides
+// (2026-10-07, NY @ ATL 401918297). Golf: the score row's market_id = Golf edition UUID, which is the desk's
+// canonical_event_id for the outright field (the Members _market-strip rule slug -> edition UUID); never by title.
+export const ID_JOIN_SPORTS = new Set(['nfl', 'nba', 'wnba', 'mlb', 'nhl', 'soccer', 'tennis', 'golf']);
+// The id a live score row joins the market desk on: market_id when the feed names one (golf), else source_id.
+export const scoreMarketId = (x) => String(x?.market_id ?? x?.source_id ?? '');
+export const scoreKey = (x) => `${x?.sport}:${scoreMarketId(x)}`;
 
 export const BADGES = {
   COMPARABLE: 'Both venues list this outcome and their settlement rules were approved as comparable. The gap is a real price difference on the same question.',
@@ -169,12 +175,12 @@ export function normalizeContract(c) {
 // Score feed index + deterministic join.
 export function scoreIndex(items = []) {
   const m = new Map();
-  for (const it of items) if (it?.sport && it.source_id != null) m.set(`${it.sport}:${String(it.source_id)}`, it);
+  for (const it of items) if (it?.sport && (it.market_id ?? it.source_id) != null) m.set(scoreKey(it), it);
   return m;
 }
 export function joinScore(event, index) {
   const sport = event.sport;
-  if (!sport || sport === 'golf' || sport === 'f1') return { state: 'NOT_APPLICABLE', score: null };
+  if (!sport || sport === 'f1') return { state: 'NOT_APPLICABLE', score: null };
   if (!ID_JOIN_SPORTS.has(sport)) return { state: 'UNMATCHED', score: null, reason: sport === 'ufc' ? 'Market lists bouts; the score feed lists cards. No deterministic bout crosswalk yet.' : 'No proven id crosswalk between this sport\'s market and score feed.' };
   const hit = index.get(`${sport}:${String(event.canonical_event_id)}`);
   return hit ? { state: 'LINKED', score: hit } : { state: 'NO_SCORE', score: null };
@@ -191,8 +197,11 @@ export const LIVE_MARKET = {
 };
 export const LIVE_MARKET_CHIP = {
   none: 'NO MARKETS', checking: 'CHECKING MARKETS', market_source_unavailable: 'MARKETS DELAYED',
-  market_match_failed: 'MARKET CHECK PENDING', not_linked: 'BOUT MARKETS IN UFC HUB'
+  market_match_failed: 'MARKET CHECK PENDING', not_linked: 'MARKET LINK NOT AVAILABLE'
 };
+// Chip text for a live score card's market state. "BOUT MARKETS IN UFC HUB" is UFC's own topology (the score feed
+// lists cards, the desk lists bouts) and is never shown for any other sport.
+export const liveMarketChip = (st) => (st?.state === LIVE_MARKET.NOT_LINKED && st?.sport === 'ufc' ? 'BOUT MARKETS IN UFC HUB' : LIVE_MARKET_CHIP[st?.state] || 'CHECKING MARKETS');
 
 // Team-code aliases across ESPN / NHL / MLB StatsAPI / desk titles -> one code per team (diagnostics only).
 const TEAM_ALIAS = {
@@ -254,8 +263,9 @@ export function liveMarketStates(items = [], { events = [], lanes = null, target
   const byKey = new Map(events.map((e) => [e.key, e]));
   const laneOf = new Map((lanes || []).map((l) => [l.lane, l]));
   return items.map((x) => {
-    const key = `${x.sport}:${x.source_id}`;
-    const base = { key, sport: x.sport, source_id: String(x.source_id), title: x.title || null, matchup_key: matchupKey(x.sport, scoreSides(x.sport, x), x.starts_at || x.start_at) };
+    const key = scoreKey(x);
+    // source_id here is the id checked against the desk (golf: the edition UUID); score_source_id is the feed's own.
+    const base = { key, sport: x.sport, source_id: scoreMarketId(x), score_source_id: String(x.source_id), title: x.title || null, matchup_key: matchupKey(x.sport, scoreSides(x.sport, x), x.starts_at || x.start_at) };
     const ev = byKey.get(key);
     if (ev && ev.contracts.length) {
       const venues = new Set();
@@ -276,10 +286,10 @@ export function liveMarketStates(items = [], { events = [], lanes = null, target
     if (candidates.length) return { ...base, state: LIVE_MARKET.MATCH_FAILED, candidates, reason: 'same_matchup_under_another_id' };
     if (lane?.state === 'not_connected') return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'sport_not_connected' };
     const t = targeted.get(key);
+    // NO MARKETS for an id-joined sport needs the targeted read by id: a whole-sport lane can omit a live game.
     if (t?.state === 'missing') return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'targeted_read_empty' };
-    if (lane?.state === 'ok' && !lane.capped) return { ...base, state: LIVE_MARKET.NONE, market_count: 0, reason: 'complete_lane_empty' };
     if (t?.state === 'unavailable' || lane?.state === 'unavailable') return { ...base, state: LIVE_MARKET.UNAVAILABLE, reason: t?.state === 'unavailable' ? 'targeted_read_failed' : 'lane_unavailable' };
-    return { ...base, state: LIVE_MARKET.CHECKING, reason: lane ? 'lane_capped_awaiting_targeted_read' : 'desk_not_loaded' };
+    return { ...base, state: LIVE_MARKET.CHECKING, reason: lane ? 'awaiting_targeted_read' : 'desk_not_loaded' };
   });
 }
 
@@ -583,4 +593,19 @@ export function hubStats(events) {
     crosses: active.filter((e) => e.contracts.some((c) => c.cross?.state === 'CROSS')).length,
     best: active.reduce((m, e) => (e.best_gap != null && e.best_gap > (m?.best_gap ?? -1) ? e : m), null)
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+export const golfToPar = (v) => (v == null ? '—' : v === 0 ? 'E' : v > 0 ? `+${v}` : String(v));
+export function golfThru(r) {
+  if (r.status && !['active', 'complete'].includes(String(r.status).toLowerCase())) return String(r.status).toUpperCase();
+  if (r.thru == null) return '';
+  return Number(r.thru) >= 18 ? 'F' : `THRU ${r.thru}`;
+}
+export function golfBoardRows(golf) {
+  const rows = (golf?.leaderboard || []).filter((r) => r?.name);
+  if (!rows.length) return [];
+  const lead = rows[0].position;
+  const tiedLead = lead != null ? rows.filter((r) => r.position === lead).length : 1;
+  return rows.slice(0, Math.min(5, Math.max(3, tiedLead)));
 }

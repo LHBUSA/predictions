@@ -18,7 +18,7 @@ test('drift: api/_lib/scores/adapters.js equals the deterministic transform of t
   assert.equal(read('../api/_lib/scores/adapters.js'), transform(read('./fixtures/members-59de9d2/live.js.txt')));
 });
 
-test('drift: every line outside the six documented patches is unchanged from Members', () => {
+test('drift: every line outside the eight documented patches is unchanged from Members', () => {
   const src = read('./fixtures/members-59de9d2/live.js.txt').split('\n');
   const out = new Set(read('../api/_lib/scores/adapters.js').split('\n'));
   const loaderEnd = src.findIndex((l) => l.startsWith('export default async function handler'));
@@ -28,7 +28,9 @@ test('drift: every line outside the six documented patches is unchanged from Mem
     'const SOURCE_TIMEOUT_MS = 4200;',
     'async function getJson(url) {',
     "    headers: { accept: 'application/json', 'user-agent': 'PropBetEdge-Members/1.0' },",
-    '  const body = await getJson(`https://nhl-api.propbetedge.ai/nhl/board?date=${date}`);'
+    '      const away = teamSide(g?.away), home = teamSide(g?.home);', // PATCH 7: WNBA sides -> wnbaSide
+    '  const body = await getJson(`https://nhl-api.propbetedge.ai/nhl/board?date=${date}`);',
+    '        updatedAt:ev?.updated_at || body?.generated_at || null' // PATCH 8: golf keeps its board + market_id
   ]);
   assert.ok(!read('../api/_lib/scores/adapters.js').includes('memberAccess'), 'no second membership check');
   assert.match(read('../api/_lib/scores/adapters.js'), /const SOURCE_TIMEOUT_MS = 6500;/, 'Compare owns a 6.5 s direct score-source budget');

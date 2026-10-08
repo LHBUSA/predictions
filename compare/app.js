@@ -5,7 +5,7 @@
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
-  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, LIVE_MARKET_CHIP, ID_JOIN_SPORTS,
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, liveMarketChip, scoreKey, golfBoardRows, golfToPar, golfThru, ID_JOIN_SPORTS,
   carryDesk, sourceDiagnostics, loadPartnerConfig, partnerOffer
 } from './core.js';
 import { createLifecycle } from './poller.js';
@@ -168,7 +168,7 @@ async function checkLiveMarkets(signal) {
   // Runs as soon as scores exist: it must not wait for the whole-sport desk (10 lane reads, each up to 12 s).
   if (S.checking || S.deskLoading || S.memberState !== 'entitled' || !S.live) return;
   const onDesk = new Set((S.desk?.events || []).map((e) => `${e.sport}:${e.canonical_event_id}`));
-  const live = new Set(liveItemsNow().map((x) => `${x.sport}:${x.source_id}`));
+  const live = new Set(liveItemsNow().map(scoreKey));
   for (const k of S.extra.keys()) if (!live.has(k)) S.extra.delete(k);
   const now = Date.now();
   const bySport = new Map();
@@ -412,12 +412,12 @@ function tennisTickerBody(title, summary, meta = null) {
 
 function plainScoreTickerBody(x) {
   if (!x.score?.away) return '';
-  const row = (side) => `<span class="ticker-score-row">${side?.logo ? `<img src="${esc(side.logo)}" alt="" width="22" height="22">` : '<span class="ticker-logo-fallback"></span>'}<b>${esc(side?.abbr || side?.name || '—')}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
+  const row = (side) => `<span class="ticker-score-row">${side?.logo ? `<img src="${esc(side.logo)}" alt="" width="22" height="22" loading="lazy" decoding="async" data-initials="${esc(String(side?.abbr || side?.name || '?').slice(0, 3).toUpperCase())}">` : '<span class="ticker-logo-fallback"></span>'}<b>${esc(side?.abbr || side?.name || '—')}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
   return `<span class="ticker-score-stack">${row(x.score.away)}${row(x.score.home)}</span>`;
 }
 
-function liveMarketRows(e) {
-  const rows = e.contracts.filter((c) => c.priced).map((c) => {
+function liveMarketRows(e, limit = Infinity) {
+  const rows = e.contracts.filter((c) => c.priced).slice(0, limit).map((c) => {
     const k = c.kalshi, p = pmFor(c);
     const kOn = k?.mid_bp != null, pOn = p?.mid_bp != null;
     if (!kOn && !pOn) return '';
@@ -446,9 +446,30 @@ function liveMarketInsight(e) {
   return 'MARKET ATTACHED · PRICE TEMPORARILY UNAVAILABLE';
 }
 
+// GOLF LIVE BOARD: Golf's own ordered leaderboard (position strings, to-par, thru exactly as Golf publishes them).
+// Tied leaders first, then enough rows for a top 3-5; nothing is ranked or derived here. No rows -> no board.
+function golfBoardHtml(golf) {
+  const rows = golfBoardRows(golf);
+  if (!rows.length) return '';
+  return `<span class="golf-board" aria-label="Live leaderboard">${rows.map((r) => `<span class="golf-row"><em>${esc(r.position ?? '')}</em><b>${esc(r.name)}</b><strong>${esc(golfToPar(r.total_to_par))}</strong><small>${esc(golfThru(r))}</small></span>`).join('')}</span>`;
+}
+function golfHead(s, fallbackTitle) {
+  const g = s?.meta?.golf || {};
+  return `<span class="ticker-title">${esc(s?.title || fallbackTitle || 'Golf tournament')}</span>${g.course ? `<small class="golf-course">${esc(g.course)}</small>` : ''}${golfBoardHtml(g)}`;
+}
+
 function liveCard(e) {
   const s = e.join.score;
   const insight = liveMarketInsight(e);
+  if (e.sport === 'golf') {
+    return `<button type="button" class="lc ticker-game lc-market-card lc-golf-card" data-open="${esc(e.key)}">
+      <span class="lc-h"><span class="sport">GOLF</span><span class="st st-live"><i></i>${esc(s?.status_label || 'LIVE')}</span></span>
+      ${golfHead(s, e.title)}
+      <span class="golf-mkt-h">OUTRIGHT · ${esc(e.field?.n ?? e.contracts.length)} GOLFERS</span>
+      ${liveMarketRows(e, 5)}
+      <small class="ticker-edge">${esc(insight)}</small>
+    </button>`;
+  }
   const markets = liveMarketRows(e);
   if (e.sport === 'tennis') {
     const doubles = String(s?.title || e.title || '').includes(' / ');
@@ -476,12 +497,13 @@ function plainLiveCard(x, st) {
   const doubles = tennis && String(x.title || '').includes(' / ');
   let body;
   if (tennis) body = tennisTickerBody(x.title, x.summary, x.meta);
+  else if (x.sport === 'golf') body = golfHead(x, x.title);
   else if (x.score?.away) body = plainScoreTickerBody(x);
   else body = `<span class="ticker-title">${esc(x.title)}</span>`;
   return `<a class="lc lc-plain ticker-game lc-score-only${tennis ? ' lc-tennis-card' : ''}${doubles ? ' is-doubles' : ''}" href="${esc(x.pbecast_url || x.href || '#')}">
     <span class="lc-h"><span class="sport">${esc(x.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(x.detail || x.status_label || 'LIVE')}</span></span>
     ${body}
-    <small class="no-market-chip${st.state === LIVE_MARKET.NONE ? '' : ' is-pending'}" data-market-state="${esc(st.state)}">${esc(LIVE_MARKET_CHIP[st.state] || 'CHECKING MARKETS')}</small></a>`;
+    <small class="no-market-chip${st.state === LIVE_MARKET.NONE ? '' : ' is-pending'}" data-market-state="${esc(st.state)}">${esc(liveMarketChip(st))}</small></a>`;
 }
 
 function renderLive() {
@@ -494,7 +516,7 @@ function renderLive() {
   window.__compareLiveMarkets = states.map(({ event, ...st }) => st);
   const stateOf = new Map(states.map((st) => [st.key, st]));
   const ids = new Set(marketEvents.map((e) => `${e.sport}:${e.canonical_event_id}`));
-  const scoreOnly = liveItems.filter((x) => !ids.has(`${x.sport}:${x.source_id}`));
+  const scoreOnly = liveItems.filter((x) => !ids.has(scoreKey(x)));
   sec.hidden = S.memberState !== 'entitled' || (!marketEvents.length && !scoreOnly.length);
   if (sec.hidden) { stopMarquee(); return; }
 
@@ -503,11 +525,11 @@ function renderLive() {
   marketBlock.hidden = !marketEvents.length;
   scoreBlock.hidden = !scoreOnly.length;
   $('#live-market-meta').textContent = marketEvents.length ? `${marketEvents.length} LIVE EVENT${marketEvents.length === 1 ? '' : 'S'} · PRICES SHOWN` : '';
-  const none = scoreOnly.filter((x) => stateOf.get(`${x.sport}:${x.source_id}`)?.state === LIVE_MARKET.NONE).length;
+  const none = scoreOnly.filter((x) => stateOf.get(scoreKey(x))?.state === LIVE_MARKET.NONE).length;
   const pending = scoreOnly.length - none;
   $('#live-score-meta').textContent = scoreOnly.length ? `${scoreOnly.length} SCORE-ONLY${none ? ` · ${none} NO MARKETS` : ''}${pending ? ` · ${pending} MARKET CHECK${pending === 1 ? '' : 'S'} PENDING` : ''}` : '';
   liveRail('live-market-cards', marketEvents.map(liveCard), 'market');
-  liveRail('live-score-cards', scoreOnly.slice(0, 24).map((x) => plainLiveCard(x, stateOf.get(`${x.sport}:${x.source_id}`) || { state: LIVE_MARKET.CHECKING })), 'scores');
+  liveRail('live-score-cards', scoreOnly.slice(0, 24).map((x) => plainLiveCard(x, stateOf.get(scoreKey(x)) || { state: LIVE_MARKET.CHECKING, sport: x.sport })), 'scores');
 }
 
 // Each rail keeps its own scroll/marquee state. Market cards always render first; score-only games never displace them.
