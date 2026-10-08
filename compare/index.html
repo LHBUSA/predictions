@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://a.espncdn.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261008golf">
+  <link rel="stylesheet" href="/style.css?v=20261008board">
 </head>
 <body>
 <header class="top">
@@ -58,7 +58,10 @@
   </section>
 
   <section id="live" class="live" hidden aria-label="Live now">
-    <div class="sec-head"><h2><span class="pulse"></span>LIVE NOW</h2><small id="live-meta">SCORES & MARKET MOVES</small></div>
+    <div class="sec-head live-head">
+      <div class="live-title"><h2><span class="pulse"></span>LIVE NOW</h2><small id="live-meta">SCORES & MARKET MOVES</small><small class="live-sub">LIVE MARKET COMMAND BOARD</small></div>
+      <div id="live-summary" class="live-summary" aria-label="Live market summary"></div>
+    </div>
     <div id="live-market-block" class="live-tier" hidden>
       <div class="live-tier-head"><strong>LIVE MARKETS</strong><small id="live-market-meta"></small></div>
       <div id="live-market-cards" class="live-cards"></div>
@@ -93,6 +96,6 @@
   </nav>
   <p>Venue numbers are PropBetEdge timestamped observations of public venue reads, not live order books. A spread is shown only between contracts whose settlement rules were approved as comparable. Kalshi and Polymarket marks identify the venues. PropBetEdge participates in Kalshi's referral program and may receive compensation from qualifying Kalshi referrals; it does not affect which markets are shown, how they are classified or ranked. Nothing here is investment advice.</p>
 </footer>
-<script type="module" src="/app.js?v=20261008golf"></script>
+<script type="module" src="/app.js?v=20261008board"></script>
 </body>
 </html>

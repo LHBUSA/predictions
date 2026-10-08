@@ -5,7 +5,7 @@
 import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
-  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, liveMarketChip, scoreKey, golfBoardRows, golfToPar, golfThru, ID_JOIN_SPORTS,
+  CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, liveMarketChip, scoreKey, golfBoardRows, golfToPar, golfThru, rankLiveMarkets, featuredLive, liveSummary, boardColumns, ID_JOIN_SPORTS,
   carryDesk, sourceDiagnostics, loadPartnerConfig, partnerOffer
 } from './core.js';
 import { createLifecycle } from './poller.js';
@@ -449,16 +449,25 @@ function liveMarketInsight(e) {
 // GOLF LIVE BOARD: Golf's own ordered leaderboard (position strings, to-par, thru exactly as Golf publishes them).
 // Tied leaders first, then enough rows for a top 3-5; nothing is ranked or derived here. No rows -> no board.
 function golfBoardHtml(golf) {
-  const rows = golfBoardRows(golf);
-  if (!rows.length) return '';
+  const all = golfBoardRows(golf);
+  if (!all.length) return '';
+  // Command-board cell: at most three of Golf's rows; further players tied at the lead are counted, never dropped silently.
+  const rows = all.slice(0, 3);
+  const leadPos = all[0].position;
+  const moreTied = leadPos != null ? (golf?.leaderboard || []).filter((r) => r?.position === leadPos).length - rows.filter((r) => r.position === leadPos).length : 0;
   return `<span class="golf-board" aria-label="Live leaderboard">${rows.map((r) => `<span class="golf-row"><em>${esc(r.position ?? '')}</em><b>${esc(r.name)}</b><strong>${esc(golfToPar(r.total_to_par))}</strong><small>${esc(golfThru(r))}</small></span>`).join('')}</span>`;
 }
 function golfHead(s, fallbackTitle) {
   const g = s?.meta?.golf || {};
-  return `<span class="ticker-title">${esc(s?.title || fallbackTitle || 'Golf tournament')}</span>${g.course ? `<small class="golf-course">${esc(g.course)}</small>` : ''}${golfBoardHtml(g)}`;
+  const all = golfBoardRows(g);
+  const leadPos = all[0]?.position;
+  const shown = all.slice(0, 3).filter((r) => r.position === leadPos).length;
+  const moreTied = leadPos != null ? (g.leaderboard || []).filter((r) => r?.position === leadPos).length - shown : 0;
+  const sub = [g.course, moreTied > 0 ? `+${moreTied} MORE TIED AT ${golfToPar(all[0].total_to_par)}` : null].filter(Boolean).join(' · ');
+  return `<span class="ticker-title">${esc(s?.title || fallbackTitle || 'Golf tournament')}</span>${sub ? `<small class="golf-course">${esc(sub)}</small>` : ''}${golfBoardHtml(g)}`;
 }
 
-function liveCard(e) {
+function liveCard(e, featured = false) {
   const s = e.join.score;
   const insight = liveMarketInsight(e);
   if (e.sport === 'golf') {
@@ -466,7 +475,7 @@ function liveCard(e) {
       <span class="lc-h"><span class="sport">GOLF</span><span class="st st-live"><i></i>${esc(s?.status_label || 'LIVE')}</span></span>
       ${golfHead(s, e.title)}
       <span class="golf-mkt-h">OUTRIGHT · ${esc(e.field?.n ?? e.contracts.length)} GOLFERS</span>
-      ${liveMarketRows(e, 5)}
+      ${liveMarketRows(e, 3)}
       <small class="ticker-edge">${esc(insight)}</small>
     </button>`;
   }
@@ -480,16 +489,42 @@ function liveCard(e) {
       <small class="ticker-edge">${esc(insight)}</small>
     </button>`;
   }
-  const lines = e.contracts.slice(0, 2).map((c) => {
+  return proCard(e, featured);
+}
+
+// PREMIUM LIVE MARKET CARD (command board): sport + clock / both teams with mark, name and score / one price table
+// (Kalshi | Poly columns, a rules-differ quote marked *) / gap + comparability state / direct actions. The card opens
+// the drawer; the PBEcast link inside it navigates on its own.
+function venueState(e) {
+  const hasK = e.contracts.some((c) => c.kalshi?.mid_bp != null);
+  const hasP = e.contracts.some((c) => pmFor(c)?.mid_bp != null);
+  const related = e.contracts.some((c) => !c.polymarket && c.related.some((r) => r.venue === 'polymarket' && r.mid_bp != null));
+  if (hasK && hasP) return related ? 'RULES DIFFER' : e.badge === 'COMPARABLE' ? 'COMPARABLE' : 'BOTH VENUES';
+  return hasK ? 'KALSHI ONLY' : hasP ? 'POLY ONLY' : 'PRICE PENDING';
+}
+function proCard(e, featured = false) {
+  const s = e.join.score;
+  const two = e.contracts.slice(0, 2);
+  const team = (c) => {
     const side = sideFor(e, c);
-    return `<span class="ticker-team">${avatar(e, c, 'sm')}<b>${esc(side?.abbr || c.label)}</b><strong>${esc(side?.score ?? '—')}</strong></span>`;
+    const name = side?.name && side.name !== side?.abbr ? side.name : '';
+    return `<span class="pro-team">${avatar(e, c, 'md')}<span class="pro-name"><b>${esc(side?.abbr || c.label)}</b>${name ? `<small>${esc(name)}</small>` : ''}</span><strong>${esc(side?.score ?? '—')}</strong></span>`;
+  };
+  const price = (q, rel) => (q?.mid_bp != null ? `<span class="pro-px${rel ? ' is-related' : ''}">${esc(fmtCents(q.yes_bp ?? q.mid_bp))}${rel ? '*' : ''}</span>` : '<span class="pro-px is-none">—</span>');
+  const rows = two.map((c) => {
+    const p = pmFor(c), rel = !c.polymarket && !!p;
+    return `<span class="pro-row"><b>${esc(sideFor(e, c)?.abbr || c.label || 'Market')}</b>${price(c.kalshi, false)}${price(p, rel)}</span>`;
   }).join('');
-  return `<button type="button" class="lc ticker-game lc-market-card" data-open="${esc(e.key)}">
-    <span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
-    <span class="ticker-score">${lines}</span>
-    ${markets}
-    <small class="ticker-edge">${esc(insight)}</small>
-  </button>`;
+  const state = venueState(e);
+  const crosses = e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
+  const gap = e.best_gap != null && state !== 'RULES DIFFER' ? `MAX GAP ${e.best_gap.toFixed(1)}¢` : '';
+  const cast = s?.pbecast_url || null;
+  return `<div role="button" tabindex="0" class="lc ticker-game lc-market-card lc-pro${featured ? ' is-featured' : ''}" data-open="${esc(e.key)}">
+    ${featured ? '<span class="pro-feat">FEATURED LIVE</span>' : ''}<span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
+    <span class="pro-teams">${two.map(team).join('')}</span>
+    <span class="pro-mkt"><span class="pro-row pro-row-h"><b></b><span><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12">KALSHI</span><span><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12">POLY</span></span>${rows}</span>
+    <span class="pro-foot"><span class="pro-state"><b>${esc(gap || state)}</b>${gap ? `<em>${esc(state)}</em>` : ''}${crosses ? `<em class="is-cross">${crosses} CROSS${crosses === 1 ? '' : 'ES'}</em>` : ''}</span>${cast ? `<a class="pro-act" href="${esc(cast)}">PBECAST →</a>` : '<span class="pro-act">OPEN →</span>'}</span>
+  </div>`;
 }
 
 function plainLiveCard(x, st) {
@@ -510,7 +545,7 @@ function renderLive() {
   const sec = $('#live');
   // Every linked live event with contracts is a market card (liveCard labels a missing price). Score-only cards
   // carry their checked market state, never a default "NO MARKETS".
-  const marketEvents = S.events.filter((e) => e.live && e.contracts.length);
+  const marketEvents = rankLiveMarkets(S.events.filter((e) => e.live && e.contracts.length));
   const liveItems = liveItemsNow();
   const states = liveStatesNow();
   window.__compareLiveMarkets = states.map(({ event, ...st }) => st);
@@ -528,7 +563,10 @@ function renderLive() {
   const none = scoreOnly.filter((x) => stateOf.get(scoreKey(x))?.state === LIVE_MARKET.NONE).length;
   const pending = scoreOnly.length - none;
   $('#live-score-meta').textContent = scoreOnly.length ? `${scoreOnly.length} SCORE-ONLY${none ? ` · ${none} NO MARKETS` : ''}${pending ? ` · ${pending} MARKET CHECK${pending === 1 ? '' : 'S'} PENDING` : ''}` : '';
-  liveRail('live-market-cards', marketEvents.map(liveCard), 'market');
+  const sum = liveSummary(marketEvents);
+  $('#live-summary').innerHTML = marketEvents.length ? [`<span><b>${sum.markets}</b> MARKETS</span>`, sum.comparable ? `<span><b>${sum.comparable}</b> COMPARABLE</span>` : '',
+    sum.rules_differ ? `<span><b>${sum.rules_differ}</b> RULES DIFFER</span>` : '', sum.largest_gap != null ? `<span class="is-gap">LARGEST GAP <b>${esc(sum.largest_gap.toFixed(1))}¢</b></span>` : ''].join('') : '';
+  liveRail('live-market-cards', marketEvents.map((e, i) => liveCard(e, i === 0 && featuredLive(e))), 'market');
   liveRail('live-score-cards', scoreOnly.slice(0, 24).map((x) => plainLiveCard(x, stateOf.get(scoreKey(x)) || { state: LIVE_MARKET.CHECKING, sport: x.sport })), 'scores');
 }
 
@@ -551,11 +589,21 @@ function liveRail(id, cards, key) {
     box.addEventListener('focusin', () => { mq.paused = true; });
     box.addEventListener('focusout', () => { mq.paused = false; });
   }
-  if (!cards.length) { stopRail(key); box.innerHTML=''; box.classList.remove('marquee'); return; }
+  if (!cards.length) { stopRail(key); box.innerHTML=''; box.classList.remove('marquee', 'lc-board'); return; }
+  // Desktop: live market cards are a command grid (every card visible, no marquee). Phones keep the swipe rail.
+  const board = key === 'market' && window.innerWidth > 720;
+  box.classList.toggle('lc-board', board);
+  if (board) {
+    stopRail(key); box.classList.remove('marquee');
+    box.style.setProperty('--cols', String(boardColumns(window.innerWidth, cards.length)));
+    box.innerHTML = cards.join('');
+    return;
+  }
+  box.style.removeProperty('--cols');
   const on = cards.length >= MARQUEE_MIN && !reducedMotion();
   box.classList.toggle('marquee', on);
   if (!on) { stopRail(key); box.innerHTML = cards.join(''); return; }
-  const copy = cards.map((h) => h.replace(/^<(a|button)\b/, '<$1 tabindex="-1" aria-hidden="true" data-copy'));
+  const copy = cards.map((h) => h.replace(/^<(a|button|div)\b/, '<$1 tabindex="-1" aria-hidden="true" data-copy'));
   box.innerHTML = `<div class="lc-track">${cards.join('')}${copy.join('')}</div>`;
   box.dataset.n = String(cards.length);
   if (!mq.raf) { mq.last = 0; mq.raf = requestAnimationFrame((t) => stepMarquee(key, t)); }
@@ -783,6 +831,7 @@ function openDrawer(key) {
 }
 function closeDrawer() { if (!S.open) return; S.open = ''; writeUrl(); render(); }
 document.addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-open] a[href]')) return;
   const t = ev.target.closest('[data-scope],[data-view],[data-when],[data-open],[data-close],[data-more],[data-reset],[data-retry],#acct,#drawer-bg');
   if (!t) return;
   if (t.matches('#acct') && (S.memberState === 'unverified' || S.memberState === 'network_error')) { ev.preventDefault(); boot(); return; }
@@ -795,7 +844,18 @@ document.addEventListener('click', (ev) => {
   if (t.matches('[data-reset]')) { S.view = 'all'; S.when = 'all'; S.page = 1; writeUrl(); render(); return; }
   if (t.dataset.open) { openDrawer(t.dataset.open); }
 });
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && S.open) closeDrawer(); });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && S.open) { closeDrawer(); return; }
+  const card = ev.target?.closest?.('[role="button"][data-open]');
+  if (card && ev.target === card && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openDrawer(card.dataset.open); }
+});
+// The command grid's column count follows the viewport; re-render the live tier on a real width change only.
+let lastBoardW = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (Math.abs(window.innerWidth - lastBoardW) < 40 && (window.innerWidth > 720) === (lastBoardW > 720)) return;
+  lastBoardW = window.innerWidth;
+  if (S.live) renderLive();
+});
 window.addEventListener('popstate', () => {
   const prevScope = S.scope;
   readUrl();

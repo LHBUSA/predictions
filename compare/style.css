@@ -547,3 +547,75 @@ button:disabled{cursor:default}
 .golf-row strong{font-variant-numeric:tabular-nums}
 .golf-row small{font-size:10px;letter-spacing:.06em;color:var(--muted);text-align:right;white-space:nowrap}
 .golf-mkt-h{display:block;margin-top:2px;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:var(--muted)}
+
+/* ---------- LIVE COMMAND BOARD (2026-10-08) ----------
+   Desktop: the live market tier is a grid (no marquee); its height is its content. The old marquee track was one
+   flex row as tall as its tallest card (the golf board, 332 px), so every 130 px card sat on ~200 px of empty floor.
+   Here each row sizes to its own cards, golf spans two rows, and the gold panel hugs the last row. Phones (<=720)
+   keep the swipe rail. */
+.live-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 18px;flex-wrap:wrap}
+.live-title{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 14px;min-width:0}
+.live>.sec-head.live-head h2{font-size:19px;letter-spacing:.18em;margin:0}
+.live-title #live-meta{font:700 11px var(--mono);letter-spacing:.08em;color:var(--paper)}
+.live-sub{grid-column:1 / -1;font:700 9px var(--mono);letter-spacing:.2em;color:var(--gold)}
+.live-summary{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.live-summary span{font:700 10px/1 var(--mono);letter-spacing:.07em;color:var(--muted);padding:6px 9px;border:1px solid var(--line-2);border-radius:7px;background:rgba(255,255,255,.025);white-space:nowrap}
+.live-summary b{color:var(--paper);font-size:11.5px}
+.live-summary .is-gap b{color:var(--up)}
+.live-summary:empty{display:none}
+@media (min-width:721px){
+  #live-market-cards.lc-board{display:grid!important;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));grid-auto-flow:row dense;gap:10px;overflow:visible;padding:0;-webkit-mask-image:none;mask-image:none}
+  #live-market-cards.lc-board>.lc{flex:none!important;width:auto!important;min-width:0!important;max-width:none!important;align-self:stretch!important;min-height:176px!important;padding:12px 13px 10px;gap:7px}
+  #live-market-cards.lc-board .lc-h .sport,#live-market-cards.lc-board .lc-h .st-live{font-size:10.5px}
+  #live-market-cards.lc-board .ticker-market-row b{font-size:12px}
+  #live-market-cards.lc-board .ticker-venue{font-size:11px!important;padding:4px 6px!important}
+  #live-market-cards.lc-board .golf-row{font-size:13px}
+  #live-market-cards.lc-board .golf-row b,#live-market-cards.lc-board .golf-row strong,#live-market-cards.lc-board .golf-row em{font-size:13px}
+}
+.lc-pro{cursor:pointer;align-content:stretch;grid-template-rows:auto auto 1fr auto}
+.lc-pro:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.lc-pro.is-featured{border-color:rgba(245,166,35,.78);box-shadow:inset 0 1px 0 rgba(245,166,35,.16),0 0 0 1px rgba(245,166,35,.18)}
+.lc-pro{position:relative}
+.pro-feat{position:absolute;top:-7px;left:12px;font:800 8px/1 var(--mono);letter-spacing:.14em;color:#1a1408;background:var(--gold);padding:3px 6px;border-radius:4px;white-space:nowrap}
+.pro-teams{display:grid;gap:4px}
+.pro-team{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;min-width:0}
+.pro-team .av{width:30px;height:30px}
+.pro-name{display:grid;min-width:0;line-height:1.15}
+.pro-name b{font:700 14px var(--mono);color:var(--paper)}
+.pro-name small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pro-team strong{font:700 22px/1 var(--mono);color:var(--paper);font-variant-numeric:tabular-nums}
+.pro-mkt{display:grid;gap:2px;padding-top:6px;border-top:1px solid var(--line);align-content:start}
+.pro-row{display:grid;grid-template-columns:minmax(0,1fr) 74px 74px;align-items:center;gap:6px}
+.pro-row>b{font:700 12px var(--mono);color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pro-row-h>span{display:flex;align-items:center;justify-content:flex-end;gap:4px;font:800 8.5px/1 var(--mono);letter-spacing:.12em;color:var(--faint)}
+.pro-row-h img{border-radius:3px}
+.pro-px{justify-self:end;font:700 14px/1 var(--mono);color:var(--paper);font-variant-numeric:tabular-nums}
+.pro-px.is-related{color:var(--warn)}
+.pro-px.is-none{color:var(--faint)}
+.pro-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:5px;border-top:1px solid var(--line);min-width:0}
+.pro-state{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
+.pro-state b{font:800 10px/1.2 var(--mono);letter-spacing:.08em;color:var(--up)}
+.pro-state em{font:700 9px/1.2 var(--mono);font-style:normal;letter-spacing:.08em;color:var(--muted)}
+.pro-state em.is-cross{color:var(--gold)}
+.pro-act{flex:none;font:800 9.5px/1 var(--mono);letter-spacing:.1em;color:var(--paper);padding:5px 8px;border:1px solid var(--line-2);border-radius:6px;text-decoration:none;background:rgba(255,255,255,.03)}
+a.pro-act:hover{border-color:rgba(245,166,35,.6);color:var(--gold)}
+@media (max-width:720px){
+  .live-title{grid-template-columns:auto}
+  .live-summary{justify-content:flex-start}
+  .live-cards:not(.marquee)>.lc-pro{flex-basis:300px;min-width:300px;max-width:300px}
+  .lc-track>.lc-pro{width:290px;flex-basis:290px}
+  .pro-team strong{font-size:19px}
+}
+#live-market-cards.lc-board .lc-golf-card .golf-board{margin:2px 0 3px}
+#live-market-cards.lc-board .lc-golf-card .ticker-market-grid{gap:2px}
+#live-market-cards .lc-golf-card .golf-course{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:-3px 0 0}
+#live-market-cards .lc-golf-card .ticker-market-row{min-height:0}
+#live-market-cards .lc-golf-card{gap:5px}
+#live-market-cards .lc-golf-card .golf-board{gap:0}
+#live-market-cards .lc-golf-card .golf-row b,#live-market-cards .lc-golf-card .golf-row strong,#live-market-cards .lc-golf-card .golf-row em{line-height:1.25}
+#live-market-cards .lc-golf-card .ticker-market-grid{gap:1px;padding-top:3px}
+#live-market-cards .lc-golf-card .ticker-venue{padding:2px 5px!important}
+#live-market-cards .lc-golf-card .golf-mkt-h{margin-top:0}
+/* phone rail: market cards share one height (the track is as tall as its tallest card; no floor under short cards) */
+#live-market-cards .lc-track{align-items:stretch}
+#live-market-cards .lc-track>.lc,#live-market-cards:not(.lc-board)>.lc{align-self:stretch}

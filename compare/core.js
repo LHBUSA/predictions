@@ -609,3 +609,40 @@ export function golfBoardRows(golf) {
   const tiedLead = lead != null ? rows.filter((r) => r.position === lead).length : 1;
   return rows.slice(0, Math.min(5, Math.max(3, tiedLead)));
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// LIVE COMMAND BOARD (presentation only, 2026-10-08). Orders the already-live market cards; never changes the
+// comparison ranking or any model. 1 PBE call · 2 largest valid mid gap · 3 top-of-book cross · 4 closest live
+// score · 5 the rest in their incoming order.
+const crossCount = (e) => e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
+const scoreMargin = (e) => {
+  const s = e.join?.score?.score;
+  const a = Number(s?.away?.score), h = Number(s?.home?.score);
+  return s && Number.isFinite(a) && Number.isFinite(h) && s.away.score != null && s.home.score != null ? Math.abs(a - h) : Infinity;
+};
+export function rankLiveMarkets(events = []) {
+  return events.map((e, i) => ({ e, i })).sort((x, y) =>
+    Number(Boolean(y.e.has_pbe)) - Number(Boolean(x.e.has_pbe))
+    || (y.e.best_gap ?? -1) - (x.e.best_gap ?? -1)
+    || crossCount(y.e) - crossCount(x.e)
+    || scoreMargin(x.e) - scoreMargin(y.e)
+    || x.i - y.i).map((x) => x.e);
+}
+// A card earns FEATURED LIVE only on a real signal (PBE call, a positive mid gap, or a cross).
+export const featuredLive = (e) => Boolean(e && (e.has_pbe || (e.best_gap ?? 0) > 0 || crossCount(e) > 0));
+// Header summary from the loaded live events only (no extra request).
+export function liveSummary(events = []) {
+  const gaps = events.map((e) => e.best_gap).filter((g) => g != null);
+  return {
+    markets: events.length,
+    comparable: events.filter((e) => e.badge === 'COMPARABLE' && e.best_gap != null).length,
+    rules_differ: events.filter((e) => e.badge === 'RULE_MISMATCH').length,
+    largest_gap: gaps.length ? Math.max(...gaps) : null
+  };
+}
+// Desktop command-grid columns for a viewport width; 1-5 live cards share one row when they fit (>= 260 px each).
+export function boardColumns(width, n) {
+  const base = width >= 2048 ? 5 : width >= 1440 ? 4 : width >= 1024 ? 3 : 2;
+  if (n <= 5 && n > 0) { const fit = Math.max(1, Math.floor((Math.min(width, 1480) - 40) / 260)); return Math.min(n, Math.max(base, Math.min(fit, 5))); }
+  return base;
+}
