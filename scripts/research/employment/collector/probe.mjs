@@ -40,7 +40,19 @@ const push = git('push', '-q', 'origin', `HEAD:refs/heads/${branch}`);
 const head = git('rev-parse', 'HEAD').out;
 const remote = git('ls-remote', 'origin', `refs/heads/${branch}`).out.split(/\s+/)[0] || null;
 rec.git = { ...steps, push_exit: push.code, push_out: push.out.slice(0, 200), local_head: head, remote_head: remote, remote_confirmed: !!remote && remote === head };
-rec.pass = rec.public_fetch?.status === 200 && rec.ssh_auth.authenticated && rec.git.remote_confirmed;
+// PASS needs ALL four: verified logged-out execution (no console user AND no desktop shell running), HTTPS 200 from
+// the public source, SSH authenticated as the probe deploy key, and the pushed commit read back from the remote.
+// A run with every mechanism working but a user signed in is only a CONTROL, never a PASS.
+rec.checks = {
+  logged_out_verified: rec.console_user === 'none' && rec.explorer_processes === 0,
+  https_200: rec.public_fetch?.status === 200,
+  ssh_authenticated: rec.ssh_auth.authenticated === true,
+  remote_commit_confirmed: rec.git.remote_confirmed === true,
+};
+const mechanics = rec.checks.https_200 && rec.checks.ssh_authenticated && rec.checks.remote_commit_confirmed;
+rec.verdict = mechanics && rec.checks.logged_out_verified ? 'PASS' : mechanics ? 'CONTROL_SIGNED_IN' : 'FAIL';
+rec.pass = rec.verdict === 'PASS';
+rec.exit_code = rec.verdict === 'PASS' ? 0 : rec.verdict === 'CONTROL_SIGNED_IN' ? 2 : 1;
 appendFileSync(join(dir, '..', `probe-results-${label}.jsonl`), JSON.stringify(rec) + '\n'); // outside the clone, kept even if git fails
 writeFileSync(join(dir, '..', `probe-last-${label}.json`), JSON.stringify(rec, null, 1));
-process.exitCode = rec.pass ? 0 : 1;
+process.exitCode = rec.exit_code;
