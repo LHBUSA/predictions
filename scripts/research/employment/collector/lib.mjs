@@ -1,6 +1,6 @@
 // Employment Tier A research collector: pure helpers (no I/O). Owner-approved 2026-10-08, data and prices only:
 // no model fitting, no forecasts, no trading. Never imported by the Worker.
-export const COLLECTOR_VERSION = 'employment-collector/1';
+export const COLLECTOR_VERSION = 'employment-collector/2';
 export const ET = 'America/New_York';
 export const SERIES = ['KXU3', 'KXPAYROLLS'];
 // Kalshi snapshot slots: N days before the release date, 20:00 America/New_York (T-1D 20:00 = the pre-registered cutoff)

@@ -19,9 +19,13 @@ import { fileURLToPath } from 'node:url';
 import { COLLECTOR_VERSION, SERIES, TICK_GAP_MS, compactUtc, deriveBook, etParts, eventTicker, parseBlsSchedule, plan, slotTimes, takerFee } from './lib.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const EVIDENCE = process.env.EMP_EVIDENCE_DIR || 'D:\\Workers\\employment-evidence';
+const EVIDENCE = process.env.EMP_EVIDENCE_DIR || 'E:\\Workers\\employment-evidence';
 const REPO = process.env.EMP_EVIDENCE_REPO || 'LHBUSA/pbe-employment-evidence';
-const WEBHOOK_FILE = 'D:\\Workers\\secrets\\employment-collector-alert-webhook';
+// secrets and the fallback log live on NTFS C: under a user-only ACL (D:/E: are exFAT and cannot be access-controlled)
+const SECRET_DIR = process.env.EMP_SECRET_DIR || 'C:\\Users\\goodl\\.pbe-employment-collector';
+const WEBHOOK_FILE = join(SECRET_DIR, 'alert-webhook-url'); // ntfy.sh topic URL or Slack-compatible incoming webhook
+const HEALTHCHECK_FILE = join(SECRET_DIR, 'healthcheck-url'); // optional dead-man's switch (pinged every successful tick)
+const FALLBACK_LOG = join(SECRET_DIR, 'fallback.log');
 const STATE_DIR = join(EVIDENCE, '.state');
 const KALSHI = 'https://api.elections.kalshi.com/trade-api/v2';
 const UA = 'Mozilla/5.0 (compatible; research-bot)';
@@ -55,24 +59,33 @@ function sntp(host, timeout = 2000) {
     t0 = Date.now(); s.send(msg, 123, host, (e) => { if (e) end(null); });
   });
 }
+// Windows Time service status as reported by w32tm (works without admin while the service runs)
+function windowsTime() {
+  try {
+    const out = sh('w32tm', ['/query', '/status'], HERE);
+    const f = (k) => (out.match(new RegExp(`^${k}:\\s*(.*)$`, 'mi')) || [])[1]?.trim() ?? null;
+    return { running: true, source: f('Source'), last_successful_sync: f('Last Successful Sync Time'), leap_indicator: f('Leap Indicator'), stratum: f('Stratum'), poll_interval: f('Poll Interval') };
+  } catch (e) { return { running: false, error: String(e.stdout || e.message).trim().slice(0, 160) }; }
+}
 async function measureClock() {
   const samples = (await Promise.all(NTP_HOSTS.map((h) => sntp(h)))).filter((x) => x && x.stratum > 0 && x.stratum < 16);
   const offs = samples.map((x) => x.offset_ms).sort((a, b) => a - b);
   const offset = offs.length ? offs[Math.floor(offs.length / 2)] : 0;
-  return { source: offs.length ? 'sntp-median' : 'local-unsynchronized', offset_ms: offset, samples, measured_at_local_utc: new Date().toISOString(), now: () => Date.now() + offset };
+  return { source: offs.length ? 'sntp-median' : 'local-unsynchronized', offset_ms: offset, samples, measured_at_local_clock_utc: new Date().toISOString(), windows_time: windowsTime(), now: () => Date.now() + offset };
 }
 let clock = { now: () => Date.now(), offset_ms: 0, source: 'uninitialized', samples: [] };
 const iso = (ms) => new Date(ms).toISOString();
-const clockRecord = () => ({ source: clock.source, offset_ms: clock.offset_ms, samples: clock.samples, note: 'utc = local clock + offset_ms (median SNTP)' });
+const clockRecord = () => ({ source: clock.source, offset_ms: clock.offset_ms, samples: clock.samples, measured_at_local_clock_utc: clock.measured_at_local_clock_utc, windows_time: clock.windows_time, note: 'Every *_utc = raw local clock + offset_ms (median SNTP, independent of Windows Time); raw local readings are kept as *_local_clock_utc.' });
 
 // ---------- http ----------
 async function get(url, { tries = 3, timeoutMs = 25000 } = {}) {
   for (let i = 1; ; i++) {
-    const started = clock.now();
+    const rawStart = Date.now(); const started = rawStart + clock.offset_ms;
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA, accept: '*/*' }, signal: AbortSignal.timeout(timeoutMs) });
       const body = Buffer.from(await r.arrayBuffer());
-      const meta = { url, status: r.status, attempt: i, request_started_utc: iso(started), response_completed_utc: iso(clock.now()), server_date: r.headers.get('date'), last_modified: r.headers.get('last-modified'), etag: r.headers.get('etag'), content_type: r.headers.get('content-type'), bytes: body.length, sha256: sha(body) };
+      const rawEnd = Date.now();
+      const meta = { url, status: r.status, attempt: i, request_started_utc: iso(started), response_completed_utc: iso(rawEnd + clock.offset_ms), request_started_local_clock_utc: iso(rawStart), response_completed_local_clock_utc: iso(rawEnd), server_date: r.headers.get('date'), last_modified: r.headers.get('last-modified'), etag: r.headers.get('etag'), content_type: r.headers.get('content-type'), bytes: body.length, sha256: sha(body) };
       if ((r.status === 429 || r.status >= 500) && i < tries) { await sleep(1500 * i); continue; }
       return { ok: r.status === 200, body, meta };
     } catch (e) {
@@ -118,11 +131,34 @@ const saveState = (s) => writeJson(statePath, s);
 let state;
 function throttled(key, ms) { const last = state.throttle[key] || 0; if (clock.now() - last < ms) return true; state.throttle[key] = clock.now(); return false; }
 
+// Off-machine delivery. ntfy.sh topics get a plain-text body with a Title header; anything else gets Slack-style JSON.
+async function deliverWebhook(title, message) {
+  if (!existsSync(WEBHOOK_FILE)) return 'not configured';
+  const url = readFileSync(WEBHOOK_FILE, 'utf8').trim();
+  const ntfy = /^https:\/\/ntfy\.sh\/[A-Za-z0-9_-]+$/.test(url);
+  const r = await fetch(url, ntfy
+    ? { method: 'POST', headers: { Title: title, Priority: 'high', Tags: 'warning' }, body: message, signal: AbortSignal.timeout(10000) }
+    : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: `${title}: ${message}` }), signal: AbortSignal.timeout(10000) });
+  return r.status;
+}
+// Used when the evidence drive itself is unavailable: no ledger, no state, so de-dup and log live on C:
+async function fallbackAlert(kind, message) {
+  mkdirSync(SECRET_DIR, { recursive: true });
+  appendFileSync(FALLBACK_LOG, `${new Date().toISOString()}\t${kind}\t${message}\n`);
+  const mark = join(SECRET_DIR, `last-${kind}`); const day = etParts(Date.now()).date;
+  if (existsSync(mark) && readFileSync(mark, 'utf8') === day) return;
+  writeFileSync(mark, day);
+  let res; try { res = await deliverWebhook(`Employment collector: ${kind}`, message); } catch (e) { res = `failed: ${e.message}`; }
+  appendFileSync(FALLBACK_LOG, `${new Date().toISOString()}\t${kind}\twebhook=${res}\n`);
+}
+
 async function alert(kind, message) {
   ledger('ALERT', { kind, message });
   const day = etParts(clock.now()).date;
-  if (state.alerts[kind] === day) return; // one external alert per kind per ET day; the ledger keeps every occurrence
-  state.alerts[kind] = day;
+  // external delivery at most once per kind+subject per ET day; the ledger keeps every occurrence
+  const dedupe = `${kind}|${message.slice(0, 60)}`;
+  if (state.alerts[dedupe] === day) return;
+  state.alerts[dedupe] = day;
   const title = `Employment collector: ${kind}`;
   const results = {};
   try {
@@ -133,9 +169,7 @@ async function alert(kind, message) {
   } catch (e) { results.toast = `failed: ${String(e.message).slice(0, 120)}`; }
   if (!NO_EXTERNAL_ALERT) {
     try { results.github_issue = sh('gh', ['issue', 'create', '-R', REPO, '-t', `${title} (${day})`, '-b', `${message}\n\nat ${iso(clock.now())} from ${hostname()} (${COLLECTOR_VERSION})`], HERE); } catch (e) { results.github_issue = `failed: ${String(e.message).slice(0, 120)}`; }
-    if (existsSync(WEBHOOK_FILE)) {
-      try { const r = await fetch(readFileSync(WEBHOOK_FILE, 'utf8').trim(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: `${title}: ${message}` }), signal: AbortSignal.timeout(10000) }); results.webhook = r.status; } catch (e) { results.webhook = `failed: ${String(e.message).slice(0, 120)}`; }
-    } else results.webhook = 'not configured';
+    try { results.webhook = await deliverWebhook(title, message); } catch (e) { results.webhook = `failed: ${String(e.message).slice(0, 120)}`; }
   }
   ledger('ALERT_DELIVERY', { kind, results });
 }
@@ -306,14 +340,33 @@ function commitAndPush(summary) {
   git('commit', '-q', '-m', `capture: ${summary}`, '-m', `collector ${code.version} code ${code.commit}${code.dirty ? ' (dirty)' : ''} host ${hostname()}`);
   const head = git('rev-parse', 'HEAD');
   if (NO_PUSH) return { committed: head, pushed: false };
-  try { git('push', '-q', 'origin', 'HEAD:main'); state.push_failing_since = null; return { committed: head, pushed: true }; } catch (e) {
+  try {
+    git('push', '-q', 'origin', 'HEAD:main'); state.push_failing_since = null;
+    appendFileSync(join(STATE_DIR, 'pushed-heads.log'), `${new Date(clock.now()).toISOString()}\t${head}\n`);
+    return { committed: head, pushed: true };
+  } catch (e) {
     state.push_failing_since ||= clock.now();
     return { committed: head, pushed: false, error: String(e.message).slice(0, 200) };
   }
 }
 
+// The remote must still contain the last head this collector pushed (detects a rewritten or reset evidence branch).
+function remoteHistory() {
+  const log = join(STATE_DIR, 'pushed-heads.log');
+  const last = existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).at(-1)?.split('\t')[1] : null;
+  if (!last) return { status: 'NO_PUSHED_HEADS' };
+  try { git('fetch', '-q', 'origin'); } catch (e) { return { status: 'FETCH_FAILED', error: String(e.message).slice(0, 160) }; }
+  try { git('merge-base', '--is-ancestor', last, 'origin/main'); return { status: 'OK', last_pushed: last, remote_head: git('rev-parse', 'origin/main') }; } catch { return { status: 'REWRITTEN', last_pushed: last, remote_head: git('rev-parse', 'origin/main') }; }
+}
+
+async function healthPing(ok) {
+  if (!existsSync(HEALTHCHECK_FILE)) return;
+  try { await fetch(`${readFileSync(HEALTHCHECK_FILE, 'utf8').trim()}${ok ? '' : '/fail'}`, { signal: AbortSignal.timeout(10000) }); } catch { /* the dead-man's switch alerts on silence anyway */ }
+}
+
 // ---------- commands ----------
 async function tick() {
+  if (!existsSync(join(EVIDENCE, '.git'))) { await fallbackAlert('EVIDENCE_DRIVE_MISSING', `evidence repo not found at ${EVIDENCE} (USB drive unplugged or letter changed); nothing collected`); process.exitCode = 1; return; }
   const lock = join(STATE_DIR, 'lock');
   mkdirSync(STATE_DIR, { recursive: true });
   if (existsSync(lock) && Date.now() - (readJson(lock)?.at || 0) < 10 * 60000) return;
@@ -357,16 +410,21 @@ async function tick() {
     if (freeBytes < MIN_FREE_BYTES) await alert('DISK_LOW', `${(freeBytes / 1e9).toFixed(2)} GB free on the evidence drive`);
     if (state.heartbeat_day !== day) {
       const next = calendar.flatMap((r) => slotTimes(r).map((s) => ({ key: `${r.release_date}/${s.slot}`, at: iso(s.at) }))).filter((s) => Date.parse(s.at) > now).slice(0, 3);
-      ledger('HEARTBEAT', { clock: { source: clock.source, offset_ms: clock.offset_ms }, disk_free_gb: +(freeBytes / 1e9).toFixed(2), next_slots: next, code: codeIdentity() });
+      const history = remoteHistory();
+      ledger('HEARTBEAT', { clock: { source: clock.source, offset_ms: clock.offset_ms, windows_time: clock.windows_time }, disk_free_gb: +(freeBytes / 1e9).toFixed(2), remote_history: history, next_slots: next, code: codeIdentity() });
+      if (history.status === 'REWRITTEN') await alert('HISTORY_REWRITTEN', `origin/main ${history.remote_head} no longer contains last pushed ${history.last_pushed}`);
       state.heartbeat_day = day; did.push('heartbeat');
     }
-    if (state.push_failing_since && now - state.push_failing_since > 2 * 3600000) await alert('PUSH_FAILING', `evidence push failing since ${iso(state.push_failing_since)}`);
+    if (!clock.windows_time?.running && !throttled('w32time-alert', 86400000)) await alert('WINDOWS_TIME_STOPPED', 'Windows Time service is not running; timestamps use SNTP correction. Owner admin step: Start-Service w32time.');
+    if (state.push_failing_since && now - state.push_failing_since > 20 * 60000) await alert('PUSH_FAILING', `evidence push failing since ${iso(state.push_failing_since)}`);
     const g = commitAndPush(did.join('; ') || 'ledger');
     state.last_tick_utc = iso(now);
-    appendFileSync(join(STATE_DIR, 'ticks.log'), `${iso(now)}\toffset_ms=${clock.offset_ms}\t${did.join('; ') || '-'}\t${g.committed ? `commit ${String(g.committed).slice(0, 7)} pushed=${g.pushed}` : 'no-change'}\n`);
+    appendFileSync(join(STATE_DIR, 'ticks.log'), `${iso(now)}\toffset_ms=${clock.offset_ms}\tw32time=${clock.windows_time?.running ? 'running' : 'stopped'}\t${did.join('; ') || '-'}\t${g.committed ? `commit ${String(g.committed).slice(0, 7)} pushed=${g.pushed}` : 'no-change'}\n`);
+    await healthPing(g.pushed !== false || !g.committed);
   } catch (e) {
     appendFileSync(join(STATE_DIR, 'ticks.log'), `${new Date().toISOString()}\tERROR\t${String(e?.stack || e).replace(/\s+/g, ' ').slice(0, 400)}\n`);
     try { await alert('TICK_ERROR', String(e?.message || e).slice(0, 300)); commitAndPush('tick error'); } catch { /* best effort */ }
+    await healthPing(false);
     process.exitCode = 1;
   } finally { saveState(state); rmSync(lock, { force: true }); }
 }
@@ -398,7 +456,9 @@ function verify() {
   }
   for (const f of ls(join(EVIDENCE, 'kalshi', 'terms'))) { files += 1; if (`${sha(readFileSync(join(EVIDENCE, 'kalshi', 'terms', f)))}.pdf` !== f) { bad += 1; problems.push(`terms ${f}`); } }
   let ledgerLines = 0; for (const f of ls(join(EVIDENCE, 'ledger'))) for (const l of readFileSync(join(EVIDENCE, 'ledger', f), 'utf8').split('\n').filter(Boolean)) { ledgerLines += 1; try { JSON.parse(l); } catch { problems.push(`ledger ${f}`); } }
-  const out = { files_hashed: files, hash_mismatches: bad, kalshi_snapshots: snaps, order_books_rederived: rederived, ledger_lines: ledgerLines, problems };
+  const remote = remoteHistory();
+  if (remote.status === 'REWRITTEN') problems.push(`remote history rewritten: ${JSON.stringify(remote)}`);
+  const out = { evidence: EVIDENCE, files_hashed: files, hash_mismatches: bad, kalshi_snapshots: snaps, order_books_rederived: rederived, ledger_lines: ledgerLines, remote_history: remote, problems };
   console.log(JSON.stringify(out, null, 1));
   if (problems.length) process.exitCode = 1;
 }
