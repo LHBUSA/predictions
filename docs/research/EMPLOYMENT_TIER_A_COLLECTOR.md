@@ -43,7 +43,7 @@ A snapshot holds:
 Windows Time (w32time) is stopped on this host and cannot be started without admin. Each run therefore measures its
 clock offset by SNTP against time.cloudflare.com, time.google.com and time.windows.com. It records every `*_utc` field
 as local clock + median offset, alongside the raw samples. An alert fires if the offset is over 2 s or no server
-answers. Owner fix: run `owner-admin-setup.ps1` (this folder) elevated. It enables Windows Time with explicit NTP peers and switches both tasks to S4U, so they run whether or not anyone is signed in. Until then a WINDOWS_TIME_STOPPED alert is logged daily.
+answers. Owner fix (clock only): run `owner-clock-setup.ps1` (this folder) elevated. It starts Windows Time on its existing default configuration (time.windows.com, NTP), sets it to start automatically, and resyncs once. It changes no task and no NTP policy. Unattended operation is a separate track: the scheduled tasks stay as they are until `owner-probe-tasks.ps1` proves a network-capable logged-out identity in separate probe tasks. The earlier combined script was withdrawn on the owner's direction and never run. Until Windows Time runs, a WINDOWS_TIME_STOPPED alert is logged daily.
 The external proof of time is the GitHub push record of the evidence repo. Git commit dates are self-reported.
 
 ## Missed runs and no-backfill
