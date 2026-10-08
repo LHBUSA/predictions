@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseEmpsitRelease } from '../src/macro/employment/bls-empsit.js';
 import { parseClaimsRelease } from '../src/macro/employment/dol-claims.js';
+import { parseEmpsitLevels } from '../src/macro/employment/bls-levels.js';
+import { parseInsuredRate } from '../src/macro/employment/dol-iur.js';
 import { firstPrints, releaseAtUtc, u3ReprintConsistency } from '../src/macro/employment/ledger.js';
 import { buildFeatureRow, claimsIndex, cutoffFor, referenceSaturday } from '../src/macro/employment/features.js';
 import { employmentTerms, parseEmploymentTicker, probabilityAbove, yesOutcome } from '../src/macro/employment/employment-contract.js';
@@ -222,4 +224,23 @@ test('legacy Kalshi tickers map to the same series; the rules checks still fail 
   assert.ok(employmentTerms(legacy).ok);
   assert.equal(employmentTerms({ ...legacy, rules_primary: 'If the unemployment rate (U-3) is above 4.0% in May 2024 then the market resolves to Yes.' }).ok, false);
   assert.equal(employmentTerms({ ...legacy, floor_strike: 3.999999 }).reason, 'STRIKE_FIELDS_DISAGREE_WITH_RULES');
+});
+
+// ------------------------------------------------------------------ V2 ledger extension (research only, no fitting)
+test('V2 extension: first-print SA levels reproduce the published U-3; a level that does not is refused; shutdown month null', () => {
+  const dec = parseEmpsitLevels(fx('empsit_01092026.trim.htm'));
+  assert.ok(dec.ok);
+  assert.deepEqual([dec.reference_month, dec.reference_levels.civilian_labor_force_k, dec.reference_levels.unemployed_k, dec.reference_levels.u3_published], ['2025-12', 171495, 7503, 4.4]);
+  assert.equal(dec.levels_by_month.unemployed_k['2025-10'], null); // October 2025 household survey not collected: null, never 0
+  const jan08 = parseEmpsitLevels(fx('empsit_02012008.trim.htm'));
+  assert.deepEqual([jan08.format, jan08.reference_levels.civilian_labor_force_k, jan08.reference_levels.unemployed_k], ['text-tables', 153824, 7576]);
+  const tampered = fx('empsit_01092026.trim.htm').replace('7,503', '7,903');
+  assert.equal(parseEmpsitLevels(tampered).reason, 'LEVELS_DISAGREE_WITH_RATE');
+});
+
+test('V2 extension: advance SA IUR must be for the release continuing-claims week; table-only documents fail closed', () => {
+  const t = fx('dol_100126.txt'); const rec = parseClaimsRelease(t);
+  assert.deepEqual(parseInsuredRate(t, rec), { ok: true, week_ending: '2026-09-19', iur_sa_pct: 1.1, sentence: 'advance seasonally adjusted insured unemployment rate was 1.1 percent for the week ending September 19' });
+  assert.equal(parseInsuredRate(t, { ...rec, continuing_week_ending: '2026-09-26' }).reason, 'IUR_WEEK_NOT_CONTINUING_WEEK');
+  assert.equal(parseInsuredRate('Insured Unemployment Rate (SA)2 1.7% 1.8% 1.9%', rec).reason, 'NO_IUR_SENTENCE');
 });

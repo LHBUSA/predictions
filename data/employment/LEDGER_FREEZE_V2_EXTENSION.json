@@ -1,0 +1,24 @@
+{
+ "frozen_at": "2026-10-08T15:38:47.659Z",
+ "purpose": "Employment V2 point-in-time ledger extension (EMPLOYMENT_V2_PROTOCOL.md section 3), frozen before any V2 fit; V2 status HOLD",
+ "versions": {
+  "bls_levels_parser": "bls-levels-parser/1",
+  "dol_iur_parser": "dol-iur-parser/1"
+ },
+ "files": {
+  "data/employment/bls-empsit-levels-v1.json": {
+   "sha256": "68b31206bb0d9d10e00734df4ba2588e45b750e254c4ff7f817ae1d2d3fc2195"
+  },
+  "data/employment/dol-iur-releases-v1.json": {
+   "sha256": "6e168555bc8da2171f1272279bcd01f9f394cea4b2df1bef9abeb26927c775d6"
+  },
+  "docs/research/employment-v2-extension-manual-proof.json": {
+   "sha256": "148a357b534c1632d96b3694fa2e2885546306307bb81733f37fea70651ff387"
+  }
+ },
+ "depends_on": {
+  "data/employment/LEDGER_FREEZE.json": {
+   "sha256": "6da8d084f817579c29d91f4ada24e59f4494301de960067761596e183ec9697e"
+  }
+ }
+}

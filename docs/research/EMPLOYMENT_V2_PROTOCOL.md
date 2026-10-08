@@ -108,3 +108,11 @@ with sha256 recorded in this file's amendments.
 ## Change log
 - 2026-10-08: frozen from the proposal on the owner's direction. Added the separate commercial gate (6.2) and the
   settlement-vs-observation rule (2). Status HOLD.
+- 2026-10-08 15:39Z: section 3 ledger extension built and frozen (`data/employment/LEDGER_FREEZE_V2_EXTENSION.json`),
+  with no fit and no feature/target analysis. BLS levels: 224/224 releases parsed. In every release,
+  round(100 * unemployed / civilian labor force, 1) reproduced the published U-3 (0 refusals). October 2025 levels are
+  null, as printed. DOL advance SA IUR: 1,021 of 1,022 frozen claims releases parsed. One document (2021-10-28) prints the
+  SA rate only in its table, with no narrative sentence. It is refused (week 2021-10-16 = INPUT_UNAVAILABLE) and not
+  read by another extraction path. Manual proof 20/20 (`employment-v2-extension-manual-proof.json`). V1 ledgers and V1
+  freeze unchanged. Status remains HOLD.
+

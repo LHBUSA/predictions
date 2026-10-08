@@ -13,11 +13,11 @@ export const EMPSIT_PARSER_VERSION = 'bls-empsit-parser/2';
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
 const FULL = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const mkey = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
-const monOf = (s) => { const k = String(s).toLowerCase().replace(/\./g, ''); return MON[k.startsWith('sept') ? 'sept' : k.slice(0, 3)]; };
+export const mkey = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+export const monOf = (s) => { const k = String(s).toLowerCase().replace(/\./g, ''); return MON[k.startsWith('sept') ? 'sept' : k.slice(0, 3)]; };
 export const shiftMonth = (key, n) => { const [y, m] = key.split('-').map(Number); const t = y * 12 + (m - 1) + n; return mkey(Math.floor(t / 12), (t % 12) + 1); };
-const decode = (s) => String(s).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim();
-const numOrNull = (s) => { const t = String(s).replace(/[,\s]/g, '').replace(/\(p\)|p$/i, ''); if (t === '-' || t === '' || t === '–') return null; const v = Number(t.replace(/^\./, '0.').replace(/^-\./, '-0.')); return Number.isFinite(v) ? v : NaN; };
+export const decode = (s) => String(s).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim();
+export const numOrNull = (s) => { const t = String(s).replace(/[,\s]/g, '').replace(/\(p\)|p$/i, ''); if (t === '-' || t === '' || t === '–') return null; const v = Number(t.replace(/^\./, '0.').replace(/^-\./, '-0.')); return Number.isFinite(v) ? v : NaN; };
 
 // The release's own headline. A title quoted inside a correction note ("... USDL 08-0757, "THE EMPLOYMENT SITUATION:
 // MAY 2008."") is not the headline, so matches preceded by a quote mark are skipped.
@@ -47,11 +47,11 @@ export function releaseMeta(html) {
 }
 
 // ------------------------------------------------------------------ HTML format
-function tableByCaption(html, re) {
+export function tableByCaption(html, re) {
   for (const m of html.matchAll(/<table[\s\S]*?<\/table>/gi)) { const cap = m[0].match(/<caption[\s\S]*?<\/caption>/i); if (cap && re.test(decode(cap[0]))) return m[0]; }
   return null;
 }
-function htmlTable(table) {
+export function htmlTable(table) {
   const head = (table.match(/<thead[\s\S]*?<\/thead>/i) || [''])[0];
   const cols = [...head.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)].map((c) => decode(c[1])).slice(1).map((label) => {
     if (/change/i.test(label)) return null;
@@ -66,7 +66,7 @@ function htmlTable(table) {
   }
   return { cols, rows };
 }
-function rowByMonth({ cols, rows }, labelRe) {
+export function rowByMonth({ cols, rows }, labelRe) {
   const row = rows.find((r) => labelRe.test(r.label));
   if (!row) return null;
   const out = {};
@@ -84,7 +84,7 @@ function parseHtmlFormat(html) {
 }
 
 // ------------------------------------------------------------------ plain-text format
-function textHeaderKeys(lines, i) {
+export function textHeaderKeys(lines, i) {
   // the first two non-empty lines after a "Not seasonally adjusted" banner hold month tokens and year tokens
   const mon = []; const yrs = [];
   for (let j = i + 1; j < Math.min(lines.length, i + 12) && !yrs.length; j++) {

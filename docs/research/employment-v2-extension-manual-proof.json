@@ -1,0 +1,266 @@
+{
+ "bls": [
+  {
+   "file": "empsit_02012008.htm",
+   "sha256": "103fa881d219c9d4b4bfcd6ef6c37d77d93ecb30b822e6dba53a5b7909715a7b",
+   "reference_month": "2008-01",
+   "clf_line": "Civilian labor force....................... 151,924 153,705 152,828 152,958 153,506 153,306 153,828 153,866 153,824",
+   "unemployed_line": "Unemployed............................... 7,649 7,371 8,221 7,043 7,246 7,291 7,181 7,655 7,576",
+   "ledger": {
+    "civilian_labor_force_k": 153824,
+    "unemployed_k": 7576,
+    "u3_published": 4.9,
+    "u3_unrounded": 4.925109215727065
+   },
+   "u3_unrounded": 4.9251,
+   "match": true
+  },
+  {
+   "file": "empsit_09042009.htm",
+   "sha256": "8675d74e6757c611802b50fae1d4b243b2d2c9a577ba9b486ecf58c0d08ea7cd",
+   "reference_month": "2009-08",
+   "clf_line": "Civilian labor force....................... 155,387 156,255 154,897 154,823 154,731 155,081 154,926 154,504 154,577",
+   "unemployed_line": "Unemployed............................... 9,479 15,201 14,823 9,550 13,724 14,511 14,729 14,462 14,928",
+   "ledger": {
+    "civilian_labor_force_k": 154577,
+    "unemployed_k": 14928,
+    "u3_published": 9.7,
+    "u3_unrounded": 9.65732288762235
+   },
+   "u3_unrounded": 9.6573,
+   "match": true
+  },
+  {
+   "file": "empsit_01082010.htm",
+   "sha256": "55edc05d3d669e7204688d01188fb587a7af85335de0ea1ed525687e18e76f05",
+   "reference_month": "2009-12",
+   "clf_line": "Civilian labor force.................. 154,587 154,140 154,401 154,164 154,718 154,956 154,759 154,351 154,426 153,927 153,854 153,720 153,059",
+   "unemployed_line": "Unemployed.......................... 11,400 11,919 12,714 13,310 13,816 14,518 14,721 14,534 14,993 15,159 15,612 15,340 15,267",
+   "ledger": {
+    "civilian_labor_force_k": 153059,
+    "unemployed_k": 15267,
+    "u3_published": 10,
+    "u3_unrounded": 9.974584963968143
+   },
+   "u3_unrounded": 9.9746,
+   "match": true
+  },
+  {
+   "file": "empsit_06052015.htm",
+   "sha256": "5f5d0f81d8fa2d330691931ca0b78fd7e61454889b05d79097dba72195596e42",
+   "reference_month": "2015-05",
+   "clf_line": "Civilian labor force Civilian labor force 155,629 156,906 157,072 157,469 397",
+   "unemployed_line": "Unemployed Unemployed 9,761 8,575 8,549 8,674 125",
+   "ledger": {
+    "civilian_labor_force_k": 157469,
+    "unemployed_k": 8674,
+    "u3_published": 5.5,
+    "u3_unrounded": 5.508385777518114
+   },
+   "u3_unrounded": 5.5084,
+   "match": true
+  },
+  {
+   "file": "empsit_04032020.htm",
+   "sha256": "94e3bd4a1fe3a6c3d56fc253b0a8a3d3b976ac861807100cf4bfa4a0b6f183cb",
+   "reference_month": "2020-03",
+   "clf_line": "Civilian labor force Civilian labor force 162,935 164,606 164,546 162,913 -1,633",
+   "unemployed_line": "Unemployed Unemployed 6,194 5,892 5,787 7,140 1,353",
+   "ledger": {
+    "civilian_labor_force_k": 162913,
+    "unemployed_k": 7140,
+    "u3_published": 4.4,
+    "u3_unrounded": 4.382707334589628
+   },
+   "u3_unrounded": 4.3827,
+   "match": true
+  },
+  {
+   "file": "empsit_05082020.htm",
+   "sha256": "a3d21b889c6f4683bd0b54b33214965a24e948a2733797bb2f06f365eee6bcba",
+   "reference_month": "2020-04",
+   "clf_line": "Civilian labor force Civilian labor force 162,546 164,546 162,913 156,481 -6,432",
+   "unemployed_line": "Unemployed Unemployed 5,850 5,787 7,140 23,078 15,938",
+   "ledger": {
+    "civilian_labor_force_k": 156481,
+    "unemployed_k": 23078,
+    "u3_published": 14.7,
+    "u3_unrounded": 14.748116384736806
+   },
+   "u3_unrounded": 14.7481,
+   "match": true
+  },
+  {
+   "file": "empsit_11202025.htm",
+   "sha256": "32423903015128e72093392cfaf331a097db1aeb2e8e7d300bec15eef9b6dd8e",
+   "reference_month": "2025-09",
+   "clf_line": "Civilian labor force Civilian labor force 168,703 170,342 170,778 171,248 470",
+   "unemployed_line": "Unemployed Unemployed 6,901 7,236 7,384 7,603 219",
+   "ledger": {
+    "civilian_labor_force_k": 171248,
+    "unemployed_k": 7603,
+    "u3_published": 4.4,
+    "u3_unrounded": 4.439759880407363
+   },
+   "u3_unrounded": 4.4398,
+   "match": true
+  },
+  {
+   "file": "empsit_12162025.htm",
+   "sha256": "69c3fa7418e51c61aebe003969fc72878c19f3ea9c25e14155e244a2591e7947",
+   "reference_month": "2025-11",
+   "clf_line": "Civilian labor force Civilian labor force 168,304 171,248 - 171,571 -",
+   "unemployed_line": "Unemployed Unemployed 7,121 7,603 - 7,831 -",
+   "ledger": {
+    "civilian_labor_force_k": 171571,
+    "unemployed_k": 7831,
+    "u3_published": 4.6,
+    "u3_unrounded": 4.564291168087847
+   },
+   "u3_unrounded": 4.5643,
+   "match": true
+  },
+  {
+   "file": "empsit_01092026.htm",
+   "sha256": "4d20ca5fe1f2198dc1a0257f5ba7bd831d2f3e489e8d535e9f2d03d46d4cb2eb",
+   "reference_month": "2025-12",
+   "clf_line": "Civilian labor force Civilian labor force 168,506 170,696 170,441 170,641 171,054 170,492 170,380 170,412 170,750 171,261 - 171,541 171,495",
+   "unemployed_line": "Unemployed Unemployed 6,920 6,865 7,104 7,132 7,155 7,248 7,054 7,272 7,380 7,605 - 7,781 7,503",
+   "ledger": {
+    "civilian_labor_force_k": 171495,
+    "unemployed_k": 7503,
+    "u3_published": 4.4,
+    "u3_unrounded": 4.375054666316802
+   },
+   "u3_unrounded": 4.3751,
+   "match": true
+  },
+  {
+   "file": "empsit_10022026.htm",
+   "sha256": "1de7921a0f1a8fe0d512e9faf5f588383d65e2e3a90e62d8c6c8c7c730f4c4fe",
+   "reference_month": "2026-09",
+   "clf_line": "Civilian labor force Civilian labor force 171,261 169,094 169,777 170,262 485",
+   "unemployed_line": "Unemployed Unemployed 7,605 6,916 7,031 7,109 78",
+   "ledger": {
+    "civilian_labor_force_k": 170262,
+    "unemployed_k": 7109,
+    "u3_published": 4.2,
+    "u3_unrounded": 4.17532978585944
+   },
+   "u3_unrounded": 4.1753,
+   "match": true
+  }
+ ],
+ "dol": [
+  {
+   "key": "2007/010407.asp",
+   "sha256": "53baf613862edd418d3a6b7e695dc0cf9efdcb2b0c28b922e0c0dad9f7e2e75b",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.9 percent for the week ending Dec",
+   "ledger": {
+    "week_ending": "2006-12-23",
+    "iur_sa_pct": 1.9,
+    "release_at": "2007-01-04T13:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2008/022108.asp",
+   "sha256": "c89d31669a9afd0749dde3130543eee7a560d977a6aa8615b21645aff91845a2",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 2.1 percent for the week ending Feb",
+   "ledger": {
+    "week_ending": "2008-02-09",
+    "iur_sa_pct": 2.1,
+    "release_at": "2008-02-21T13:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2011/080411.asp",
+   "sha256": "63b20888477cd0b9a30152484529423a26d0f99fe9300c541480bec9471cdb24",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 3.0 percent for the week ending July 23, unchanged from the prior week'",
+   "ledger": {
+    "week_ending": "2011-07-23",
+    "iur_sa_pct": 3,
+    "release_at": "2011-08-04T12:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2014/010214.asp",
+   "sha256": "e52f393406c6edc16fa326ea044bd11dea883c487e390977ebba7b3bf2482b6b",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 2.2 percent for the week ending December 21, unchanged from the prior w",
+   "ledger": {
+    "week_ending": "2013-12-21",
+    "iur_sa_pct": 2.2,
+    "release_at": "2014-01-02T13:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2016/061616.pdf",
+   "sha256": "d8475bf748c3df2025ea354af47adbf92192da01f132c200f76aba910e0a25b7",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.6 percent for the week ending June 4, an increase of 0",
+   "ledger": {
+    "week_ending": "2016-06-04",
+    "iur_sa_pct": 1.6,
+    "release_at": "2016-06-16T12:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2020/032620.pdf",
+   "sha256": "ec3128982162a957a8f2ef8fb1cc2b4c24c20e9785d6e5363da554f5d542b640",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.2 percent for the week ending March 14, unchanged from the previous w",
+   "ledger": {
+    "week_ending": "2020-03-14",
+    "iur_sa_pct": 1.2,
+    "release_at": "2020-03-26T12:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2020/040220.pdf",
+   "sha256": "38249e6298e9c79f73c5fa56556734ab8ae85131c44b7585df0fc77f0a4e2304",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 2.1 percent for the week ending March 21, an increase of 0",
+   "ledger": {
+    "week_ending": "2020-03-21",
+    "iur_sa_pct": 2.1,
+    "release_at": "2020-04-02T12:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2025/092525.pdf",
+   "sha256": "a5ee3eb9712e480a09307f00fa2a818ba2b30f119b93bfa4f74d948782244558",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.3 percent for the week ending September 13, unchanged from the previo",
+   "ledger": {
+    "week_ending": "2025-09-13",
+    "iur_sa_pct": 1.3,
+    "release_at": "2025-09-25T12:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2025/112025.pdf",
+   "sha256": "7d02bdbd386763679f73260ed403956ca93b8bdc27460ddaa1664da2f0ec24c0",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.3 percent for the week ending November 8, unchanged from the previous",
+   "ledger": {
+    "week_ending": "2025-11-08",
+    "iur_sa_pct": 1.3,
+    "release_at": "2025-11-20T13:30:00.000Z"
+   },
+   "match": true
+  },
+  {
+   "key": "2026/100826.pdf",
+   "sha256": "8c7f16d98620ec0c61ae851f4acc53881606bdd2026f2d00d3a1972d9c8e091d",
+   "sentence": "advance seasonally adjusted insured unemployment rate was 1.1 percent for the week ending September 26, unchanged from the previo",
+   "ledger": {
+    "week_ending": "2026-09-26",
+    "iur_sa_pct": 1.1,
+    "release_at": "2026-10-08T12:30:00.000Z"
+   },
+   "match": true
+  }
+ ]
+}
