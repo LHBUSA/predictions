@@ -1,0 +1,6545 @@
+{
+ "target": "KXPAYROLLS",
+ "units": "10,000 persons (0.1 = 1,000 persons)",
+ "model_version": "employment-v1/0.1.0-research",
+ "feature_version": "employment-features/1",
+ "cutoff_rule": "T-1D 20:00 America/New_York",
+ "hyper": {
+  "ridgeLambda": 2,
+  "studentNu": 5,
+  "ewmaHalfLifeMonths": 24,
+  "empiricalWindow": 60,
+  "meanWindow": 12,
+  "minTrain": 36
+ },
+ "gate": {
+  "metric": "mean per-origin ladder binary log loss (floor 1e-4)",
+  "ciLowerAbove": 0,
+  "coverage80": [
+   0.72,
+   0.88
+  ],
+  "bootstrap": {
+   "block": 12,
+   "reps": 2000,
+   "seed": 20261008
+  }
+ },
+ "ledger_freeze": {
+  "path": "data/employment/LEDGER_FREEZE.json",
+  "sha256": "6da8d084f817579c29d91f4ada24e59f4494301de960067761596e183ec9697e"
+ },
+ "inputs": {
+  "releases": {
+   "path": "data/employment/bls-empsit-releases-v1.json",
+   "sha256": "ed7206bb37a6fd7d0ee8c3cfda3d0ae1e18a7a7e090e38faa16ea298cb935add"
+  },
+  "firstPrints": {
+   "path": "data/employment/bls-empsit-first-prints-v1.json",
+   "sha256": "7c763c3ec87a72e83368526d3c6156720c0075060a32a88789dd56c986e0c148"
+  },
+  "claims": {
+   "path": "data/employment/dol-claims-releases-v1.json",
+   "sha256": "56c0d204dfe8978269f2706fa5c223042703606012e9b12042595f26063ecd55"
+  }
+ },
+ "dataset_sha256": "35a014f4812fdca6eedbc15ff80cee4d395d51fe9e509ba3b2257f37f00e9a94",
+ "origins": {
+  "n": 177,
+  "common": 177,
+  "first": "2011-04",
+  "last": "2026-09",
+  "no_forecast": [
+   {
+    "month": "2008-01",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "PAY_M1": "payroll change for 2007-12 not published by the cutoff",
+     "PAY_M2": "payroll change for 2007-11 not published by the cutoff",
+     "PAY_M3": "payroll change for 2007-10 not published by the cutoff"
+    }
+   },
+   {
+    "month": "2008-02",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "PAY_M2": "payroll change for 2007-12 not published by the cutoff",
+     "PAY_M3": "payroll change for 2007-11 not published by the cutoff"
+    }
+   },
+   {
+    "month": "2008-03",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "PAY_M3": "payroll change for 2007-12 not published by the cutoff"
+    }
+   },
+   {
+    "month": "2011-11",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "CC_REF": "continuing claims for week ending 2011-11-12 not published by the cutoff"
+    }
+   },
+   {
+    "month": "2011-12",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "CC_REF_PREV": "continuing claims for week ending 2011-11-12 not published by the cutoff"
+    }
+   },
+   {
+    "month": "2012-03",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "IC4_REF": "initial claims for the 4 weeks ending 2012-03-17 not all published by the cutoff"
+    }
+   },
+   {
+    "month": "2012-04",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "IC4_REF_PREV": "initial claims for the 4 weeks ending 2012-03-17 not all published by the cutoff"
+    }
+   },
+   {
+    "month": "2019-10",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "IC4_REF": "initial claims for the 4 weeks ending 2019-10-12 not all published by the cutoff"
+    }
+   },
+   {
+    "month": "2019-11",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "IC4_REF_PREV": "initial claims for the 4 weeks ending 2019-10-12 not all published by the cutoff"
+    }
+   },
+   {
+    "month": "2025-11",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "PAY_M1": "payroll change for 2025-10 not published by the cutoff",
+     "CC_REF_PREV": "continuing claims for week ending 2025-10-18 not published by the cutoff",
+     "IC4_REF": "initial claims for the 4 weeks ending 2025-11-15 not all published by the cutoff",
+     "IC4_REF_PREV": "initial claims for the 4 weeks ending 2025-10-18 not all published by the cutoff"
+    }
+   },
+   {
+    "month": "2025-12",
+    "reason": "INPUT_UNAVAILABLE",
+    "missing": {
+     "IC4_REF_PREV": "initial claims for the 4 weeks ending 2025-11-15 not all published by the cutoff"
+    }
+   }
+  ]
+ },
+ "results": {
+  "RIDGE_T_EWMA": {
+   "all": {
+    "n": 177,
+    "brier": 0.16855941215248738,
+    "logLoss": 0.5848381059296707,
+    "ece": 0.12027457733149735,
+    "rps": 33.369487502560204,
+    "bucketLogScore": 6.56663749346415,
+    "mae": 38.36214689265537,
+    "sharpnessSd": 23.48163340899541,
+    "coverage80": 0.7796610169491526,
+    "pit": [
+     0.08310957650366786,
+     0.05861106257311572,
+     0.062146892655367235,
+     0.10585142993936794,
+     0.12013727062560381,
+     0.09036631726924688,
+     0.0899880524313441,
+     0.1021315060056237,
+     0.14689265536723164,
+     0.13559322033898305
+    ]
+   },
+   "ex_2020_21": {
+    "n": 155,
+    "brier": 0.16703563803073473,
+    "logLoss": 0.49980067959255997,
+    "ece": 0.12942157378236432,
+    "rps": 10.47964399704977,
+    "bucketLogScore": 6.333807110196212,
+    "mae": 14.630322580645156,
+    "sharpnessSd": 22.115880079756142,
+    "coverage80": 0.8387096774193549,
+    "pit": [
+     0.036295754351990436,
+     0.06047843919639666,
+     0.05806451612903226,
+     0.10797227805979435,
+     0.13073739935956047,
+     0.0902892784300432,
+     0.10276055019579294,
+     0.11662759072900257,
+     0.16774193548387098,
+     0.12903225806451613
+    ]
+   },
+   "covid_2020_21": {
+    "n": 22,
+    "brier": 0.17929509346483496,
+    "logLoss": 1.1839654278502245,
+    "ece": 0.1561165729765801,
+    "rps": 194.638839473202,
+    "bucketLogScore": 8.207033375579162,
+    "mae": 205.56363636363642,
+    "sharpnessSd": 33.10398641045386,
+    "coverage80": 0.36363636363636365,
+    "pit": [
+     0.41293423257230427,
+     0.045454545454545456,
+     0.09090909090909091,
+     0.09090909090909091,
+     0.045454545454545456,
+     0.09090909090909091,
+     0,
+     0,
+     0,
+     0.18181818181818182
+    ]
+   }
+  },
+  "PERSISTENCE_EMPIRICAL": {
+   "all": {
+    "n": 177,
+    "brier": 0.16214288005508126,
+    "logLoss": 0.5381211643498238,
+    "ece": 0.10861991997401671,
+    "rps": 45.884151416178604,
+    "bucketLogScore": 6.977821925297288,
+    "mae": 38.59830508474575,
+    "sharpnessSd": 118.13460079691662,
+    "coverage80": 0.8813559322033898,
+    "pit": [
+     0.062146892655367235,
+     0.054495865661842155,
+     0.06749775130137377,
+     0.10449150101687792,
+     0.17464482552273103,
+     0.2824858757062147,
+     0.06779661016949153,
+     0.07344632768361582,
+     0.05649717514124294,
+     0.03954802259887006
+    ]
+   },
+   "ex_2020_21": {
+    "n": 155,
+    "brier": 0.15347170718967684,
+    "logLoss": 0.47345474592013037,
+    "ece": 0.09227990122181118,
+    "rps": 16.9526597143136,
+    "bucketLogScore": 6.734934539436786,
+    "mae": 8.599999999999998,
+    "sharpnessSd": 94.75634228928325,
+    "coverage80": 0.8903225806451613,
+    "pit": [
+     0.06451612903225806,
+     0.06223076272352298,
+     0.0770780772925365,
+     0.09996771406443478,
+     0.17362667172595736,
+     0.2645161290322581,
+     0.07096774193548387,
+     0.08387096774193549,
+     0.05806451612903226,
+     0.04516129032258064
+    ]
+   },
+   "covid_2020_21": {
+    "n": 22,
+    "brier": 0.22323523433406683,
+    "logLoss": 0.9937254760135731,
+    "ece": 0.24923187299531124,
+    "rps": 249.71966113386387,
+    "bucketLogScore": 8.689073962041734,
+    "mae": 249.94999999999993,
+    "sharpnessSd": 282.84505846433376,
+    "coverage80": 0.8181818181818182,
+    "pit": [
+     0.045454545454545456,
+     0,
+     0,
+     0.13636363636363635,
+     0.18181818181818182,
+     0.4090909090909091,
+     0.045454545454545456,
+     0,
+     0.045454545454545456,
+     0
+    ]
+   }
+  },
+  "ROLLING_MEAN_GAUSS": {
+   "all": {
+    "n": 177,
+    "brier": 0.1697203816885174,
+    "logLoss": 0.5102825077489601,
+    "ece": 0.16240051543269574,
+    "rps": 39.01307562698276,
+    "bucketLogScore": 7.115453501738693,
+    "mae": 32.68305084745763,
+    "sharpnessSd": 82.96355857639435,
+    "coverage80": 0.96045197740113,
+    "pit": [
+     0.01165759172150337,
+     0.011299435028248588,
+     0.02824858757062147,
+     0.1016949152542373,
+     0.3333333333333333,
+     0.25916295590238647,
+     0.1306675525721898,
+     0.07344632768361582,
+     0.022598870056497175,
+     0.01694915254237288
+    ]
+   },
+   "ex_2020_21": {
+    "n": 155,
+    "brier": 0.1462107242963615,
+    "logLoss": 0.45400378877121994,
+    "ece": 0.18687289930661935,
+    "rps": 17.2730489406435,
+    "bucketLogScore": 6.884488061283081,
+    "mae": 6.430967741935483,
+    "sharpnessSd": 70.09488984652836,
+    "coverage80": 0.9870967741935484,
+    "pit": [
+     0.012903225806451613,
+     0.012903225806451613,
+     0.03225806451612903,
+     0.10967741935483871,
+     0.34838709677419355,
+     0.2830441496433704,
+     0.12340746325985542,
+     0.06451612903225806,
+     0.012903225806451613,
+     0
+    ]
+   },
+   "covid_2020_21": {
+    "n": 22,
+    "brier": 0.33535660422416164,
+    "logLoss": 0.9067916641830384,
+    "ece": 0.3933277161945511,
+    "rps": 192.18144546255488,
+    "bucketLogScore": 8.7427100140396,
+    "mae": 217.64090909090908,
+    "sharpnessSd": 173.62917917317782,
+    "coverage80": 0.7727272727272727,
+    "pit": [
+     0.002881533395731656,
+     0,
+     0,
+     0.045454545454545456,
+     0.22727272727272727,
+     0.09090909090909091,
+     0.18181818181818182,
+     0.13636363636363635,
+     0.09090909090909091,
+     0.13636363636363635
+    ]
+   }
+  },
+  "CLAIMS_ONLY": {
+   "all": {
+    "n": 177,
+    "brier": 0.21891256343586976,
+    "logLoss": 0.653145341439752,
+    "ece": 0.24151607741063744,
+    "rps": 26.220749910182185,
+    "bucketLogScore": 7.000142390652739,
+    "mae": 33.10847457627119,
+    "sharpnessSd": 27.317374372898186,
+    "coverage80": 0.8135593220338984,
+    "pit": [
+     0.062146892655367235,
+     0.022598870056497175,
+     0.03389830508474576,
+     0.03389830508474576,
+     0.0903954802259887,
+     0.0903954802259887,
+     0.12476759916309228,
+     0.1633679940572467,
+     0.2542372881355932,
+     0.11299435028248588
+    ]
+   },
+   "ex_2020_21": {
+    "n": 155,
+    "brier": 0.23968918073343812,
+    "logLoss": 0.6954236549791218,
+    "ece": 0.27372843299092675,
+    "rps": 14.179114098523748,
+    "bucketLogScore": 6.842955012127777,
+    "mae": 20.43032258064516,
+    "sharpnessSd": 26.694102239115963,
+    "coverage80": 0.8709677419354839,
+    "pit": [
+     0.012903225806451613,
+     0.01935483870967742,
+     0.03225806451612903,
+     0.03225806451612903,
+     0.09032258064516129,
+     0.0967741935483871,
+     0.13602493581849892,
+     0.17365248353633977,
+     0.2903225806451613,
+     0.11612903225806452
+    ]
+   },
+   "covid_2020_21": {
+    "n": 22,
+    "brier": 0.0725318506575475,
+    "logLoss": 0.3552754051396454,
+    "ece": 0.0786217224816957,
+    "rps": 111.05954767413935,
+    "bucketLogScore": 8.107598921169524,
+    "mae": 122.43181818181819,
+    "sharpnessSd": 31.708609860909316,
+    "coverage80": 0.4090909090909091,
+    "pit": [
+     0.4090909090909091,
+     0.045454545454545456,
+     0.045454545454545456,
+     0.045454545454545456,
+     0.09090909090909091,
+     0.045454545454545456,
+     0.045454545454545456,
+     0.09090909090909091,
+     0,
+     0.09090909090909091
+    ]
+   }
+  }
+ },
+ "best_baseline": "ROLLING_MEAN_GAUSS",
+ "verdict": {
+  "candidate": "RIDGE_T_EWMA",
+  "vs_best_baseline": {
+   "baseline": "ROLLING_MEAN_GAUSS",
+   "mean_logloss_gain": -0.0745555981807108,
+   "ci95": [
+    -0.24392422470160222,
+    0.06096980276876016
+   ]
+  },
+  "coverage80": 0.7796610169491526,
+  "gate": "FAIL"
+ },
+ "vs_every_baseline": {
+  "PERSISTENCE_EMPIRICAL": {
+   "logLoss": {
+    "mean": -0.04671694157984725,
+    "ci95": [
+     -0.1844203125744951,
+     0.06963430291587883
+    ],
+    "probNonNegative": 0.2465
+   },
+   "brier": {
+    "mean": -0.00641653209740604,
+    "ci95": [
+     -0.045023862737609915,
+     0.02730026402725797
+    ],
+    "probNonNegative": 0.396
+   }
+  },
+  "ROLLING_MEAN_GAUSS": {
+   "logLoss": {
+    "mean": -0.0745555981807108,
+    "ci95": [
+     -0.24392422470160222,
+     0.06096980276876016
+    ],
+    "probNonNegative": 0.1415
+   },
+   "brier": {
+    "mean": 0.001160969536030193,
+    "ci95": [
+     -0.045015906969854164,
+     0.04821544555794005
+    ],
+    "probNonNegative": 0.5075
+   }
+  },
+  "CLAIMS_ONLY": {
+   "logLoss": {
+    "mean": 0.0683072355100808,
+    "ci95": [
+     -0.2108424503856018,
+     0.2445818011568245
+    ],
+    "probNonNegative": 0.7225
+   },
+   "brier": {
+    "mean": 0.05035315128338255,
+    "ci95": [
+     0.0034766577811272256,
+     0.09074723394352549
+    ],
+    "probNonNegative": 0.981
+   }
+  }
+ },
+ "final_fit_state": {
+  "intercept": 10.206603773584902,
+  "beta": [
+   6.67645970450716,
+   -15.648640686042352,
+   -90.27849312630877,
+   -55.061120818361324
+  ],
+  "featureMean": [
+   10.107547169811319,
+   10.445440251572334,
+   -0.0024063333206961056,
+   -0.002001817860901797
+  ],
+  "featureSd": [
+   149.19993214876752,
+   82.21187557581062,
+   0.2387198890331007,
+   0.1702397376455081
+  ],
+  "sigma": 37.76037517236629,
+  "scale": 29.24906083782373,
+  "nu": 5,
+  "features": [
+   "PAY_L1",
+   "PAY_AVG3",
+   "IC4_LOGCHG_REF",
+   "CC_LOGCHG_REF"
+  ],
+  "unit_persons": 10000
+ },
+ "per_origin": [
+  {
+   "month": "2011-04",
+   "anchor": 216,
+   "y": 24.4,
+   "n_train": 36,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.42985,
+    "brier": 0.14394,
+    "median": 13.6,
+    "q10": -2.1,
+    "q90": 29.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25659,
+    "brier": 0.06776,
+    "median": 23,
+    "q10": 5.4,
+    "q90": 42
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.59454,
+    "brier": 0.20533,
+    "median": 8.8,
+    "q10": -23,
+    "q90": 40.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.08328,
+    "brier": 0.41056,
+    "median": -6,
+    "q10": -35,
+    "q90": 23
+   }
+  },
+  {
+   "month": "2011-05",
+   "anchor": 244,
+   "y": 5.4,
+   "n_train": 37,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.30888,
+    "brier": 0.08928,
+    "median": 12,
+    "q10": -3.5,
+    "q90": 27.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.79987,
+    "brier": 0.29213,
+    "median": 25.9,
+    "q10": 8.6,
+    "q90": 44.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.4227,
+    "brier": 0.12289,
+    "median": 8.4,
+    "q10": -23,
+    "q90": 39.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.54533,
+    "brier": 0.20264,
+    "median": -13.9,
+    "q10": -43.1,
+    "q90": 15.4
+   }
+  },
+  {
+   "month": "2011-06",
+   "anchor": 54,
+   "y": 1.8,
+   "n_train": 38,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.29555,
+    "brier": 0.08385,
+    "median": 6.4,
+    "q10": -8.9,
+    "q90": 21.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33119,
+    "brier": 0.09397,
+    "median": 6.4,
+    "q10": -11.9,
+    "q90": 25.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.42091,
+    "brier": 0.12363,
+    "median": 5.2,
+    "q10": -25.5,
+    "q90": 36
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.38131,
+    "brier": 0.12728,
+    "median": -11.7,
+    "q10": -40.8,
+    "q90": 17.4
+   }
+  },
+  {
+   "month": "2011-07",
+   "anchor": 18,
+   "y": 11.7,
+   "n_train": 39,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.39621,
+    "brier": 0.13309,
+    "median": 1.8,
+    "q10": -13.3,
+    "q90": 16.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.38356,
+    "brier": 0.12238,
+    "median": 2.6,
+    "q10": -15.2,
+    "q90": 21.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.42693,
+    "brier": 0.12638,
+    "median": 6.4,
+    "q10": -23.8,
+    "q90": 36.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.65195,
+    "brier": 0.24529,
+    "median": -10,
+    "q10": -38.9,
+    "q90": 18.8
+   }
+  },
+  {
+   "month": "2011-08",
+   "anchor": 117,
+   "y": 0,
+   "n_train": 40,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.45381,
+    "brier": 0.15429,
+    "median": 9.7,
+    "q10": -5.4,
+    "q90": 24.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.57936,
+    "brier": 0.20325,
+    "median": 12.8,
+    "q10": -4.9,
+    "q90": 31.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.48458,
+    "brier": 0.15423,
+    "median": 8.5,
+    "q10": -21.2,
+    "q90": 38.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.3386,
+    "brier": 0.09639,
+    "median": -4.9,
+    "q10": -33.7,
+    "q90": 23.8
+   }
+  },
+  {
+   "month": "2011-09",
+   "anchor": 0,
+   "y": 10.3,
+   "n_train": 41,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.66692,
+    "brier": 0.24413,
+    "median": -5,
+    "q10": -19.9,
+    "q90": 9.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.4231,
+    "brier": 0.14285,
+    "median": 0.7,
+    "q10": -16.9,
+    "q90": 19.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40964,
+    "brier": 0.11768,
+    "median": 9,
+    "q10": -20.3,
+    "q90": 38.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.78999,
+    "brier": 0.30136,
+    "median": -15.3,
+    "q10": -43.7,
+    "q90": 13.1
+   }
+  },
+  {
+   "month": "2011-10",
+   "anchor": 103,
+   "y": 8,
+   "n_train": 42,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.2507,
+    "brier": 0.06207,
+    "median": 10.1,
+    "q10": -4.9,
+    "q90": 25.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.30167,
+    "brier": 0.0795,
+    "median": 11.4,
+    "q10": -6.3,
+    "q90": 29.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40455,
+    "brier": 0.11544,
+    "median": 10.6,
+    "q10": -18.2,
+    "q90": 39.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.46041,
+    "brier": 0.15272,
+    "median": -2.9,
+    "q10": -31.4,
+    "q90": 25.6
+   }
+  },
+  {
+   "month": "2012-01",
+   "anchor": 200,
+   "y": 24.3,
+   "n_train": 43,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.42988,
+    "brier": 0.14515,
+    "median": 13.5,
+    "q10": -1.2,
+    "q90": 28.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.27431,
+    "brier": 0.07458,
+    "median": 20.9,
+    "q10": 3.7,
+    "q90": 39.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.56129,
+    "brier": 0.19097,
+    "median": 10,
+    "q10": -18.3,
+    "q90": 38.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.03511,
+    "brier": 0.39188,
+    "median": -4.5,
+    "q10": -32.7,
+    "q90": 23.7
+   }
+  },
+  {
+   "month": "2012-02",
+   "anchor": 243,
+   "y": 22.7,
+   "n_train": 44,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.21942,
+    "brier": 0.05698,
+    "median": 22.5,
+    "q10": 7.9,
+    "q90": 37.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23272,
+    "brier": 0.0616,
+    "median": 25.3,
+    "q10": 8.3,
+    "q90": 43.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.52164,
+    "brier": 0.1728,
+    "median": 11.7,
+    "q10": -16.3,
+    "q90": 39.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.71506,
+    "brier": 0.26095,
+    "median": 4.3,
+    "q10": -24.1,
+    "q90": 32.8
+   }
+  },
+  {
+   "month": "2012-05",
+   "anchor": 115,
+   "y": 6.9,
+   "n_train": 45,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.27471,
+    "brier": 0.07546,
+    "median": 10.7,
+    "q10": -3.8,
+    "q90": 25.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33667,
+    "brier": 0.09859,
+    "median": 12.4,
+    "q10": -4.2,
+    "q90": 30.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.42781,
+    "brier": 0.12826,
+    "median": 12.7,
+    "q10": -15,
+    "q90": 40.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.40929,
+    "brier": 0.12724,
+    "median": -2,
+    "q10": -30.3,
+    "q90": 26.3
+   }
+  },
+  {
+   "month": "2012-06",
+   "anchor": 69,
+   "y": 8,
+   "n_train": 46,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.29742,
+    "brier": 0.08954,
+    "median": 2.8,
+    "q10": -11.5,
+    "q90": 17
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.2793,
+    "brier": 0.07117,
+    "median": 7.6,
+    "q10": -8.6,
+    "q90": 25.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40387,
+    "brier": 0.11687,
+    "median": 13,
+    "q10": -14.3,
+    "q90": 40.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56194,
+    "brier": 0.20729,
+    "median": -9.7,
+    "q10": -37.8,
+    "q90": 18.3
+   }
+  },
+  {
+   "month": "2012-07",
+   "anchor": 80,
+   "y": 16.3,
+   "n_train": 47,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.42429,
+    "brier": 0.14387,
+    "median": 6.2,
+    "q10": -7.9,
+    "q90": 20.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.35876,
+    "brier": 0.10986,
+    "median": 8.7,
+    "q10": -7.2,
+    "q90": 26.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40248,
+    "brier": 0.11617,
+    "median": 12.1,
+    "q10": -14.9,
+    "q90": 39.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.75275,
+    "brier": 0.28423,
+    "median": -6.2,
+    "q10": -34.1,
+    "q90": 21.8
+   }
+  },
+  {
+   "month": "2012-08",
+   "anchor": 163,
+   "y": 9.6,
+   "n_train": 48,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.23938,
+    "brier": 0.05946,
+    "median": 10.6,
+    "q10": -3.4,
+    "q90": 24.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.3766,
+    "brier": 0.12101,
+    "median": 17.2,
+    "q10": 1.3,
+    "q90": 34.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.39157,
+    "brier": 0.11096,
+    "median": 11.7,
+    "q10": -15,
+    "q90": 38.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.54979,
+    "brier": 0.20141,
+    "median": -9,
+    "q10": -37,
+    "q90": 18.9
+   }
+  },
+  {
+   "month": "2012-09",
+   "anchor": 96,
+   "y": 11.4,
+   "n_train": 49,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.27037,
+    "brier": 0.07578,
+    "median": 6.7,
+    "q10": -7.1,
+    "q90": 20.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.2728,
+    "brier": 0.06885,
+    "median": 10.3,
+    "q10": -5.3,
+    "q90": 27.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.38273,
+    "brier": 0.1067,
+    "median": 10.4,
+    "q10": -15.8,
+    "q90": 36.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.49005,
+    "brier": 0.16523,
+    "median": -1.2,
+    "q10": -29.1,
+    "q90": 26.6
+   }
+  },
+  {
+   "month": "2012-10",
+   "anchor": 114,
+   "y": 17.1,
+   "n_train": 50,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.2853,
+    "brier": 0.08286,
+    "median": 10.8,
+    "q10": -2.7,
+    "q90": 24.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.29371,
+    "brier": 0.08007,
+    "median": 12.1,
+    "q10": -3.3,
+    "q90": 29.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40582,
+    "brier": 0.11856,
+    "median": 10.9,
+    "q10": -15,
+    "q90": 36.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.70355,
+    "brier": 0.26267,
+    "median": -4.4,
+    "q10": -32,
+    "q90": 23.3
+   }
+  },
+  {
+   "month": "2012-11",
+   "anchor": 171,
+   "y": 14.6,
+   "n_train": 51,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.27169,
+    "brier": 0.07687,
+    "median": 8.9,
+    "q10": -4.5,
+    "q90": 22.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.28247,
+    "brier": 0.07862,
+    "median": 18,
+    "q10": 2.7,
+    "q90": 34.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.37751,
+    "brier": 0.10511,
+    "median": 12.2,
+    "q10": -13.4,
+    "q90": 37.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.6859,
+    "brier": 0.25774,
+    "median": -7.2,
+    "q10": -34.9,
+    "q90": 20.4
+   }
+  },
+  {
+   "month": "2012-12",
+   "anchor": 146,
+   "y": 15.5,
+   "n_train": 52,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22047,
+    "brier": 0.05379,
+    "median": 15.6,
+    "q10": 2.3,
+    "q90": 28.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25893,
+    "brier": 0.06535,
+    "median": 15.4,
+    "q10": 0.4,
+    "q90": 32.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3862,
+    "brier": 0.10986,
+    "median": 12.4,
+    "q10": -12.9,
+    "q90": 37.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56044,
+    "brier": 0.19491,
+    "median": 1.6,
+    "q10": -26,
+    "q90": 29.2
+   }
+  },
+  {
+   "month": "2013-01",
+   "anchor": 155,
+   "y": 15.7,
+   "n_train": 53,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22814,
+    "brier": 0.05755,
+    "median": 14.1,
+    "q10": 1.1,
+    "q90": 27.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25248,
+    "brier": 0.06334,
+    "median": 16.3,
+    "q10": 1.5,
+    "q90": 32.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.37325,
+    "brier": 0.10437,
+    "median": 13.7,
+    "q10": -11.3,
+    "q90": 38.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.595,
+    "brier": 0.212,
+    "median": 0,
+    "q10": -27.5,
+    "q90": 27.4
+   }
+  },
+  {
+   "month": "2013-02",
+   "anchor": 157,
+   "y": 23.6,
+   "n_train": 54,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.36474,
+    "brier": 0.12112,
+    "median": 15.2,
+    "q10": 2.4,
+    "q90": 28
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33697,
+    "brier": 0.10463,
+    "median": 16.4,
+    "q10": 1.9,
+    "q90": 32.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.45389,
+    "brier": 0.14419,
+    "median": 14.2,
+    "q10": -10.5,
+    "q90": 38.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.71751,
+    "brier": 0.26188,
+    "median": 4.4,
+    "q10": -22.9,
+    "q90": 31.7
+   }
+  },
+  {
+   "month": "2013-03",
+   "anchor": 236,
+   "y": 8.8,
+   "n_train": 55,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.47803,
+    "brier": 0.1699,
+    "median": 20.4,
+    "q10": 7.7,
+    "q90": 33.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65118,
+    "brier": 0.23624,
+    "median": 24.5,
+    "q10": 10,
+    "q90": 40.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40124,
+    "brier": 0.12,
+    "median": 15.5,
+    "q10": -9,
+    "q90": 40
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.4507,
+    "brier": 0.14877,
+    "median": -2.4,
+    "q10": -29.6,
+    "q90": 24.9
+   }
+  },
+  {
+   "month": "2013-04",
+   "anchor": 88,
+   "y": 16.5,
+   "n_train": 56,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.35013,
+    "brier": 0.11413,
+    "median": 8.2,
+    "q10": -4.5,
+    "q90": 20.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33267,
+    "brier": 0.10016,
+    "median": 9.5,
+    "q10": -5.4,
+    "q90": 25.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.36335,
+    "brier": 0.10063,
+    "median": 14.2,
+    "q10": -10,
+    "q90": 38.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.53537,
+    "brier": 0.18273,
+    "median": 2.8,
+    "q10": -24.3,
+    "q90": 29.9
+   }
+  },
+  {
+   "month": "2013-05",
+   "anchor": 165,
+   "y": 17.5,
+   "n_train": 57,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.20972,
+    "brier": 0.05075,
+    "median": 16.4,
+    "q10": 3.7,
+    "q90": 29
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25001,
+    "brier": 0.06334,
+    "median": 17.4,
+    "q10": 2.4,
+    "q90": 33.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.36462,
+    "brier": 0.10127,
+    "median": 13.7,
+    "q10": -10.3,
+    "q90": 37.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.67852,
+    "brier": 0.25142,
+    "median": -3.3,
+    "q10": -30.2,
+    "q90": 23.6
+   }
+  },
+  {
+   "month": "2013-06",
+   "anchor": 175,
+   "y": 19.5,
+   "n_train": 58,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.28562,
+    "brier": 0.08632,
+    "median": 12.8,
+    "q10": 0.4,
+    "q90": 25.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.24291,
+    "brier": 0.06123,
+    "median": 18.4,
+    "q10": 3.6,
+    "q90": 34.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.37147,
+    "brier": 0.10558,
+    "median": 14.6,
+    "q10": -9.2,
+    "q90": 38.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.68137,
+    "brier": 0.24983,
+    "median": -0.2,
+    "q10": -27.1,
+    "q90": 26.7
+   }
+  },
+  {
+   "month": "2013-07",
+   "anchor": 195,
+   "y": 16.2,
+   "n_train": 59,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.21406,
+    "brier": 0.05306,
+    "median": 14.5,
+    "q10": 2.2,
+    "q90": 26.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.26221,
+    "brier": 0.07346,
+    "median": 20.4,
+    "q10": 5.8,
+    "q90": 36
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.34866,
+    "brier": 0.09532,
+    "median": 15.5,
+    "q10": -8,
+    "q90": 39
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.76013,
+    "brier": 0.28713,
+    "median": -6.1,
+    "q10": -32.9,
+    "q90": 20.8
+   }
+  },
+  {
+   "month": "2013-08",
+   "anchor": 162,
+   "y": 16.9,
+   "n_train": 60,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.20936,
+    "brier": 0.05142,
+    "median": 14.8,
+    "q10": 2.7,
+    "q90": 26.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.24195,
+    "brier": 0.06041,
+    "median": 17,
+    "q10": 2.7,
+    "q90": 32.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.34638,
+    "brier": 0.09452,
+    "median": 15.5,
+    "q10": -7.7,
+    "q90": 38.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.64982,
+    "brier": 0.23825,
+    "median": -2.2,
+    "q10": -29.1,
+    "q90": 24.7
+   }
+  },
+  {
+   "month": "2013-09",
+   "anchor": 169,
+   "y": 14.8,
+   "n_train": 61,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.26313,
+    "brier": 0.08052,
+    "median": 19.4,
+    "q10": 7.4,
+    "q90": 31.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.26332,
+    "brier": 0.07168,
+    "median": 17.5,
+    "q10": 3.4,
+    "q90": 33.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.34691,
+    "brier": 0.0957,
+    "median": 16.1,
+    "q10": -6.9,
+    "q90": 39.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.37983,
+    "brier": 0.10719,
+    "median": 15.9,
+    "q10": -11,
+    "q90": 42.7
+   }
+  },
+  {
+   "month": "2013-10",
+   "anchor": 148,
+   "y": 20.4,
+   "n_train": 62,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.58908,
+    "brier": 0.20643,
+    "median": 8,
+    "q10": -3.8,
+    "q90": 19.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.30182,
+    "brier": 0.08869,
+    "median": 15.4,
+    "q10": 1.3,
+    "q90": 31.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.36357,
+    "brier": 0.10457,
+    "median": 16.4,
+    "q10": -6.4,
+    "q90": 39.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.03184,
+    "brier": 0.38916,
+    "median": -6.8,
+    "q10": -33.4,
+    "q90": 19.8
+   }
+  },
+  {
+   "month": "2013-11",
+   "anchor": 204,
+   "y": 20.3,
+   "n_train": 63,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.19821,
+    "brier": 0.04998,
+    "median": 19.7,
+    "q10": 7.9,
+    "q90": 31.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.22692,
+    "brier": 0.05759,
+    "median": 21.2,
+    "q10": 6.9,
+    "q90": 36.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.35787,
+    "brier": 0.10235,
+    "median": 16.7,
+    "q10": -5.9,
+    "q90": 39.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.50895,
+    "brier": 0.16742,
+    "median": 9.6,
+    "q10": -17.1,
+    "q90": 36.4
+   }
+  },
+  {
+   "month": "2013-12",
+   "anchor": 203,
+   "y": 7.4,
+   "n_train": 64,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.25173,
+    "brier": 0.07259,
+    "median": 11.1,
+    "q10": -0.5,
+    "q90": 22.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.62433,
+    "brier": 0.22406,
+    "median": 21.1,
+    "q10": 6.8,
+    "q90": 36.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.4586,
+    "brier": 0.1512,
+    "median": 17.1,
+    "q10": -5.2,
+    "q90": 39.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.64078,
+    "brier": 0.24325,
+    "median": -17.7,
+    "q10": -44.2,
+    "q90": 8.9
+   }
+  },
+  {
+   "month": "2014-01",
+   "anchor": 74,
+   "y": 11.3,
+   "n_train": 65,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.23407,
+    "brier": 0.06493,
+    "median": 7.2,
+    "q10": -4.3,
+    "q90": 18.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.26837,
+    "brier": 0.07054,
+    "median": 8.1,
+    "q10": -6.7,
+    "q90": 23.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.36121,
+    "brier": 0.10431,
+    "median": 16.5,
+    "q10": -5.7,
+    "q90": 38.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.6367,
+    "brier": 0.23899,
+    "median": -8.8,
+    "q10": -35.5,
+    "q90": 17.9
+   }
+  },
+  {
+   "month": "2014-02",
+   "anchor": 113,
+   "y": 17.5,
+   "n_train": 66,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.26867,
+    "brier": 0.08126,
+    "median": 10.6,
+    "q10": -0.7,
+    "q90": 22
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.27733,
+    "brier": 0.075,
+    "median": 12.3,
+    "q10": -2.6,
+    "q90": 27.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.33174,
+    "brier": 0.08961,
+    "median": 16.1,
+    "q10": -5.9,
+    "q90": 38.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.53841,
+    "brier": 0.18453,
+    "median": 2.6,
+    "q10": -24,
+    "q90": 29.3
+   }
+  },
+  {
+   "month": "2014-03",
+   "anchor": 175,
+   "y": 19.2,
+   "n_train": 67,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.18834,
+    "brier": 0.04558,
+    "median": 18.2,
+    "q10": 6.9,
+    "q90": 29.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23796,
+    "brier": 0.05944,
+    "median": 18.8,
+    "q10": 3.8,
+    "q90": 33.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.34275,
+    "brier": 0.09492,
+    "median": 15.6,
+    "q10": -6.2,
+    "q90": 37.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.39947,
+    "brier": 0.11597,
+    "median": 14.1,
+    "q10": -12.5,
+    "q90": 40.6
+   }
+  },
+  {
+   "month": "2014-04",
+   "anchor": 192,
+   "y": 28.8,
+   "n_train": 68,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.31674,
+    "brier": 0.10732,
+    "median": 21.2,
+    "q10": 10.1,
+    "q90": 32.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33603,
+    "brier": 0.11097,
+    "median": 20.7,
+    "q10": 7,
+    "q90": 35.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.49797,
+    "brier": 0.1692,
+    "median": 16.5,
+    "q10": -5.2,
+    "q90": 38.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.5514,
+    "brier": 0.1888,
+    "median": 15,
+    "q10": -11.4,
+    "q90": 41.3
+   }
+  },
+  {
+   "month": "2014-05",
+   "anchor": 288,
+   "y": 21.7,
+   "n_train": 69,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17871,
+    "brier": 0.04657,
+    "median": 23.1,
+    "q10": 12.1,
+    "q90": 34.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.29578,
+    "brier": 0.10567,
+    "median": 30.5,
+    "q10": 16.6,
+    "q90": 45.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.33774,
+    "brier": 0.09491,
+    "median": 17.5,
+    "q10": -4.1,
+    "q90": 39
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.58334,
+    "brier": 0.20263,
+    "median": 6.4,
+    "q10": -19.8,
+    "q90": 32.7
+   }
+  },
+  {
+   "month": "2014-06",
+   "anchor": 217,
+   "y": 28.8,
+   "n_train": 70,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.30922,
+    "brier": 0.10466,
+    "median": 21.4,
+    "q10": 10.5,
+    "q90": 32.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25894,
+    "brier": 0.07868,
+    "median": 23.5,
+    "q10": 9.5,
+    "q90": 38.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.45489,
+    "brier": 0.15133,
+    "median": 17.8,
+    "q10": -3.5,
+    "q90": 39.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.83684,
+    "brier": 0.30943,
+    "median": 6.8,
+    "q10": -19.4,
+    "q90": 32.9
+   }
+  },
+  {
+   "month": "2014-07",
+   "anchor": 288,
+   "y": 20.9,
+   "n_train": 71,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.20922,
+    "brier": 0.06652,
+    "median": 26.1,
+    "q10": 15.4,
+    "q90": 36.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.30256,
+    "brier": 0.1087,
+    "median": 30.9,
+    "q10": 16.8,
+    "q90": 45.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.32158,
+    "brier": 0.08882,
+    "median": 18.6,
+    "q10": -2.6,
+    "q90": 39.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.51233,
+    "brier": 0.16938,
+    "median": 9.4,
+    "q10": -16.8,
+    "q90": 35.6
+   }
+  },
+  {
+   "month": "2014-08",
+   "anchor": 209,
+   "y": 14.2,
+   "n_train": 72,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22343,
+    "brier": 0.06435,
+    "median": 18,
+    "q10": 7.3,
+    "q90": 28.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.36035,
+    "brier": 0.12349,
+    "median": 22.9,
+    "q10": 8.6,
+    "q90": 37.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.34052,
+    "brier": 0.09902,
+    "median": 19,
+    "q10": -2.1,
+    "q90": 40.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.60125,
+    "brier": 0.21912,
+    "median": -3.5,
+    "q10": -29.5,
+    "q90": 22.5
+   }
+  },
+  {
+   "month": "2014-09",
+   "anchor": 142,
+   "y": 24.8,
+   "n_train": 73,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.28781,
+    "brier": 0.09336,
+    "median": 17.2,
+    "q10": 6.6,
+    "q90": 27.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.35075,
+    "brier": 0.11302,
+    "median": 15.8,
+    "q10": 1.8,
+    "q90": 30.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.33825,
+    "brier": 0.09786,
+    "median": 18.8,
+    "q10": -2.2,
+    "q90": 39.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.5029,
+    "brier": 0.16539,
+    "median": 12.2,
+    "q10": -13.8,
+    "q90": 38.2
+   }
+  },
+  {
+   "month": "2014-10",
+   "anchor": 248,
+   "y": 21.4,
+   "n_train": 74,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17385,
+    "brier": 0.04587,
+    "median": 23.3,
+    "q10": 12.8,
+    "q90": 33.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23292,
+    "brier": 0.07106,
+    "median": 26.3,
+    "q10": 12.4,
+    "q90": 40.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.30654,
+    "brier": 0.08362,
+    "median": 19.6,
+    "q10": -1.2,
+    "q90": 40.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56152,
+    "brier": 0.19263,
+    "median": 7.3,
+    "q10": -18.6,
+    "q90": 33.1
+   }
+  },
+  {
+   "month": "2014-11",
+   "anchor": 214,
+   "y": 32.1,
+   "n_train": 75,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.47493,
+    "brier": 0.1681,
+    "median": 20.3,
+    "q10": 10,
+    "q90": 30.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33335,
+    "brier": 0.11269,
+    "median": 23,
+    "q10": 9.6,
+    "q90": 36.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.46019,
+    "brier": 0.15679,
+    "median": 19.7,
+    "q10": -0.9,
+    "q90": 40.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.77221,
+    "brier": 0.28277,
+    "median": 11,
+    "q10": -14.8,
+    "q90": 36.8
+   }
+  },
+  {
+   "month": "2014-12",
+   "anchor": 321,
+   "y": 25.2,
+   "n_train": 76,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.24857,
+    "brier": 0.07855,
+    "median": 20.7,
+    "q10": 10.3,
+    "q90": 31.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.18328,
+    "brier": 0.06012,
+    "median": 33.7,
+    "q10": 20.3,
+    "q90": 46.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3317,
+    "brier": 0.09812,
+    "median": 20.7,
+    "q10": 0.1,
+    "q90": 41.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.56608,
+    "brier": 0.5532,
+    "median": -10.1,
+    "q10": -35.9,
+    "q90": 15.7
+   }
+  },
+  {
+   "month": "2015-01",
+   "anchor": 252,
+   "y": 25.7,
+   "n_train": 77,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.19607,
+    "brier": 0.05646,
+    "median": 22.7,
+    "q10": 12.4,
+    "q90": 33
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.18106,
+    "brier": 0.04703,
+    "median": 26.6,
+    "q10": 13.2,
+    "q90": 39.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.30322,
+    "brier": 0.0869,
+    "median": 22.2,
+    "q10": 1.8,
+    "q90": 42.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.80602,
+    "brier": 0.29783,
+    "median": 4.9,
+    "q10": -21.3,
+    "q90": 31
+   }
+  },
+  {
+   "month": "2015-02",
+   "anchor": 257,
+   "y": 29.5,
+   "n_train": 78,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.1944,
+    "brier": 0.05881,
+    "median": 24.8,
+    "q10": 14.7,
+    "q90": 34.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.17967,
+    "brier": 0.04754,
+    "median": 27.2,
+    "q10": 13.8,
+    "q90": 40.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3074,
+    "brier": 0.0914,
+    "median": 23.4,
+    "q10": 3.1,
+    "q90": 43.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.25638,
+    "brier": 0.46367,
+    "median": -2.1,
+    "q10": -28.2,
+    "q90": 24.1
+   }
+  },
+  {
+   "month": "2015-03",
+   "anchor": 295,
+   "y": 12.6,
+   "n_train": 79,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.36376,
+    "brier": 0.12862,
+    "median": 22.6,
+    "q10": 12.6,
+    "q90": 32.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.69556,
+    "brier": 0.25077,
+    "median": 30.9,
+    "q10": 17.6,
+    "q90": 44
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.39682,
+    "brier": 0.13554,
+    "median": 24.4,
+    "q10": 4.2,
+    "q90": 44.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.49838,
+    "brier": 0.16731,
+    "median": 1.5,
+    "q10": -24.8,
+    "q90": 27.9
+   }
+  },
+  {
+   "month": "2015-04",
+   "anchor": 126,
+   "y": 22.3,
+   "n_train": 80,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16453,
+    "brier": 0.04003,
+    "median": 21.4,
+    "q10": 11.3,
+    "q90": 31.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.3401,
+    "brier": 0.10897,
+    "median": 13.6,
+    "q10": -0.2,
+    "q90": 26.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27404,
+    "brier": 0.07618,
+    "median": 23.8,
+    "q10": 3.7,
+    "q90": 43.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.32437,
+    "brier": 0.09121,
+    "median": 24.1,
+    "q10": -2.1,
+    "q90": 50.3
+   }
+  },
+  {
+   "month": "2015-05",
+   "anchor": 223,
+   "y": 28,
+   "n_train": 81,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.33978,
+    "brier": 0.11778,
+    "median": 20.6,
+    "q10": 10.7,
+    "q90": 30.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25334,
+    "brier": 0.07642,
+    "median": 23.7,
+    "q10": 9.7,
+    "q90": 36.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.30674,
+    "brier": 0.09154,
+    "median": 23.3,
+    "q10": 3.3,
+    "q90": 43.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.87028,
+    "brier": 0.32279,
+    "median": 6,
+    "q10": -20.1,
+    "q90": 32
+   }
+  },
+  {
+   "month": "2015-06",
+   "anchor": 280,
+   "y": 22.3,
+   "n_train": 82,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17884,
+    "brier": 0.04597,
+    "median": 19.1,
+    "q10": 9.2,
+    "q90": 29
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.27575,
+    "brier": 0.09543,
+    "median": 29.3,
+    "q10": 15.4,
+    "q90": 41.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27158,
+    "brier": 0.07546,
+    "median": 23.8,
+    "q10": 4,
+    "q90": 43.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.78492,
+    "brier": 0.29252,
+    "median": -0.2,
+    "q10": -26.3,
+    "q90": 25.9
+   }
+  },
+  {
+   "month": "2015-07",
+   "anchor": 223,
+   "y": 21.5,
+   "n_train": 83,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.1944,
+    "brier": 0.05338,
+    "median": 18,
+    "q10": 8.3,
+    "q90": 27.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.21366,
+    "brier": 0.05701,
+    "median": 23.6,
+    "q10": 9.6,
+    "q90": 36.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27186,
+    "brier": 0.07482,
+    "median": 23.2,
+    "q10": 3.6,
+    "q90": 42.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.73452,
+    "brier": 0.27094,
+    "median": 1.2,
+    "q10": -24.9,
+    "q90": 27.4
+   }
+  },
+  {
+   "month": "2015-08",
+   "anchor": 215,
+   "y": 17.3,
+   "n_train": 84,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.18746,
+    "brier": 0.05118,
+    "median": 19.4,
+    "q10": 9.7,
+    "q90": 29
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.2785,
+    "brier": 0.08728,
+    "median": 22.5,
+    "q10": 8.9,
+    "q90": 34.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.32617,
+    "brier": 0.10172,
+    "median": 23.3,
+    "q10": 3.8,
+    "q90": 42.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.54789,
+    "brier": 0.18961,
+    "median": 2.1,
+    "q10": -24,
+    "q90": 28.3
+   }
+  },
+  {
+   "month": "2015-09",
+   "anchor": 173,
+   "y": 14.2,
+   "n_train": 85,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.19881,
+    "brier": 0.05607,
+    "median": 17.4,
+    "q10": 7.9,
+    "q90": 26.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.24723,
+    "brier": 0.06908,
+    "median": 18,
+    "q10": 4.7,
+    "q90": 29.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.38144,
+    "brier": 0.12827,
+    "median": 23.6,
+    "q10": 4.2,
+    "q90": 43
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.41498,
+    "brier": 0.12336,
+    "median": 7.5,
+    "q10": -18.6,
+    "q90": 33.6
+   }
+  },
+  {
+   "month": "2015-10",
+   "anchor": 142,
+   "y": 27.1,
+   "n_train": 86,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.34325,
+    "brier": 0.1185,
+    "median": 18.2,
+    "q10": 8.8,
+    "q90": 27.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.50632,
+    "brier": 0.17654,
+    "median": 14.6,
+    "q10": 1.6,
+    "q90": 26.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28484,
+    "brier": 0.08084,
+    "median": 22.7,
+    "q10": 3.4,
+    "q90": 42
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.43509,
+    "brier": 0.13666,
+    "median": 17.4,
+    "q10": -8.5,
+    "q90": 43.3
+   }
+  },
+  {
+   "month": "2015-11",
+   "anchor": 271,
+   "y": 21.1,
+   "n_train": 87,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.21965,
+    "brier": 0.06588,
+    "median": 16.7,
+    "q10": 7.3,
+    "q90": 26.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23863,
+    "brier": 0.08303,
+    "median": 27.8,
+    "q10": 16.3,
+    "q90": 38.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.26791,
+    "brier": 0.07356,
+    "median": 23.2,
+    "q10": 3.9,
+    "q90": 42.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.9765,
+    "brier": 0.36796,
+    "median": -5.1,
+    "q10": -30.9,
+    "q90": 20.7
+   }
+  },
+  {
+   "month": "2015-12",
+   "anchor": 211,
+   "y": 29.2,
+   "n_train": 88,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.43222,
+    "brier": 0.15178,
+    "median": 18.9,
+    "q10": 9.6,
+    "q90": 28.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.29055,
+    "brier": 0.09736,
+    "median": 21.7,
+    "q10": 10.2,
+    "q90": 32.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.32388,
+    "brier": 0.09955,
+    "median": 22.2,
+    "q10": 3.2,
+    "q90": 41.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.87661,
+    "brier": 0.32513,
+    "median": 5.9,
+    "q10": -20,
+    "q90": 31.8
+   }
+  },
+  {
+   "month": "2016-01",
+   "anchor": 292,
+   "y": 15.1,
+   "n_train": 89,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.20134,
+    "brier": 0.05923,
+    "median": 20.3,
+    "q10": 11,
+    "q90": 29.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.52787,
+    "brier": 0.19548,
+    "median": 29.8,
+    "q10": 18.3,
+    "q90": 40.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.31584,
+    "brier": 0.09643,
+    "median": 22.6,
+    "q10": 3.6,
+    "q90": 41.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.73895,
+    "brier": 0.27792,
+    "median": -5.1,
+    "q10": -31,
+    "q90": 20.9
+   }
+  },
+  {
+   "month": "2016-02",
+   "anchor": 151,
+   "y": 24.2,
+   "n_train": 90,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.26677,
+    "brier": 0.08731,
+    "median": 17.6,
+    "q10": 8.3,
+    "q90": 26.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33971,
+    "brier": 0.11393,
+    "median": 15.7,
+    "q10": 3.4,
+    "q90": 26.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27686,
+    "brier": 0.07593,
+    "median": 21.7,
+    "q10": 2.8,
+    "q90": 40.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.67669,
+    "brier": 0.24379,
+    "median": 5.9,
+    "q10": -20,
+    "q90": 31.8
+   }
+  },
+  {
+   "month": "2016-03",
+   "anchor": 242,
+   "y": 21.5,
+   "n_train": 91,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16711,
+    "brier": 0.04696,
+    "median": 24.1,
+    "q10": 14.9,
+    "q90": 33.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.19787,
+    "brier": 0.05803,
+    "median": 24.8,
+    "q10": 12.7,
+    "q90": 35.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27281,
+    "brier": 0.07337,
+    "median": 21.2,
+    "q10": 2.5,
+    "q90": 40
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.40849,
+    "brier": 0.12164,
+    "median": 15,
+    "q10": -10.9,
+    "q90": 40.9
+   }
+  },
+  {
+   "month": "2016-04",
+   "anchor": 215,
+   "y": 16,
+   "n_train": 92,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22567,
+    "brier": 0.07175,
+    "median": 21.4,
+    "q10": 12.3,
+    "q90": 30.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25554,
+    "brier": 0.08205,
+    "median": 22.1,
+    "q10": 10.5,
+    "q90": 32.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.30849,
+    "brier": 0.09248,
+    "median": 22,
+    "q10": 3.3,
+    "q90": 40.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.39806,
+    "brier": 0.11498,
+    "median": 11.6,
+    "q10": -14.2,
+    "q90": 37.4
+   }
+  },
+  {
+   "month": "2016-05",
+   "anchor": 160,
+   "y": 3.8,
+   "n_train": 93,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.36415,
+    "brier": 0.12576,
+    "median": 12.3,
+    "q10": 3.2,
+    "q90": 21.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.54459,
+    "brier": 0.19314,
+    "median": 16.3,
+    "q10": 4.9,
+    "q90": 26.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.68691,
+    "brier": 0.25291,
+    "median": 21.5,
+    "q10": 2.9,
+    "q90": 40
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35814,
+    "brier": 0.10117,
+    "median": 1,
+    "q10": -24.6,
+    "q90": 26.7
+   }
+  },
+  {
+   "month": "2016-06",
+   "anchor": 38,
+   "y": 28.7,
+   "n_train": 94,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.21933,
+    "brier": 0.36415,
+    "median": 9.2,
+    "q10": 0.1,
+    "q90": 18.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 2.14284,
+    "brier": 0.47415,
+    "median": 4.1,
+    "q10": -7.8,
+    "q90": 14.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.39553,
+    "brier": 0.12978,
+    "median": 19.4,
+    "q10": 0.8,
+    "q90": 38.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.68846,
+    "brier": 0.24788,
+    "median": 10.8,
+    "q10": -14.8,
+    "q90": 36.3
+   }
+  },
+  {
+   "month": "2016-07",
+   "anchor": 287,
+   "y": 25.5,
+   "n_train": 95,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.27124,
+    "brier": 0.08945,
+    "median": 19.9,
+    "q10": 10.3,
+    "q90": 29.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.1495,
+    "brier": 0.04305,
+    "median": 29,
+    "q10": 17,
+    "q90": 39.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3299,
+    "brier": 0.09979,
+    "median": 20,
+    "q10": 1.4,
+    "q90": 38.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.93967,
+    "brier": 0.35055,
+    "median": 1.8,
+    "q10": -23.7,
+    "q90": 27.3
+   }
+  },
+  {
+   "month": "2016-08",
+   "anchor": 255,
+   "y": 15.1,
+   "n_train": 96,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17455,
+    "brier": 0.04442,
+    "median": 18.4,
+    "q10": 8.8,
+    "q90": 28
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.35536,
+    "brier": 0.12922,
+    "median": 25.6,
+    "q10": 13.8,
+    "q90": 36.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29592,
+    "brier": 0.08394,
+    "median": 20.3,
+    "q10": 1.9,
+    "q90": 38.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.4918,
+    "brier": 0.16203,
+    "median": 4.8,
+    "q10": -20.7,
+    "q90": 30.4
+   }
+  },
+  {
+   "month": "2016-09",
+   "anchor": 151,
+   "y": 15.6,
+   "n_train": 97,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.213,
+    "brier": 0.06461,
+    "median": 20.8,
+    "q10": 11.3,
+    "q90": 30.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.20322,
+    "brier": 0.05137,
+    "median": 14.9,
+    "q10": 3,
+    "q90": 26.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29412,
+    "brier": 0.08296,
+    "median": 20.1,
+    "q10": 1.8,
+    "q90": 38.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35885,
+    "brier": 0.09988,
+    "median": 17.5,
+    "q10": -7.9,
+    "q90": 42.9
+   }
+  },
+  {
+   "month": "2016-10",
+   "anchor": 156,
+   "y": 16.1,
+   "n_train": 98,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16185,
+    "brier": 0.03808,
+    "median": 16.8,
+    "q10": 7.4,
+    "q90": 26.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.19107,
+    "brier": 0.04779,
+    "median": 15.6,
+    "q10": 4.5,
+    "q90": 26.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29373,
+    "brier": 0.08315,
+    "median": 20.2,
+    "q10": 2,
+    "q90": 38.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.42813,
+    "brier": 0.13013,
+    "median": 8.7,
+    "q10": -16.6,
+    "q90": 34
+   }
+  },
+  {
+   "month": "2016-11",
+   "anchor": 161,
+   "y": 17.8,
+   "n_train": 99,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.21777,
+    "brier": 0.06481,
+    "median": 14.3,
+    "q10": 5,
+    "q90": 23.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.20263,
+    "brier": 0.0538,
+    "median": 16.3,
+    "q10": 5,
+    "q90": 27
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27726,
+    "brier": 0.07375,
+    "median": 19.3,
+    "q10": 1.2,
+    "q90": 37.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.54877,
+    "brier": 0.18835,
+    "median": 5,
+    "q10": -20.2,
+    "q90": 30.2
+   }
+  },
+  {
+   "month": "2016-12",
+   "anchor": 178,
+   "y": 15.6,
+   "n_train": 100,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22825,
+    "brier": 0.06964,
+    "median": 11.4,
+    "q10": 2.2,
+    "q90": 20.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.18898,
+    "brier": 0.04835,
+    "median": 17.9,
+    "q10": 6.7,
+    "q90": 28.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28712,
+    "brier": 0.07848,
+    "median": 19,
+    "q10": 1,
+    "q90": 37.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.67255,
+    "brier": 0.24882,
+    "median": -2.7,
+    "q10": -27.8,
+    "q90": 22.4
+   }
+  },
+  {
+   "month": "2017-01",
+   "anchor": 156,
+   "y": 22.7,
+   "n_train": 101,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.30313,
+    "brier": 0.10256,
+    "median": 16.7,
+    "q10": 7.6,
+    "q90": 25.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.32915,
+    "brier": 0.11221,
+    "median": 15.7,
+    "q10": 5.1,
+    "q90": 26.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3273,
+    "brier": 0.09684,
+    "median": 17.9,
+    "q10": -0.1,
+    "q90": 35.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.70302,
+    "brier": 0.25522,
+    "median": 5.2,
+    "q10": -19.9,
+    "q90": 30.3
+   }
+  },
+  {
+   "month": "2017-02",
+   "anchor": 227,
+   "y": 23.5,
+   "n_train": 102,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.1849,
+    "brier": 0.05258,
+    "median": 20.4,
+    "q10": 11.4,
+    "q90": 29.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.16881,
+    "brier": 0.04389,
+    "median": 22.8,
+    "q10": 12.2,
+    "q90": 33.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.31435,
+    "brier": 0.09156,
+    "median": 18.5,
+    "q10": 0.7,
+    "q90": 36.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.53285,
+    "brier": 0.17956,
+    "median": 10.9,
+    "q10": -14.2,
+    "q90": 36
+   }
+  },
+  {
+   "month": "2017-03",
+   "anchor": 235,
+   "y": 9.8,
+   "n_train": 103,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.51664,
+    "brier": 0.18012,
+    "median": 20,
+    "q10": 11.1,
+    "q90": 28.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.70351,
+    "brier": 0.24577,
+    "median": 23.7,
+    "q10": 13,
+    "q90": 33.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.40477,
+    "brier": 0.13406,
+    "median": 18.5,
+    "q10": 0.7,
+    "q90": 36.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.37033,
+    "brier": 0.10208,
+    "median": 8.3,
+    "q10": -16.7,
+    "q90": 33.3
+   }
+  },
+  {
+   "month": "2017-04",
+   "anchor": 98,
+   "y": 21.1,
+   "n_train": 104,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.29412,
+    "brier": 0.09861,
+    "median": 14.4,
+    "q10": 5.4,
+    "q90": 23.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.50281,
+    "brier": 0.17623,
+    "median": 9.7,
+    "q10": -1.4,
+    "q90": 20.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29898,
+    "brier": 0.08303,
+    "median": 17.5,
+    "q10": -0.2,
+    "q90": 35.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.38796,
+    "brier": 0.11339,
+    "median": 15.9,
+    "q10": -9,
+    "q90": 40.7
+   }
+  },
+  {
+   "month": "2017-05",
+   "anchor": 211,
+   "y": 13.8,
+   "n_train": 105,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.27732,
+    "brier": 0.09362,
+    "median": 20.4,
+    "q10": 11.4,
+    "q90": 29.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.30614,
+    "brier": 0.1044,
+    "median": 21.3,
+    "q10": 9.8,
+    "q90": 31.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.30031,
+    "brier": 0.0844,
+    "median": 17.9,
+    "q10": 0.3,
+    "q90": 35.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.36295,
+    "brier": 0.1016,
+    "median": 16.4,
+    "q10": -8.4,
+    "q90": 41.1
+   }
+  },
+  {
+   "month": "2017-06",
+   "anchor": 138,
+   "y": 22.2,
+   "n_train": 106,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.51494,
+    "brier": 0.17819,
+    "median": 10.2,
+    "q10": 1.3,
+    "q90": 19.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.30909,
+    "brier": 0.10217,
+    "median": 14,
+    "q10": 2.4,
+    "q90": 24.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28121,
+    "brier": 0.07625,
+    "median": 18.8,
+    "q10": 1.2,
+    "q90": 36.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.70873,
+    "brier": 0.2594,
+    "median": 2.3,
+    "q10": -22.3,
+    "q90": 27
+   }
+  },
+  {
+   "month": "2017-07",
+   "anchor": 222,
+   "y": 20.9,
+   "n_train": 107,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.1943,
+    "brier": 0.05538,
+    "median": 17.6,
+    "q10": 8.5,
+    "q90": 26.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.18331,
+    "brier": 0.04844,
+    "median": 22.5,
+    "q10": 10.8,
+    "q90": 33.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28665,
+    "brier": 0.07841,
+    "median": 18.2,
+    "q10": 0.8,
+    "q90": 35.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.65631,
+    "brier": 0.23635,
+    "median": 3.9,
+    "q10": -20.7,
+    "q90": 28.6
+   }
+  },
+  {
+   "month": "2017-08",
+   "anchor": 209,
+   "y": 15.6,
+   "n_train": 108,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17039,
+    "brier": 0.04477,
+    "median": 18.8,
+    "q10": 9.8,
+    "q90": 27.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23025,
+    "brier": 0.06992,
+    "median": 21,
+    "q10": 9.5,
+    "q90": 31.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27745,
+    "brier": 0.07354,
+    "median": 17.8,
+    "q10": 0.5,
+    "q90": 35.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.43354,
+    "brier": 0.13358,
+    "median": 8,
+    "q10": -16.6,
+    "q90": 32.6
+   }
+  },
+  {
+   "month": "2017-09",
+   "anchor": 156,
+   "y": -3.3,
+   "n_train": 109,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.82349,
+    "brier": 0.2674,
+    "median": 11.5,
+    "q10": 2.7,
+    "q90": 20.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 1.08779,
+    "brier": 0.34205,
+    "median": 15.7,
+    "q10": 4.3,
+    "q90": 26.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.95865,
+    "brier": 0.3412,
+    "median": 17.9,
+    "q10": 0.6,
+    "q90": 35.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56743,
+    "brier": 0.19546,
+    "median": 10.5,
+    "q10": -14,
+    "q90": 35
+   }
+  },
+  {
+   "month": "2017-10",
+   "anchor": -33,
+   "y": 26.1,
+   "n_train": 110,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.12014,
+    "brier": 0.34238,
+    "median": 7.6,
+    "q10": -1.5,
+    "q90": 16.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 2.25388,
+    "brier": 0.57911,
+    "median": -3.5,
+    "q10": -15.6,
+    "q90": 7.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.41894,
+    "brier": 0.13875,
+    "median": 16.3,
+    "q10": -1.1,
+    "q90": 33.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.53868,
+    "brier": 0.18313,
+    "median": 13,
+    "q10": -11.4,
+    "q90": 37.5
+   }
+  },
+  {
+   "month": "2017-11",
+   "anchor": 261,
+   "y": 22.8,
+   "n_train": 111,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.24228,
+    "brier": 0.07618,
+    "median": 18.4,
+    "q10": 8.8,
+    "q90": 28
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.17681,
+    "brier": 0.04958,
+    "median": 26,
+    "q10": 13.6,
+    "q90": 38
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.3381,
+    "brier": 0.1023,
+    "median": 17.1,
+    "q10": -0.2,
+    "q90": 34.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.04827,
+    "brier": 0.39033,
+    "median": -2.9,
+    "q10": -27.3,
+    "q90": 21.5
+   }
+  },
+  {
+   "month": "2017-12",
+   "anchor": 228,
+   "y": 14.8,
+   "n_train": 112,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.23545,
+    "brier": 0.07373,
+    "median": 19,
+    "q10": 9.5,
+    "q90": 28.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.35086,
+    "brier": 0.12356,
+    "median": 22.7,
+    "q10": 10.3,
+    "q90": 34.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29402,
+    "brier": 0.08158,
+    "median": 17.6,
+    "q10": 0.3,
+    "q90": 34.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.3882,
+    "brier": 0.11136,
+    "median": 9.1,
+    "q10": -15.4,
+    "q90": 33.6
+   }
+  },
+  {
+   "month": "2018-01",
+   "anchor": 148,
+   "y": 20,
+   "n_train": 113,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.23343,
+    "brier": 0.07151,
+    "median": 13.8,
+    "q10": 4.4,
+    "q90": 23.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.2468,
+    "brier": 0.07018,
+    "median": 14.4,
+    "q10": 2.2,
+    "q90": 26.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27587,
+    "brier": 0.07268,
+    "median": 17.5,
+    "q10": 0.3,
+    "q90": 34.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.49474,
+    "brier": 0.16296,
+    "median": 7.3,
+    "q10": -17.1,
+    "q90": 31.7
+   }
+  },
+  {
+   "month": "2018-02",
+   "anchor": 200,
+   "y": 31.3,
+   "n_train": 114,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.41287,
+    "brier": 0.14623,
+    "median": 21.7,
+    "q10": 12.3,
+    "q90": 31
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.46576,
+    "brier": 0.16671,
+    "median": 19.8,
+    "q10": 7.4,
+    "q90": 32
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.55603,
+    "brier": 0.19808,
+    "median": 17.3,
+    "q10": 0.1,
+    "q90": 34.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.87933,
+    "brier": 0.32397,
+    "median": 8.8,
+    "q10": -15.5,
+    "q90": 33.2
+   }
+  },
+  {
+   "month": "2018-03",
+   "anchor": 313,
+   "y": 10.3,
+   "n_train": 115,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.8313,
+    "brier": 0.27641,
+    "median": 27.3,
+    "q10": 18,
+    "q90": 36.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.9493,
+    "brier": 0.31632,
+    "median": 31.1,
+    "q10": 18.7,
+    "q90": 43.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.33295,
+    "brier": 0.10119,
+    "median": 17.9,
+    "q10": 0.8,
+    "q90": 35.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.37756,
+    "brier": 0.10917,
+    "median": 16.2,
+    "q10": -8.2,
+    "q90": 40.6
+   }
+  },
+  {
+   "month": "2018-04",
+   "anchor": 103,
+   "y": 16.4,
+   "n_train": 116,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.19693,
+    "brier": 0.05313,
+    "median": 13.1,
+    "q10": 3.3,
+    "q90": 22.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.29213,
+    "brier": 0.08869,
+    "median": 10.1,
+    "q10": -2.7,
+    "q90": 22.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27416,
+    "brier": 0.07271,
+    "median": 18,
+    "q10": 0.9,
+    "q90": 35.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.38475,
+    "brier": 0.11005,
+    "median": 11.7,
+    "q10": -12.6,
+    "q90": 36
+   }
+  },
+  {
+   "month": "2018-05",
+   "anchor": 164,
+   "y": 22.3,
+   "n_train": 117,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17916,
+    "brier": 0.05255,
+    "median": 24.7,
+    "q10": 15.1,
+    "q90": 34.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.26338,
+    "brier": 0.07748,
+    "median": 16.2,
+    "q10": 3.4,
+    "q90": 28.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29032,
+    "brier": 0.08043,
+    "median": 17.6,
+    "q10": 0.6,
+    "q90": 34.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.30961,
+    "brier": 0.08644,
+    "median": 23.8,
+    "q10": -0.4,
+    "q90": 47.9
+   }
+  },
+  {
+   "month": "2018-06",
+   "anchor": 223,
+   "y": 21.3,
+   "n_train": 118,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.20089,
+    "brier": 0.05703,
+    "median": 17.6,
+    "q10": 8,
+    "q90": 27.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.20049,
+    "brier": 0.05277,
+    "median": 22.2,
+    "q10": 9.3,
+    "q90": 34.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28015,
+    "brier": 0.07645,
+    "median": 18.3,
+    "q10": 1.3,
+    "q90": 35.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.43936,
+    "brier": 0.13705,
+    "median": 12.5,
+    "q10": -11.6,
+    "q90": 36.5
+   }
+  },
+  {
+   "month": "2018-07",
+   "anchor": 213,
+   "y": 15.7,
+   "n_train": 119,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16218,
+    "brier": 0.03825,
+    "median": 16.9,
+    "q10": 7.4,
+    "q90": 26.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.2475,
+    "brier": 0.07431,
+    "median": 21.1,
+    "q10": 8.3,
+    "q90": 33.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27179,
+    "brier": 0.07237,
+    "median": 18.2,
+    "q10": 1.3,
+    "q90": 35.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.5827,
+    "brier": 0.20772,
+    "median": 0.7,
+    "q10": -23.3,
+    "q90": 24.7
+   }
+  },
+  {
+   "month": "2018-08",
+   "anchor": 157,
+   "y": 20.1,
+   "n_train": 120,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16122,
+    "brier": 0.03979,
+    "median": 19.9,
+    "q10": 10.6,
+    "q90": 29.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.28013,
+    "brier": 0.08478,
+    "median": 15.4,
+    "q10": 2.7,
+    "q90": 28
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.28507,
+    "brier": 0.07859,
+    "median": 17.8,
+    "q10": 1,
+    "q90": 34.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.41186,
+    "brier": 0.12466,
+    "median": 13.9,
+    "q10": -10,
+    "q90": 37.9
+   }
+  },
+  {
+   "month": "2018-09",
+   "anchor": 201,
+   "y": 13.4,
+   "n_train": 121,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.31039,
+    "brier": 0.10728,
+    "median": 21.2,
+    "q10": 12.1,
+    "q90": 30.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.28091,
+    "brier": 0.08846,
+    "median": 20,
+    "q10": 7.1,
+    "q90": 32.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29226,
+    "brier": 0.08276,
+    "median": 18.2,
+    "q10": 1.4,
+    "q90": 34.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35466,
+    "brier": 0.09822,
+    "median": 16,
+    "q10": -7.9,
+    "q90": 39.8
+   }
+  },
+  {
+   "month": "2018-10",
+   "anchor": 134,
+   "y": 25,
+   "n_train": 122,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.44481,
+    "brier": 0.15505,
+    "median": 13.8,
+    "q10": 4.6,
+    "q90": 22.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.43434,
+    "brier": 0.15051,
+    "median": 13.1,
+    "q10": 0.3,
+    "q90": 25.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.2847,
+    "brier": 0.08108,
+    "median": 19.5,
+    "q10": 2.9,
+    "q90": 36.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.52379,
+    "brier": 0.17632,
+    "median": 11.1,
+    "q10": -12.6,
+    "q90": 34.9
+   }
+  },
+  {
+   "month": "2018-11",
+   "anchor": 250,
+   "y": 15.5,
+   "n_train": 123,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16103,
+    "brier": 0.03782,
+    "median": 15.7,
+    "q10": 6.4,
+    "q90": 25
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.32321,
+    "brier": 0.11383,
+    "median": 24.8,
+    "q10": 11.9,
+    "q90": 37.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27253,
+    "brier": 0.07509,
+    "median": 19.4,
+    "q10": 2.9,
+    "q90": 36
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.77471,
+    "brier": 0.29179,
+    "median": -5.4,
+    "q10": -29.1,
+    "q90": 18.3
+   }
+  },
+  {
+   "month": "2018-12",
+   "anchor": 155,
+   "y": 31.2,
+   "n_train": 124,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.00255,
+    "brier": 0.31466,
+    "median": 13.9,
+    "q10": 4.7,
+    "q90": 23
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.72128,
+    "brier": 0.2534,
+    "median": 15.1,
+    "q10": 2.1,
+    "q90": 28.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.49053,
+    "brier": 0.17318,
+    "median": 18.8,
+    "q10": 2.3,
+    "q90": 35.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.88599,
+    "brier": 0.32584,
+    "median": 8.9,
+    "q10": -14.9,
+    "q90": 32.6
+   }
+  },
+  {
+   "month": "2019-01",
+   "anchor": 312,
+   "y": 30.4,
+   "n_train": 125,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.26473,
+    "brier": 0.09107,
+    "median": 24.7,
+    "q10": 15.1,
+    "q90": 34.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.11549,
+    "brier": 0.02854,
+    "median": 31.2,
+    "q10": 18.3,
+    "q90": 44.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.4358,
+    "brier": 0.15159,
+    "median": 20.2,
+    "q10": 3.7,
+    "q90": 36.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.02548,
+    "brier": 0.37721,
+    "median": 6.1,
+    "q10": -17.7,
+    "q90": 29.9
+   }
+  },
+  {
+   "month": "2019-02",
+   "anchor": 304,
+   "y": 2,
+   "n_train": 126,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.76852,
+    "brier": 0.25658,
+    "median": 16.3,
+    "q10": 6.7,
+    "q90": 25.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 2.01929,
+    "brier": 0.52662,
+    "median": 30.3,
+    "q10": 17.5,
+    "q90": 43.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.8495,
+    "brier": 0.30635,
+    "median": 21.1,
+    "q10": 4.6,
+    "q90": 37.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.33748,
+    "brier": 0.10733,
+    "median": -7.4,
+    "q10": -31.2,
+    "q90": 16.5
+   }
+  },
+  {
+   "month": "2019-03",
+   "anchor": 20,
+   "y": 19.6,
+   "n_train": 127,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.22077,
+    "brier": 0.06457,
+    "median": 14.4,
+    "q10": 4.6,
+    "q90": 24.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.76356,
+    "brier": 0.26999,
+    "median": 1.5,
+    "q10": -12.2,
+    "q90": 15.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.26142,
+    "brier": 0.06845,
+    "median": 18.6,
+    "q10": 2.1,
+    "q90": 35.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35409,
+    "brier": 0.0984,
+    "median": 16.3,
+    "q10": -7.5,
+    "q90": 40.1
+   }
+  },
+  {
+   "month": "2019-04",
+   "anchor": 196,
+   "y": 26.3,
+   "n_train": 128,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.13392,
+    "brier": 0.03573,
+    "median": 27.7,
+    "q10": 18.1,
+    "q90": 37.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.31159,
+    "brier": 0.09833,
+    "median": 19.2,
+    "q10": 5.3,
+    "q90": 34.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.32692,
+    "brier": 0.1015,
+    "median": 19.4,
+    "q10": 2.9,
+    "q90": 35.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.27779,
+    "brier": 0.07551,
+    "median": 25.9,
+    "q10": 2.3,
+    "q90": 49.6
+   }
+  },
+  {
+   "month": "2019-05",
+   "anchor": 263,
+   "y": 7.5,
+   "n_train": 129,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.31263,
+    "brier": 0.10501,
+    "median": 13.6,
+    "q10": 4.1,
+    "q90": 23.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.89921,
+    "brier": 0.31679,
+    "median": 25.9,
+    "q10": 12.1,
+    "q90": 40.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.5441,
+    "brier": 0.19642,
+    "median": 20.2,
+    "q10": 3.8,
+    "q90": 36.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35453,
+    "brier": 0.09664,
+    "median": 6.6,
+    "q10": -17,
+    "q90": 30.2
+   }
+  },
+  {
+   "month": "2019-06",
+   "anchor": 75,
+   "y": 22.4,
+   "n_train": 130,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.53495,
+    "brier": 0.18548,
+    "median": 9.7,
+    "q10": 0.2,
+    "q90": 19.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.58453,
+    "brier": 0.20704,
+    "median": 7.1,
+    "q10": -7.7,
+    "q90": 21.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.26614,
+    "brier": 0.07161,
+    "median": 19,
+    "q10": 2.5,
+    "q90": 35.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.68264,
+    "brier": 0.24791,
+    "median": 3.3,
+    "q10": -20.2,
+    "q90": 26.8
+   }
+  },
+  {
+   "month": "2019-07",
+   "anchor": 224,
+   "y": 16.4,
+   "n_train": 131,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16885,
+    "brier": 0.04133,
+    "median": 17.7,
+    "q10": 8.2,
+    "q90": 27.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.28097,
+    "brier": 0.0864,
+    "median": 22,
+    "q10": 7.2,
+    "q90": 37.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.26869,
+    "brier": 0.07315,
+    "median": 19.1,
+    "q10": 2.7,
+    "q90": 35.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.39466,
+    "brier": 0.11561,
+    "median": 10.3,
+    "q10": -13.2,
+    "q90": 33.8
+   }
+  },
+  {
+   "month": "2019-08",
+   "anchor": 164,
+   "y": 13,
+   "n_train": 132,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16348,
+    "brier": 0.03802,
+    "median": 14,
+    "q10": 4.5,
+    "q90": 23.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25724,
+    "brier": 0.06732,
+    "median": 16.1,
+    "q10": 1.2,
+    "q90": 31.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29853,
+    "brier": 0.08798,
+    "median": 19.2,
+    "q10": 2.8,
+    "q90": 35.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.42527,
+    "brier": 0.13233,
+    "median": 5.2,
+    "q10": -18.2,
+    "q90": 28.7
+   }
+  },
+  {
+   "month": "2019-09",
+   "anchor": 130,
+   "y": 13.6,
+   "n_train": 133,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.17235,
+    "brier": 0.0434,
+    "median": 15.9,
+    "q10": 6.5,
+    "q90": 25.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25465,
+    "brier": 0.06413,
+    "median": 12.7,
+    "q10": -2.1,
+    "q90": 27.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29149,
+    "brier": 0.08391,
+    "median": 18.6,
+    "q10": 2.3,
+    "q90": 34.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.3505,
+    "brier": 0.09723,
+    "median": 16.3,
+    "q10": -7,
+    "q90": 39.7
+   }
+  },
+  {
+   "month": "2019-12",
+   "anchor": 266,
+   "y": 14.5,
+   "n_train": 134,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16638,
+    "brier": 0.0408,
+    "median": 15.4,
+    "q10": 6.2,
+    "q90": 24.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.46153,
+    "brier": 0.17015,
+    "median": 26.1,
+    "q10": 11.5,
+    "q90": 41.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.29108,
+    "brier": 0.08387,
+    "median": 18.6,
+    "q10": 2.4,
+    "q90": 34.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.64369,
+    "brier": 0.23934,
+    "median": -4.5,
+    "q10": -27.8,
+    "q90": 18.7
+   }
+  },
+  {
+   "month": "2020-01",
+   "anchor": 145,
+   "y": 22.5,
+   "n_train": 135,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16952,
+    "brier": 0.04413,
+    "median": 19,
+    "q10": 9.9,
+    "q90": 28
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.33844,
+    "brier": 0.10499,
+    "median": 13.9,
+    "q10": -0.9,
+    "q90": 29.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.27885,
+    "brier": 0.07695,
+    "median": 17.7,
+    "q10": 1.5,
+    "q90": 33.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.44326,
+    "brier": 0.13958,
+    "median": 12,
+    "q10": -11.2,
+    "q90": 35.3
+   }
+  },
+  {
+   "month": "2020-02",
+   "anchor": 225,
+   "y": 27.3,
+   "n_train": 136,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.28833,
+    "brier": 0.09769,
+    "median": 19.5,
+    "q10": 10.5,
+    "q90": 28.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.25607,
+    "brier": 0.07451,
+    "median": 21.9,
+    "q10": 7.1,
+    "q90": 37.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.35367,
+    "brier": 0.11337,
+    "median": 18.3,
+    "q10": 2.2,
+    "q90": 34.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.79376,
+    "brier": 0.29087,
+    "median": 5.9,
+    "q10": -17.3,
+    "q90": 29.1
+   }
+  },
+  {
+   "month": "2020-03",
+   "anchor": 273,
+   "y": -70.1,
+   "n_train": 137,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.73307,
+    "brier": 0.46737,
+    "median": 12.8,
+    "q10": 3.8,
+    "q90": 21.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 2.99276,
+    "brier": 0.73058,
+    "median": 27,
+    "q10": 11.9,
+    "q90": 41.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.68313,
+    "brier": 0.51988,
+    "median": 18,
+    "q10": 1.9,
+    "q90": 34
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.32349,
+    "brier": 0.09719,
+    "median": -5,
+    "q10": -28.2,
+    "q90": 18.3
+   }
+  },
+  {
+   "month": "2020-04",
+   "anchor": -701,
+   "y": -2050,
+   "n_train": 138,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": -497.1,
+    "q10": -514.9,
+    "q90": -479.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": -70.6,
+    "q10": -88.6,
+    "q90": -53.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.88145,
+    "brier": 0.3171,
+    "median": 9.6,
+    "q10": -9.3,
+    "q90": 28.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": -726.8,
+    "q10": -751,
+    "q90": -702.6
+   }
+  },
+  {
+   "month": "2020-05",
+   "anchor": -20537,
+   "y": 250.9,
+   "n_train": 139,
+   "RIDGE_T_EWMA": {
+    "logLoss": 9.21034,
+    "brier": 1,
+    "median": -986,
+    "q10": -1010.7,
+    "q90": -961.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 9.21034,
+    "brier": 1,
+    "median": -2058,
+    "q10": -2221.6,
+    "q90": -1902.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.74563,
+    "brier": 0.68029,
+    "median": -161.4,
+    "q10": -396.4,
+    "q90": 73.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0006,
+    "brier": 0,
+    "median": 101.4,
+    "q10": 68.6,
+    "q90": 134.3
+   }
+  },
+  {
+   "month": "2020-06",
+   "anchor": 2509,
+   "y": 480,
+   "n_train": 140,
+   "RIDGE_T_EWMA": {
+    "logLoss": 9.06019,
+    "brier": 0.99979,
+    "median": -161.4,
+    "q10": -187.5,
+    "q90": -135.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.11978,
+    "brier": 0.01285,
+    "median": 249.3,
+    "q10": -4.3,
+    "q90": 500
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.57719,
+    "brier": 0.62856,
+    "median": -142.1,
+    "q10": -380.8,
+    "q90": 96.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": 245.1,
+    "q10": 210.6,
+    "q90": 279.6
+   }
+  },
+  {
+   "month": "2020-07",
+   "anchor": 4800,
+   "y": 176.3,
+   "n_train": 141,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": 312.4,
+    "q10": 284,
+    "q90": 340.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.02274,
+    "brier": 0.00051,
+    "median": 481.4,
+    "q10": 225.6,
+    "q90": 500
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.28472,
+    "brier": 0.5224,
+    "median": -104.3,
+    "q10": -352.2,
+    "q90": 143.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": 158.2,
+    "q10": 117.2,
+    "q90": 199.3
+   }
+  },
+  {
+   "month": "2020-08",
+   "anchor": 1763,
+   "y": 137.1,
+   "n_train": 142,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.04328,
+    "brier": 0.0024,
+    "median": 67.3,
+    "q10": 30.7,
+    "q90": 103.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.23302,
+    "brier": 0.04342,
+    "median": 173.9,
+    "q10": -90.2,
+    "q90": 435.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.19623,
+    "brier": 0.48611,
+    "median": -90.3,
+    "q10": -339.2,
+    "q90": 158.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0008,
+    "brier": 0,
+    "median": 117.6,
+    "q10": 76.7,
+    "q90": 158.5
+   }
+  },
+  {
+   "month": "2020-09",
+   "anchor": 1371,
+   "y": 66.1,
+   "n_train": 143,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.0054,
+    "brier": 0.00004,
+    "median": 115.8,
+    "q10": 77.5,
+    "q90": 154
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.31178,
+    "brier": 0.072,
+    "median": 134.1,
+    "q10": -130.1,
+    "q90": 395.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.13962,
+    "brier": 0.46191,
+    "median": -80.7,
+    "q10": -330,
+    "q90": 168.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": 160.4,
+    "q10": 119.5,
+    "q90": 201.3
+   }
+  },
+  {
+   "month": "2020-10",
+   "anchor": 661,
+   "y": 63.8,
+   "n_train": 144,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.00043,
+    "brier": 0,
+    "median": 199.8,
+    "q10": 160.8,
+    "q90": 238.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.507,
+    "brier": 0.15836,
+    "median": 61.9,
+    "q10": -202.7,
+    "q90": 323.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.1168,
+    "brier": 0.45195,
+    "median": -76.6,
+    "q10": -325.4,
+    "q90": 172.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.0001,
+    "brier": 0,
+    "median": 172,
+    "q10": 130,
+    "q90": 214
+   }
+  },
+  {
+   "month": "2020-11",
+   "anchor": 638,
+   "y": 24.5,
+   "n_train": 145,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.78517,
+    "brier": 0.17228,
+    "median": 118.8,
+    "q10": 76.7,
+    "q90": 160.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.55992,
+    "brier": 0.18454,
+    "median": 59.7,
+    "q10": -205,
+    "q90": 321.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.94693,
+    "brier": 0.37232,
+    "median": -72.3,
+    "q10": -320.8,
+    "q90": 176.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.06446,
+    "brier": 0.17561,
+    "median": 121.5,
+    "q10": 78.8,
+    "q90": 164.2
+   }
+  },
+  {
+   "month": "2020-12",
+   "anchor": 245,
+   "y": -14,
+   "n_train": 146,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.40599,
+    "brier": 0.11919,
+    "median": -6.2,
+    "q10": -50.8,
+    "q90": 38.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.73399,
+    "brier": 0.27036,
+    "median": 19.7,
+    "q10": -245,
+    "q90": 281.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.41161,
+    "brier": 0.11411,
+    "median": -71.4,
+    "q10": -319.2,
+    "q90": 176.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.34523,
+    "brier": 0.09313,
+    "median": -10.9,
+    "q10": -54.5,
+    "q90": 32.8
+   }
+  },
+  {
+   "month": "2021-01",
+   "anchor": -140,
+   "y": 4.9,
+   "n_train": 147,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.45196,
+    "brier": 0.13595,
+    "median": 2.1,
+    "q10": -41.8,
+    "q90": 45.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.62716,
+    "brier": 0.21734,
+    "median": -19.7,
+    "q10": -284.4,
+    "q90": 242.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.61027,
+    "brier": 0.21099,
+    "median": -73.8,
+    "q10": -320.7,
+    "q90": 173.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.45586,
+    "brier": 0.13966,
+    "median": -2,
+    "q10": -45.5,
+    "q90": 41.5
+   }
+  },
+  {
+   "month": "2021-02",
+   "anchor": 49,
+   "y": 37.9,
+   "n_train": 148,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16518,
+    "brier": 0.02766,
+    "median": 46.8,
+    "q10": 3.6,
+    "q90": 90
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.73706,
+    "brier": 0.27189,
+    "median": -0.3,
+    "q10": -265.1,
+    "q90": 261.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.11485,
+    "brier": 0.45108,
+    "median": -75.3,
+    "q10": -321.4,
+    "q90": 170.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.19172,
+    "brier": 0.03639,
+    "median": 44.5,
+    "q10": 1.1,
+    "q90": 87.8
+   }
+  },
+  {
+   "month": "2021-03",
+   "anchor": 379,
+   "y": 91.6,
+   "n_train": 149,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.02639,
+    "brier": 0.00084,
+    "median": 86.6,
+    "q10": 44.1,
+    "q90": 129.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.60604,
+    "brier": 0.20666,
+    "median": 33.1,
+    "q10": -231.8,
+    "q90": 295.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 1.11095,
+    "brier": 0.44936,
+    "median": -74.4,
+    "q10": -319.9,
+    "q90": 171.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.02153,
+    "brier": 0.00073,
+    "median": 82.8,
+    "q10": 39.6,
+    "q90": 126
+   }
+  },
+  {
+   "month": "2021-04",
+   "anchor": 916,
+   "y": 26.6,
+   "n_train": 150,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.3295,
+    "brier": 0.10102,
+    "median": 75.9,
+    "q10": 34,
+    "q90": 117.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.4848,
+    "brier": 0.14932,
+    "median": 88,
+    "q10": -177.2,
+    "q90": 350.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.94699,
+    "brier": 0.37323,
+    "median": -60.9,
+    "q10": -306.2,
+    "q90": 184.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35429,
+    "brier": 0.10519,
+    "median": 82.2,
+    "q10": 39.1,
+    "q90": 125.2
+   }
+  },
+  {
+   "month": "2021-05",
+   "anchor": 266,
+   "y": 55.9,
+   "n_train": 151,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.00725,
+    "brier": 0.00006,
+    "median": 119.1,
+    "q10": 76.5,
+    "q90": 161.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64881,
+    "brier": 0.2279,
+    "median": 21.7,
+    "q10": -243.7,
+    "q90": 284.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.35256,
+    "brier": 0.08856,
+    "median": 112.1,
+    "q10": -132.5,
+    "q90": 356.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.00021,
+    "brier": 0,
+    "median": 138.3,
+    "q10": 94.9,
+    "q90": 181.6
+   }
+  },
+  {
+   "month": "2021-06",
+   "anchor": 559,
+   "y": 85,
+   "n_train": 152,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.01102,
+    "brier": 0.00014,
+    "median": 111.6,
+    "q10": 67.3,
+    "q90": 155.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.54164,
+    "brier": 0.17506,
+    "median": 51.5,
+    "q10": -214,
+    "q90": 314.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.39552,
+    "brier": 0.10699,
+    "median": 95.9,
+    "q10": -147.9,
+    "q90": 339.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.00085,
+    "brier": 0,
+    "median": 124.4,
+    "q10": 80.3,
+    "q90": 168.6
+   }
+  },
+  {
+   "month": "2021-07",
+   "anchor": 850,
+   "y": 94.3,
+   "n_train": 153,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.39363,
+    "brier": 0.11396,
+    "median": 27,
+    "q10": -17.1,
+    "q90": 71
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.44849,
+    "brier": 0.13084,
+    "median": 81.3,
+    "q10": -184.4,
+    "q90": 344.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.49559,
+    "brier": 0.15294,
+    "median": 63,
+    "q10": -180,
+    "q90": 305.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.33304,
+    "brier": 0.08795,
+    "median": 32.1,
+    "q10": -12.1,
+    "q90": 76.3
+   }
+  },
+  {
+   "month": "2021-08",
+   "anchor": 943,
+   "y": 23.5,
+   "n_train": 154,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.35115,
+    "brier": 0.10203,
+    "median": 36.1,
+    "q10": -9.3,
+    "q90": 81.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.51072,
+    "brier": 0.16223,
+    "median": 90.9,
+    "q10": -174.7,
+    "q90": 353.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.56078,
+    "brier": 0.18494,
+    "median": 56.1,
+    "q10": -186,
+    "q90": 298.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35101,
+    "brier": 0.10253,
+    "median": 37.1,
+    "q10": -7.5,
+    "q90": 81.6
+   }
+  },
+  {
+   "month": "2021-09",
+   "anchor": 235,
+   "y": 19.4,
+   "n_train": 155,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.52947,
+    "brier": 0.19011,
+    "median": 51.7,
+    "q10": 7,
+    "q90": 96.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64573,
+    "brier": 0.22634,
+    "median": 18.5,
+    "q10": -247.4,
+    "q90": 281.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.60491,
+    "brier": 0.20651,
+    "median": 46.7,
+    "q10": -194.6,
+    "q90": 288
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.68156,
+    "brier": 0.23458,
+    "median": 67.9,
+    "q10": 23.5,
+    "q90": 112.3
+   }
+  },
+  {
+   "month": "2021-10",
+   "anchor": 194,
+   "y": 53.1,
+   "n_train": 156,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.03924,
+    "brier": 0.00183,
+    "median": 80.5,
+    "q10": 35.9,
+    "q90": 125.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.67731,
+    "brier": 0.2421,
+    "median": 14.3,
+    "q10": -251.6,
+    "q90": 277.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.56473,
+    "brier": 0.18634,
+    "median": 42.8,
+    "q10": -197.7,
+    "q90": 283.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.03754,
+    "brier": 0.00202,
+    "median": 76.2,
+    "q10": 31.6,
+    "q90": 120.7
+   }
+  },
+  {
+   "month": "2021-11",
+   "anchor": 531,
+   "y": 21,
+   "n_train": 157,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.77638,
+    "brier": 0.2174,
+    "median": 92.3,
+    "q10": 48.2,
+    "q90": 136.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.59348,
+    "brier": 0.20079,
+    "median": 48.8,
+    "q10": -217.2,
+    "q90": 312.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.59894,
+    "brier": 0.20339,
+    "median": 41.9,
+    "q10": -197.8,
+    "q90": 281.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.94439,
+    "brier": 0.22661,
+    "median": 98.8,
+    "q10": 54.3,
+    "q90": 143.2
+   }
+  },
+  {
+   "month": "2021-12",
+   "anchor": 210,
+   "y": 19.9,
+   "n_train": 158,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.722,
+    "brier": 0.29242,
+    "median": 167.8,
+    "q10": 122.2,
+    "q90": 213.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64931,
+    "brier": 0.22811,
+    "median": 16.1,
+    "q10": -249.9,
+    "q90": 279.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.61001,
+    "brier": 0.2089,
+    "median": 41.6,
+    "q10": -197.3,
+    "q90": 280.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 2.70899,
+    "brier": 0.29411,
+    "median": 175.6,
+    "q10": 130.6,
+    "q90": 220.7
+   }
+  },
+  {
+   "month": "2022-01",
+   "anchor": 199,
+   "y": 46.7,
+   "n_train": 159,
+   "RIDGE_T_EWMA": {
+    "logLoss": 2.31003,
+    "brier": 0.79656,
+    "median": -43.5,
+    "q10": -96.9,
+    "q90": 9.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.67467,
+    "brier": 0.24079,
+    "median": 15,
+    "q10": -251.1,
+    "q90": 278.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.55745,
+    "brier": 0.18278,
+    "median": 44.4,
+    "q10": -193.6,
+    "q90": 282.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 2.80803,
+    "brier": 0.86062,
+    "median": -46.8,
+    "q10": -94.5,
+    "q90": 0.9
+   }
+  },
+  {
+   "month": "2022-02",
+   "anchor": 467,
+   "y": 67.8,
+   "n_train": 160,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.63478,
+    "brier": 0.22243,
+    "median": 14.6,
+    "q10": -41.1,
+    "q90": 70.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.57373,
+    "brier": 0.19073,
+    "median": 42.3,
+    "q10": -223.9,
+    "q90": 305.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.54426,
+    "brier": 0.17636,
+    "median": 47.9,
+    "q10": -189.3,
+    "q90": 285.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.74236,
+    "brier": 0.27315,
+    "median": 9.3,
+    "q10": -39.2,
+    "q90": 57.9
+   }
+  },
+  {
+   "month": "2022-03",
+   "anchor": 678,
+   "y": 43.1,
+   "n_train": 161,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.14798,
+    "brier": 0.02133,
+    "median": 59.1,
+    "q10": 3.1,
+    "q90": 115.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.50211,
+    "brier": 0.15602,
+    "median": 63.8,
+    "q10": -202.5,
+    "q90": 327.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.53478,
+    "brier": 0.17176,
+    "median": 50.4,
+    "q10": -186.1,
+    "q90": 286.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.09127,
+    "brier": 0.0097,
+    "median": 64.7,
+    "q10": 15.9,
+    "q90": 113.5
+   }
+  },
+  {
+   "month": "2022-04",
+   "anchor": 431,
+   "y": 42.8,
+   "n_train": 162,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.16126,
+    "brier": 0.02496,
+    "median": 56.1,
+    "q10": 0.9,
+    "q90": 111.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.58697,
+    "brier": 0.19724,
+    "median": 38.5,
+    "q10": -227.7,
+    "q90": 302.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.54904,
+    "brier": 0.17869,
+    "median": 46.4,
+    "q10": -189.3,
+    "q90": 282
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.04355,
+    "brier": 0.00253,
+    "median": 78.9,
+    "q10": 30.2,
+    "q90": 127.6
+   }
+  },
+  {
+   "month": "2022-05",
+   "anchor": 428,
+   "y": 39,
+   "n_train": 163,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.54975,
+    "brier": 0.60314,
+    "median": -21.5,
+    "q10": -76.1,
+    "q90": 33
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.5881,
+    "brier": 0.1978,
+    "median": 38.2,
+    "q10": -228,
+    "q90": 301.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.54364,
+    "brier": 0.17606,
+    "median": 47.7,
+    "q10": -187.2,
+    "q90": 282.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.67553,
+    "brier": 0.63694,
+    "median": -22.6,
+    "q10": -71.3,
+    "q90": 26.1
+   }
+  },
+  {
+   "month": "2022-06",
+   "anchor": 390,
+   "y": 37.2,
+   "n_train": 164,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.9959,
+    "brier": 0.73036,
+    "median": -35.8,
+    "q10": -90.9,
+    "q90": 19.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.60109,
+    "brier": 0.20421,
+    "median": 34.6,
+    "q10": -231.7,
+    "q90": 298.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.54839,
+    "brier": 0.17837,
+    "median": 46.3,
+    "q10": -187.8,
+    "q90": 280.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 2.28979,
+    "brier": 0.78307,
+    "median": -37.7,
+    "q10": -86.7,
+    "q90": 11.3
+   }
+  },
+  {
+   "month": "2022-07",
+   "anchor": 372,
+   "y": 52.8,
+   "n_train": 165,
+   "RIDGE_T_EWMA": {
+    "logLoss": 2.03646,
+    "brier": 0.74058,
+    "median": -38,
+    "q10": -94.2,
+    "q90": 18.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.60845,
+    "brier": 0.20786,
+    "median": 32.5,
+    "q10": -233.7,
+    "q90": 296.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.56289,
+    "brier": 0.18545,
+    "median": 42.3,
+    "q10": -191,
+    "q90": 275.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 2.20221,
+    "brier": 0.76663,
+    "median": -36.2,
+    "q10": -85.6,
+    "q90": 13.2
+   }
+  },
+  {
+   "month": "2022-08",
+   "anchor": 528,
+   "y": 31.5,
+   "n_train": 166,
+   "RIDGE_T_EWMA": {
+    "logLoss": 2.00784,
+    "brier": 0.73485,
+    "median": -38.8,
+    "q10": -96.9,
+    "q90": 19.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.55213,
+    "brier": 0.18016,
+    "median": 48.5,
+    "q10": -217.7,
+    "q90": 312.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.57574,
+    "brier": 0.19175,
+    "median": 38.9,
+    "q10": -193.7,
+    "q90": 271.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 2.0926,
+    "brier": 0.74445,
+    "median": -34.3,
+    "q10": -84.4,
+    "q90": 15.8
+   }
+  },
+  {
+   "month": "2022-09",
+   "anchor": 315,
+   "y": 26.3,
+   "n_train": 167,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.29922,
+    "brier": 0.09198,
+    "median": 76,
+    "q10": 17.1,
+    "q90": 135
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.62797,
+    "brier": 0.21753,
+    "median": 26.7,
+    "q10": -239.5,
+    "q90": 290.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.58394,
+    "brier": 0.19587,
+    "median": 39.5,
+    "q10": -192.3,
+    "q90": 271.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.33449,
+    "brier": 0.10229,
+    "median": 86.4,
+    "q10": 36,
+    "q90": 136.8
+   }
+  },
+  {
+   "month": "2022-10",
+   "anchor": 263,
+   "y": 26.1,
+   "n_train": 168,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.99716,
+    "brier": 0.39095,
+    "median": -10.2,
+    "q10": -69.1,
+    "q90": 48.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64291,
+    "brier": 0.22495,
+    "median": 21.4,
+    "q10": -244.8,
+    "q90": 285.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.582,
+    "brier": 0.19493,
+    "median": 40.1,
+    "q10": -191,
+    "q90": 271.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.76919,
+    "brier": 0.28662,
+    "median": 2.1,
+    "q10": -48.4,
+    "q90": 52.7
+   }
+  },
+  {
+   "month": "2022-11",
+   "anchor": 261,
+   "y": 26.3,
+   "n_train": 169,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.58451,
+    "brier": 0.60101,
+    "median": -34.3,
+    "q10": -92.8,
+    "q90": 24.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64323,
+    "brier": 0.2251,
+    "median": 21.3,
+    "q10": -244.9,
+    "q90": 284.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.58808,
+    "brier": 0.19789,
+    "median": 37.9,
+    "q10": -192.5,
+    "q90": 268.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.49738,
+    "brier": 0.57103,
+    "median": -26.9,
+    "q10": -77.4,
+    "q90": 23.6
+   }
+  },
+  {
+   "month": "2022-12",
+   "anchor": 263,
+   "y": 22.3,
+   "n_train": 170,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.20322,
+    "brier": 0.46727,
+    "median": -28.8,
+    "q10": -87.7,
+    "q90": 30
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.63986,
+    "brier": 0.22342,
+    "median": 21.9,
+    "q10": -244.4,
+    "q90": 285.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.60169,
+    "brier": 0.20471,
+    "median": 38.3,
+    "q10": -191.4,
+    "q90": 267.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.03828,
+    "brier": 0.40556,
+    "median": -18.7,
+    "q10": -69.3,
+    "q90": 31.9
+   }
+  },
+  {
+   "month": "2023-01",
+   "anchor": 223,
+   "y": 51.7,
+   "n_train": 171,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.33206,
+    "brier": 0.08468,
+    "median": 36.6,
+    "q10": -22.1,
+    "q90": 95.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.66584,
+    "brier": 0.23638,
+    "median": 17.3,
+    "q10": -248.8,
+    "q90": 280.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.57544,
+    "brier": 0.1916,
+    "median": 38.5,
+    "q10": -190.4,
+    "q90": 267.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.26204,
+    "brier": 0.05878,
+    "median": 41.3,
+    "q10": -9.3,
+    "q90": 91.9
+   }
+  },
+  {
+   "month": "2023-02",
+   "anchor": 517,
+   "y": 31.1,
+   "n_train": 172,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.33824,
+    "brier": 0.08734,
+    "median": 35.7,
+    "q10": -22.2,
+    "q90": 93.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.55649,
+    "brier": 0.18229,
+    "median": 47.3,
+    "q10": -219,
+    "q90": 310.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.57346,
+    "brier": 0.19064,
+    "median": 38.9,
+    "q10": -189.3,
+    "q90": 267.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.25413,
+    "brier": 0.05594,
+    "median": 42,
+    "q10": -8.4,
+    "q90": 92.5
+   }
+  },
+  {
+   "month": "2023-03",
+   "anchor": 311,
+   "y": 23.6,
+   "n_train": 173,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.99998,
+    "brier": 0.39163,
+    "median": -13.7,
+    "q10": -70.9,
+    "q90": 43.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.6294,
+    "brier": 0.21824,
+    "median": 26.4,
+    "q10": -239.8,
+    "q90": 290
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.5984,
+    "brier": 0.203,
+    "median": 35.9,
+    "q10": -191.7,
+    "q90": 263.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.93545,
+    "brier": 0.36336,
+    "median": -9.6,
+    "q10": -60,
+    "q90": 40.7
+   }
+  },
+  {
+   "month": "2023-04",
+   "anchor": 236,
+   "y": 25.3,
+   "n_train": 174,
+   "RIDGE_T_EWMA": {
+    "logLoss": 3.09181,
+    "brier": 0.82696,
+    "median": -85.6,
+    "q10": -142.4,
+    "q90": -28.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65083,
+    "brier": 0.22889,
+    "median": 18.7,
+    "q10": -247.5,
+    "q90": 282.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.59721,
+    "brier": 0.20236,
+    "median": 34.2,
+    "q10": -192.6,
+    "q90": 261
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 4.03868,
+    "brier": 0.85934,
+    "median": -82.8,
+    "q10": -133.1,
+    "q90": -32.5
+   }
+  },
+  {
+   "month": "2023-05",
+   "anchor": 253,
+   "y": 33.9,
+   "n_train": 175,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.20094,
+    "brier": 0.47752,
+    "median": -11.8,
+    "q10": -71.7,
+    "q90": 48.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65443,
+    "brier": 0.2307,
+    "median": 20.2,
+    "q10": -246,
+    "q90": 283.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.59708,
+    "brier": 0.20226,
+    "median": 32.8,
+    "q10": -193.3,
+    "q90": 258.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.40242,
+    "brier": 0.55047,
+    "median": -16.3,
+    "q10": -67.5,
+    "q90": 34.9
+   }
+  },
+  {
+   "month": "2023-06",
+   "anchor": 339,
+   "y": 20.9,
+   "n_train": 176,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.71614,
+    "brier": 0.26264,
+    "median": -1.8,
+    "q10": -61.4,
+    "q90": 57.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.62584,
+    "brier": 0.2165,
+    "median": 29.4,
+    "q10": -236.9,
+    "q90": 292.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.61144,
+    "brier": 0.20943,
+    "median": 32.3,
+    "q10": -193.1,
+    "q90": 257.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.74742,
+    "brier": 0.27804,
+    "median": -3.5,
+    "q10": -54.9,
+    "q90": 47.8
+   }
+  },
+  {
+   "month": "2023-07",
+   "anchor": 209,
+   "y": 18.7,
+   "n_train": 177,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.46753,
+    "brier": 0.15361,
+    "median": 40.8,
+    "q10": -18.1,
+    "q90": 99.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64951,
+    "brier": 0.22822,
+    "median": 16,
+    "q10": -250.2,
+    "q90": 279.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.61974,
+    "brier": 0.21355,
+    "median": 31,
+    "q10": -193.8,
+    "q90": 255.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.46714,
+    "brier": 0.15903,
+    "median": 44.7,
+    "q10": -6.6,
+    "q90": 95.9
+   }
+  },
+  {
+   "month": "2023-08",
+   "anchor": 187,
+   "y": 18.7,
+   "n_train": 178,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.5516,
+    "brier": 0.1812,
+    "median": 10,
+    "q10": -48.3,
+    "q90": 68.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65319,
+    "brier": 0.23005,
+    "median": 13.7,
+    "q10": -252.5,
+    "q90": 277.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62376,
+    "brier": 0.2155,
+    "median": 28.1,
+    "q10": -195.9,
+    "q90": 252.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.51984,
+    "brier": 0.16594,
+    "median": 13.4,
+    "q10": -37.8,
+    "q90": 64.5
+   }
+  },
+  {
+   "month": "2023-09",
+   "anchor": 187,
+   "y": 33.6,
+   "n_train": 179,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.26908,
+    "brier": 0.06017,
+    "median": 42.6,
+    "q10": -14.9,
+    "q90": 100.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.67986,
+    "brier": 0.24337,
+    "median": 13.7,
+    "q10": -252.5,
+    "q90": 277.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.61974,
+    "brier": 0.21348,
+    "median": 27.1,
+    "q10": -196.3,
+    "q90": 250.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.22074,
+    "brier": 0.04423,
+    "median": 46.1,
+    "q10": -5,
+    "q90": 97.1
+   }
+  },
+  {
+   "month": "2023-10",
+   "anchor": 336,
+   "y": 15,
+   "n_train": 180,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.54424,
+    "brier": 0.17834,
+    "median": 4.4,
+    "q10": -52.3,
+    "q90": 61.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64268,
+    "brier": 0.22491,
+    "median": 29,
+    "q10": -237.3,
+    "q90": 292.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63637,
+    "brier": 0.2218,
+    "median": 27.7,
+    "q10": -195,
+    "q90": 250.4
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.50294,
+    "brier": 0.15774,
+    "median": 14.5,
+    "q10": -36.4,
+    "q90": 65.4
+   }
+  },
+  {
+   "month": "2023-11",
+   "anchor": 150,
+   "y": 19.9,
+   "n_train": 181,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.44183,
+    "brier": 0.52577,
+    "median": -43.4,
+    "q10": -99.3,
+    "q90": 12.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65922,
+    "brier": 0.23306,
+    "median": 10,
+    "q10": -256.3,
+    "q90": 273.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.6253,
+    "brier": 0.21625,
+    "median": 26.8,
+    "q10": -195.3,
+    "q90": 248.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.44708,
+    "brier": 0.52477,
+    "median": -40,
+    "q10": -90.8,
+    "q90": 10.7
+   }
+  },
+  {
+   "month": "2023-12",
+   "anchor": 199,
+   "y": 21.6,
+   "n_train": 182,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.44241,
+    "brier": 0.13342,
+    "median": 27.7,
+    "q10": -28.7,
+    "q90": 84.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65337,
+    "brier": 0.23014,
+    "median": 15.1,
+    "q10": -251.2,
+    "q90": 278.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62259,
+    "brier": 0.21489,
+    "median": 26.2,
+    "q10": -195.2,
+    "q90": 247.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.43073,
+    "brier": 0.12949,
+    "median": 29.1,
+    "q10": -21.8,
+    "q90": 80
+   }
+  },
+  {
+   "month": "2024-01",
+   "anchor": 216,
+   "y": 35.3,
+   "n_train": 183,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.38639,
+    "brier": 0.10813,
+    "median": 30.8,
+    "q10": -24.8,
+    "q90": 86.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.66856,
+    "brier": 0.23774,
+    "median": 16.6,
+    "q10": -249.6,
+    "q90": 280.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62281,
+    "brier": 0.215,
+    "median": 26.2,
+    "q10": -194.6,
+    "q90": 246.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.36387,
+    "brier": 0.09903,
+    "median": 32.2,
+    "q10": -18.6,
+    "q90": 83
+   }
+  },
+  {
+   "month": "2024-02",
+   "anchor": 353,
+   "y": 27.5,
+   "n_train": 184,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.49115,
+    "brier": 0.57216,
+    "median": -28.3,
+    "q10": -83.1,
+    "q90": 26.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.61697,
+    "brier": 0.21208,
+    "median": 30.7,
+    "q10": -235.6,
+    "q90": 294.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62415,
+    "brier": 0.21565,
+    "median": 24.8,
+    "q10": -195.3,
+    "q90": 244.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.47178,
+    "brier": 0.56342,
+    "median": -26.2,
+    "q10": -76.9,
+    "q90": 24.4
+   }
+  },
+  {
+   "month": "2024-03",
+   "anchor": 275,
+   "y": 30.3,
+   "n_train": 185,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.51097,
+    "brier": 0.16434,
+    "median": 21.8,
+    "q10": -33.2,
+    "q90": 76.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64588,
+    "brier": 0.22644,
+    "median": 22.5,
+    "q10": -243.7,
+    "q90": 286.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62965,
+    "brier": 0.2184,
+    "median": 24.5,
+    "q10": -195,
+    "q90": 244
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.52012,
+    "brier": 0.16868,
+    "median": 21.2,
+    "q10": -29.6,
+    "q90": 72
+   }
+  },
+  {
+   "month": "2024-04",
+   "anchor": 303,
+   "y": 17.5,
+   "n_train": 186,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.51994,
+    "brier": 0.16588,
+    "median": 10.8,
+    "q10": -43.5,
+    "q90": 65
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.63942,
+    "brier": 0.22323,
+    "median": 25.3,
+    "q10": -240.9,
+    "q90": 289
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.6312,
+    "brier": 0.21918,
+    "median": 25.1,
+    "q10": -193.8,
+    "q90": 243.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.51801,
+    "brier": 0.16488,
+    "median": 11.5,
+    "q10": -39.1,
+    "q90": 62.1
+   }
+  },
+  {
+   "month": "2024-05",
+   "anchor": 175,
+   "y": 27.2,
+   "n_train": 187,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.94101,
+    "brier": 0.36533,
+    "median": -6,
+    "q10": -59.4,
+    "q90": 47.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.66829,
+    "brier": 0.23759,
+    "median": 12.8,
+    "q10": -253.4,
+    "q90": 276.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62487,
+    "brier": 0.21601,
+    "median": 24.4,
+    "q10": -193.8,
+    "q90": 242.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.90635,
+    "brier": 0.34999,
+    "median": -4.6,
+    "q10": -55.1,
+    "q90": 45.9
+   }
+  },
+  {
+   "month": "2024-06",
+   "anchor": 272,
+   "y": 20.6,
+   "n_train": 188,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.17867,
+    "brier": 0.45762,
+    "median": -24.5,
+    "q10": -77.5,
+    "q90": 28.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.63887,
+    "brier": 0.22293,
+    "median": 22.4,
+    "q10": -243.8,
+    "q90": 285.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62658,
+    "brier": 0.21685,
+    "median": 23.8,
+    "q10": -193.8,
+    "q90": 241.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.15798,
+    "brier": 0.44987,
+    "median": -23.7,
+    "q10": -74.2,
+    "q90": 26.7
+   }
+  },
+  {
+   "month": "2024-07",
+   "anchor": 206,
+   "y": 11.4,
+   "n_train": 189,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.52578,
+    "brier": 0.17042,
+    "median": 2,
+    "q10": -50.9,
+    "q90": 55
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65095,
+    "brier": 0.22894,
+    "median": 15.5,
+    "q10": -250.6,
+    "q90": 279.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64314,
+    "brier": 0.22513,
+    "median": 23.8,
+    "q10": -193.2,
+    "q90": 240.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.52579,
+    "brier": 0.1699,
+    "median": 2.9,
+    "q10": -47.6,
+    "q90": 53.4
+   }
+  },
+  {
+   "month": "2024-08",
+   "anchor": 114,
+   "y": 14.2,
+   "n_train": 190,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.54908,
+    "brier": 0.18194,
+    "median": 2.2,
+    "q10": -50,
+    "q90": 54.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65576,
+    "brier": 0.23133,
+    "median": 6.5,
+    "q10": -259.6,
+    "q90": 270
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63707,
+    "brier": 0.22209,
+    "median": 23.2,
+    "q10": -193.2,
+    "q90": 239.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.54348,
+    "brier": 0.17842,
+    "median": 3.8,
+    "q10": -46.6,
+    "q90": 54.1
+   }
+  },
+  {
+   "month": "2024-09",
+   "anchor": 142,
+   "y": 25.4,
+   "n_train": 191,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.40095,
+    "brier": 0.1151,
+    "median": 28.3,
+    "q10": -23.2,
+    "q90": 79.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.67961,
+    "brier": 0.24324,
+    "median": 9.1,
+    "q10": -257,
+    "q90": 272.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.62935,
+    "brier": 0.21823,
+    "median": 22.8,
+    "q10": -192.9,
+    "q90": 238.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.40327,
+    "brier": 0.11612,
+    "median": 29,
+    "q10": -21.2,
+    "q90": 79.3
+   }
+  },
+  {
+   "month": "2024-10",
+   "anchor": 254,
+   "y": 1.2,
+   "n_train": 192,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.45007,
+    "brier": 0.14733,
+    "median": -17.7,
+    "q10": -68.4,
+    "q90": 33.1
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.67733,
+    "brier": 0.24213,
+    "median": 20.6,
+    "q10": -245.5,
+    "q90": 284.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.67822,
+    "brier": 0.24261,
+    "median": 22.2,
+    "q10": -193,
+    "q90": 237.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.44783,
+    "brier": 0.14464,
+    "median": -16.5,
+    "q10": -66.6,
+    "q90": 33.6
+   }
+  },
+  {
+   "month": "2024-11",
+   "anchor": 12,
+   "y": 22.7,
+   "n_train": 193,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.36073,
+    "brier": 0.10571,
+    "median": 38.6,
+    "q10": -11.6,
+    "q90": 88.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.70747,
+    "brier": 0.25717,
+    "median": -4,
+    "q10": -270.1,
+    "q90": 259.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63295,
+    "brier": 0.22,
+    "median": 21,
+    "q10": -193.6,
+    "q90": 235.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.35391,
+    "brier": 0.10624,
+    "median": 43.6,
+    "q10": -6.4,
+    "q90": 93.5
+   }
+  },
+  {
+   "month": "2024-12",
+   "anchor": 227,
+   "y": 25.6,
+   "n_train": 194,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.98732,
+    "brier": 0.38455,
+    "median": -6.8,
+    "q10": -56.4,
+    "q90": 42.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65317,
+    "brier": 0.23006,
+    "median": 17.9,
+    "q10": -248.3,
+    "q90": 281.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63427,
+    "brier": 0.22067,
+    "median": 21.2,
+    "q10": -192.8,
+    "q90": 235.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.98345,
+    "brier": 0.38377,
+    "median": -7.9,
+    "q10": -57.8,
+    "q90": 42
+   }
+  },
+  {
+   "month": "2025-01",
+   "anchor": 256,
+   "y": 14.3,
+   "n_train": 195,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.55977,
+    "brier": 0.19892,
+    "median": 37.4,
+    "q10": -11.8,
+    "q90": 86.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64638,
+    "brier": 0.22668,
+    "median": 21.1,
+    "q10": -245.1,
+    "q90": 284.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63728,
+    "brier": 0.22218,
+    "median": 21.6,
+    "q10": -191.9,
+    "q90": 235
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56089,
+    "brier": 0.19933,
+    "median": 38.8,
+    "q10": -11,
+    "q90": 88.7
+   }
+  },
+  {
+   "month": "2025-02",
+   "anchor": 143,
+   "y": 15.1,
+   "n_train": 196,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.57127,
+    "brier": 0.19313,
+    "median": 2.8,
+    "q10": -46,
+    "q90": 51.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.65626,
+    "brier": 0.23158,
+    "median": 9.4,
+    "q10": -256.8,
+    "q90": 273
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.6355,
+    "brier": 0.22127,
+    "median": 19.8,
+    "q10": -193,
+    "q90": 232.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.56088,
+    "brier": 0.18678,
+    "median": 4.8,
+    "q10": -45,
+    "q90": 54.6
+   }
+  },
+  {
+   "month": "2025-03",
+   "anchor": 151,
+   "y": 22.8,
+   "n_train": 197,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.06393,
+    "brier": 0.4157,
+    "median": -13,
+    "q10": -61.1,
+    "q90": 35
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.66936,
+    "brier": 0.23813,
+    "median": 10.2,
+    "q10": -256,
+    "q90": 273.7
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63874,
+    "brier": 0.22288,
+    "median": 18.8,
+    "q10": -193.5,
+    "q90": 231.1
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.05131,
+    "brier": 0.41176,
+    "median": -14.5,
+    "q10": -64.2,
+    "q90": 35.1
+   }
+  },
+  {
+   "month": "2025-04",
+   "anchor": 228,
+   "y": 17.7,
+   "n_train": 198,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.44902,
+    "brier": 0.13541,
+    "median": 21.7,
+    "q10": -26.1,
+    "q90": 69.5
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.64385,
+    "brier": 0.22541,
+    "median": 19.7,
+    "q10": -245.8,
+    "q90": 282.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63687,
+    "brier": 0.22194,
+    "median": 18.2,
+    "q10": -193.5,
+    "q90": 229.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.46404,
+    "brier": 0.14207,
+    "median": 22.9,
+    "q10": -26.8,
+    "q90": 72.5
+   }
+  },
+  {
+   "month": "2025-05",
+   "anchor": 177,
+   "y": 13.9,
+   "n_train": 199,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.90571,
+    "brier": 0.34712,
+    "median": -23.8,
+    "q10": -71,
+    "q90": 23.4
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.63402,
+    "brier": 0.22053,
+    "median": 17.9,
+    "q10": -176.4,
+    "q90": 219.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63884,
+    "brier": 0.22292,
+    "median": 18.2,
+    "q10": -193,
+    "q90": 229.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.84168,
+    "brier": 0.32301,
+    "median": -22.9,
+    "q10": -72.5,
+    "q90": 26.6
+   }
+  },
+  {
+   "month": "2025-06",
+   "anchor": 139,
+   "y": 14.7,
+   "n_train": 200,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.88658,
+    "brier": 0.33996,
+    "median": -22.7,
+    "q10": -69.7,
+    "q90": 24.3
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.48565,
+    "brier": 0.14974,
+    "median": 12.5,
+    "q10": -37.6,
+    "q90": 57.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.63946,
+    "brier": 0.22322,
+    "median": 17.1,
+    "q10": -193.5,
+    "q90": 227.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.84945,
+    "brier": 0.32613,
+    "median": -23.4,
+    "q10": -72.9,
+    "q90": 26.1
+   }
+  },
+  {
+   "month": "2025-07",
+   "anchor": 147,
+   "y": 7.3,
+   "n_train": 201,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.78432,
+    "brier": 0.29864,
+    "median": 37,
+    "q10": -9.8,
+    "q90": 83.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.48689,
+    "brier": 0.15175,
+    "median": 12.9,
+    "q10": -32.8,
+    "q90": 50.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.65089,
+    "brier": 0.22894,
+    "median": 16.6,
+    "q10": -193.4,
+    "q90": 226.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.79955,
+    "brier": 0.30553,
+    "median": 40.4,
+    "q10": -9.1,
+    "q90": 89.9
+   }
+  },
+  {
+   "month": "2025-08",
+   "anchor": 73,
+   "y": 2.2,
+   "n_train": 202,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.59337,
+    "brier": 0.20371,
+    "median": 16.1,
+    "q10": -30.4,
+    "q90": 62.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.40742,
+    "brier": 0.11881,
+    "median": 6.3,
+    "q10": -28,
+    "q90": 35.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.66474,
+    "brier": 0.23585,
+    "median": 16.2,
+    "q10": -193.2,
+    "q90": 225.7
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.59537,
+    "brier": 0.20375,
+    "median": 15.7,
+    "q10": -33.8,
+    "q90": 65.2
+   }
+  },
+  {
+   "month": "2025-09",
+   "anchor": 22,
+   "y": 11.9,
+   "n_train": 203,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.60332,
+    "brier": 0.21543,
+    "median": -9,
+    "q10": -55,
+    "q90": 37
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.45194,
+    "brier": 0.14444,
+    "median": 1.5,
+    "q10": -30.3,
+    "q90": 29.9
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64192,
+    "brier": 0.22445,
+    "median": 15.2,
+    "q10": -193.7,
+    "q90": 224.2
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.64806,
+    "brier": 0.23715,
+    "median": -14.3,
+    "q10": -63.7,
+    "q90": 35.1
+   }
+  },
+  {
+   "month": "2026-01",
+   "anchor": 50,
+   "y": 13,
+   "n_train": 204,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.78666,
+    "brier": 0.2888,
+    "median": 55.8,
+    "q10": 10.3,
+    "q90": 101.2
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.44214,
+    "brier": 0.13807,
+    "median": 4.9,
+    "q10": -23.5,
+    "q90": 32.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64109,
+    "brier": 0.22403,
+    "median": 14.1,
+    "q10": -194.3,
+    "q90": 222.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.70596,
+    "brier": 0.26322,
+    "median": 53.9,
+    "q10": 4.6,
+    "q90": 103.3
+   }
+  },
+  {
+   "month": "2026-02",
+   "anchor": 130,
+   "y": -9.2,
+   "n_train": 205,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.24779,
+    "brier": 0.05943,
+    "median": -22.6,
+    "q10": -68.3,
+    "q90": 23
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.8415,
+    "brier": 0.31113,
+    "median": 13.2,
+    "q10": -15.5,
+    "q90": 40.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.70562,
+    "brier": 0.25622,
+    "median": 15.1,
+    "q10": -192.7,
+    "q90": 222.9
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.24301,
+    "brier": 0.05835,
+    "median": -27.4,
+    "q10": -76.7,
+    "q90": 22
+   }
+  },
+  {
+   "month": "2026-03",
+   "anchor": -92,
+   "y": 17.8,
+   "n_train": 206,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.42786,
+    "brier": 0.12908,
+    "median": 25.6,
+    "q10": -19.5,
+    "q90": 70.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 1.00449,
+    "brier": 0.3803,
+    "median": -9,
+    "q10": -35.9,
+    "q90": 18.2
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64664,
+    "brier": 0.22679,
+    "median": 12.4,
+    "q10": -194.9,
+    "q90": 219.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.45318,
+    "brier": 0.13886,
+    "median": 25.9,
+    "q10": -23.4,
+    "q90": 75.1
+   }
+  },
+  {
+   "month": "2026-04",
+   "anchor": 178,
+   "y": 11.5,
+   "n_train": 207,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.4749,
+    "brier": 0.14632,
+    "median": 16.2,
+    "q10": -28.2,
+    "q90": 60.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.39819,
+    "brier": 0.12163,
+    "median": 18.8,
+    "q10": -6.6,
+    "q90": 46.1
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64213,
+    "brier": 0.22454,
+    "median": 11.8,
+    "q10": -195,
+    "q90": 218.6
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.50185,
+    "brier": 0.15735,
+    "median": 14,
+    "q10": -35.2,
+    "q90": 63.1
+   }
+  },
+  {
+   "month": "2026-05",
+   "anchor": 115,
+   "y": 17.2,
+   "n_train": 208,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.44647,
+    "brier": 0.13832,
+    "median": 24.9,
+    "q10": -18.9,
+    "q90": 68.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.37909,
+    "brier": 0.10747,
+    "median": 11.9,
+    "q10": -12.9,
+    "q90": 39.4
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64468,
+    "brier": 0.22581,
+    "median": 11.6,
+    "q10": -194.7,
+    "q90": 217.8
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.47286,
+    "brier": 0.14874,
+    "median": 26,
+    "q10": -23.1,
+    "q90": 75
+   }
+  },
+  {
+   "month": "2026-06",
+   "anchor": 172,
+   "y": 5.7,
+   "n_train": 209,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.8368,
+    "brier": 0.30274,
+    "median": -37.3,
+    "q10": -80.5,
+    "q90": 5.9
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.47213,
+    "brier": 0.15606,
+    "median": 17.4,
+    "q10": -7,
+    "q90": 43.5
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64532,
+    "brier": 0.22614,
+    "median": 11.7,
+    "q10": -194,
+    "q90": 217.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.79091,
+    "brier": 0.29068,
+    "median": -40,
+    "q10": -88.9,
+    "q90": 8.9
+   }
+  },
+  {
+   "month": "2026-07",
+   "anchor": 57,
+   "y": -2.3,
+   "n_train": 210,
+   "RIDGE_T_EWMA": {
+    "logLoss": 1.3938,
+    "brier": 0.52171,
+    "median": 46.4,
+    "q10": 3.1,
+    "q90": 89.8
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.38597,
+    "brier": 0.11381,
+    "median": 5.3,
+    "q10": -18.3,
+    "q90": 29.6
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.65757,
+    "brier": 0.23225,
+    "median": 10.3,
+    "q10": -194.9,
+    "q90": 215.5
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 1.33494,
+    "brier": 0.50629,
+    "median": 49.6,
+    "q10": 0.6,
+    "q90": 98.6
+   }
+  },
+  {
+   "month": "2026-08",
+   "anchor": -23,
+   "y": 16.2,
+   "n_train": 211,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.45542,
+    "brier": 0.13709,
+    "median": 16.9,
+    "q10": -26.9,
+    "q90": 60.7
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.70353,
+    "brier": 0.26054,
+    "median": -2.7,
+    "q10": -23.8,
+    "q90": 21.3
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64861,
+    "brier": 0.22778,
+    "median": 8.6,
+    "q10": -196.1,
+    "q90": 213.3
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.48994,
+    "brier": 0.15213,
+    "median": 16.6,
+    "q10": -32.4,
+    "q90": 65.7
+   }
+  },
+  {
+   "month": "2026-09",
+   "anchor": 162,
+   "y": 2.9,
+   "n_train": 212,
+   "RIDGE_T_EWMA": {
+    "logLoss": 0.60323,
+    "brier": 0.21091,
+    "median": 20.5,
+    "q10": -22.7,
+    "q90": 63.6
+   },
+   "PERSISTENCE_EMPIRICAL": {
+    "logLoss": 0.49677,
+    "brier": 0.16846,
+    "median": 15.8,
+    "q10": -5.2,
+    "q90": 38.8
+   },
+   "ROLLING_MEAN_GAUSS": {
+    "logLoss": 0.64463,
+    "brier": 0.22579,
+    "median": 8.8,
+    "q10": -195.4,
+    "q90": 213
+   },
+   "CLAIMS_ONLY": {
+    "logLoss": 0.57565,
+    "brier": 0.19465,
+    "median": 17.2,
+    "q10": -31.7,
+    "q90": 66.2
+   }
+  }
+ ]
+}
