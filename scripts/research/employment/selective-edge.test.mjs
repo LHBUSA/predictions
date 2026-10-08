@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {chooseOne,settle} from './selective-edge.mjs';
+const base=()=>({cutoffEpoch:100000,captureAt:99990,releaseAt:105000,modelStatus:'VALIDATED',contracts:[{ticker:'KXU3-26SEP-T4.2',termsOk:true,pYes:.85,quoteAt:99980,yesBid:.50,yesAsk:.53,liquidityVerified:true}]});
+test('fails closed for unvalidated model',()=>assert.equal(chooseOne({...base(),modelStatus:'RESEARCH_FAIL'}).reason,'MODEL_NOT_VALIDATED'));
+test('selects conservative YES',()=>{let x=chooseOne(base());assert.equal(x.status,'RESEARCH_CANDIDATE');assert.equal(x.selected.side,'YES')});
+test('stale quote refused',()=>assert.equal(chooseOne({...base(),contracts:[{...base().contracts[0],quoteAt:90000}]}).refusals.STALE_OR_FUTURE_QUOTE,1));
+test('crossed quote refused',()=>assert.equal(chooseOne({...base(),contracts:[{...base().contracts[0],yesBid:.9}]}).refusals.INVALID_QUOTE,1));
+test('liquidity missing refused',()=>assert.equal(chooseOne({...base(),contracts:[{...base().contracts[0],liquidityVerified:false}]}).refusals.UNVERIFIED_LIQUIDITY,1));
+test('late capture refused',()=>assert.equal(chooseOne({...base(),captureAt:100001}).reason,'INVALID_CAPTURE_TIMING'));
+test('selection independent of truth',()=>assert.deepEqual(chooseOne({...base(),outcomes:{a:0}}),chooseOne({...base(),outcomes:{a:1}})));
+test('settle only after selection',()=>{const x=chooseOne(base());assert.equal(settle(x,{'KXU3-26SEP-T4.2':1}).status,'SCORED');assert.equal(settle(x,{}).status,'UNSETTLED')});
+test('small disagreement abstains',()=>assert.equal(chooseOne({...base(),contracts:[{...base().contracts[0],pYes:.52}]}).status,'PASS'));
+test('max one selected per event',()=>{const b=base();b.contracts.push({...b.contracts[0],ticker:'KXU3-26SEP-T4.3'});assert.equal(chooseOne(b).selected.ticker,'KXU3-26SEP-T4.2')});
