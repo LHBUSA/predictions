@@ -192,3 +192,76 @@ off-grid strikes like 215,999, and 2022 rules that do not name the Employment Si
 `vs_market_gain_positive_means_model_better` = market LL minus model LL. The measurement is unchanged. Only the heading
 was wrong; the values above are the same quantity, negated to match the heading. The JSON evidence
 (sha256 5213b69e30f32f98dcfaed7eba38325857fa3598b8c70b0f29a3020b679880a9) is not modified.
+
+### C. Quote-freshness and executable-price sensitivity (2026-10-08, descriptive; replaces nothing above)
+
+Owner direction 2026-10-08, item 2. Source: `employment-v1-kalshi-fresh-quote-sensitivity.json`
+(sha256 16b1766e865af1018a7739a69c7c0b59e95f478f14a38065a8a532d821b8470c), produced by
+`scripts/research/employment/fresh-quote-sensitivity.mjs`. The script reads the committed comparison JSON (hash-checked)
+and does not refit. It first reproduces table B exactly, then filters. **Unit = one release**: each release is the mean
+over its priced contracts, and the block-3 bootstrap (2,000 reps, seed 20261008) resamples releases. **Quote age** =
+cutoff minus the end of the quoting candle; fresh means 2 h or less (Amendment B0). This finding was first reported in
+foreign commit b2ae835 (audit: `EMPLOYMENT_BRANCH_AUDIT_b2ae835.md`). Its point estimates reproduce exactly; the
+intervals are new.
+
+Quote age of the priced contracts in table B: KXU3 316 contracts, 106 older than 2 h, median 1 h, p90 27 h, max 71 h.
+KXPAYROLLS 279 contracts, 39 older than 2 h, median 0 h, p90 5 h, max 46 h.
+
+| Sample | Releases | Contracts | Market LL | V1 candidate LL | Candidate minus market LL [95% CI] | Brier diff [95% CI] | Best baseline minus market LL [95% CI] |
+|---|---|---|---|---|---|---|---|
+| KXU3, full (= table B) | 39 | 316 | 0.2654 | 0.3654 | +0.100 [+0.039, +0.168] | +0.033 [+0.010, +0.059] | claims-only +0.108 [+0.045, +0.179] |
+| KXU3, fresh only | 38 | 210 | 0.3943 | 0.5048 | **+0.111 [+0.014, +0.217]** | +0.040 [+0.001, +0.080] | claims-only +0.122 [+0.022, +0.236] |
+| KXU3, stale only (> 2 h) | 32 | 106 | | | | | |
+| KXPAYROLLS, full (= table B) | 31 | 279 | 0.4136 | 0.6878 | +0.274 [+0.011, +0.444] | +0.097 [-0.000, +0.160] | rolling mean +0.238 [+0.135, +0.344] |
+| KXPAYROLLS, fresh only | 31 | 240 | 0.4700 | 0.7562 | **+0.286 [-0.009, +0.486]** | +0.098 [-0.007, +0.170] | rolling mean +0.188 [+0.080, +0.300] |
+| KXPAYROLLS, stale only (> 2 h) | 19 | 39 | | | | | |
+
+Positive = market better. Fresh U-3: the market is better than every V1 model, with every interval excluding zero.
+Fresh payrolls: the market is better than the baselines with intervals excluding zero. For the V1 candidate, the
+point estimate is larger than on the full sample, but the interval now touches zero because the fresh sample is
+noisier. Fresh quotes are the less liquid, wider-tailed late quotes. Their absolute log losses (0.39, 0.47) are higher
+than on the full sample, so absolute levels are not comparable across rows; only the paired differences are.
+
+**Executable sensitivity (fresh quotes, 1 contract per signal, taker).** Rule: buy YES at the ask if
+p - ask - fee(ask) > 0; buy NO at 1 - bid if (bid - p) - fee(1 - bid) > 0. Kalshi fee:
+ceil(100 * 0.07 * P * (1 - P)) / 100 per contract. The KXU3/KXPAYROLLS series report fee_type
+`quadratic_with_maker_fees` and multiplier 1, read 2026-10-08. P&L is summed per release, with the bootstrap over
+releases.
+
+| Series | Model | Trades | Win rate | Fees | P&L per release, $ [95% CI] | Total $ |
+|---|---|---|---|---|---|---|
+| KXU3 | V1 candidate | 159 | 0.28 | 2.26 | -0.05 [-0.34, +0.16] | -1.89 |
+| KXU3 | claims-only | 160 | 0.28 | 2.30 | -0.08 [-0.38, +0.13] | -3.09 |
+| KXPAYROLLS | V1 candidate | 217 | 0.34 | 3.23 | +0.46 [-0.22, +1.65] | +14.22 |
+| KXPAYROLLS | rolling mean | 230 | 0.25 | 3.46 | +0.29 [-0.24, +0.80] | +9.11 |
+
+No executable result is distinguishable from zero. The payroll P&L is concentrated in two releases. For the V1
+candidate, January and February 2026 contribute $13.03 of the $14.22, and only 13 of 31 releases are positive.
+For the rolling mean, its two largest releases (January and July 2026) contribute $8.13 of the $9.11. This is the
+pattern of a mis-calibrated model that occasionally wins a tail bet, consistent with its worse log loss. It is not
+evidence of an edge.
+
+**Liquidity:** historical order-book depth was never captured, so fills larger than 1 contract cannot be assessed. Of
+the contracts these rules would have traded, about 35% had zero volume in the quoting candle (KXU3 54/159, KXPAYROLLS
+78/217 for the V1 candidate). Median 24 h volume before the cutoff was about 1,300 (KXU3) and 3,900 (KXPAYROLLS)
+contracts. Median fresh spread was 3 cents (KXU3) and 2 cents (KXPAYROLLS); p90 was 7 and 6 cents.
+
+**Conclusion, unchanged:** the market's advantage over V1 does not come from stale quotes. V1 stays CLOSED (FAIL/FAIL).
+None of these numbers is a gate, a V2 result, or a claim of a tradable edge.
+
+### D. October 2025 settlement: terms provenance (2026-10-08, extends section A's caveat)
+
+Kalshi's original CFTC self-certifications were fetched 2026-10-08 from the `contract_url` the series API now
+returns:
+- U-3: filed 2021-07-01, sha256 57dd147e...f5c7.
+- PAYROLLS: filed 2022-03-08, sha256 5375e8ec...93e6.
+
+Copies are in `D:\Workers\scratch\predictions-employment\raw\kalshi-terms\`. **Neither filing contains the "last
+available month" fallback.** On missing data, they provide only a discretionary Market Outcome Review (Rulebook 6.3(c))
+and Kalshi's right to designate a new Source Agency or Underlying (Rule 7.2). The fallback quoted in section A comes from
+`contract_terms/U3.pdf` (sha256 bb568889...). That file was served on 2026-10-08, is undated, and is a later revision.
+What can be established:
+- The 2025-12-16 settlement at 4.4 is consistent with the current terms.
+- Which revision governed in December 2025 is **not established**, and nothing here depends on it.
+- Settlement and observation stay separate, as before. October 2025 U-3 remains INPUT_UNAVAILABLE in the ledger, and
+  the settlement value is recorded only as a settlement fact.

@@ -9,6 +9,7 @@ explicit owner GO, and that date is recorded here as Amendment B1. Until then th
 point-in-time ledger extension (section 3), research-only. KXU3 and KXPAYROLLS remain MARKET MONITORING: no published
 forecast, no edge claim, no premium pick, whatever any gate says, until the owner approves a product change.
 Employment V1 is CLOSED (KXU3 FAIL, KXPAYROLLS FAIL); V1 is never retuned.
+Dated amendments in the change log (B0, B2) govern where they differ from the sections below.
 
 Objective (owner): a model that adds genuine intelligence beyond the market, not one that only passes internal tests.
 So V2 has **two separate gates**. The statistical gate decides whether a model is sound. The commercial gate decides
@@ -122,4 +123,79 @@ with sha256 recorded in this file's amendments.
   the gate, never in place of it: an executable sensitivity (YES at ask, NO at 1 - bid, after Kalshi fees), quote-age
   distribution, spread and volume per event. A model that beats the mid but not the executable price has no tradable
   edge. The V1 comparison and its JSON are not changed (V1 is closed).
+- 2026-10-08 (**Amendment B2**, before any V2 forecast exists; owner direction 2026-10-08 "final protocol checks").
+  B1 stays reserved for the capture-start date. B2 governs wherever it conflicts with sections 5-6 or B0. Status
+  remains HOLD.
+
+  **B2.1 Unit of evaluation: the monthly release.**
+  - One Employment Situation publication for reference month M is one release. Every `n` in section 6 counts
+    releases.
+  - Statistical gate: one ladder log loss per release per model (V1 A1 ladder).
+  - Commercial gate, probability part: per release, the mean over that release's eligible contracts. Each release
+    gets equal weight however many strikes it lists.
+  - Commercial gate, executable part: per release, the summed P&L of its signals. A release with eligible contracts
+    but no signal scores 0 and still counts.
+  - Intervals: a moving-block bootstrap over releases in time order (block 3, 2,000 reps, seed 20261008).
+    "One-sided 95% bound" means the 5th (lower) or 95th (upper) percentile of the 2,000 bootstrap means.
+  - No contract-level standard error, pooled contract count or contract-level test may appear in a gate or a headline
+    figure. Contract counts are descriptive only.
+  - KXU3 and KXPAYROLLS share releases. They are separate gates and are never pooled.
+
+  **B2.2 Releases excluded from both gates.** These are listed in the evidence and never count toward n:
+  - BLS does not publish the reference month (INPUT_UNAVAILABLE).
+  - Kalshi settles by anything other than the first print: a terms fallback such as the October 2025 "last available
+    month" rule, a Market Outcome Review, or a source change.
+
+  Settlement and published data stay separate. A settlement value is never an observation, target or feature.
+  Truth is the BLS first print; settlement agreement is reported as data validation only. Each capture archives the
+  contract terms PDF and the series record with sha256, so the rules in force are proven at the time. Section D of the
+  V1 evidence shows the original 2021/2022 filings lack the fallback, so terms can change between capture and expiry.
+
+  **B2.3 Commercial gate, restated in full (replaces 6.2 and B0).**
+  - *Snapshot (prospective, read-only, never an input):* fetched between 19:50 and 20:00 ET on the cutoff evening,
+    with each response's fetch time recorded. For every listed contract: the order book (`/markets/{ticker}/orderbook`),
+    the market record, the series record (`fee_type`, `fee_multiplier`) and the terms PDF hash. YES bid = best YES
+    bid; YES ask = 1 - best NO bid; mid = (bid + ask) / 2.
+  - *Freshness:* a snapshot no more than 10 minutes old is live. If the live snapshot is missing, the probability part
+    may use the B0 candle rule: mid of the last two-sided hourly candle ending within [cutoff - 2 h, cutoff].
+    Otherwise the contract is NO_PRICE for every source. The executable part uses live snapshots only, with no candle
+    fallback.
+  - *Eligibility:* the terms pass `employmentTerms` (fail closed), both sides are quoted, and the strike is on the model
+    grid.
+  - *(a) Probability:* mean per-release log loss (candidate minus market mid) < 0, with its one-sided 95% upper bound
+    < 0, AND mean per-release Brier difference <= 0.
+  - *(b) Executable:* the rule frozen in V1 evidence section C.
+    - Buy YES at the ask if p - ask - fee(ask) > 0; buy NO at 1 - bid if (bid - p) - fee(1 - bid) > 0. At most one
+      side per contract.
+    - Size is 1 contract at the displayed best level. No fill better than displayed, no fill after the cutoff, and
+      no maker rebate.
+    - Fee: the taker fee for the captured series `fee_type`. Quadratic: ceil(100 * 0.07 * multiplier * C * P(1 - P))
+      / 100 per order of C contracts. A fee type that is missing or unrecognised makes that contract NO_PRICE for (b).
+    - P&L uses the actual Kalshi settlement. Releases where settlement differs from the first print are already
+      excluded by B2.2.
+    - Pass needs mean per-release P&L > 0 with its one-sided 95% lower bound > 0, AND total P&L still > 0 after
+      dropping the single best release (concentration guard: V1 payroll P&L was mostly two releases).
+  - *Liquidity sensitivity (reported, never gating, never in place of (b)):* sizes of 10 and 100 contracts, walking
+    the captured book and filling only the displayed size. Also quote age, spread, top-of-book size, 24 h volume and
+    open interest per release.
+  - *Pass* = (a) AND (b) AND at least 18 releases with at least one eligible contract live-priced. Anything else means
+    "no demonstrated edge", and the series stays MARKET MONITORING.
+
+  **B2.4 Calendar.** n >= 24 releases means about 24 months, i.e. about two years. The next release is 2026-11-06
+  (October 2026 data); its cutoff is 2026-11-05 20:00 EST = 2026-11-06 01:00Z, and Kalshi's KXU3-26OCT and
+  KXPAYROLLS-26OCT close at 13:29Z.
+  - If capture starts before that cutoff, the interim look (n = 12, descriptive only) comes about October 2027 and the
+    24th scoreable release about October 2028.
+  - Every cancelled or fallback-settled month adds a month; so does every month of delay to the GO.
+  - Commercial (b) also needs at least 18 live snapshots. A missed snapshot cannot be repaired later.
+
+  **B2.5 Ownership and capture validity.** The rules in `EMPLOYMENT_BRANCH_AUDIT_b2ae835.md` apply:
+  - One owning session per branch.
+  - Foreign commits are audited and are never decisions or evidence.
+  - Capture files count only if written by the single scheduled collector and pushed before 08:30 ET on release
+    day, as shown by the GitHub push record, not the git commit date.
+
+  **B2.6 CPI isolation.** Employment research and capture never run in, import into, deploy, or schedule on the
+  pbe-predictions Worker. They never write to tkmln and never touch CPI SHADOW code, tables or crons. The CPI forecast
+  freeze of 2026-10-14 00:09Z is unaffected.
 

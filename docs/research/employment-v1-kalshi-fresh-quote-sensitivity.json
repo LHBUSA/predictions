@@ -1,0 +1,785 @@
+{
+ "source": {
+  "file": "docs/research/employment-v1-kalshi-comparison.json",
+  "sha256": "5213b69e30f32f98dcfaed7eba38325857fa3598b8c70b0f29a3020b679880a9",
+  "raw_kalshi_manifest_sha256": "0ec153e9415abd95a101aa0432ee0d8641fe1b8f4bdea3e1ab14cf1701d25e4e"
+ },
+ "rules": "see header of scripts/research/employment/fresh-quote-sensitivity.mjs",
+ "note": "V1 is CLOSED (FAIL/FAIL). Sensitivity of a closed descriptive comparison; not a gate, not a V2 result.",
+ "series": {
+  "KXU3": {
+   "roles": {
+    "V1_CANDIDATE": "RIDGE_T_EWMA",
+    "BEST_BASELINE": "CLAIMS_ONLY"
+   },
+   "quote_age_hours": {
+    "priced_contracts": 316,
+    "older_than_2h": 106,
+    "median": 1,
+    "p90": 27,
+    "max": 71
+   },
+   "full_comparison_as_committed": {
+    "releases": 39,
+    "contracts": 316,
+    "months": [
+     "2022-12",
+     "2026-07"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.2654,
+     "RIDGE_T_EWMA": 0.3654,
+     "PERSISTENCE_EMPIRICAL": 0.4336,
+     "ROLLING_MEAN_GAUSS": 0.5127,
+     "CLAIMS_ONLY": 0.3731
+    },
+    "mean_brier": {
+     "MARKET": 0.0824,
+     "RIDGE_T_EWMA": 0.1154,
+     "PERSISTENCE_EMPIRICAL": 0.1371,
+     "ROLLING_MEAN_GAUSS": 0.1642,
+     "CLAIMS_ONLY": 0.1185
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.1,
+       "ci95": [
+        0.0394,
+        0.1683
+       ],
+       "share_of_reps_market_not_worse": 0.999
+      },
+      "brier": {
+       "mean": 0.0329,
+       "ci95": [
+        0.0099,
+        0.0591
+       ],
+       "share_of_reps_market_not_worse": 0.9965
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.1682,
+       "ci95": [
+        0.1036,
+        0.2585
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0546,
+       "ci95": [
+        0.031,
+        0.0883
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.2473,
+       "ci95": [
+        0.1873,
+        0.3186
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0818,
+       "ci95": [
+        0.0603,
+        0.1075
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.1077,
+       "ci95": [
+        0.0448,
+        0.179
+       ],
+       "share_of_reps_market_not_worse": 0.9995
+      },
+      "brier": {
+       "mean": 0.036,
+       "ci95": [
+        0.0128,
+        0.0624
+       ],
+       "share_of_reps_market_not_worse": 0.9985
+      }
+     }
+    }
+   },
+   "fresh_quotes_le_2h": {
+    "releases": 38,
+    "contracts": 210,
+    "months": [
+     "2022-12",
+     "2026-07"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.3943,
+     "RIDGE_T_EWMA": 0.5048,
+     "PERSISTENCE_EMPIRICAL": 0.5034,
+     "ROLLING_MEAN_GAUSS": 0.5737,
+     "CLAIMS_ONLY": 0.5161
+    },
+    "mean_brier": {
+     "MARKET": 0.1286,
+     "RIDGE_T_EWMA": 0.1682,
+     "PERSISTENCE_EMPIRICAL": 0.167,
+     "ROLLING_MEAN_GAUSS": 0.1921,
+     "CLAIMS_ONLY": 0.1715
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.1105,
+       "ci95": [
+        0.0141,
+        0.2174
+       ],
+       "share_of_reps_market_not_worse": 0.9865
+      },
+      "brier": {
+       "mean": 0.0397,
+       "ci95": [
+        0.0006,
+        0.0802
+       ],
+       "share_of_reps_market_not_worse": 0.976
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.109,
+       "ci95": [
+        0.0354,
+        0.2094
+       ],
+       "share_of_reps_market_not_worse": 0.999
+      },
+      "brier": {
+       "mean": 0.0384,
+       "ci95": [
+        0.0099,
+        0.0761
+       ],
+       "share_of_reps_market_not_worse": 0.9975
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.1794,
+       "ci95": [
+        0.0876,
+        0.2797
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0636,
+       "ci95": [
+        0.0311,
+        0.1
+       ],
+       "share_of_reps_market_not_worse": 0.9995
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.1218,
+       "ci95": [
+        0.0221,
+        0.2363
+       ],
+       "share_of_reps_market_not_worse": 0.991
+      },
+      "brier": {
+       "mean": 0.043,
+       "ci95": [
+        0.0039,
+        0.0844
+       ],
+       "share_of_reps_market_not_worse": 0.9835
+      }
+     }
+    }
+   },
+   "stale_quotes_gt_2h_only": {
+    "releases": 32,
+    "contracts": 106,
+    "months": [
+     "2022-12",
+     "2026-06"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.0749,
+     "RIDGE_T_EWMA": 0.1561,
+     "PERSISTENCE_EMPIRICAL": 0.3196,
+     "ROLLING_MEAN_GAUSS": 0.4035,
+     "CLAIMS_ONLY": 0.1596
+    },
+    "mean_brier": {
+     "MARKET": 0.0186,
+     "RIDGE_T_EWMA": 0.0364,
+     "PERSISTENCE_EMPIRICAL": 0.0874,
+     "ROLLING_MEAN_GAUSS": 0.1142,
+     "CLAIMS_ONLY": 0.0389
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.0811,
+       "ci95": [
+        0.0076,
+        0.163
+       ],
+       "share_of_reps_market_not_worse": 0.9825
+      },
+      "brier": {
+       "mean": 0.0179,
+       "ci95": [
+        -0.0088,
+        0.0473
+       ],
+       "share_of_reps_market_not_worse": 0.9105
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.2447,
+       "ci95": [
+        0.1764,
+        0.3341
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0689,
+       "ci95": [
+        0.0419,
+        0.1016
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.3286,
+       "ci95": [
+        0.2769,
+        0.3759
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0956,
+       "ci95": [
+        0.0762,
+        0.1135
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.0847,
+       "ci95": [
+        0.0069,
+        0.1661
+       ],
+       "share_of_reps_market_not_worse": 0.9835
+      },
+      "brier": {
+       "mean": 0.0204,
+       "ci95": [
+        -0.0071,
+        0.05
+       ],
+       "share_of_reps_market_not_worse": 0.931
+      }
+     }
+    }
+   },
+   "fresh_spread": {
+    "median": 0.03,
+    "p90": 0.07
+   },
+   "executable_fresh_1_contract_taker": {
+    "RIDGE_T_EWMA": {
+     "releases": 38,
+     "trades": 159,
+     "win_rate": 0.283,
+     "fees_paid": 2.26,
+     "pnl_per_release_dollars": {
+      "mean": -0.0497,
+      "ci95": [
+       -0.3434,
+       0.1561
+      ],
+      "share_of_reps_pnl_non_negative": 0.2285
+     },
+     "pnl_total_dollars": -1.89,
+     "liquidity_of_traded_contracts": {
+      "n": 159,
+      "quote_candle_volume_zero": 54,
+      "median_volume_24h": 1326
+     }
+    },
+    "PERSISTENCE_EMPIRICAL": {
+     "releases": 38,
+     "trades": 171,
+     "win_rate": 0.1637,
+     "fees_paid": 2.32,
+     "pnl_per_release_dollars": {
+      "mean": -0.0416,
+      "ci95": [
+       -0.2979,
+       0.1268
+      ],
+      "share_of_reps_pnl_non_negative": 0.202
+     },
+     "pnl_total_dollars": -1.58,
+     "liquidity_of_traded_contracts": {
+      "n": 171,
+      "quote_candle_volume_zero": 70,
+      "median_volume_24h": 1140
+     }
+    },
+    "ROLLING_MEAN_GAUSS": {
+     "releases": 38,
+     "trades": 198,
+     "win_rate": 0.1364,
+     "fees_paid": 2.69,
+     "pnl_per_release_dollars": {
+      "mean": -0.1547,
+      "ci95": [
+       -0.3824,
+       0.0339
+      ],
+      "share_of_reps_pnl_non_negative": 0.047
+     },
+     "pnl_total_dollars": -5.88,
+     "liquidity_of_traded_contracts": {
+      "n": 198,
+      "quote_candle_volume_zero": 87,
+      "median_volume_24h": 1000.6699999999998
+     }
+    },
+    "CLAIMS_ONLY": {
+     "releases": 38,
+     "trades": 160,
+     "win_rate": 0.275,
+     "fees_paid": 2.3,
+     "pnl_per_release_dollars": {
+      "mean": -0.0813,
+      "ci95": [
+       -0.3771,
+       0.1253
+      ],
+      "share_of_reps_pnl_non_negative": 0.1575
+     },
+     "pnl_total_dollars": -3.09,
+     "liquidity_of_traded_contracts": {
+      "n": 160,
+      "quote_candle_volume_zero": 56,
+      "median_volume_24h": 1331.1599999999999
+     }
+    }
+   }
+  },
+  "KXPAYROLLS": {
+   "roles": {
+    "V1_CANDIDATE": "RIDGE_T_EWMA",
+    "BEST_BASELINE": "ROLLING_MEAN_GAUSS"
+   },
+   "quote_age_hours": {
+    "priced_contracts": 279,
+    "older_than_2h": 39,
+    "median": 0,
+    "p90": 5,
+    "max": 46
+   },
+   "full_comparison_as_committed": {
+    "releases": 31,
+    "contracts": 279,
+    "months": [
+     "2023-03",
+     "2026-07"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.4136,
+     "RIDGE_T_EWMA": 0.6878,
+     "PERSISTENCE_EMPIRICAL": 0.659,
+     "ROLLING_MEAN_GAUSS": 0.6518,
+     "CLAIMS_ONLY": 0.7106
+    },
+    "mean_brier": {
+     "MARKET": 0.1365,
+     "RIDGE_T_EWMA": 0.2331,
+     "PERSISTENCE_EMPIRICAL": 0.233,
+     "ROLLING_MEAN_GAUSS": 0.2294,
+     "CLAIMS_ONLY": 0.2362
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.2741,
+       "ci95": [
+        0.0114,
+        0.4445
+       ],
+       "share_of_reps_market_not_worse": 0.9785
+      },
+      "brier": {
+       "mean": 0.0966,
+       "ci95": [
+        -0.0004,
+        0.1603
+       ],
+       "share_of_reps_market_not_worse": 0.9735
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.2454,
+       "ci95": [
+        0.1506,
+        0.3403
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0965,
+       "ci95": [
+        0.0601,
+        0.1318
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.2382,
+       "ci95": [
+        0.1353,
+        0.3437
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0929,
+       "ci95": [
+        0.0552,
+        0.1305
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.2969,
+       "ci95": [
+        0.0214,
+        0.4997
+       ],
+       "share_of_reps_market_not_worse": 0.98
+      },
+      "brier": {
+       "mean": 0.0997,
+       "ci95": [
+        0.0036,
+        0.1657
+       ],
+       "share_of_reps_market_not_worse": 0.9775
+      }
+     }
+    }
+   },
+   "fresh_quotes_le_2h": {
+    "releases": 31,
+    "contracts": 240,
+    "months": [
+     "2023-03",
+     "2026-07"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.47,
+     "RIDGE_T_EWMA": 0.7562,
+     "PERSISTENCE_EMPIRICAL": 0.6681,
+     "ROLLING_MEAN_GAUSS": 0.6584,
+     "CLAIMS_ONLY": 0.7817
+    },
+    "mean_brier": {
+     "MARKET": 0.1587,
+     "RIDGE_T_EWMA": 0.2567,
+     "PERSISTENCE_EMPIRICAL": 0.2375,
+     "ROLLING_MEAN_GAUSS": 0.2327,
+     "CLAIMS_ONLY": 0.2561
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.2862,
+       "ci95": [
+        -0.0086,
+        0.486
+       ],
+       "share_of_reps_market_not_worse": 0.9685
+      },
+      "brier": {
+       "mean": 0.098,
+       "ci95": [
+        -0.0073,
+        0.1701
+       ],
+       "share_of_reps_market_not_worse": 0.9625
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.1981,
+       "ci95": [
+        0.1007,
+        0.2985
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.0788,
+       "ci95": [
+        0.0403,
+        0.1181
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.1884,
+       "ci95": [
+        0.0803,
+        0.2995
+       ],
+       "share_of_reps_market_not_worse": 0.9995
+      },
+      "brier": {
+       "mean": 0.074,
+       "ci95": [
+        0.033,
+        0.1158
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.3117,
+       "ci95": [
+        -0.01,
+        0.5464
+       ],
+       "share_of_reps_market_not_worse": 0.9705
+      },
+      "brier": {
+       "mean": 0.0974,
+       "ci95": [
+        -0.0097,
+        0.1724
+       ],
+       "share_of_reps_market_not_worse": 0.961
+      }
+     }
+    }
+   },
+   "stale_quotes_gt_2h_only": {
+    "releases": 19,
+    "contracts": 39,
+    "months": [
+     "2023-03",
+     "2025-03"
+    ],
+    "mean_log_loss": {
+     "MARKET": 0.1003,
+     "RIDGE_T_EWMA": 0.5035,
+     "PERSISTENCE_EMPIRICAL": 0.6116,
+     "ROLLING_MEAN_GAUSS": 0.6039,
+     "CLAIMS_ONLY": 0.533
+    },
+    "mean_brier": {
+     "MARKET": 0.0231,
+     "RIDGE_T_EWMA": 0.161,
+     "PERSISTENCE_EMPIRICAL": 0.2094,
+     "ROLLING_MEAN_GAUSS": 0.2056,
+     "CLAIMS_ONLY": 0.17
+    },
+    "candidate_minus_market": {
+     "RIDGE_T_EWMA": {
+      "log_loss": {
+       "mean": 0.4032,
+       "ci95": [
+        0.1654,
+        0.5934
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.1379,
+       "ci95": [
+        0.0526,
+        0.2092
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "PERSISTENCE_EMPIRICAL": {
+      "log_loss": {
+       "mean": 0.5112,
+       "ci95": [
+        0.4135,
+        0.5655
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.1863,
+       "ci95": [
+        0.1597,
+        0.2019
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "ROLLING_MEAN_GAUSS": {
+      "log_loss": {
+       "mean": 0.5035,
+       "ci95": [
+        0.4127,
+        0.5528
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.1825,
+       "ci95": [
+        0.1586,
+        0.1951
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     },
+     "CLAIMS_ONLY": {
+      "log_loss": {
+       "mean": 0.4327,
+       "ci95": [
+        0.1767,
+        0.6408
+       ],
+       "share_of_reps_market_not_worse": 1
+      },
+      "brier": {
+       "mean": 0.1469,
+       "ci95": [
+        0.0598,
+        0.2211
+       ],
+       "share_of_reps_market_not_worse": 1
+      }
+     }
+    }
+   },
+   "fresh_spread": {
+    "median": 0.02,
+    "p90": 0.06
+   },
+   "executable_fresh_1_contract_taker": {
+    "RIDGE_T_EWMA": {
+     "releases": 31,
+     "trades": 217,
+     "win_rate": 0.341,
+     "fees_paid": 3.23,
+     "pnl_per_release_dollars": {
+      "mean": 0.4587,
+      "ci95": [
+       -0.2219,
+       1.6497
+      ],
+      "share_of_reps_pnl_non_negative": 0.899
+     },
+     "pnl_total_dollars": 14.22,
+     "liquidity_of_traded_contracts": {
+      "n": 217,
+      "quote_candle_volume_zero": 78,
+      "median_volume_24h": 3945.71
+     }
+    },
+    "PERSISTENCE_EMPIRICAL": {
+     "releases": 31,
+     "trades": 225,
+     "win_rate": 0.2578,
+     "fees_paid": 3.37,
+     "pnl_per_release_dollars": {
+      "mean": 0.2358,
+      "ci95": [
+       -0.251,
+       0.669
+      ],
+      "share_of_reps_pnl_non_negative": 0.739
+     },
+     "pnl_total_dollars": 7.31,
+     "liquidity_of_traded_contracts": {
+      "n": 225,
+      "quote_candle_volume_zero": 79,
+      "median_volume_24h": 4202
+     }
+    },
+    "ROLLING_MEAN_GAUSS": {
+     "releases": 31,
+     "trades": 230,
+     "win_rate": 0.2522,
+     "fees_paid": 3.46,
+     "pnl_per_release_dollars": {
+      "mean": 0.2939,
+      "ci95": [
+       -0.2419,
+       0.7965
+      ],
+      "share_of_reps_pnl_non_negative": 0.7535
+     },
+     "pnl_total_dollars": 9.11,
+     "liquidity_of_traded_contracts": {
+      "n": 230,
+      "quote_candle_volume_zero": 80,
+      "median_volume_24h": 4237.139999999999
+     }
+    },
+    "CLAIMS_ONLY": {
+     "releases": 31,
+     "trades": 222,
+     "win_rate": 0.3288,
+     "fees_paid": 3.31,
+     "pnl_per_release_dollars": {
+      "mean": 0.3584,
+      "ci95": [
+       -0.2881,
+       1.4919
+      ],
+      "share_of_reps_pnl_non_negative": 0.859
+     },
+     "pnl_total_dollars": 11.11,
+     "liquidity_of_traded_contracts": {
+      "n": 222,
+      "quote_candle_volume_zero": 79,
+      "median_volume_24h": 4202
+     }
+    }
+   }
+  }
+ }
+}
