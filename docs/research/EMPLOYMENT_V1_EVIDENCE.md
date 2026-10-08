@@ -125,20 +125,39 @@ KXADP is out of scope (proprietary ADP data, not purchased or ingested).
 Research evidence only. No Employment production table, cron lane, Worker path, public model row or SHADOW forecast exists.
 Both targets stay RESEARCH. A next step, if any, needs the owner.
 
-## Post-gate addenda (2026-10-08, after the verdicts; the verdicts are unchanged and final per the owner)
+## Post-gate addenda (2026-10-08, after the verdicts; the verdicts are unchanged and final)
+
+Owner decision 2026-10-08: **Employment V1 is CLOSED. KXU3 FAIL. KXPAYROLLS FAIL.** V2 is HOLD (see
+`EMPLOYMENT_V2_PROTOCOL.md`). KXU3 and KXPAYROLLS stay MARKET MONITORING: no published forecast, edge claim or pick.
+
+### A. Settlement validation (data integrity; says nothing about predictive skill)
 
 **Data integrity: PASS.**
 - DOL reconciliation: 1,028 archived files = 1,022 releases + 2 identical duplicates (the same release listed under two
   years: 2013-01-03 in 2012/ and 2013/, 2013-08-01 in 2012/ and 2013/) + 4 refused defective documents. All 1,028 have
   HTTP 200 and their sha256 matches the manifest (382 .asp, 646 .pdf). No other category exists.
-- Independent truth check against Kalshi's own settlements (`employment-v1-kalshi-comparison.json`): **810 / 810**
-  checkable contracts agree with our first-print ledger (KXU3 461/461, KXPAYROLLS 349/349, 2021-2026). This includes
-  November 2025 U-3: Kalshi `expiration_value` 4.6 = our first print, not the 4.5 January revision.
-- Not checkable: the 9 October 2025 KXU3 contracts. Kalshi settled them with `expiration_value` 4.4, but BLS never
-  published an October 2025 U-3 (the release prints it as not available). The ledger keeps INPUT_UNAVAILABLE. This is a
-  settlement-source risk to note for any future U-3 lane.
+- Ledger vs Kalshi settlements (`employment-v1-kalshi-comparison.json`, `truth_agreement`): **810 / 810** checkable
+  contracts agree with the YES/NO outcome our first-print ledger implies (KXU3 461/461, KXPAYROLLS 349/349, 2021-2026).
+  This includes November 2025 U-3: Kalshi `expiration_value` 4.6 = our first print, not the 4.5 January revision.
+  This validates our truth ledger and our strict ">" semantics. It is not evidence that any model is accurate.
 - Reproducibility: rebuilding both ledgers from the raw archive into a clean directory and re-running both gates gives
   byte-identical ledgers (3/3 hashes) and evidence (both sha256 identical).
+
+**October 2025 KXU3: settled by a contract fallback, not by an observation.** The 9 contracts settled on 2025-12-16 at
+17:33Z (the day the November release printed October U-3 as not available) with `expiration_value` 4.4. That equals
+the September 2025 first print. Kalshi's U3 contract terms (`assets.kalshi.com/contract_terms/U3.pdf`, captured
+2026-10-08, sha256 bb568889...ce2e), under Payout Criterion: "If no data is available at the Expiration Date at the
+Expiration time, then the market will resolve based on the last available month's data." Expiration Date: "If ... the
+Source Agency announces that they will not release the Underlying data, expiration will be moved to an earlier date."
+The settlement is therefore consistent with the terms. The PAYROLLS terms (sha256 39b74218...12ac8) carry the same
+fallback ("the last available month of data"). October 2025 payrolls were printed (-105k), and all 7 contracts settled
+NO, consistent with the ledger.
+- Our ledger keeps October 2025 U-3 = **INPUT_UNAVAILABLE**. No observation is created from the settlement.
+- Consequence for any future normalizer: **settlement value != observation.** Settlement = first print if published;
+  otherwise the terms' fallback (the last available month), recorded as a contract rule with its own provenance. It is
+  never written into the observation ledger, and never used as a training target or feature.
+- Caveat: the terms PDF is the version served on 2026-10-08. Whether this exact wording was in force in December 2025
+  is not independently established (the PDF carries no version date).
 
 **April 2020 provenance limitation.** The only source for the -20,500k first print is the correction note inside the
 archived, corrected BLS file. An independent copy of the original release was not retrievable (Wayback 429). Kalshi has
@@ -153,13 +172,23 @@ no April 2020 market. The figure is used as-is and flagged.
    longer matches the page.
 Items 2-4 fail on main too. They belong to the network/All Access work, not to Predictions research.
 
-**V1 vs Kalshi, descriptive only** (T-1D 20:00 ET mid of the last hourly candle with both quotes; every source scored on
-the same priced contracts; fail-closed term refusals excluded for all sources; block-3 bootstrap):
-| | Events | Contracts | Market LL / Brier | V1 candidate | Best V1 baseline | Candidate minus market (LL), 95% CI |
+### B. Predictive performance vs the market (descriptive only; V1 verdicts unchanged)
+
+T-1D 20:00 ET mid of the last hourly candle with both quotes; every source scored on the same priced contracts; fail-closed
+term refusals excluded for all sources; block-3 bootstrap. **Lower log loss is better.** "Model LL minus market LL" > 0
+means the market was better.
+
+| | Events | Contracts | Market LL / Brier | V1 candidate LL / Brier | Best V1 baseline LL / Brier | Candidate LL minus market LL, 95% CI |
 |---|---|---|---|---|---|---|
-| KXU3 | 39 (2022-12 .. 2026-07) | 316 | **0.2654 / 0.0824** | 0.3654 / 0.1154 | claims-only 0.3731 / 0.1185 | -0.100 [-0.168, -0.039] |
-| KXPAYROLLS | 31 (2023-03 .. 2026-07) | 279 | **0.4136 / 0.1365** | 0.6878 / 0.2331 | rolling mean 0.6518 / 0.2294 | -0.274 [-0.444, -0.011] |
-The market beats every V1 model on both targets, with confidence intervals excluding zero. Median quoted spread: 3 cents.
+| KXU3 | 39 (2022-12 .. 2026-07) | 316 | **0.2654 / 0.0824** | 0.3654 / 0.1154 | claims-only 0.3731 / 0.1185 | **+0.100 [+0.039, +0.168]** |
+| KXPAYROLLS | 31 (2023-03 .. 2026-07) | 279 | **0.4136 / 0.1365** | 0.6878 / 0.2331 | rolling mean 0.6518 / 0.2294 | **+0.274 [+0.011, +0.444]** |
+
+The market beats every V1 model on both targets; every interval excludes zero. Median quoted spread: 3 cents.
 Contracts refused by the fail-closed terms check (missing `strike_type`, `4.099999` floors, a double space in a month,
 off-grid strikes like 215,999, and 2022 rules that do not name the Employment Situation): KXU3 129, KXPAYROLLS 47.
 
+**Erratum (2026-10-08, labels only).** In commit ab9e105 this table's last column was headed "Candidate minus market
+(LL)" but showed -0.100 [-0.168, -0.039] and -0.274 [-0.444, -0.011]. Those numbers are the JSON field
+`vs_market_gain_positive_means_model_better` = market LL minus model LL. The measurement is unchanged. Only the heading
+was wrong; the values above are the same quantity, negated to match the heading. The JSON evidence
+(sha256 5213b69e30f32f98dcfaed7eba38325857fa3598b8c70b0f29a3020b679880a9) is not modified.

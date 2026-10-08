@@ -1,6 +1,6 @@
 # Employment V2 — protocol PROPOSAL (2026-10-08, design only)
 
-Status: **PROPOSAL, not pre-registered.** It becomes the V2 protocol only on the owner's approval, and is then frozen and
+Status: **SUPERSEDED 2026-10-08 by the frozen `EMPLOYMENT_V2_PROTOCOL.md` (owner direction). Kept as the design record.** Originally: PROPOSAL, not pre-registered. It becomes the V2 protocol only on the owner's approval, and is then frozen and
 committed before any V2 code is fit. No V2 model has been fit. Employment V1 is closed: KXU3 FAIL and KXPAYROLLS FAIL are
 final (`EMPLOYMENT_V1_EVIDENCE.md`). V1 is not retuned, its gate is unchanged, and it is not deployed.
 
