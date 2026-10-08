@@ -260,7 +260,8 @@ Copies are in `D:\Workers\scratch\predictions-employment\raw\kalshi-terms\`. **N
 available month" fallback.** On missing data, they provide only a discretionary Market Outcome Review (Rulebook 6.3(c))
 and Kalshi's right to designate a new Source Agency or Underlying (Rule 7.2). The fallback quoted in section A comes from
 `contract_terms/U3.pdf` (sha256 bb568889...). That file was served on 2026-10-08, is undated, and is a later revision.
-What can be established:
+The Tier A collector's first fetch of that file (2026-10-08 17:19Z) shows server `Last-Modified: Tue, 29 Sep 2026 20:40:32 GMT`. The file
+served today was last written after the December 2025 settlement. That does not prove its wording changed then. What can be established:
 - The 2025-12-16 settlement at 4.4 is consistent with the current terms.
 - Which revision governed in December 2025 is **not established**, and nothing here depends on it.
 - Settlement and observation stay separate, as before. October 2025 U-3 remains INPUT_UNAVAILABLE in the ledger, and

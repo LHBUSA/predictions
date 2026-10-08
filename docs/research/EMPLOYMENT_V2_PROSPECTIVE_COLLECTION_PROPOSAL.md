@@ -1,4 +1,6 @@
-# Employment V2: prospective research collection (PROPOSAL, 2026-10-08; nothing built or scheduled)
+# Employment V2: prospective research collection (PROPOSAL, 2026-10-08)
+
+**Status update 2026-10-08:** the owner approved Tier A only, now built (`EMPLOYMENT_TIER_A_COLLECTOR.md`). Tier B stays HOLD.
 
 Owner direction 2026-10-08, item 5. This is a proposal only. No collector exists, no task is scheduled, and nothing
 here is authorized until the owner says GO. V2 stays HOLD under `EMPLOYMENT_V2_PROTOCOL.md` (Amendment B2).

@@ -199,3 +199,7 @@ with sha256 recorded in this file's amendments.
   pbe-predictions Worker. They never write to tkmln and never touch CPI SHADOW code, tables or crons. The CPI forecast
   freeze of 2026-10-14 00:09Z is unaffected.
 
+- 2026-10-08 (note, not an amendment; no gate changed): the owner approved **Tier A** prospective data collection only.
+  It collects order books, fees, terms, settlements, and BLS/DOL documents; it fits nothing, forecasts nothing and does
+  not trade. Runbook: `EMPLOYMENT_TIER_A_COLLECTOR.md`. Evidence: private repo `LHBUSA/pbe-employment-evidence`.
+  Tier A does not start the 24-release clock. **Tier B stays HOLD** and Amendment B1 stays unused.
