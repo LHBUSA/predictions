@@ -4,7 +4,7 @@
 //   initial_claims_sa      advance SA initial claims for week W (week ending Saturday)
 //   continuing_claims_sa   advance SA insured unemployment for week W-1
 // Any failed guard returns { ok: false, reason } instead of a record: a release we cannot read exactly is not data.
-export const DOL_PARSER_VERSION = 'dol-claims-parser/1';
+export const DOL_PARSER_VERSION = 'dol-claims-parser/2';
 
 const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 };
 const monthIdx = (s) => MONTHS[String(s).toLowerCase().replace(/\.$/, '').slice(0, String(s).toLowerCase().startsWith('sept') ? 4 : 3)];
@@ -28,7 +28,7 @@ function embargo(text) {
   const win = text.slice(at, at + 320);
   const t = win.match(/(\d{1,2}):(\d{2})\s*([AP])\.?\s*M\.?/i);
   const wd = win.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i);
-  const dm = win.match(/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+(\d{1,2}),?\s+(\d{4})\b/i);
+  const dm = win.match(/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+(\d{1,2})\s*,?\s+(\d{4})\b/i); // 'Aug. 4 , 2011' occurs
   if (!t || !wd || !dm) return null;
   const mi = monthIdx(dm[1]);
   if (mi === undefined) return null;
@@ -49,13 +49,21 @@ function weekEnding(monthText, day, releaseDate) {
   return null;
 }
 
+// PDF text extraction can split words with kerning spaces ("the a dva nce figure ... wa s 242,000"). Fixed phrases are
+// matched letter by letter with optional single spaces; the captured month, day and number stay strict. Older .asp pages
+// sometimes print 'Feb.16' (no space after the abbreviation).
+const loose = (phrase) => phrase.split(' ').map((w) => w.split('').map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join(' ?')).join('\\s+');
+const IC_RE = new RegExp(`${loose('week ending')} ([A-Za-z]+\\.?) ?(\\d{1,2}),? ${loose('the advance figure for seasonally adjusted initial claims')} (?:${loose('was')}|${loose('were')}) ([\\d,]+)`, 'i');
+const CC_RE = new RegExp(`${loose('advance number for seasonally adjusted insured unemployment during')} (?:${loose('the')} )?${loose('week ending')} ([A-Za-z]+\\.?) ?(\\d{1,2}),? (?:${loose('was')}|${loose('were')}) ([\\d,]+)`, 'i');
+
 export function parseClaimsRelease(raw, { sourceUrl = null, sha256 = null, fileName = null } = {}) {
   const text = normalizeReleaseText(raw);
+  if (/^Dummy file:/i.test(text)) return { ok: false, reason: 'DUMMY_FILE_IN_ARCHIVE', fileName };
   const emb = embargo(text);
   if (!emb) return { ok: false, reason: 'NO_EMBARGO_LINE', fileName };
-  const ic = text.match(/week ending ([A-Za-z]+\.?) (\d{1,2}),? the advance figure for seasonally adjusted initial claims (?:was|were) ([\d,]+)/i);
+  const ic = text.match(IC_RE);
   if (!ic) return { ok: false, reason: 'NO_INITIAL_CLAIMS_SENTENCE', fileName, release_date: emb.date };
-  const cc = text.match(/advance number for seasonally adjusted insured unemployment during (?:the )?week ending ([A-Za-z]+\.?) (\d{1,2}),? (?:was|were) ([\d,]+)/i);
+  const cc = text.match(CC_RE);
   if (!cc) return { ok: false, reason: 'NO_CONTINUING_CLAIMS_SENTENCE', fileName, release_date: emb.date };
   const icWeek = weekEnding(ic[1], ic[2], emb.date);
   const ccWeek = weekEnding(cc[1], cc[2], emb.date);

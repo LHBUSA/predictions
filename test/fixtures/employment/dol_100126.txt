@@ -1,0 +1,41 @@
+# trimmed pdftotext -layout of https://oui.doleta.gov/press/2026/100126.pdf
+News Release  Connect with DOL at
+                https://blog.dol.gov
+
+                     TRANSMISSION OF MATERIALS IN THIS RELEASE IS EMBARGOED UNTIL
+                                          8:30 A.M. (Eastern) Thursday, October 1, 2026
+
+UNEMPLOYMENT INSURANCE WEEKLY CLAIMS
+
+   SEASONALLY ADJUSTED DATA
+
+In the week ending September 26, the advance figure for seasonally adjusted initial claims was 197,000, a decrease of
+1,000 from the previous week's revised level. The previous week's level was revised up by 1,000 from 197,000 to
+198,000. The 4-week moving average was 200,000, a decrease of 2,500 from the previous week's revised average. The
+previous week's average was revised up by 250 from 202,250 to 202,500.
+
+The advance seasonally adjusted insured unemployment rate was 1.1 percent for the week ending September 19,
+unchanged from the previous week's unrevised rate. The advance number for seasonally adjusted insured
+unemployment during the week ending September 19 was 1,701,000, a decrease of 11,000 from the previous week's
+revised level. The previous week's level was revised down by 7,000 from 1,719,000 to 1,712,000. The 4-week moving
+average was 1,723,750, a decrease of 18,500 from the previous week's revised average. The previous week's average was
+revised down by 1,750 from 1,744,000 to 1,742,250.
+
+1
+   UNADJUSTED DATA
+The advance number of actual initial claims under state programs, unadjusted, totaled 156,738 in the week ending
+September 26, a decrease of 7,979 (or -4.8 percent) from the previous week. The seasonal factors had expected a
+decrease of 6,747 (or -4.1 percent) from the previous week. There were 179,162 initial claims in the comparable week in
+2025.
+The advance unadjusted insured unemployment rate was 1.0 percent during the week ending September 19, unchanged
+from the prior week. The advance unadjusted level of insured unemployment in state programs totaled 1,498,378, a
+decrease of 47,267 (or -3.1 percent) from the preceding week. The seasonal factors had expected a decrease of 37,657
+(or -2.4 percent) from the previous week. A year earlier the rate was 1.1 percent and the volume was 1,696,023.
+
+The total number of continued weeks claimed for benefits in all programs for the week ending September 12 was
+1,567,411, a decrease of 21,222 from the previous week. There were 1,749,873 weekly claims filed for benefits in all
+programs in the comparable week in 2025.
+No state was triggered "on" the Extended Benefits program during the week ending September 12.
+Initial claims for UI benefits filed by former Federal civilian employees totaled 369 in the week ending September 19, an
+increase of 7 from the prior week. There were 379 initial claims filed by newly discharged veterans, an increase of 21
+from the preceding week.

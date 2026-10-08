@@ -109,7 +109,36 @@ ledgers' integrity has been inspected so far (parse guards, gaps); no model, bas
    every model and listed with its reason (shutdown months included). Nothing is imputed.
 9. **Regime split.** 2020-03 .. 2021-12 vs all other origins, reported for every model.
 
+## Amendment A2 (2026-10-08 14:45Z, ledgers frozen, before any model fit)
+
+Reason: A1 does not state grid ranges or the payroll computation unit. Both are fixed here before any fit, and no score
+of any model has been computed. Nothing in A1 changes.
+
+1. **Grids.** U-3: 2.0 ... 16.0 on the 0.1 grid. Payrolls: -25,000,000 ... +5,000,000 persons on the 1,000-person grid
+   (covers every first print since 2008, incl. April 2020). Tail mass folds into the end buckets, as in CPI V1.
+2. **Payroll unit.** Payrolls are computed in units of 10,000 persons, so the CPI V1 0.1 grid step is exactly the A1
+   1,000-person grid. This is a representation only: +50,000 persons = 5.0, strike 50,000 = 5.0, and "above" is decided
+   on integer grid indices (the exact strike is NO).
+3. **Frozen ledgers** (`data/employment/LEDGER_FREEZE.json`, hashes of the three ledgers and of every raw document).
+   BLS: 224 releases 2008-01 .. 2026-09, 0 parse failures, 0 U-3 reprint mismatches (5 year-end SA revisions listed).
+   DOL: 1,022 weekly releases (weeks ending 2006-12-30 .. 2026-10-03). Four archived documents are refused because of
+   defects in the documents themselves, and nothing is inferred from them: 2011-11-23 (prints Thursday on a Wednesday),
+   2012/010312 (a misfiled copy of the 2013-01-03 release with the year misprinted; the real copy parses), 2012-03-15
+   ("Mach 3"), 2014/031514 (DOL placeholder file). Missing weeks: 2011-11-19, 2012-03-10, 2019-10-12 (absent from the
+   DOL listing), and 2025-09-27 .. 2025-11-08 (federal shutdown: no releases in the archive).
+4. **Reissued BLS releases** (archive keeps the reissued file). Each reissue note says the targets are unaffected:
+   2008-06 (rounding of household levels; "no published rates were affected"; establishment data unaffected),
+   2015-01 (table C only), 2019-11/2019-12 (veterans table A-5), 2020-01 .. 2020-08 (occupation tables A-8/A-9/A-13/A-14;
+   "the official unemployment rate" not affected), 2025-04 (April 2025 household sample errors; "the unemployment rate"
+   unaffected; release not updated). April 2020 payrolls: the archived file carries the May 11, 2020 correction; the
+   first print is restored from the note in the file itself ("37,000 lower than initially reported"): -20,500k.
+5. **2025 shutdown, from the archive.** September 2025 data released 2025-11-20 (not October). No October 2025 release.
+   The November release (2025-12-16) prints October U-3 as not available (INPUT_UNAVAILABLE, never imputed) and the first
+   October payroll change, -105k (later revised to -173k; the revision never replaces the first print). January 2026 data
+   released 2026-02-11. Origins whose inputs fall in the gap are NO_FORECAST with the missing input named.
+
 ## Change log
 
 - 2026-10-08: protocol written before any fit.
 - 2026-10-08: Amendment A1 (metric definition, ladders, model and baseline specification), before any fit.
+- 2026-10-08 14:45Z: Amendment A2 (grid ranges, payroll unit, frozen-ledger record), before any fit.

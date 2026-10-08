@@ -6,15 +6,19 @@
 import { etToUtcIso } from '../cpi/timeline.js';
 import { shiftMonth } from './bls-empsit.js';
 
-export const LEDGER_VERSION = 'employment-ledger/1';
+export const LEDGER_VERSION = 'employment-ledger/2';
 export const releaseAtUtc = (r) => etToUtcIso(r.release_date, Number(r.release_time_et.slice(0, 2)), Number(r.release_time_et.slice(3, 5)));
 
 function prints(releases, field) {
   const byMonth = new Map();
   for (const r of [...releases].sort((a, b) => releaseAtUtc(a).localeCompare(releaseAtUtc(b)))) {
-    for (const [month, v] of Object.entries(r[field] || {})) {
+    for (const [month, printed] of Object.entries(r[field] || {})) {
       if (!byMonth.has(month)) byMonth.set(month, []);
-      byMonth.get(month).push({ value: v, release_date: r.release_date, release_at: releaseAtUtc(r), release_reference_month: r.reference_month, file_name: r.file_name, sha256: r.source_document_sha256 });
+      // a post-publication correction in the archived file: restore the value as it was published at the embargo time
+      const corr = field === 'payroll_change_k_by_month' ? (r.payroll_corrections || []).find((c) => c.month === month) : null;
+      const value = corr && printed !== null ? Math.round(printed - corr.corrected_minus_original_k) : printed;
+      byMonth.get(month).push({ value, release_date: r.release_date, release_at: releaseAtUtc(r), release_reference_month: r.reference_month, file_name: r.file_name, sha256: r.source_document_sha256,
+        ...(corr ? { restored_from_correction_note: { archived_value: printed, note: corr.note } } : {}) });
     }
   }
   return byMonth;
@@ -35,6 +39,7 @@ export function firstPrints(releases, { fromMonth = null } = {}) {
     if (!first) return { status: 'INPUT_UNAVAILABLE', value: null, reason: all.length ? 'PRINTED_AS_NOT_AVAILABLE' : 'NEVER_PRINTED', prints: all.length };
     return {
       status: 'OK', value: first.value, release_date: first.release_date, release_at: first.release_at, file_name: first.file_name, sha256: first.sha256,
+      ...(first.restored_from_correction_note ? { restored_from_correction_note: first.restored_from_correction_note } : {}),
       in_own_release: first.release_reference_month === month,
       later_prints: all.filter((p) => p.release_at > first.release_at && p.value !== null).map((p) => ({ value: p.value, release_date: p.release_date })),
     };
@@ -47,11 +52,12 @@ export function firstPrints(releases, { fromMonth = null } = {}) {
   }));
 }
 
-// U-3 for month M as printed in the M+1 release must equal the first print, except in January-data releases (annual
-// seasonal-factor revision of the prior 5 years). Returns every exception so a reviewer can see each one.
+// U-3 for month M as printed in the M+1 release must equal the first print, except when the M+1 release is the
+// December-data release published in January: BLS revises seasonally adjusted household data at the end of each year
+// ("Revision of Seasonally Adjusted Household Survey Data" box). Returns every exception so a reviewer can see each one.
 export function u3ReprintConsistency(releases) {
   const byRef = new Map(releases.map((r) => [r.reference_month, r]));
-  const out = { checked: 0, equal: 0, january_revisions: 0, mismatches: [] };
+  const out = { checked: 0, equal: 0, year_end_sa_revisions: [], mismatches: [] };
   for (const r of releases) {
     const next = byRef.get(shiftMonth(r.reference_month, 1));
     if (!next) continue;
@@ -59,7 +65,7 @@ export function u3ReprintConsistency(releases) {
     if (a === null || a === undefined || b === undefined) continue;
     out.checked += 1;
     if (a === b) out.equal += 1;
-    else if (next.reference_month.endsWith('-01')) out.january_revisions += 1;
+    else if (next.reference_month.endsWith('-12')) out.year_end_sa_revisions.push({ month: r.reference_month, first: a, next_release: next.release_date, reprinted: b });
     else out.mismatches.push({ month: r.reference_month, first: a, next_release: next.release_date, reprinted: b });
   }
   return out;

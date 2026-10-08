@@ -1,0 +1,162 @@
+[
+ {
+  "key": "2007/010407.asp",
+  "sha256": "53baf613862edd418d3a6b7e695dc0cf9efdcb2b0c28b922e0c0dad9f7e2e75b",
+  "embargo": "EMBARGOED UNTIL Tony Sznoluch (202) 693-3176",
+  "icSentence": "In the week ending Dec. 30, the advance figure for seasonally adjusted initial claims was 329,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending Dec. 23 was 2,446,000",
+  "ledger": {
+   "release_at": "2007-01-04T13:30:00.000Z",
+   "initial_week_ending": "2006-12-30",
+   "initial_claims_sa": 329000,
+   "continuing_week_ending": "2006-12-23",
+   "continuing_claims_sa": 2446000,
+   "sha256": "53baf613862edd418d3a6b7e695dc0cf9efdcb2b0c28b922e0c0dad9f7e2e75b"
+  },
+  "match": true
+ },
+ {
+  "key": "2008/022108.asp",
+  "sha256": "c89d31669a9afd0749dde3130543eee7a560d977a6aa8615b21645aff91845a2",
+  "embargo": "EMBARGOED UNTIL Tony Sznoluch (202) 693-3176",
+  "icSentence": "In the week ending Feb.16, the advance figure for seasonally adjusted initial claims was 349,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending Feb. 9 was 2,784,000",
+  "ledger": {
+   "release_at": "2008-02-21T13:30:00.000Z",
+   "initial_week_ending": "2008-02-16",
+   "initial_claims_sa": 349000,
+   "continuing_week_ending": "2008-02-09",
+   "continuing_claims_sa": 2784000,
+   "sha256": "c89d31669a9afd0749dde3130543eee7a560d977a6aa8615b21645aff91845a2"
+  },
+  "match": true
+ },
+ {
+  "key": "2011/080411.asp",
+  "sha256": "63b20888477cd0b9a30152484529423a26d0f99fe9300c541480bec9471cdb24",
+  "embargo": "EMBARGOED UNTIL Tony Sznoluch (202) 693-3176",
+  "icSentence": "In the week ending July 30, the advance figure for seasonally adjusted initial claims was 400,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending July 23 was 3,730,000",
+  "ledger": {
+   "release_at": "2011-08-04T12:30:00.000Z",
+   "initial_week_ending": "2011-07-30",
+   "initial_claims_sa": 400000,
+   "continuing_week_ending": "2011-07-23",
+   "continuing_claims_sa": 3730000,
+   "sha256": "63b20888477cd0b9a30152484529423a26d0f99fe9300c541480bec9471cdb24"
+  },
+  "match": true
+ },
+ {
+  "key": "2014/010214.asp",
+  "sha256": "e52f393406c6edc16fa326ea044bd11dea883c487e390977ebba7b3bf2482b6b",
+  "embargo": "EMBARGOED UNTIL Tony Sznoluch (202) 693-3176",
+  "icSentence": "In the week ending December 28, the advance figure for seasonally adjusted initial claims was 339,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending December 21 was 2,833,000",
+  "ledger": {
+   "release_at": "2014-01-02T13:30:00.000Z",
+   "initial_week_ending": "2013-12-28",
+   "initial_claims_sa": 339000,
+   "continuing_week_ending": "2013-12-21",
+   "continuing_claims_sa": 2833000,
+   "sha256": "e52f393406c6edc16fa326ea044bd11dea883c487e390977ebba7b3bf2482b6b"
+  },
+  "match": true
+ },
+ {
+  "key": "2016/061616.pdf",
+  "sha256": "d8475bf748c3df2025ea354af47adbf92192da01f132c200f76aba910e0a25b7",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, June 16, 2016",
+  "icSentence": "In the week ending June 11, the advance figure for seasonally adjusted initial claims was 277,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending June 4 was 2,157,000",
+  "ledger": {
+   "release_at": "2016-06-16T12:30:00.000Z",
+   "initial_week_ending": "2016-06-11",
+   "initial_claims_sa": 277000,
+   "continuing_week_ending": "2016-06-04",
+   "continuing_claims_sa": 2157000,
+   "sha256": "d8475bf748c3df2025ea354af47adbf92192da01f132c200f76aba910e0a25b7"
+  },
+  "match": true
+ },
+ {
+  "key": "2020/032620.pdf",
+  "sha256": "ec3128982162a957a8f2ef8fb1cc2b4c24c20e9785d6e5363da554f5d542b640",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, March 26, 2020",
+  "icSentence": "In the week ending March 21, the advance figure for seasonally adjusted initial claims was 3,283,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending March 14 was 1,803,000",
+  "ledger": {
+   "release_at": "2020-03-26T12:30:00.000Z",
+   "initial_week_ending": "2020-03-21",
+   "initial_claims_sa": 3283000,
+   "continuing_week_ending": "2020-03-14",
+   "continuing_claims_sa": 1803000,
+   "sha256": "ec3128982162a957a8f2ef8fb1cc2b4c24c20e9785d6e5363da554f5d542b640"
+  },
+  "match": true
+ },
+ {
+  "key": "2020/040220.pdf",
+  "sha256": "38249e6298e9c79f73c5fa56556734ab8ae85131c44b7585df0fc77f0a4e2304",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, April 2, 2020",
+  "icSentence": "In the week ending March 28, the advance figure for seasonally adjusted initial claims was 6,648,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending March 21 was 3,029,000",
+  "ledger": {
+   "release_at": "2020-04-02T12:30:00.000Z",
+   "initial_week_ending": "2020-03-28",
+   "initial_claims_sa": 6648000,
+   "continuing_week_ending": "2020-03-21",
+   "continuing_claims_sa": 3029000,
+   "sha256": "38249e6298e9c79f73c5fa56556734ab8ae85131c44b7585df0fc77f0a4e2304"
+  },
+  "match": true
+ },
+ {
+  "key": "2025/092525.pdf",
+  "sha256": "a5ee3eb9712e480a09307f00fa2a818ba2b30f119b93bfa4f74d948782244558",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, September 25, 2025",
+  "icSentence": "In the week ending September 20, the advance figure for seasonally adjusted initial claims was 218,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending September 13 was 1,926,000",
+  "ledger": {
+   "release_at": "2025-09-25T12:30:00.000Z",
+   "initial_week_ending": "2025-09-20",
+   "initial_claims_sa": 218000,
+   "continuing_week_ending": "2025-09-13",
+   "continuing_claims_sa": 1926000,
+   "sha256": "a5ee3eb9712e480a09307f00fa2a818ba2b30f119b93bfa4f74d948782244558"
+  },
+  "match": true
+ },
+ {
+  "key": "2025/112025.pdf",
+  "sha256": "7d02bdbd386763679f73260ed403956ca93b8bdc27460ddaa1664da2f0ec24c0",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, November 20, 2025",
+  "icSentence": "In the week ending November 15, the advance figure for seasonally adjusted initial claims was 220,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending November 8 was 1,974,000",
+  "ledger": {
+   "release_at": "2025-11-20T13:30:00.000Z",
+   "initial_week_ending": "2025-11-15",
+   "initial_claims_sa": 220000,
+   "continuing_week_ending": "2025-11-08",
+   "continuing_claims_sa": 1974000,
+   "sha256": "7d02bdbd386763679f73260ed403956ca93b8bdc27460ddaa1664da2f0ec24c0"
+  },
+  "match": true
+ },
+ {
+  "key": "2026/100826.pdf",
+  "sha256": "8c7f16d98620ec0c61ae851f4acc53881606bdd2026f2d00d3a1972d9c8e091d",
+  "embargo": "EMBARGOED UNTIL 8:30 A.M. (Eastern) Thursday, October 8, 2026",
+  "icSentence": "In the week ending October 3, the advance figure for seasonally adjusted initial claims was 197,000",
+  "ccSentence": "advance number for seasonally adjusted insured unemployment during the week ending September 26 was 1,716,000",
+  "ledger": {
+   "release_at": "2026-10-08T12:30:00.000Z",
+   "initial_week_ending": "2026-10-03",
+   "initial_claims_sa": 197000,
+   "continuing_week_ending": "2026-09-26",
+   "continuing_claims_sa": 1716000,
+   "sha256": "8c7f16d98620ec0c61ae851f4acc53881606bdd2026f2d00d3a1972d9c8e091d"
+  },
+  "match": true
+ }
+]

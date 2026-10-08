@@ -1,0 +1,35 @@
+{
+ "frozen_at": "2026-10-08T14:43:04.740Z",
+ "purpose": "Employment V1 as-published ledgers, frozen before any model fit (protocol + Amendment A1)",
+ "versions": {
+  "bls_parser": "bls-empsit-parser/2",
+  "dol_parser": "dol-claims-parser/2",
+  "ledger": "employment-ledger/2",
+  "features": "employment-features/1",
+  "cutoff_rule": "T-1D 20:00 America/New_York"
+ },
+ "files": {
+  "data/employment/bls-empsit-releases-v1.json": {
+   "sha256": "ed7206bb37a6fd7d0ee8c3cfda3d0ae1e18a7a7e090e38faa16ea298cb935add"
+  },
+  "data/employment/bls-empsit-first-prints-v1.json": {
+   "sha256": "7c763c3ec87a72e83368526d3c6156720c0075060a32a88789dd56c986e0c148"
+  },
+  "data/employment/dol-claims-releases-v1.json": {
+   "sha256": "56c0d204dfe8978269f2706fa5c223042703606012e9b12042595f26063ecd55"
+  }
+ },
+ "raw": {
+  "bls_releases": {
+   "source": "https://www.bls.gov/news.release/archives/empsit_MMDDYYYY.htm",
+   "files": 224,
+   "sha256_of_listing": "5f6907d991288b229dee3f8e74acd7d63aaead4572bbc0ec49978c3de0812866"
+  },
+  "dol_claims": {
+   "source": "https://oui.doleta.gov/press/<year>/",
+   "manifest_sha256": "2d522008ff12aadd5cae50f400d5c1d3be5707c965042adc80c553d0dadb1655",
+   "files": 1028,
+   "sha256_of_listing": "4371adaf7a6937088fee5f538b63e556e92b7979d8e7fc3ffbe1c90d1c35ce25"
+  }
+ }
+}

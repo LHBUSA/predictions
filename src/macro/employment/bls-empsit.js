@@ -8,7 +8,7 @@
 // earliest release that carries a value for X. A value printed as "-" (not collected) is null, never 0.
 // Guards (fail = { ok:false, reason }): embargo date + weekday agree; the headline month is the newest month in both
 // tables; the narrative's unemployment rate and payroll change equal the table values for the reference month.
-export const EMPSIT_PARSER_VERSION = 'bls-empsit-parser/1';
+export const EMPSIT_PARSER_VERSION = 'bls-empsit-parser/2';
 
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
 const FULL = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
@@ -35,10 +35,11 @@ export function releaseMeta(html) {
   const t = win.match(/(\d{1,2}):(\d{2})\s*([ap])\.?\s*m\.?/i);
   const wd = win.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i);
   const dm = win.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(\d{4})\b/i);
-  if (!t || !wd || !dm) return { error: 'UNPARSEABLE_EMBARGO' };
+  if (!t || !dm) return { error: 'UNPARSEABLE_EMBARGO' };
   const date = `${dm[3]}-${String(FULL.indexOf(dm[1].toLowerCase()) + 1).padStart(2, '0')}-${dm[2].padStart(2, '0')}`;
-  const weekday = wd[1][0].toUpperCase() + wd[1].slice(1).toLowerCase();
-  if (WEEKDAYS[new Date(`${date}T12:00:00Z`).getUTCDay()] !== weekday) return { error: 'EMBARGO_WEEKDAY_MISMATCH', date, weekday };
+  // some releases omit the weekday ("8:30 a.m. (EDT) September 4, 2009"); a printed weekday must match the date
+  const weekday = wd ? wd[1][0].toUpperCase() + wd[1].slice(1).toLowerCase() : WEEKDAYS[new Date(`${date}T12:00:00Z`).getUTCDay()];
+  if (wd && WEEKDAYS[new Date(`${date}T12:00:00Z`).getUTCDay()] !== weekday) return { error: 'EMBARGO_WEEKDAY_MISMATCH', date, weekday };
   let hh = Number(t[1]) % 12; if (t[3].toLowerCase() === 'p') hh += 12;
   const head = headline(text);
   if (!head) return { error: 'NO_HEADLINE_MONTH' };
@@ -170,7 +171,11 @@ export function parseEmpsitRelease(html, { fileName = null, sha256 = null, sourc
   return {
     ok: true, ...meta, format: body.format,
     // the archive keeps the LAST issued version; a reissue note means the file is not byte-for-byte what was first published
-    reissued: (decode(html).match(/BLS reissued this news release on ([A-Z][a-z]+ \d{1,2}, \d{4})/) || [])[1] ?? null,
+    reissued: (decode(html).match(/(?:BLS reissued this news release|This (?:news )?release was reissued) on (?:[A-Z][a-z]+day, )?([A-Z][a-z]+ \d{1,2}, \d{4})/) || [])[1] ?? null,
+    // "The corrected change in total nonfarm employment for April is 37,000 lower than initially reported": the archive
+    // carries the corrected table; the as-published value is restored from this note by the ledger
+    payroll_corrections: [...decode(html).matchAll(/corrected change in total nonfarm employment for (January|February|March|April|May|June|July|August|September|October|November|December) is ([\d,]+) (lower|higher) than (?:initially|originally) reported/gi)]
+      .map((m) => ({ month: mkey(Number(meta.reference_month.slice(0, 4)) - (FULL.indexOf(m[1].toLowerCase()) + 1 > Number(meta.reference_month.slice(5)) ? 1 : 0), FULL.indexOf(m[1].toLowerCase()) + 1), corrected_minus_original_k: (m[3].toLowerCase() === 'lower' ? -1 : 1) * Number(m[2].replace(/,/g, '')) / 1000, note: m[0] })),
     u3_by_month: body.u3, payroll_change_k_by_month: body.payroll_change_k,
     headline: { u3: body.u3[ref] ?? null, payroll_change_k: body.payroll_change_k[ref] ?? null },
     narrative: nar, checks,
