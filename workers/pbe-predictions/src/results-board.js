@@ -85,9 +85,9 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
   return {
     schema: 'pbe-scorecard/1', generated_at: new Date().toISOString(),
     unit: 'completed_temperature_events',
-    top_outcome: { ...count(temperature), events: temperature.length, rows: temperature.slice(0, 30) },
-    official: { ...count(active), rows: active.slice(0, 30) },
-    prospective: { ...count(research), rows: research.slice(0, 30) },
+    top_outcome: { ...count(temperature), events: temperature.length, rows: temperature },
+    official: { ...count(active), rows: active },
+    prospective: { ...count(research), rows: research },
     disclaimers: [
       'Top outcome is the largest locked model probability in each completed temperature event, evaluated against the actual winning bucket. It is not an official decision or a bet.',
       'Prospective CALL records were frozen before resolution for research. They are NOT official PBE Picks; PASS records are excluded.',
@@ -98,6 +98,14 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
 
 let cache = null, pending = null;
 const TTL = 60_000;
+// Display window: counts always cover every row; `limit` only trims the row lists (homepage preview asks for 5).
+export function limitRows(card, limit) {
+  const n = Number.isInteger(limit) && limit > 0 ? limit : null;
+  if (!n) return card;
+  const cut = (g) => (g ? { ...g, rows: (g.rows || []).slice(0, n) } : g);
+  return { ...card, top_outcome: cut(card.top_outcome), official: cut(card.official), prospective: cut(card.prospective) };
+}
+
 export async function memberScorecard(store, { fresh = false, now = Date.now } = {}) {
   if (!fresh && cache && now() - cache.at < TTL) return cache.result;
   if (!fresh && pending) return pending;

@@ -108,7 +108,7 @@ function continueResearch(story, built) {
 <li><a href="/events/${esc(story.primary)}"><b>Open the event record</b><span>The exact resolution rule and outcomes; the live PBE forecast, evidence and full history are included with All Access.</span></a></li>
 ${fam ? `<li><a href="/models/#${esc(fam)}"><b>The model on the research board</b><span>${esc(fam)}: state, versions, live forecasts, calibration status and limitations.</span></a></li>` : ''}
 <li><a href="/methodology/#scoring"><b>How forecasts are made and scored</b><span>Contract normalization, point-in-time data, immutable snapshots and fixed scoring roles.</span></a></li>
-<li><a href="/#track-record"><b>Track record</b><span>Resolved forecasts scored against the market on the same snapshots.</span></a></li>
+<li><a href="/track-record/"><b>Track record</b><span>Resolved forecasts scored against the market on the same snapshots.</span></a></li>
 <li><a href="/insights/${esc(story.vertical)}/"><b>More ${esc(VERTICALS[story.vertical])} analysis</b><span>Every ${esc(VERTICALS[story.vertical].toLowerCase())} story from the Predictions desk.</span></a></li>
 <li><a href="/"><b>PropBetEdge Predictions</b><span>The intelligence desk: every live real-world contract we track.</span></a></li>
 </ul></nav>`;

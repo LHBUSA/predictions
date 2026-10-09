@@ -15,14 +15,14 @@
   },
   "product": [
     [
-      "Desk",
-      "/#desk",
-      "desk"
+      "Overview",
+      "/",
+      "overview"
     ],
     [
-      "Markets",
-      "/markets/",
-      "markets"
+      "Intelligence Desk",
+      "/desk/",
+      "desk"
     ],
     [
       "Crypto",
@@ -30,49 +30,74 @@
       "crypto"
     ],
     [
+      "Markets AI",
+      "/markets/",
+      "markets"
+    ],
+    [
       "Insights",
       "/insights/",
       "insights"
     ],
     [
-      "Models",
-      "/models/",
-      "models"
-    ],
-    [
-      "Track record",
-      "/#track-record",
+      "Track Record",
+      "/track-record/",
       "record"
     ]
   ],
+  "research": {
+    "label": "Research",
+    "key": "research",
+    "items": [
+      [
+        "Calendar",
+        "/calendar/",
+        "calendar"
+      ],
+      [
+        "Models",
+        "/models/",
+        "models"
+      ],
+      [
+        "Methodology",
+        "/methodology/",
+        "methodology"
+      ]
+    ]
+  },
   "footer_product": [
     [
-      "Intelligence Desk",
-      "/#desk"
+      "Overview",
+      "/"
     ],
     [
-      "Market Intelligence",
-      "/markets/"
+      "Intelligence Desk",
+      "/desk/"
+    ],
+    [
+      "Track Record",
+      "/track-record/"
+    ],
+    [
+      "Prediction Calendar",
+      "/calendar/"
     ],
     [
       "Crypto Nowcast",
       "/crypto/"
     ],
     [
+      "Markets AI",
+      "/markets/"
+    ],
+    [
       "Insights",
       "/insights/"
     ],
     [
-      "Calendar",
-      "/#calendar"
-    ],
-    [
       "Models",
       "/models/"
-    ],
-    [
-      "Track Record",
-      "/#track-record"
     ],
     [
       "Methodology",

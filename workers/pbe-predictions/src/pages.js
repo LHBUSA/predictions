@@ -9,14 +9,14 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261009rel2';
+export const ASSET_V = '20261009ia1';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
 export const LIVE_V = '20261005aa1';
 export const HEAD_ICONS = `<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">`;
 export const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
-const NAV = [['desk', '/#desk', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/#calendar', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/#track-record', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
+const NAV = [['desk', '/desk/', 'Intelligence desk'], ['insights', '/insights/', 'Insights'], ['calendar', '/calendar/', 'Calendar'], ['models', '/models/', 'Models'], ['record', '/track-record/', 'Track record'], ['methodology', '/methodology/', 'Methodology']];
 export const nav = (current) => `<nav class="nav" aria-label="Primary">${NAV.map(([k, href, label]) => `<a href="${href}"${k === current ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>`;
 
 // Native share controls: every URL is the canonical page URL. Web Share appears only where supported.
@@ -235,6 +235,9 @@ export function sitemapXml(entries, insights = []) {
   const urls = [
     ...(insights.length ? [{ loc: `${SITE}/insights/`, changefreq: 'daily', priority: '0.9' }, ...[...new Set(insights.map((i) => i.vertical))].map((v) => ({ loc: `${SITE}/insights/${v}/`, changefreq: 'daily', priority: '0.6' })), ...insights.map((i) => ({ loc: `${SITE}/insights/${i.slug}`, lastmod: (i.modified || i.published_at).slice(0, 10), changefreq: 'weekly', priority: '0.8' }))] : []),
     { loc: `${SITE}/`, changefreq: 'hourly', priority: '1.0' },
+    { loc: `${SITE}/desk/`, changefreq: 'hourly', priority: '0.9' },
+    { loc: `${SITE}/track-record/`, changefreq: 'daily', priority: '0.8' },
+    { loc: `${SITE}/calendar/`, changefreq: 'hourly', priority: '0.7' },
     { loc: `${SITE}/models/`, changefreq: 'daily', priority: '0.6' },
     { loc: `${SITE}/methodology/`, changefreq: 'monthly', priority: '0.5' },
     ...entries.map((e) => ({ loc: `${SITE}/events/${e.slug}`, lastmod: (e.updated_at || '').slice(0, 10), changefreq: 'hourly', priority: '0.7' })),

@@ -27,13 +27,16 @@ test('event page: one HIDDEN panel (chart + related box) + module; the rest of t
   assert.equal(on.main.replace(/<section class="card panel" id="mv-chart-panel"[\s\S]*?<\/section>/, ''), off.main);
 });
 
-test('homepage: the module loads on the normal URL, after the desk renders; every hook is optional', () => {
-  const home = src('../home.js');
+// Since the IA split (issue #50) the desk lives on /desk/ (desk.js); the module is imported by absolute path so it
+// resolves from /desk/ too. The overview never loads it.
+test('desk: the module loads on the normal URL, after the desk renders; every hook is optional', () => {
+  const home = src('../desk.js');
   assert.ok(!/get\('mv'\)/.test(home), 'no ?mv gate left');
-  assert.match(home, /import\('\.\/multivenue\.js\?v=20261004mv4'\)\.then\(\(m\) => m\.ready\)\.then\(\(\) => \{ window\.PBE_MV\?\.addModes\(events\); desk\(\); \}\)/);
+  assert.match(home, /import\('\/multivenue\.js\?v=20261004mv4'\)\.then\(\(m\) => m\.ready\)\.then\(\(\) => \{ window\.PBE_MV\?\.addModes\(events\); desk\(\); \}\)/);
   // the (member) desk renders before the venue module is awaited (a slow venue read never blocks the page)
-  assert.ok(home.indexOf("tape(); featured(); cats(); views(); desk();") < home.indexOf("import('./multivenue.js"));
+  assert.ok(home.indexOf("tape(); cats(); views(); desk();") < home.indexOf("import('/multivenue.js"));
   for (const hook of home.match(/window\.PBE_MV[^;]*/g)) assert.match(hook, /window\.PBE_MV\?\./, hook);
+  assert.ok(!/multivenue/.test(src('../home.js')), 'the overview never loads the multi-venue module');
 });
 
 test('multivenue: venue rules — compare only qualifying quotes, related markets at native price, no consensus', () => {

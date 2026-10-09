@@ -10,6 +10,21 @@
       "source": "/events/fed-september-2026/",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/desk",
+      "destination": "/desk/",
+      "permanent": true
+    },
+    {
+      "source": "/track-record",
+      "destination": "/track-record/",
+      "permanent": true
+    },
+    {
+      "source": "/calendar",
+      "destination": "/calendar/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -89,7 +104,7 @@
       ]
     },
     {
-      "source": "/(site.css|home.js|access.js|favicon.svg)",
+      "source": "/(site.css|home.js|core.js|desk.js|track-record.js|calendar.js|access.js|favicon.svg)",
       "headers": [
         {
           "key": "Cache-Control",

@@ -63,7 +63,7 @@ function sampleArticle() {
 test('every article links up (PropBetEdge, Predictions, vertical), sideways (event, model, record) and down (methodology), plus All Access', () => {
   const { story, html } = sampleArticle();
   const h = hrefs(html);
-  for (const href of ['https://propbetedge.ai/', '/', '/insights/', '/insights/weather/', `/events/${story.primary}`, '/models/#pbe-weather-precip', '/methodology/#scoring', '/#track-record', 'https://propbetedge.ai/pro'])
+  for (const href of ['https://propbetedge.ai/', '/', '/insights/', '/insights/weather/', `/events/${story.primary}`, '/models/#pbe-weather-precip', '/methodology/#scoring', '/track-record/', 'https://propbetedge.ai/pro'])
     assert.ok(h.has(href), `article links ${href}`);
   assert.match(html, /Part of the PropBetEdge intelligence network/);
   assert.match(html, /10 sports \+ PropBetEdge Predictions · All Access \$29\/month/);

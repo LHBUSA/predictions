@@ -1,8 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/pbe-consent-v1.css">
-<script src="/pbe-consent-v1.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prediction Markets, Forecasts &amp; Probability Intelligence | PropBetEdge Predictions</title>
@@ -24,7 +22,7 @@
 <meta name="twitter:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="alternate" type="application/rss+xml" title="PropBetEdge Prediction Intelligence" href="https://predictions.propbetedge.ai/insights/rss.xml">
-<link rel="stylesheet" href="/site.css?v=20261009rel2">
+<link rel="stylesheet" href="/site.css?v=20261009ia1">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"NewsMediaOrganization","@id":"https://propbetedge.ai/#organization","name":"PropBetEdge","url":"https://propbetedge.ai/","logo":{"@type":"ImageObject","@id":"https://propbetedge.ai/#logo","url":"https://propbetedge.ai/logo/pbe-full-400.png","width":400,"height":100}},
@@ -35,9 +33,9 @@
 </head>
 <body>
 <!-- network:header -->
-<header class="topbar"><div class="wrap">
+<link rel="stylesheet" href="/pbe-consent-v1.css"><script src="/pbe-consent-v1.js"></script><header class="topbar"><div class="wrap">
 <a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>
-<nav class="nav" aria-label="Predictions"><a href="/#desk" aria-current="page">Desk</a><a href="/markets/">Markets</a><a href="/crypto/">Crypto</a><a href="/insights/">Insights</a><a href="/models/">Models</a><a href="/#track-record">Track record</a></nav>
+<nav class="nav" aria-label="Predictions"><a href="/" aria-current="page">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/crypto/">Crypto</a><a href="/markets/">Markets AI</a><a href="/insights/">Insights</a><a href="/track-record/">Track Record</a><details class="nav-drop"><summary>Research<span aria-hidden="true" class="nav-caret"></span></summary><div class="nav-menu"><a href="/calendar/">Calendar</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a></div></details></nav>
 <div class="top-right">
 <span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>
 <button type="button" class="theme-btn" data-theme-toggle aria-label="Theme: Light. Switch to Dark" title="Theme: Light (click for Dark)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span class="theme-label">Light</span></button>
@@ -45,14 +43,14 @@
 <a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="loading" aria-label="Account"><span class="mem-state">Account</span></a>
 <a class="aa-pill" href="https://propbetedge.ai/pro" data-acct-cta data-pbe-placement="predictions_header_all_access" aria-label="Get PropBetEdge All Access, $29/month">Get All Access</a>
 </div></div>
-<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track"><a href="/#desk" aria-current="page">Desk</a><a href="/markets/">Markets</a><a href="/crypto/">Crypto</a><a href="/insights/">Insights</a><a href="/models/">Models</a><a href="/#track-record">Track record</a><a class="subnav-net" href="https://propbetedge.ai/">Network ↗</a></div></nav>
+<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track"><a href="/" aria-current="page">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/crypto/">Crypto</a><a href="/markets/">Markets AI</a><a href="/insights/">Insights</a><a href="/track-record/">Track Record</a><a href="/calendar/">Calendar</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a><a class="subnav-net" href="https://propbetedge.ai/">PropBetEdge ↗</a></div></nav>
 </header>
 <script src="/access.js?v=20261005aa1" defer></script>
-<script src="/theme.js?v=20261004w5" defer></script>
+<script src="/theme.js?v=20261004t1" defer></script>
 <!-- /network:header -->
 
 <main>
-  <section class="hero hero-art" aria-labelledby="hero-title">
+  <section class="hero hero-art hero-overview" aria-labelledby="hero-title">
     <picture class="hero-media">
       <source media="(max-width: 760px)" type="image/avif" width="1152" height="941" srcset="/images/predictions/hero-mobile-480.avif 480w, /images/predictions/hero-mobile-800.avif 800w, /images/predictions/hero-mobile-1152.avif 1152w" sizes="100vw">
       <source media="(max-width: 760px)" type="image/webp" width="1152" height="941" srcset="/images/predictions/hero-mobile-480.webp 480w, /images/predictions/hero-mobile-800.webp 800w, /images/predictions/hero-mobile-1152.webp 1152w" sizes="100vw">
@@ -65,95 +63,59 @@
       <div class="hero-copy">
         <span class="overline">PROPBETEDGE PREDICTIONS · ALL ACCESS</span>
         <h1 id="hero-title">What did we predict?<br><span>Were we right?</span></h1>
-        <p>See the model’s actual forecast, what happened, and whether it was right. Every result comes from a stored forecast made before the outcome—not a rewritten prediction after the fact.</p>
+        <p>Independent forecasts for real-world events, compared with live prediction-market prices, stored before the outcome and scored after it.</p>
         <p class="hero-membership">Included with PropBetEdge All Access · $29/month</p>
-        <div class="hero-cta"><a class="cta-primary" href="https://propbetedge.ai/pro" data-purchase-cta data-pbe-placement="predictions_hero_all_access">Get All Access</a><a class="cta-primary" id="hero-member-cta" href="#desk" hidden>Open the intelligence desk</a><a class="cta-secondary" href="/methodology/">How forecasts are made</a></div>
+        <div class="hero-cta"><a class="cta-primary" href="https://propbetedge.ai/pro" data-purchase-cta data-pbe-placement="predictions_hero_all_access">Get All Access</a><a class="cta-primary" id="hero-member-cta" href="/desk/" hidden>Open Intelligence Desk</a><a class="cta-secondary" href="/track-record/">See the track record</a></div>
       </div>
-      <div class="stats hero-stats" aria-live="polite">
+      <div class="stats hero-stats stats-4" aria-live="polite">
         <div class="stat"><span>Live contracts tracked</span><strong class="num" id="s-live"><span class="skel" style="display:block;height:28px;width:70px"></span></strong><small id="s-live-sub">&nbsp;</small></div>
         <div class="stat"><span>With a PBE model</span><strong class="num" id="s-modeled"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>contracts with a PBE probability</small></div>
-        <div class="stat"><span>Market monitoring</span><strong class="num" id="s-monitor"><span class="skel" style="display:block;height:28px;width:60px"></span></strong><small>tracked contracts without a PBE model</small></div>
         <div class="stat"><span>Resolved &amp; scored</span><strong class="num" id="s-scored"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-scored-sub">&nbsp;</small></div>
         <div class="stat"><span>Last engine cycle</span><strong class="num" id="s-cycle"><span class="skel" style="display:block;height:28px;width:80px"></span></strong><small id="s-cycle-sub"></small></div>
-        <div class="stat"><span>Model families</span><strong class="num" id="s-models"><span class="skel" style="display:block;height:28px;width:40px"></span></strong><small id="s-models-sub">&nbsp;</small></div>
       </div>
     </div>
   </section>
 
-  <div class="tape" aria-label="Live probability tape" hidden><div class="tape-track" id="tape"></div></div>
-
-  <section class="section result-feature" id="picks-results"><div class="wrap">
-    <div class="section-head"><div><span class="overline">PBE RESULTS · THE PLAIN-ENGLISH VERSION</span><h2>What we predicted. What actually happened.</h2><p>Two different records: predeclared research calls and retrospective event forecasts. We will never label either an official pick unless it was officially activated before the event.</p></div><a class="result-jump" href="#track-record">Full record ↓</a></div>
-    <div id="results-overview" class="result-overview" aria-live="polite"><div class="card result-empty">Checking the verified results ledger…</div></div>
-    <div class="result-feature-head"><h3>Recent settled results</h3><p>Which outcome the model favored, which outcome won, and whether they matched.</p></div>
-    <div id="results-ledger" class="result-ledger"><div class="card result-empty">Sign in with All Access to inspect the stored results.</div></div>
-    <p class="result-disclosure">A high-probability forecast is not automatically an official YES/NO pick. A correct forecast is not necessarily a profitable trade. Unsettled events and model PASS decisions are never counted as wins.</p>
+  <section class="section home-featured"><div class="wrap">
+    <div class="section-head"><div><span class="overline">FEATURED</span><h2>Three events to watch</h2><p id="featured-sub">From the Intelligence Desk.</p></div><a class="section-link" href="/desk/">Open the Intelligence Desk →</a></div>
+    <div class="featured" id="featured"><div class="card feat skel" style="height:190px"></div><div class="card feat skel" style="height:190px"></div><div class="card feat skel" style="height:190px"></div></div>
   </div></section>
 
-  <section class="section crypto-home-link"><div class="wrap"><a class="card crypto-home-card" href="/crypto/"><div><span class="overline">PBE CRYPTO NOWCAST</span><h2>BTC 15-minute probability intelligence is now live on its own desk.</h2><p>Open the dedicated crypto terminal for PBE probability, Kalshi benchmark, Robinhood execution economics, evidence and the scored record.</p></div><strong>Open Crypto →</strong></a></div></section>
-
-  <section class="section" hidden><div class="wrap">
-    <div class="section-head"><div><span class="overline">FEATURED</span><h2>Largest model-vs-market divergences</h2><p>Research-stage models. A divergence is a disagreement to inspect, not a guarantee.</p></div></div>
-    <div class="featured" id="featured"></div>
+  <section class="section home-results"><div class="wrap">
+    <div class="section-head"><div><span class="overline">RESULTS</span><h2>Were we right?</h2><p>Retrospective event outcomes and prospective research calls are separate records. Official picks are not activated.</p></div><a class="section-link" href="/track-record/">View the complete Track Record →</a></div>
+    <div class="card results-preview" id="results-preview" aria-live="polite"><div class="skel" style="height:120px"></div></div>
   </div></section>
 
-  <section class="section" id="desk"><div class="wrap">
-    <div class="section-head"><div><span class="overline">INTELLIGENCE DESK</span><h2>Every live contract we track</h2><p id="desk-sub">Every tracked event, its close time and the live market price. PBE probabilities and model-vs-market divergence are included with All Access; events without a specialist model are market monitoring.</p></div></div>
-    <div id="desk-controls" hidden>
-    <div class="controls" role="search">
-      <div class="cats" id="cats" aria-label="Categories"></div>
-      <label class="sr-only" for="q">Search events</label><input class="search" id="q" type="search" placeholder="Search events, cities, tenors…" autocomplete="off">
-      <label class="sr-only" for="sort">Sort</label>
-      <select class="sort" id="sort"><option value="div">Largest divergence</option><option value="close">Closing soonest</option><option value="fresh">Latest forecast</option></select>
+  <section class="section home-dest"><div class="wrap">
+    <div class="section-head"><div><span class="overline">EXPLORE</span><h2>Go deeper</h2></div></div>
+    <div class="dest-grid">
+      <a class="card dest" href="/desk/"><span class="dest-k">Intelligence Desk</span><b>Every event market we track</b><small>Weather, rates, macro, business, space, public health and energy, with filters, search and evidence.</small></a>
+      <a class="card dest" href="/track-record/"><span class="dest-k">Track Record</span><b>Wins, misses and scoring</b><small>Contracts scored against the market, event outcomes and research calls, never mixed.</small></a>
+      <a class="card dest" href="/crypto/"><span class="dest-k">Crypto Nowcast</span><b>BTC 15-minute nowcast</b><small>Live crypto probability desk with read-only Robinhood execution intelligence.</small></a>
+      <a class="card dest" href="/models/"><span class="dest-k">Research</span><b>Models, calendar &amp; methodology</b><small>Model states and samples, upcoming resolutions and how every forecast is made.</small></a>
     </div>
-    <div class="cats views" id="views" aria-label="Desk views" hidden></div>
-    </div>
-    <div class="desk" id="desk-list"></div>
-    <section class="card panel prem gate" id="desk-gate" data-gate aria-labelledby="gate-h">
-      <span class="prem-kicker">PROPBETEDGE PREDICTIONS · ALL ACCESS</span><h2 id="gate-h">Unlock every PBE probability with All Access</h2>
-      <ul class="gate-list"><li>Official PBE Predictions with model probability</li><li>Market comparison against live venues</li><li>Evidence ledger and exact resolution rules</li><li>Immutable forecast history</li><li>Full intelligence desk: divergence scanner, search and sort</li><li>Scored track record</li></ul>
-      <p class="gate-price">Included with PropBetEdge All Access · <b>$29/month</b> — 10 sports + PropBetEdge Predictions.</p>
-      <div class="gate-cta" data-gate-cta><a class="cta-primary" href="https://propbetedge.ai/pro" data-pbe-placement="predictions_desk_gate">Get All Access</a><a class="cta-secondary" href="#" data-pbe-signin>Sign in</a></div>
-    </section>
   </div></section>
 
-  <section class="section" id="calendar"><div class="wrap">
-    <div class="section-head"><div><span class="overline">PREDICTION CALENDAR</span><h2>Upcoming resolutions</h2><p>When the tracked contracts close, from stored venue close times.</p></div></div>
-    <div class="card" style="padding:6px 16px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Closes</th><th>Event</th><th>Category</th><th>State</th><th>Outcomes</th></tr></thead><tbody id="cal"></tbody></table></div></div>
-  </div></section>
-
-  <section class="section" id="track-record"><div class="wrap">
-    <div class="section-head"><div><span class="overline">TRACK RECORD</span><h2>The scoreboard, without the jargon</h2><p>See exactly how many contracts have settled and how the model compared with the market. Below the scorecard, advanced statistical measures are labeled and explained instead of being confused with a win rate.</p></div></div>
-    <div class="stats stats-4" id="tr"></div>
-  </div></section>
-
-  <section class="section" id="models"><div class="wrap">
-    <div class="section-head"><div><span class="overline">MODEL REGISTRY · 60-DAY RESEARCH BOARD</span><h2>Model families and their state</h2><p>MONITORING → BACKTESTING → SHADOW → RESEARCH → VALIDATED → OFFICIAL. <a href="/models/">Full research board →</a></p></div></div>
-    <div class="card" style="padding:6px 16px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Family</th><th>Category</th><th>State</th><th>Contracts</th><th>Forecast snapshots</th><th>Resolved</th><th>Calibration</th></tr></thead><tbody id="reg"></tbody></table></div></div>
-  </div></section>
-
-  <section class="section"><div class="wrap">
-    <div class="section-head"><div><span class="overline">METHOD</span><h2>Evidence, not a black box</h2></div></div>
-    <div class="featured" style="min-height:0">
-      <div class="card feat"><h3>The market never enters the model</h3><p class="note">Kalshi prices, order books and volume are stored as a benchmark only. A code guard and a database constraint reject any market-derived feature; a test proves PBE probabilities are unchanged when every market price moves.</p></div>
-      <div class="card feat"><h3>Model the contract, not the headline</h3><p class="note">Each market is normalized to its exact station, window, threshold and resolution authority — or held with a machine-readable reason. Chicago rain resolves at O'Hare; the Chicago high at Midway.</p></div>
-      <div class="card feat"><h3>No retroactive rewrites</h3><p class="note">Forecasts, contracts and resolutions are append-only. Venue settlement and the independent official value are stored separately. <a href="/methodology/">Methodology →</a></p></div>
-    </div>
+  <section class="section trust-strip"><div class="wrap">
+    <div class="trust-row"><h2>Evidence, not a black box</h2>
+      <ul><li><b>The market never enters the model.</b> Prices are stored as a benchmark only.</li><li><b>Model the contract, not the headline.</b> Exact station, window and resolution rules.</li><li><b>No retroactive rewrites.</b> Forecasts and results are append-only.</li></ul>
+      <a class="section-link" href="/methodology/">Methodology →</a></div>
   </div></section>
 </main>
 
 <!-- network:footer -->
 <footer class="footer net-footer"><div class="wrap">
 <div class="nf-grid">
-<div class="nf-col"><strong>Predictions</strong><a href="/#desk">Intelligence Desk</a><a href="/crypto/">Crypto Nowcast</a><a href="/insights/">Insights</a><a href="/#calendar">Calendar</a><a href="/models/">Models</a><a href="/#track-record">Track Record</a><a href="/methodology/">Methodology</a><a href="/insights/rss.xml">RSS</a></div>
+<div class="nf-col"><strong>Predictions</strong><a href="/">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/track-record/">Track Record</a><a href="/calendar/">Prediction Calendar</a><a href="/crypto/">Crypto Nowcast</a><a href="/markets/">Markets AI</a><a href="/insights/">Insights</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a><a href="/insights/rss.xml">RSS</a></div>
 <div class="nf-col nf-sports"><strong>PropBetEdge Sports</strong><div class="nf-sports-grid"><a href="https://mlb.propbetedge.ai/" target="_blank" rel="noopener">MLB</a><a href="https://nfl.propbetedge.ai/" target="_blank" rel="noopener">NFL</a><a href="https://nba.propbetedge.ai/" target="_blank" rel="noopener">NBA</a><a href="https://nhl.propbetedge.ai/" target="_blank" rel="noopener">NHL</a><a href="https://wnba.propbetedge.ai/" target="_blank" rel="noopener">WNBA</a><a href="https://ufc.propbetedge.ai/" target="_blank" rel="noopener">UFC</a><a href="https://tennis.propbetedge.ai/" target="_blank" rel="noopener">Tennis</a><a href="https://soccer.propbetedge.ai/" target="_blank" rel="noopener">Soccer</a><a href="https://golf.propbetedge.ai/" target="_blank" rel="noopener">Golf</a><a href="https://f1.propbetedge.ai/" target="_blank" rel="noopener">F1</a></div></div>
-<div class="nf-col"><strong>All Access</strong><a href="https://members.propbetedge.ai/">Command Center</a><a href="https://compare.propbetedge.ai/">Compare</a><a href="https://predictions.propbetedge.ai/" aria-current="page">Predictions</a></div><div class="nf-col"><strong>Network</strong><a href="https://propbetedge.ai/">PropBetEdge</a><a href="https://propbetedge.ai/news">PropBetEdge News</a><a href="https://learn.propbetedge.ai/">Learn PropBetEdge</a></div>
+<div class="nf-col"><strong>All Access</strong><a href="https://members.propbetedge.ai/" target="_blank" rel="noopener">Command Center</a><a href="https://compare.propbetedge.ai/" target="_blank" rel="noopener">Compare</a><a href="https://predictions.propbetedge.ai/" target="_blank" rel="noopener">Predictions</a></div>
+<div class="nf-col"><strong>Network</strong><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a><a href="https://propbetedge.ai/news" target="_blank" rel="noopener">PropBetEdge News</a><a href="https://learn.propbetedge.ai/" target="_blank" rel="noopener">Learn PropBetEdge</a></div>
 <div class="nf-col"><strong>Trust</strong><a href="/methodology/#immutable">Immutable forecasts</a><a href="/methodology/#evidence">Evidence &amp; sources</a><a href="/methodology/#scoring">Scoring methodology</a><a href="/models/">Model states &amp; limitations</a><a href="https://propbetedge.ai/about">About PropBetEdge</a><a href="https://propbetedge.ai/terms">Terms</a><a href="https://propbetedge.ai/legal">Legal</a><a href="https://propbetedge.ai/support">Support</a><span class="nf-note">Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model.</span></div>
 </div>
 <p class="nf-line"><a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_footer_all_access"><strong>PropBetEdge All Access</strong></a> — 10 sports + Predictions + Compare for $29/month.</p>
 <p class="nf-fine"><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a> · Predictions is part of the PropBetEdge intelligence network.</p>
 </div></footer>
 <!-- /network:footer -->
-<script src="/home.js?v=20261009rel2" defer></script>
+<script src="/core.js?v=20261009ia1" defer></script><script src="/home.js?v=20261009ia1" defer></script>
 </body>
 </html>

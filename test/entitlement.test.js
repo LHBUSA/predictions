@@ -195,7 +195,7 @@ test('homepage preview (public): whitelisted rows, market favorite headline, clo
   assert.doesNotMatch(blob, /87|SECRET-HEADLINE|61/);
   const { r, db } = await call('/v1/preview/desk', undefined, authStub(verdict('all_access')));
   assert.ok(db > 0 && r.status !== 401 && r.status !== 403, 'preview is public (no gate)');
-  const home = readFileSync(new URL('../home.js', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../core.js', import.meta.url), 'utf8'); // shared placeholder (issue #50 split)
   assert.match(home, /const LOCKED = '<span class="locked-num"[^']*<i aria-hidden="true">00<\/i>%/, 'blur covers a placeholder, not a value');
 });
 

@@ -13,20 +13,32 @@ const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<'
 const ext = 'target="_blank" rel="noopener"';
 
 const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
-const productLinks = (current) => NET.product.map(([label, href, key]) => `<a href="${href}"${key === current ? ' aria-current="page"' : ''}>${e(label)}</a>`).join('');
+const link = (current) => ([label, href, key]) => `<a href="${href}"${key === current ? ' aria-current="page"' : ''}>${e(label)}</a>`;
+const productLinks = (current) => NET.product.map(link(current)).join('');
+// Research = Calendar, Models, Methodology. Desktop: one native <details> dropdown (keyboard + screen-reader friendly,
+// no script); the summary carries the active state when the current page lives inside it. Mobile: flattened into the
+// single horizontal tab strip (one nav per breakpoint; never two stacked).
+const researchMenu = (current) => {
+  const R = NET.research; const active = R.items.some(([, , key]) => key === current);
+  return `<details class="nav-drop"${active ? ' data-active' : ''}><summary${active ? ' aria-current="true"' : ''}>${e(R.label)}<span aria-hidden="true" class="nav-caret"></span></summary><div class="nav-menu">${R.items.map(link(current)).join('')}</div></details>`;
+};
+const researchLinks = (current) => NET.research.items.map(link(current)).join('');
 
-export function siteHeader(current = null) {
+// live: optional page-owned status indicator (the Crypto desk reports its nowcast feed in #crypto-live); default = the
+// engine heartbeat (#live-dot / #live-text) that core.js keeps honest.
+export function siteHeader(current = null, { live = null } = {}) {
+  const liveDot = live ? `<span class="live-dot" id="${e(live.id)}"><i></i><span>${e(live.text)}</span></span>` : '<span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>';
   return `<link rel="stylesheet" href="/pbe-consent-v1.css"><script src="/pbe-consent-v1.js"></script><header class="topbar"><div class="wrap">
 ${BRAND}
-<nav class="nav" aria-label="Predictions">${productLinks(current)}</nav>
+<nav class="nav" aria-label="Predictions">${productLinks(current)}${researchMenu(current)}</nav>
 <div class="top-right">
-<span class="live-dot" id="live-dot"><i></i><span id="live-text">Live engine</span></span>
+${liveDot}
 ${THEME_BTN}
 <a class="net-link" href="${NET.brand.url}" data-pbe-placement="predictions_header_network"><span class="net-long">PropBetEdge Network</span><span class="net-short">Network</span> <span aria-hidden="true">↗</span></a>
 <a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="loading" aria-label="Account"><span class="mem-state">Account</span></a>
 <a class="aa-pill" href="${NET.all_access.url}" data-acct-cta data-pbe-placement="predictions_header_all_access" aria-label="Get PropBetEdge All Access, $29/month">Get All Access</a>
 </div></div>
-<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}<a class="subnav-net" href="${NET.brand.url}">PropBetEdge ↗</a></div></nav>
+<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track">${productLinks(current)}${researchLinks(current)}<a class="subnav-net" href="${NET.brand.url}">PropBetEdge ↗</a></div></nav>
 </header>
 <script src="/access.js?v=${ACCESS_V}" defer></script>
 <script src="/theme.js?v=${THEME_V}" defer></script>`;
