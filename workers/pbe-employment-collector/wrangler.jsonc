@@ -1,0 +1,29 @@
+{
+  // Employment Tier A collector (owner direction 2026-10-09: move off Windows to Cloudflare Workers). Separate from
+  // pbe-predictions. Data and prices only: no fitting, no forecasts, no trading. Deploy ONLY via scripts/deploy.mjs
+  // (refuses a dirty or unpushed tree and stamps CODE_COMMIT / CODE_FILES into every capture).
+  "name": "pbe-employment-collector",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-14",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // every 5 minutes, like the Windows task: slot windows [20:00 ET - 15 min, 20:00 ET) get ticks at :45, :50, :55
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "pbe-employment-evidence" }],
+  "durable_objects": { "bindings": [{ "name": "STATE", "class_name": "CollectorState" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CollectorState"] }],
+  "vars": {
+    // "shadow" (R2 shadow/ only, never GitHub) -> "authoritative" (R2 root + GitHub mirror) at cutover; "off" stops it
+    "MODE": "shadow",
+    "KALSHI_BASE": "https://api.elections.kalshi.com/trade-api/v2",
+    "GITHUB_REPO": "LHBUSA/pbe-employment-evidence",
+    // optional isolated cutoff rehearsal: {"id":"...","release":{reference_month,release_date,release_time_et,release_at}}
+    "REHEARSAL": "",
+    "SHADOW_ALERTS": "false"
+  }
+  // secrets (wrangler secret put; never in source): KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (Ed25519 PKCS#8 PEM),
+  // GITHUB_TOKEN (fine-grained: LHBUSA/pbe-employment-evidence only, Contents RW + Issues RW), ADMIN_TOKEN,
+  // ALERT_WEBHOOK_URL (ntfy.sh topic or Slack incoming webhook), HEALTHCHECK_URL / SHADOW_HEALTHCHECK_URL (dead-man's switch)
+}
