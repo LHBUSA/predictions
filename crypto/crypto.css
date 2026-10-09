@@ -303,3 +303,4 @@ linear-gradient(180deg,#07111f,#081522)}
   .cx3-axis{font-size:11px}.cx3-path.pbe{stroke-width:2.6}.cx3-path.pbe.glow{stroke-width:6}.cx3-path.kalshi{stroke-width:2}.cx3-path.poly{stroke-width:1.5}
 }
 .cx3-hero .cx3-note,.cx3-hero .cx3-span{max-width:none;font-size:12px;line-height:1.5}.cx3-hero .cx3-span{font:700 12px/1.5 var(--mono);color:#9fb3c9}.cx3-hero .cx3-note{color:#8ea4bb}.cx3-hero .cx3-unchanged{color:#ffd28a}
+.cx3-chart svg:focus{outline:none}.cx3-chart svg:focus-visible{outline:3px solid #79b4ff;outline-offset:2px}
