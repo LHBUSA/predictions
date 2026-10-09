@@ -10,7 +10,7 @@
 // a backup that also re-arms the alarm. Each tick records its trigger; one tick per 5-minute bucket at most.
 // Routes: GET /health (public, no secrets; also re-arms the alarm); /admin/* with Bearer ADMIN_TOKEN.
 import { plan, slotTimes } from '../../../scripts/research/employment/collector/lib.mjs';
-import { COLLECTOR_VERSION, indexView, kalshiSnapshot } from './collector.js';
+import { COLLECTOR_VERSION, indexView, kalshiSnapshot, tick } from './collector.js';
 import { chainEntries } from './ledger.js';
 import { NS, codeIdentity, deliverAll, makeContext, rehearsalOf, runAll, stateStub } from './runner.js';
 import { EvidenceStore } from './store.js';
@@ -89,6 +89,15 @@ export default {
       return json(await verify({ store: new EvidenceStore(env.EVIDENCE, prefixOf(ns)), state, ns, chain: st.chain, prefix: url.searchParams.get('prefix') || '' }));
     }
     if (url.pathname === '/admin/tick' && req.method === 'POST') return json(await runAll(env, { trigger: 'manual' }));
+    // FAULT DRILL: a real tick in the isolated 'drill' namespace (R2 drill/, never shadow or authoritative) with every
+    // outbound request failing, so the collector's own failure paths raise and deliver real alerts.
+    if (url.pathname === '/admin/drill' && req.method === 'POST') {
+      const fail = () => Promise.reject(new Error('DRILL: injected network failure'));
+      const c = await makeContext(env, { mode: 'shadow', ns: 'drill', prefix: 'drill/', trigger: 'manual', fetchImpl: fail });
+      c.anchor = async () => ({ ok: false, errors: ['DRILL: injected TSA failure'] });
+      const st = await state.getState('drill'); delete st.last_bucket; delete st.alerts; delete st.calendar; delete st.schedule_day; await state.putState('drill', st);
+      return json({ drill: true, tick: await tick(c) });
+    }
     if (url.pathname === '/admin/start' && req.method === 'POST') return json({ next_alarm_utc: await state.ensureAlarm() });
     // Cutover step 1 (owner-approved only): one historical evidence file, byte-for-byte, into the R2 root. The body's sha256
     // must equal x-content-sha256; write-once like every other evidence write. Refused outside shadow mode, after seeding,
