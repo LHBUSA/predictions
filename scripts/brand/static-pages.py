@@ -23,7 +23,7 @@ def ld(title, desc, path):
 
 CRUMB = {'/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
 PAGE_KEY = {'/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261009ia4'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+ASSET_V = '20261009op1'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 

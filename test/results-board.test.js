@@ -41,3 +41,20 @@ test('the member route is gated before any scorecard load',()=>{
  assert.ok(block.indexOf('requireAllAccess')>=0);assert.ok(block.indexOf('requireAllAccess')<block.indexOf('memberScorecard'));
  assert.match(block,/privateJson/);
 });
+test('official picks (activated 2026-10-09): RIGHT/MISSED from their own locked forecast, VOID on a venue void, PENDING until settled; earlier calls stay research',()=>{
+ const off=(id,side,extra={})=>({decision_id:'d-'+id,contract_id:id,forecast_id:'f-'+id,state:'CALL',side,policy_status:'OFFICIAL',official_at_decision:true,decision_as_of:'2026-10-10T05:30:00Z',...extra});
+ const data={events:[e('A','Rain')],contracts:['r1','r2','r3','r4','r5'].map(id=>c(id,'A','YES','PRECIP_ANY')),forecasts:['r1','r2','r3','r4','r5'].map(id=>f('f-'+id,id,.8)),
+  scores:[s('r1',1),s('r2',1)],
+  decisions:[off('r1','YES'),off('r2','NO'),off('r3','YES'),off('r4','NO'),
+   {...off('r5','YES'),policy_status:'FROZEN_PROSPECTIVE',official_at_decision:false,decision_as_of:'2026-10-08T05:30:00Z'}],
+  voids:[{contract_id:'r4',venue_result:'void'}]};
+ const r=assembleScorecard(data);
+ const by=Object.fromEntries(r.official.rows.map(x=>[x.side+x.decided_at+x.result,x]));
+ assert.deepEqual([r.official.calls,r.official.matched,r.official.missed,r.official.pending,r.official.void],[4,1,1,1,1]);
+ assert.deepEqual(r.official.rows.map(x=>x.result).sort(),['MATCHED','MISSED','PENDING','VOID']);
+ assert.equal(r.official.rows.find(x=>x.result==='VOID').actual,'VOID');
+ assert.equal(r.prospective.calls,1,'the pre-activation call stays research');
+ assert.equal(r.official.policy.activated_at,'2026-10-09T21:15:00Z');
+ assert.equal(r.official.policy.status,'OFFICIAL');
+ assert.ok(by);
+});

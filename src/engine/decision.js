@@ -3,10 +3,12 @@
 // no venue price, quote, spread, volume or any market-derived value can be passed (unknown keys and any key matching
 // the market denylist throw). Changing Kalshi or Polymarket therefore cannot change a decision (test/decision.test.js).
 //
-// STATUS (owner 2026-10-04): FROZEN_PROSPECTIVE — parameters frozen at frozen_at so they cannot be tuned while the
-// natural live record accumulates; public CALL is NOT activated (activated_at = null => official=false everywhere).
-// Frozen != activated: activation is a separate owner decision after the promotion review below. Any parameter change
-// = a NEW candidate version (test/decision.test.js pins the frozen parameter hash).
+// STATUS (owner 2026-10-09): OFFICIAL — the frozen rain YES/NO candidate (parameters frozen 2026-10-04 13:21Z, hash
+// pinned in test/decision.test.js) is activated for Official PBE Picks on its historical holdout evidence, prospectively
+// from activated_at. Only a decision whose designated forecast was captured at/after activated_at is official; every
+// earlier decision stays research forever (also a DB CHECK on pred_decisions). Activation changed status/activated_at
+// only — never the frozen parameters. Only families with validated=true can CALL; temperature, rates and Fed are not
+// validated, so they can never produce an official pick under this policy. Any parameter change = a NEW candidate version.
 //
 // HOLD = PBE cannot responsibly evaluate the contract right now (rules, data, staleness, integrity, domain).
 // PASS = PBE evaluated it and deliberately declines to call (unvalidated model, band, confidence, near-certain).
@@ -37,9 +39,14 @@ const RANK = { LOW: 0, MEDIUM: 1, HIGH: 2 };
 export const DECISION_POLICY = Object.freeze({
   version: 'prediction-decision-v1',
   candidate: 'rain-v1-candidate',
-  status: 'FROZEN_PROSPECTIVE',
+  status: 'OFFICIAL',
   frozen_at: '2026-10-04T13:21:00Z',
-  activated_at: null,
+  // Owner decision 2026-10-09: activate on historical evidence; first eligible forecast is captured at/after this instant.
+  activated_at: '2026-10-09T21:15:00Z',
+  official_policy: 'pbe-official-picks/1 (rain YES/NO, pbe-weather-precip only)',
+  // Not part of the frozen parameters: the 100/300 reviews became ongoing checkpoints, not launch gates (owner 2026-10-09).
+  activation: Object.freeze({ decided: '2026-10-09', basis: 'historical holdout 2025-07..2026-09 (docs/research/DECISION_POLICY_V1_EVIDENCE.md)',
+    checkpoints: 'promotion.interim_diagnostic_at and promotion.promotion_review_at are calibration/performance reviews of official picks, not gates' }),
   evidence: 'docs/research/DECISION_POLICY_V1_EVIDENCE.md',
   // Prospective promotion evidence, predeclared before collection (owner 2026-10-04). Never raw engine-cadence snapshots.
   promotion: Object.freeze({

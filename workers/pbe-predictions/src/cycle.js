@@ -402,7 +402,17 @@ export async function designateResolveScore(env, { store, mkt, fetchImpl, now })
     const newRes = [];
     for (const c of due) {
       const m = venue.get(c.market_id);
-      if (!m || !['yes', 'no'].includes(m.result)) continue; // venue not settled yet
+      if (!m || !['yes', 'no', 'void'].includes(m.result)) continue; // venue not settled yet
+      // A VOID settlement is recorded (so official picks on it grade VOID instead of pending forever) but is never scored:
+      // every scorer keeps filtering to yes/no, and no official-source check runs for a cancelled contract.
+      if (m.result === 'void') {
+        newRes.push({ event_id: c.event_id, resolved_at: m.settlement_ts || now, authority: c.resolution_authority, source_url: null,
+          outcome: { venue_result: 'void', official: null, scored_outcome: null, scored_on: 'not scored: venue voided the contract' },
+          contract_id: c.contract_id, market_id: c.market_id, official_outcome: null, official_value: null, official_units: null, official_source: null, official_observation_key: null,
+          venue_result: 'void', venue_settlement_value: m.settlement_value_dollars != null ? Number(m.settlement_value_dollars) : null, venue_expiration_value: m.expiration_value ?? null,
+          venue_settled_at: m.settlement_ts ?? null, sources_agree: null, metadata: { resolution_rule: c.rules_primary, verification: c.verification_dataset } });
+        continue;
+      }
       let day = null; let official = null; let sourceLabel = null;
       if (c.event_type === 'FOMC_DECISION_BUCKET') {
         if (!cache.has('fred')) { try { cache.set('fred', await fetchFredSeries(['DFEDTARU'], { fetchImpl, userAgent: USER_AGENT, since: '2026-01-01' })); } catch (e) { cache.set('fred', { error: e.message }); } }

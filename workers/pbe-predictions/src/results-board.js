@@ -1,14 +1,20 @@
-// Read-only, member-gated Predictions scorecard. This is NOT the public
-// track record or an official-pick publisher. There is no model retraining,
-// resettlement, backfilling, or promotion of the FROZEN_PROSPECTIVE policy.
+// Read-only, member-gated Predictions scorecard. Official PBE Picks (activated 2026-10-09) are graded here as
+// RIGHT (stored key MATCHED) / MISSED / PENDING / VOID from their own locked forecast only. There is no model
+// retraining, resettlement or backfilling: a research call made before activation never becomes official.
 // Event-level favorite is the highest-probability *designated* temperature
 // bucket (one event => one hit/miss), not a tally of easy NO contracts.
+import { DECISION_POLICY } from '../../../src/engine/decision.js';
+
+const P = DECISION_POLICY;
+export const OFFICIAL_POLICY = Object.freeze({ status: P.status, activated_at: P.activated_at, candidate: P.candidate, version: P.version, official_policy: P.official_policy,
+  scope: 'Rain YES/NO (pbe-weather-precip): HIGH-grade forecast, PBE >= 70% YES or <= 30% NO, no YES calls Jun-Sep, nothing near-certain (>= 97%), evidence <= 12 h old' });
 const num = x => x === null || x === undefined ? null : Number.isFinite(Number(x)) ? Number(x) : null;
 const valid = x => num(x) !== null && num(x) >= 0 && num(x) <= 1;
 const key = x => String(x ?? '');
 const txt = x => typeof x === 'string' ? x.slice(0, 230) : '';
 
-export function assembleScorecard({ scores = [], forecasts = [], contracts = [], events = [], decisions = [] } = {}) {
+export function assembleScorecard({ scores = [], forecasts = [], contracts = [], events = [], decisions = [], voids = [] } = {}) {
+  const voided = new Set(voids.filter((r) => String(r.venue_result).toLowerCase() === 'void').map((r) => key(r.contract_id)));
   const fs = new Map(forecasts.map(f => [key(f.forecast_id), f]));
   const cs = new Map(contracts.map(c => [key(c.contract_id), c]));
   const evs = new Map(events.map(e => [key(e.event_id), e]));
@@ -70,8 +76,8 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
       decided_at: d.decision_as_of || null,
       official: d.official_at_decision === true && d.policy_status === 'OFFICIAL',
       policy_status: txt(d.policy_status),
-      result: correct === null ? 'PENDING' : correct ? 'MATCHED' : 'MISSED',
-      actual: out === null ? null : out === 1 ? 'YES' : 'NO'
+      result: voided.has(key(d.contract_id)) ? 'VOID' : correct === null ? 'PENDING' : correct ? 'MATCHED' : 'MISSED',
+      actual: voided.has(key(d.contract_id)) ? 'VOID' : out === null ? null : out === 1 ? 'YES' : 'NO'
     });
   }
   calls.sort((a,b)=>key(b.decided_at).localeCompare(key(a.decided_at)));
@@ -80,17 +86,19 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
     calls: arr.length,
     matched: arr.filter(x=>x.result==='MATCHED').length,
     missed: arr.filter(x=>x.result==='MISSED').length,
-    pending: arr.filter(x=>x.result==='PENDING').length
+    pending: arr.filter(x=>x.result==='PENDING').length,
+    void: arr.filter(x=>x.result==='VOID').length
   });
   return {
     schema: 'pbe-scorecard/1', generated_at: new Date().toISOString(),
     unit: 'completed_temperature_events',
     top_outcome: { ...count(temperature), events: temperature.length, rows: temperature },
-    official: { ...count(active), rows: active },
+    official: { ...count(active), rows: active, policy: OFFICIAL_POLICY },
     prospective: { ...count(research), rows: research },
     disclaimers: [
       'Top outcome is the largest locked model probability in each completed temperature event, evaluated against the actual winning bucket. It is not an official decision or a bet.',
-      'Prospective CALL records were frozen before resolution for research. They are NOT official PBE Picks; PASS records are excluded.',
+      'Official PBE Picks: rain YES/NO calls by the frozen rain-v1 policy whose forecast was locked at/after activation (2026-10-09 21:15 UTC). RIGHT/MISSED from the venue settlement; VOID when the venue cancelled the contract (excluded from the record).',
+      'Prospective CALL records frozen before activation stay research. They are NOT official PBE Picks; PASS records are excluded.',
       'Independent rain and rate thresholds are not counted as event-level weather-bucket wins. No backfilled picks or win claims.'
     ]
   };
@@ -121,15 +129,17 @@ export async function memberScorecard(store, { fresh = false, now = Date.now } =
       }) // no row cap: every frozen CALL is counted
     ]);
     const cids = [...new Set([...scores, ...decisions].map(x=>x.contract_id).filter(Boolean))];
+    const callIds = [...new Set(decisions.map(x=>x.contract_id).filter(Boolean))];
     const fids = [...new Set([...scores, ...decisions].map(x=>x.forecast_id).filter(Boolean))];
     if (!cids.length) return assembleScorecard();
-    const [contracts, forecasts] = await Promise.all([
+    const [contracts, forecasts, voids] = await Promise.all([
       store.selectIn('pred_contracts', { select: 'contract_id,event_id,market_id,outcome_label,event_type' }, 'contract_id', cids, { chunkSize: 75 }),
-      store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,probability,captured_at,model_state' }, 'forecast_id', fids, { chunkSize: 75 })
+      store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,probability,captured_at,model_state' }, 'forecast_id', fids, { chunkSize: 75 }),
+      callIds.length ? store.selectIn('pred_resolutions', { select: 'contract_id,venue_result', venue_result: 'eq.void' }, 'contract_id', callIds, { chunkSize: 75 }) : []
     ]);
     const eventIds = [...new Set(contracts.map(c=>c.event_id).filter(Boolean))];
     const events = eventIds.length ? await store.selectIn('pred_events', {select: 'event_id,slug,canonical_question,category'}, 'event_id', eventIds, {chunkSize: 75}) : [];
-    return assembleScorecard({ scores, decisions, contracts, forecasts, events });
+    return assembleScorecard({ scores, decisions, contracts, forecasts, events, voids });
   })();
   pending = work;
   try {

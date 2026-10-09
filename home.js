@@ -166,15 +166,17 @@ function scoreMember(data) {
   const top = data.top_outcome || { matched: 0, missed: 0, events: 0, rows: [] };
   const pro = data.prospective || { matched: 0, missed: 0, pending: 0, calls: 0, rows: [] };
   const off = data.official || { calls: 0 };
+  const since = off.policy?.activated_at ? new Date(off.policy.activated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', timeZoneName: 'short' }) : null;
   const recent = [...(top.rows || []).map((r) => ({ ...r, kind: 'Temperature outcome', at: r.scored_at, line: `Top bucket <b>${esc(r.picked)}</b>${r.probability_pct != null ? ` (${r.probability_pct}%)` : ''} · actual <b>${esc(r.actual)}</b>` })),
-    ...(pro.rows || []).filter((r) => r.result !== 'PENDING').map((r) => ({ ...r, kind: 'Research call', at: r.decided_at, line: `Called <b>${esc(r.side)}</b> on ${esc(r.label)}${r.probability_pct != null ? ` at ${r.probability_pct}%` : ''} · resolved <b>${esc(r.actual)}</b>` }))]
+    ...(off.rows || []).filter((r) => r.result !== 'PENDING').map((r) => ({ ...r, kind: 'Official pick', at: r.decided_at, line: `Called <b>${esc(r.side)}</b> on ${esc(r.label)}${r.probability_pct != null ? ` at ${r.probability_pct}%` : ''} · resolved <b>${esc(r.actual)}</b>` })),
+    ...(pro.rows || []).filter((r) => r.result !== 'PENDING' && r.result !== 'VOID').map((r) => ({ ...r, kind: 'Research call', at: r.decided_at, line: `Called <b>${esc(r.side)}</b> on ${esc(r.label)}${r.probability_pct != null ? ` at ${r.probability_pct}%` : ''} · resolved <b>${esc(r.actual)}</b>` }))]
     .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 3);
-  el.innerHTML = `<div class="sb-grid${off.calls ? '' : ' sb-grid--active'}">
+  el.innerHTML = `<div class="sb-grid">
     <div class="sb-tile"><span>Temperature event outcomes</span><b class="num">${top.matched}/${top.events}</b><small>top bucket matched the winner · ${top.missed} missed · retrospective, one result per settled event</small><div class="sb-bar" aria-hidden="true"><i style="width:${top.events ? (top.matched / top.events) * 100 : 0}%"></i></div></div>
     <div class="sb-tile"><span>Research YES/NO calls</span><b class="num">${pro.matched}–${pro.missed}</b><small>${pro.pending} pending · frozen before resolution · research, not official picks</small></div>
-    ${off.calls ? `<div class="sb-tile"><span>Official picks</span><b class="num">${off.matched}–${off.missed}</b><small>${off.pending} pending · only forward official decisions</small></div>` : ''}
+    <div class="sb-tile"><span>Official picks · rain YES/NO</span>${off.calls ? `<b class="num">${off.matched}–${off.missed}</b><small>${off.pending} pending${off.void ? ` · ${off.void} void` : ''} · forward official decisions only${since ? ` · since ${esc(since)}` : ''}</small>` : `<b>Active</b><small>${since ? `since ${esc(since)} · ` : ''}first official pick = the next eligible rain call, locked before its window</small>`}</div>
     <div class="sb-tile"><span>Contracts scored</span><b class="num" id="sb-n">—</b><small id="sb-brier">stored scores · not wins</small></div></div>
-    ${recent.length ? `<h3 class="sb-h">Latest settled</h3><ul class="sb-rows">${recent.map((r) => `<li><span class="result-pill ${r.result === 'MATCHED' ? 'result-pill--hit' : 'result-pill--miss'}">${r.result === 'MATCHED' ? 'RIGHT' : 'MISSED'}</span><span class="sb-kind">${esc(r.kind)}</span><a href="/events/${encodeURIComponent(r.slug || '')}">${esc(r.title)}</a><small>${r.line}</small></li>`).join('')}</ul>` : ''}`;
+    ${recent.length ? `<h3 class="sb-h">Latest settled</h3><ul class="sb-rows">${recent.map((r) => `<li><span class="result-pill ${r.result === 'MATCHED' ? 'result-pill--hit' : r.result === 'MISSED' ? 'result-pill--miss' : 'result-pill--pending'}">${r.result === 'MATCHED' ? 'RIGHT' : r.result === 'MISSED' ? 'MISSED' : esc(r.result)}</span><span class="sb-kind">${esc(r.kind)}</span><a href="/events/${encodeURIComponent(r.slug || '')}">${esc(r.title)}</a><small>${r.line}</small></li>`).join('')}</ul>` : ''}`;
   if (lastTrack) scoring(lastTrack);
 }
 function scoring(t) {
@@ -190,7 +192,7 @@ function scoring(t) {
     <div class="sb-tile"><span>Contracts scored</span><b class="num">${t.resolved_contracts.toLocaleString()}</b><small>every resolved contract with a stored forecast · not a win count</small></div>
     <div class="sb-tile"><span>Brier score · final forecast</span><b class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</b><small>${b?.market_mean != null ? `market ${b.market_mean.toFixed(3)} on the ${b.market_n} with a quote · lower is better` : 'lower is better'}</small></div>
     <div class="sb-tile"><span>Log loss · final forecast</span><b class="num">${l && enough ? l.pbe_mean.toFixed(3) : 'Pending'}</b><small>${l?.market_mean != null ? `market ${l.market_mean.toFixed(3)} · lower is better` : 'lower is better'}</small></div>
-    <div class="sb-tile"><span>Official picks</span><b>Not activated</b><small>no official pick has been published · no win claim</small></div></div>
+    <div class="sb-tile"><span>Official picks · rain YES/NO</span><b>Active</b><small>activated Oct 9, 2026 · tracked RIGHT / MISSED / PENDING / VOID · picks and results for All Access members</small></div></div>
     <p class="rp-lock">Members see every settled result: temperature event outcomes and research calls, wins and losses, with the evidence behind each. <a href="${AA_URL}" data-purchase-cta data-pbe-placement="predictions_home_results">Get All Access →</a></p>`;
 }
 

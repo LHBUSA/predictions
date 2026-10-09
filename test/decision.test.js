@@ -33,17 +33,20 @@ test('decisionInput never copies a market column from a forecast row', () => {
   assert.deepEqual(decide(a, TEST_POLICY), decide(b, TEST_POLICY));
 });
 
-test('FROZEN_PROSPECTIVE policy: parameters frozen, CALL not activated (nothing official); only precip is validated', () => {
-  assert.equal(DECISION_POLICY.status, 'FROZEN_PROSPECTIVE');
-  assert.ok(DECISION_POLICY.frozen_at);
-  assert.equal(DECISION_POLICY.activated_at, null);
-  for (const fam of ['pbe-weather-maxtemp', 'pbe-rates-path', 'pbe-fed-decision']) {
-    const d = decide({ ...base, model_id: fam });
-    assert.equal(d.official, false);
-    assert.deepEqual([d.state, ...d.reasons], ['PASS', 'MODEL_NOT_VALIDATED'], 'valid forecast, unvalidated model = PASS (evaluated, declined)');
+test('OFFICIAL policy (owner 2026-10-09): frozen rain-v1 activated prospectively; only precip can CALL; temperature/rates/Fed never official', () => {
+  assert.equal(DECISION_POLICY.status, 'OFFICIAL');
+  assert.equal(DECISION_POLICY.frozen_at, '2026-10-04T13:21:00Z');
+  assert.equal(DECISION_POLICY.activated_at, '2026-10-09T21:15:00Z');
+  assert.deepEqual(Object.entries(DECISION_POLICY.families).filter(([, f]) => f.validated).map(([k]) => k), ['pbe-weather-precip'], 'activation enables rain only');
+  const post = { decision_time: '2026-10-10T05:30:00Z', data_cutoff_at: '2026-10-10T05:00:00Z', as_of: '2026-10-10T06:00:00Z' };
+  for (const fam of ['pbe-weather-maxtemp', 'pbe-rates-path', 'pbe-fed-decision']) for (const p of [0.99, 0.9, 0.75, 0.25, 0.05]) {
+    const d = decide({ ...base, ...post, model_id: fam, probability: p });
+    assert.deepEqual([d.state, ...d.reasons], ['PASS', 'MODEL_NOT_VALIDATED'], `${fam} ${p}: valid forecast, unvalidated model = PASS, never a pick`);
   }
   const P = (x) => decide({ ...base, data_cutoff_at: '2026-10-04T05:00:00Z', as_of: '2026-10-04T12:00:00Z', ...x });
-  assert.deepEqual([P({ probability: 0.72, contract_month: 10 }).state, P({ probability: 0.72, contract_month: 10 }).side, P({}).official], ['CALL', 'YES', false]);
+  assert.deepEqual([P({ probability: 0.72, contract_month: 10 }).state, P({ probability: 0.72, contract_month: 10 }).side, P({}).official], ['CALL', 'YES', false], 'a pre-activation (Oct 4) call stays research');
+  const A = decide({ ...base, ...post, probability: 0.72, contract_month: 10 });
+  assert.deepEqual([A.state, A.side, A.official, A.policy_status], ['CALL', 'YES', true, 'OFFICIAL'], 'a post-activation rain call is official');
   assert.deepEqual([P({ probability: 0.72, contract_month: 7 }).state, ...P({ probability: 0.72, contract_month: 7 }).reasons], ['PASS', 'MODEL_NOT_VALIDATED']);
   assert.deepEqual([P({ probability: 0.2, contract_month: 7 }).state, P({ probability: 0.2, contract_month: 7 }).side], ['CALL', 'NO']);
   assert.deepEqual([...P({ probability: 0.65 }).reasons], ['WITHIN_UNCERTAINTY_BAND']);
@@ -169,7 +172,10 @@ test('activation invariant: a pre-activation decision stays unofficial forever; 
   assert.equal(isOfficial(activated, '2026-11-20T00:00:00Z'), true, 'at activation counts');
   // 4. no historical/backfilled row becomes official because activated_at is later populated, and no decision time = never official
   for (const t of ['2026-10-04T13:21:00Z', '2026-11-19T23:59:59Z', null, undefined]) assert.equal(isOfficial(activated, t), false, String(t));
-  assert.equal(isOfficial(DECISION_POLICY, '2027-01-01T00:00:00Z'), false, 'not activated -> never official');
+  assert.equal(isOfficial({ ...DECISION_POLICY, activated_at: null }, '2027-01-01T00:00:00Z'), false, 'not activated -> never official');
+  // 5. the production activation: strictly prospective from 2026-10-09T21:15:00Z
+  assert.equal(isOfficial(DECISION_POLICY, '2026-10-09T21:14:59.999Z'), false);
+  assert.equal(isOfficial(DECISION_POLICY, '2026-10-09T21:15:00Z'), true);
 });
 
 test('policyHash = the pinned frozen hash (one definition shared by tests and the decision ledger)', async () => {
