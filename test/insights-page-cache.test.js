@@ -14,15 +14,21 @@ test('reuses same public HTML during TTL; refreshes afterward', async()=>{
  assert.equal(await (await cachedInsightsDesk('test-a',build,{now:()=>tick,ttlMs:100})).text(),'generation-2');
  assert.equal(calls,2);
 });
-test('coalesces concurrent cold loads',async()=>{
- let calls=0,release;
- const wait=new Promise(resolve=>release=resolve);
- const build=async()=>{calls++;await wait;return response('shared')};
- const many=Array.from({length:12},()=>cachedInsightsDesk('test-b',build));
- release();
- const answers=await Promise.all(many);
+// Workers forbids sharing a Response/stream (or awaiting another request's promise) across requests: the memo
+// must hand every request its own fresh Response built from plain data. (The original cross-request coalescing
+// shared one Response and returned 500s in production on 2026-10-09: "ReadableStream is currently locked".)
+test('every request gets an independent Response (no shared body/stream across requests)',async()=>{
+ let calls=0;
+ // Model the Workers rule: the builder's Response belongs to ITS request; cloning it or handing it out again is forbidden.
+ const build=()=>{calls++;const r=response('desk-html');r.clone=()=>{throw new Error('cross-request Response reuse (clone)')};return r};
+ const first=await cachedInsightsDesk('test-b',build);
+ const second=await cachedInsightsDesk('test-b',build);
+ const third=await cachedInsightsDesk('test-b',build);
+ assert.notEqual(first,second); assert.notEqual(second,third);
+ // each body can be read on its own, in any order, without locking the others
+ assert.equal(await third.text(),'desk-html'); assert.equal(await first.text(),'desk-html'); assert.equal(await second.text(),'desk-html');
+ assert.equal(first.headers.get('cache-control'),'public, max-age=120');
  assert.equal(calls,1);
- assert.deepEqual(await Promise.all(answers.map(a=>a.text())),Array(12).fill('shared'));
 });
 test('never caches non-success, private, or cookie-bearing data',async()=>{
  for(const [key,make] of [
