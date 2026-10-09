@@ -17,7 +17,7 @@ import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
 import { memberScorecard, limitRows } from './results-board.js';
-import { featuredForMember, featuredForPreview } from './featured.js';
+import { featuredForMember, featuredForPreview, pulseFromPreview, latestInsight } from './featured.js';
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome, eventIntel } from './pages.js';
 import { renderPng } from './og.js';
 import { predictionsMembership, PRIVATE_HEADERS } from './membership.js';
@@ -728,6 +728,16 @@ export default {
       if (p === '/v1/preview/desk') return json(deskPreview(await desk(store)));
       // Overview: three events only (the homepage never downloads the whole desk). Public = preview fields only.
       if (p === '/v1/preview/featured') return json(featuredForPreview(deskPreview(await desk(store))));
+      if (p === '/v1/preview/latest-insight') {
+        // homepage line: never rebuilds the newsroom per visitor (edge cache 10 min per colo + the newsroom's own 5 min cache)
+        const key = new Request(`${url.origin}/v1/preview/latest-insight`, { method: 'GET' });
+        const hit = await caches.default.match(key).catch(() => null);
+        if (hit) return hit;
+        const res = json(latestInsight(await publishedStories(store)), 200, 'public, max-age=600');
+        ctx.waitUntil(caches.default.put(key, res.clone()).catch(() => {}));
+        return res;
+      }
+      if (p === '/v1/preview/pulse') return json(pulseFromPreview(deskPreview(await desk(store))), 200, 'public, max-age=60');
       if (p === '/v1/featured') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...featuredForMember(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
       if (p === '/v1/desk' || p === '/v1/premium/desk') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson({ ...(await desk(store, { venues: true })), access: { tier: 'all_access' } }); }
       if (p.startsWith('/v1/premium/event-page/')) {
@@ -840,7 +850,7 @@ export default {
         return ref ? new Response(null, { status: 301, headers: { location: `${SITE}/events/${ref.slug}#${encodeURIComponent(ref.market_id)}`, 'cache-control': 'public, max-age=3600' } }) : html(renderNotFound('/record/'), 404);
       }
       if (p === '/sitemap.xml') return new Response(sitemapXml(await sitemapEntries(store), (await publishedStories(store)).map((i) => ({ slug: i.story.slug, vertical: i.story.vertical, published_at: i.story.published_at }))), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=900, no-transform', vary: 'Accept-Encoding' } });
-      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/preview/desk', '/v1/preview/featured', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/membership'], all_access: ['/v1/desk', '/v1/featured', '/v1/event/:slug', '/v1/contract/:contract_id', '/v1/live/event/:slug', '/v1/premium/*'] }, 404);
+      return json({ error: 'not_found', routes: ['/v1/health', '/v1/summary', '/v1/preview/desk', '/v1/preview/featured', '/v1/preview/pulse', '/v1/preview/latest-insight', '/v1/calendar', '/v1/models', '/v1/track-record', '/v1/queue', '/v1/membership'], all_access: ['/v1/desk', '/v1/featured', '/v1/event/:slug', '/v1/contract/:contract_id', '/v1/live/event/:slug', '/v1/premium/*'] }, 404);
     } catch (e) {
       console.error(e.stack || e.message);
       return json({ error: 'internal_error', message: e.message }, 500, 'no-store');

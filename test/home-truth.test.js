@@ -62,11 +62,10 @@ test('visible divergence carries its unit: −78 pts / +45 pts / 0 pts (field an
 });
 
 test('KPIs, desk, track record and registry name what they count; sources unchanged', () => {
-  // overview: exactly four KPIs (issue #50); contracts are never called forecasts or wins
-  assert.match(home, /\$\('s-modeled'\)\.textContent = s\.modeled_contracts\.toLocaleString\(\);/);
-  assert.equal([...index.matchAll(/<div class="stat"><span>/g)].length, 4, 'four KPIs on the overview');
-  assert.ok(index.includes('<small>contracts with a PBE probability</small>') && !index.includes('research-stage forecasts'));
-  assert.match(home, /contracts with stored scores \(not wins\)/);
+  // overview (Homepage V2): a compact engine line instead of KPI cards; contracts are never called forecasts or wins
+  assert.match(home, /\$\('e-modeled'\)\.textContent = s\.modeled_contracts\.toLocaleString\(\);/);
+  assert.ok(index.includes('</b> with a PBE forecast</span>') && index.includes('</b> live contracts</span>') && !index.includes('research-stage forecasts'));
+  assert.match(home, /not a win count/); assert.match(home, /stored scores · not wins/);
   // market-monitoring count moved to the desk, named for what it counts
   assert.match(desk, /\$\{s\.monitoring_contracts\.toLocaleString\(\)\} market monitoring/);
   assert.ok(!index.includes('market shown, no PBE number') && !deskPage.includes('market shown, no PBE number'));
