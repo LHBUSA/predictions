@@ -286,13 +286,13 @@ ${links()}`;
     // =====================================================================================================
     // LIVE $10K PORTFOLIO
     // =====================================================================================================
-    const L = { timer: null, data: null, quotes: new Map(), cq: new Map(), intraSig: null, eodSig: null, built: false, proof: null, charts: {} };
+    const L = { timer: null, data: null, quotes: new Map(), cq: new Map(), intraSig: null, eodSig: null, built: false, proof: null, proofAt: 0, charts: {} };
     async function live() {
       clearTimeout(L.timer);
       const r = await api('live');
       if (handleGate(r, 'the Signal 10 paper portfolio', live)) return;
       L.data = r.data;
-      if (!L.data.forward && !L.proof) L.proof = await proof();
+      if (!L.data.forward && (!L.proof || Date.now() - (L.proofAt || 0) > 60000)) { L.proof = await proof(); L.proofAt = Date.now(); }
       renderLive(L.data);
       schedule();
     }
@@ -310,7 +310,7 @@ ${links()}`;
       const now = Date.parse(d.now) || Date.now();
       const badge = C.sessionBadge(d.session, quoteTimes(d), now);
       const sessionHTML = `<span class="s10-session ${badge.cls}" role="status"><i aria-hidden="true"></i>${esc(badge.text)}</span>`;
-      const f = d.forward;
+      const f = d.forward?.origin === 'FORWARD_PAPER' ? d.forward : null;
       if (!L.built || (L.built === 'fwd') !== !!f) {
         L.built = f ? 'fwd' : 'nofwd'; L.quotes.clear(); L.cq.clear(); L.intraSig = null; L.eodSig = null;
         app.dataset.state = 'ready';
@@ -319,14 +319,14 @@ ${links()}`;
 <section class="s10-sec" aria-labelledby="b-h"><h2 class="s10-h2" id="b-h">Same-inception paper benchmarks</h2><p class="s10-sub">$10,000 of simulated cash each, whole shares bought at the account’s first fill-session open (+10 bps), dividends to cash.</p><div id="s10-bench"></div></section>
 <div class="s10-grid2"><section class="s10-sec" aria-labelledby="i-h" id="s10-intra-sec"><h2 class="s10-h2" id="i-h">Today · persisted 5-minute marks</h2><div id="s10-intra"></div></section>
 <section class="s10-sec" aria-labelledby="e-h" id="s10-eod-sec"><h2 class="s10-h2" id="e-h">Daily closes since inception</h2><div id="s10-eod"></div></section></div>`
-          : `<section class="s10-term" aria-labelledby="acct-h"><div class="s10-term-head"><h2 id="acct-h">PBE PAPER ACCOUNT · STARTING $10,000 · SIMULATED</h2><span id="s10-sess">${sessionHTML}</span></div>${forwardStatusLine(L.proof).replace('s10-statusline', 's10-term-foot')}</section>`}
-<section class="s10-sec s10-hypo" aria-labelledby="c-h"><span class="s10-tag s10-tag-bt">HISTORICAL_REPLAY · HYPOTHETICAL CONTINUATION</span><h2 class="s10-h2" id="c-h" style="margin-top:10px">${esc(d.continuation?.label || 'Backtested Holdings · hypothetical continuation')}</h2>
-<p class="s10-sub">The backtest’s final holdings (as of the ${esc(fmtDate(d.continuation?.asOf))} close) marked at the same live quotes. This is not the paper account and is never added to its totals.</p><div id="s10-cont"></div></section>
-<p class="s10-note">Quotes: ${esc(d.quoteSource || '')}. Cached up to ${fmtInt(d.quoteCacheSeconds)} s. This page refreshes every 20 s while the regular session is open and this tab is visible, every 2 min otherwise, and pauses while hidden.</p>`;
+          : `<section class="s10-term" aria-labelledby="acct-h"><div class="s10-term-head"><h2 id="acct-h">PBE PAPER ACCOUNT · $10,000 SIMULATED · AWAITING FIRST CLOSE</h2><span id="s10-sess">PAPER ACCOUNT · NOT YET FUNDED</span></div>
+<div class="s10-kpis">${kpi('Planned starting capital', '$10,000', 'No funding event recorded yet')}${kpi('First scheduled EOD', 'Oct 9 · 4:20 PM ET', 'Only after source validation')}${kpi('First possible fills', 'Next market open', 'Subject to actual frozen signals')}</div>${forwardStatusLine(L.proof).replace('s10-statusline', 's10-term-foot')}</section>
+<section class="s10-sec" aria-labelledby="wait-h"><span class="s10-over">FORWARD_PAPER · NEW TRACK RECORD</span><h2 class="s10-h2" id="wait-h">Waiting for the first verified paper-account snapshot</h2><p class="s10-sub">This page shows only this account's recorded simulated funding, positions, orders and marks. Historical backtest holdings never appear here.</p><p class="s10-note"><a href="/markets/signal-10/backtest/">See the historical backtest separately →</a></p></section>`}
+`;
       }
       if (f) { renderHero(d, f, sessionHTML); renderHoldings(f); renderBench(d, f); renderIntra(f); renderEod(f); }
       else { const s = document.getElementById('s10-sess'); if (s) s.innerHTML = sessionHTML; }
-      renderCont(d);
+      // No historical continuation on the forward account page.
     }
     function renderHero(d, f, sessionHTML) {
       const nv = C.navView(f);
@@ -419,28 +419,6 @@ ${awaiting ? '<p class="s10-term-foot"><b>AWAITING ENTRY.</b> No positions yet. 
       ch = chart(box.querySelector('[data-c]'), { xs, series, yFmt: (v, ax, st) => (ax ? C.axisUSD(v, st) : fmtUSD(v)), tipX: (x) => fmtDate(isoDay(x)), xTicks: sampleTicks(shortDay), baseline: START_CENTS, page: 5,
         ariaLabel: `Daily end-of-day NAV since inception, ${rows.length} closes from ${fmtDate(rows[0].d)} to ${fmtDate(rows.at(-1).d)}: paper account ${fmtUSD(rows.at(-1).nav_cents)}. Use arrow keys to inspect.`, readout: box.querySelector('.s10-readout') });
     }
-    function contRow(h) {
-      const v = Number.isFinite(h.price) ? Math.round(h.qty * h.price * 100) : h.valueCents;
-      const chg = Number.isFinite(h.price) && h.close ? h.price / h.close - 1 : null;
-      return `<tr data-sym="${esc(h.symbol)}">${symCell(h.symbol, h.name)}<td class="num">${fmtQty(h.qty)}</td><td class="num">${esc(fmtDate(h.entryDate))}</td><td class="num">${fmtPrice(h.close)}<br><small>${esc(fmtDate(h.closeDate))}</small></td><td class="num">${fmtPrice(h.price)}<br><small>${h.quoteTime ? rel(h.quoteTime) : 'no quote'}</small></td><td class="num">${pct(chg, { dp: 2 })}</td><td class="num">${fmtUSD(v)}</td><td class="num">${money(v - h.costCents)}</td></tr>`;
-    }
-    function renderCont(d) {
-      const c = d.continuation; const box = document.getElementById('s10-cont');
-      if (!c || !box) return;
-      const hs = c.holdings || [];
-      const total = (c.cashCents || 0) + hs.reduce((s, h) => s + (Number.isFinite(h.price) ? Math.round(h.qty * h.price * 100) : h.valueCents || 0), 0);
-      const atClose = (c.cashCents || 0) + hs.reduce((s, h) => s + (h.valueCents || 0), 0);
-      const syms = hs.map((h) => h.symbol).join(',');
-      if (box.dataset.syms !== syms || !box.querySelector('tbody')) {
-        box.dataset.syms = syms;
-        box.innerHTML = `<div data-k></div>${tbl('Backtest final holdings at live quotes (hypothetical)', ['Symbol', 'r:Shares', 'r:Entered', 'r:Backtest close', 'r:Live price', 'r:Since close', 'r:Value', 'r:Unrealized'], hs.map(contRow), { cap2: 'HISTORICAL_REPLAY origin. Never added to the paper account.' })}`;
-        L.cq = new Map(hs.map((h) => [h.symbol, h.quoteTime ?? null]));
-      } else {
-        for (const s of C.changedQuotes(L.cq, hs)) { const h = hs.find((q) => q.symbol === s); const tr = box.querySelector(`tr[data-sym="${CSS.escape(s)}"]`); if (tr && h) { tr.outerHTML = contRow(h); L.cq.set(s, h.quoteTime ?? null); } }
-      }
-      box.querySelector('[data-k]').innerHTML = `<div class="s10-kpis" style="margin-bottom:12px">${kpi('Hypothetical value at live quotes', fmtUSD(total), `incl. ${fmtUSD(c.cashCents)} backtest cash`)}${kpi(`At the ${esc(fmtDate(c.asOf))} backtest close`, fmtUSD(atClose))}${kpi('Change since that close', money(total - atClose), pct(C.pnl(total, atClose).pct, { dp: 2 }))}</div>`;
-    }
-
     // =====================================================================================================
     // HISTORICAL BACKTEST
     // =====================================================================================================
