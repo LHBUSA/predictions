@@ -23,6 +23,19 @@ test('header: product nav preserved + PropBetEdge Network + Get All Access (desk
   assert.match(h, /aria-current="page">Insights</);
 });
 
+test('Signal 10 is a first-class desktop and mobile destination and marks its own route active', () => {
+  const href = '/markets/signal-10/';
+  const normal = siteHeader('overview');
+  assert.equal(normal.split('href="' + href + '"').length - 1, 2, 'direct top navigation and mobile strip');
+  const active = siteHeader('signal10');
+  assert.equal(active.split('href="' + href + '" aria-current="page"').length - 1, 2, 'active on the Signal 10 product');
+  assert.ok(siteFooter().includes('href="' + href + '"'), 'footer destination');
+  for (const path of ['index.html','desk/index.html','markets/signal-10/index.html','markets/signal-10/live/index.html']) {
+    const html = readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+    assert.ok(html.includes('href="' + href + '"'), path + ' shows Signal 10 in navigation');
+  }
+});
+
 test('footer: Predictions, all 10 sports, network, trust, and the All Access line', () => {
   const f = siteFooter();
   assert.equal(NETWORK.sports.length, 10);
