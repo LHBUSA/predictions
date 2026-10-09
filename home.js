@@ -169,10 +169,10 @@ function scoreMember(data) {
   const recent = [...(top.rows || []).map((r) => ({ ...r, kind: 'Temperature outcome', at: r.scored_at, line: `Top bucket <b>${esc(r.picked)}</b>${r.probability_pct != null ? ` (${r.probability_pct}%)` : ''} · actual <b>${esc(r.actual)}</b>` })),
     ...(pro.rows || []).filter((r) => r.result !== 'PENDING').map((r) => ({ ...r, kind: 'Research call', at: r.decided_at, line: `Called <b>${esc(r.side)}</b> on ${esc(r.label)}${r.probability_pct != null ? ` at ${r.probability_pct}%` : ''} · resolved <b>${esc(r.actual)}</b>` }))]
     .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 3);
-  el.innerHTML = `<div class="sb-grid">
+  el.innerHTML = `<div class="sb-grid${off.calls ? '' : ' sb-grid--active'}">
     <div class="sb-tile"><span>Temperature event outcomes</span><b class="num">${top.matched}/${top.events}</b><small>top bucket matched the winner · ${top.missed} missed · retrospective, one result per settled event</small><div class="sb-bar" aria-hidden="true"><i style="width:${top.events ? (top.matched / top.events) * 100 : 0}%"></i></div></div>
     <div class="sb-tile"><span>Research YES/NO calls</span><b class="num">${pro.matched}–${pro.missed}</b><small>${pro.pending} pending · frozen before resolution · research, not official picks</small></div>
-    <div class="sb-tile"><span>Official picks</span><b>${off.calls ? `${off.matched}–${off.missed}` : 'Not activated'}</b><small>${off.calls ? `${off.pending} pending` : 'no official pick has been published · no win claim'}</small></div>
+    ${off.calls ? `<div class="sb-tile"><span>Official picks</span><b class="num">${off.matched}–${off.missed}</b><small>${off.pending} pending · only forward official decisions</small></div>` : ''}
     <div class="sb-tile"><span>Contracts scored</span><b class="num" id="sb-n">—</b><small id="sb-brier">stored scores · not wins</small></div></div>
     ${recent.length ? `<h3 class="sb-h">Latest settled</h3><ul class="sb-rows">${recent.map((r) => `<li><span class="result-pill ${r.result === 'MATCHED' ? 'result-pill--hit' : 'result-pill--miss'}">${r.result === 'MATCHED' ? 'RIGHT' : 'MISSED'}</span><span class="sb-kind">${esc(r.kind)}</span><a href="/events/${encodeURIComponent(r.slug || '')}">${esc(r.title)}</a><small>${r.line}</small></li>`).join('')}</ul>` : ''}`;
   if (lastTrack) scoring(lastTrack);
