@@ -5,7 +5,7 @@
 // rehearsal/<id>/, its own namespace, no GitHub, no external alerts.
 // Routes: GET /health (public, no secrets); /admin/* with Bearer ADMIN_TOKEN.
 import { plan, slotTimes } from '../../../scripts/research/employment/collector/lib.mjs';
-import { COLLECTOR_VERSION, indexView, tick } from './collector.js';
+import { COLLECTOR_VERSION, indexView, kalshiSnapshot, tick } from './collector.js';
 import { GitHubMirror } from './github.js';
 import { makeGet } from './http.js';
 import { kalshiSigner } from './kalshi-auth.js';
@@ -141,6 +141,15 @@ export default {
     }
     if (url.pathname === '/admin/tick' && req.method === 'POST') return json(await runAll(env, null));
     if (url.pathname === '/admin/import-github' && req.method === 'POST') return json(await importFromGitHub(env));
+    // labelled ADHOC capture of the next release, SHADOW namespace only (live side-by-side comparison; never a slot)
+    if (url.pathname === '/admin/adhoc' && req.method === 'POST') {
+      const c = await makeContext(env, { mode: 'shadow', ns: 'shadow', prefix: 'shadow/' });
+      const st = await state.getState('shadow'); const rel = (st.calendar || []).find((r) => Date.parse(r.release_at) > Date.now());
+      if (!rel) return json({ error: 'no calendar yet: wait for the first shadow tick' }, 409);
+      c.ledger = () => {}; c.alert = async () => {};
+      const s = await kalshiSnapshot(c, rel, 'ADHOC', null);
+      return json({ dir: `shadow/kalshi/${rel.release_date}/ADHOC`, status: s.status, started_utc: s.started_utc, completed_utc: s.completed_utc, series: Object.fromEntries(Object.entries(s.series).map(([k, v]) => [k, { status: v.status, markets: v.markets_listed, orderbooks_ok: v.orderbooks_ok, fee: v.fee }])), kalshi_auth: c.code.kalshi_auth });
+    }
     if (url.pathname === '/admin/test-alert' && req.method === 'POST') {
       // always exercises the webhook (even in shadow) so the channel itself is proven before cutover
       const msg = 'Validation of off-machine alert delivery (expected; no action needed).';
