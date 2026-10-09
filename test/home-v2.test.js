@@ -92,14 +92,14 @@ test('guest: spotlight shows the public price, locked PBE and provenance, no cha
   assert.ok(!t.calls.some((c) => c.path === 'featured' || c.path.startsWith('premium')));
 });
 
-test('scoreboard: three records, three denominators, losses shown, official picks not activated', async () => {
+test('scoreboard: three active records, losses shown, no empty official-picks tile', async () => {
   const board = { top_outcome: { matched: 11, missed: 24, events: 35, rows: [{ slug: 'a', title: 'A?', picked: '80-81°', actual: '82-83°', probability_pct: 41, scored_at: '2026-10-09T10:00:00Z', result: 'MISSED' }] },
     prospective: { matched: 10, missed: 1, pending: 2, calls: 13, rows: [{ slug: 'r', title: 'R?', label: 'Above 4.1%', side: 'NO', probability_pct: 22, decided_at: '2026-10-08T10:00:00Z', result: 'MATCHED', actual: 'NO' }, { slug: 'q', title: 'Q?', label: 'x', side: 'YES', decided_at: '2026-10-09T11:00:00Z', result: 'PENDING', actual: null }] },
     official: { calls: 0, matched: 0, missed: 0, pending: 0, rows: [] } };
   const t = boot({ member: { entitled: true }, bodies: { featured: { audience: 'member', comparable_count: 0, events: [], watch: [] }, 'premium/results-board': board } });
   await settle();
   const sb = t.nodes.scoreboard.innerHTML;
-  assert.match(sb, /11\/35/); assert.match(sb, /24 missed/); assert.match(sb, /10–1/); assert.match(sb, /2 pending/); assert.match(sb, /Not activated/);
+  assert.match(sb, /11\/35/); assert.match(sb, /24 missed/); assert.match(sb, /10–1/); assert.match(sb, /2 pending/); assert.doesNotMatch(sb, /Not activated|Official picks/);
   assert.match(sb, /MISSED/); assert.match(sb, /RIGHT/); assert.doesNotMatch(sb, /Q\?/, 'pending calls are not listed as results');
   assert.ok(t.calls.some((c) => c.path === 'premium/results-board'));
   assert.doesNotMatch(sb, /profit|ROI|units/i);
