@@ -304,6 +304,22 @@ export async function tick(c) {
       sealed = { seq: chain.seq, head: chain.head.slice(0, 16), entries: out.length, files: evidence.length };
     }
   } catch (e) { st.unsealed = [...(st.unsealed || []), ...entries].slice(-500); error ||= `ledger write failed: ${String(e?.message || e).slice(0, 200)}`; }
+  // External anchor (B3 V7): RFC 3161 token over the new chain head, stored write-once beside the ledger. A failure is
+  // alerted but never blocks collection; the evidence without an anchor simply cannot satisfy V7.
+  if (sealed && c.anchor) {
+    try {
+      const a = await c.anchor(st.chain.head);
+      if (a.ok) {
+        const key = `ledger-anchors/${iso(now).slice(0, 7)}/${compactUtc(now)}_seq${st.chain.seq}.tsr`;
+        await c.store.put(key, a.bytes, 'application/timestamp-reply');
+        sealed.anchor = { tsa: a.tsa, gen_time_utc: a.gen_time_utc, key };
+        st.last_anchor = { seq: st.chain.seq, head: st.chain.head, tsa: a.tsa, gen_time_utc: a.gen_time_utc, key };
+      } else {
+        sealed.anchor = { failed: a.errors };
+        if (c.deliver) await c.deliver('ANCHOR_FAILED', `RFC 3161 anchor for ledger seq ${st.chain.seq} failed at every TSA`);
+      }
+    } catch (e) { sealed.anchor = { failed: String(e?.message || e).slice(0, 160) }; }
+  }
   st.last_tick_utc = iso(now);
   if (error) st.last_error = { at_utc: iso(now), error }; else st.last_ok_utc = iso(now);
   for (const [k, d] of Object.entries(st.alerts)) if (d < etParts(now - 3 * 86400000).date) delete st.alerts[k];

@@ -55,13 +55,28 @@ A capture passes only if the Worker-clock evidence (V2, V3) agrees with **two in
 - A capture that arrives after the window, or fails any of V1–V7, is kept and labelled `LATE` or `INVALID` with its
   reason. It never counts and never replaces `MISSED`.
 
-## 5. Duplicate prevention
+## 5. Duplicate prevention and the designated observation
 
-- One capture per `(release, slot)` key. The Durable Object holds the single-writer lease and the capture index; the
-  first capture that satisfies V1–V7 is the record.
-- Every R2 evidence write is write-once: a conditional put that refuses an existing key and never overwrites.
-- A later attempt for the same key is refused and logged in the ledger. It is never stored as an alternative.
-- Shadow and rehearsal captures live under `shadow/` and `rehearsal/` and can never satisfy V1.
+The collector runs one tick per 5-minute bucket. As on Windows, every tick inside a slot window [slot - 15 min, slot)
+takes a snapshot, so a slot has at most 3 on-time captures, at about :45, :50 and :55. Duplicates are prevented as follows:
+
+- **One tick per bucket.** A per-namespace 5-minute idempotency key held in the Durable Object means alarm, cron and
+  manual triggers can never produce two ticks, or two captures, in the same bucket. A single-writer lease stops
+  overlapping ticks.
+- **Write-once keys.** Each capture lives under its own timestamped key. Every R2 evidence write is refused if the key
+  already exists with different bytes (code check), and overwrite or delete is refused at the platform level (bucket
+  lock).
+- **Designated observation.** Each slot has exactly one designated observation: the latest capture that satisfies V1–V7
+  and whose first request started at or after slot - 10 min. This enforces protocol B2.3: "fetched between 19:50 and
+  20:00 ET … no more than 10 minutes old". The other on-time captures are kept as supplementary evidence and are never
+  averaged or substituted.
+- **The 19:45 capture.** It cannot be the B2.3 snapshot. If it is the only valid capture, the slot's executable price
+  is NO_PRICE under B2.3, while the capture is still kept and coverage-counted.
+- **Cutoff is final.** A capture completing at or after the slot can never be designated.
+- **Namespaces.** Shadow and rehearsal captures live under `shadow/` and `rehearsal/` and can never satisfy V1.
+
+This designation rule applies equally to Windows-era captures. It is a clarification of B2.3 that the owner must adopt
+together with B3.
 
 ## 6. Privileged Cloudflare administrators
 
@@ -79,12 +94,20 @@ administrator can change or remove those rules. B3 therefore does not rely on bu
 Residual risk: an administrator can destroy evidence, which turns a slot into MISSED. They cannot make an invalid or
 late capture count.
 
-## 7. Implementation required before B3 can be used
+## 7. Implementation status
 
-- **V7 anchoring:** about one request per tick to a free public RFC 3161 TSA, with a second TSA as fallback. No
-  account or signup. A slot whose token cannot be obtained before slot + 5 min is MISSED.
-- **The independent verifier script.**
-- No capture made before both exist can count.
+- **V7 anchoring: BUILT (2026-10-09, `src/tsa.js`).**
+  - After every sealed tick, the new chain head is timestamped by DigiCert's public TSA, with Sectigo as fallback. No
+    account or signup.
+  - The token is stored write-once at `ledger-anchors/<month>/<tick>_seq<N>.tsr` (bucket-locked).
+  - `/admin/verify` checks every token: granted, echoes the chain hash at its seq, and genTime not before the entry.
+  - Offline proof: a DigiCert token over a test hash passed `openssl ts -verify` against the public CA bundle
+    ("Verification OK").
+  - A failed anchor alerts (`ANCHOR_FAILED`) and never blocks collection. A slot whose seal has no token with genTime
+    ≤ slot + 5 min fails V7 and is MISSED.
+- **Independent offline verifier: NOT YET WRITTEN.** It is the read-only re-check of §3 with an R2 read-only token plus
+  `openssl ts -verify` on each anchor. Due before any authoritative cutover.
+- No capture made before both exist can count. Shadow captures never count (V1) in any case.
 
 ## Owner decision
 

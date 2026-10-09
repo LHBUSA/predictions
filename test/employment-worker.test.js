@@ -168,3 +168,24 @@ test('one tick per 5-minute bucket: a second trigger (alarm + cron + manual) in 
   assert.equal(second.skipped, 'bucket_already_ticked');
   assert.equal([...bucket.m.keys()].filter((k) => k.endsWith('snapshot.json')).length, 1);
 });
+
+test('RFC 3161 anchor: the request is a valid TimeStampReq; tick stores the token and verify checks it echoes the chain head', async () => {
+  const { timeStampRequest } = await import('../workers/pbe-employment-collector/src/tsa.js');
+  const req = timeStampRequest('ab'.repeat(32));
+  assert.equal(req.length, 59); assert.deepEqual([...req.subarray(0, 5)], [0x30, 0x39, 0x02, 0x01, 0x01]);
+  const fakeToken = (hashHex, gen) => Uint8Array.from([0x30, 0x82, 0, 0, 0x30, 0x03, 0x02, 0x01, 0x00, ...hashHex.match(/../g).map((x) => parseInt(x, 16)), 0x18, gen.length, ...new TextEncoder().encode(gen)]);
+  const bucket = new FakeBucket(); const state = new MemoryState();
+  clockNow = SLOT - 14 * 60000;
+  const c = await ctx({ bucket, state });
+  c.anchor = async (h) => ({ ok: true, tsa: 'test-tsa', bytes: fakeToken(h, '20261010000000Z'), gen_time_utc: '2026-10-10T00:00:00Z' });
+  const r = await tick(c);
+  assert.equal(r.ledger.anchor.tsa, 'test-tsa');
+  const st = await state.getState('shadow');
+  const store = new EvidenceStore(bucket, 'shadow/');
+  const v = await verify({ store, state, ns: 'shadow', chain: st.chain });
+  assert.equal(v.ok, true, JSON.stringify(v.problems)); assert.equal(v.ledger_chain.anchors_ok, 1);
+  // a token over a different hash is rejected
+  const k = [...bucket.m.keys()].find((x) => x.includes('ledger-anchors/'));
+  bucket.m.get(k).bytes = fakeToken('cd'.repeat(32), '20261010000000Z');
+  assert.ok((await verify({ store, state, ns: 'shadow', chain: st.chain })).problems.some((p) => p.startsWith('anchor invalid')));
+});

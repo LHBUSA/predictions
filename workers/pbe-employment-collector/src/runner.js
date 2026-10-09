@@ -9,6 +9,7 @@ import { COLLECTOR_VERSION, tick } from './collector.js';
 import { makeGet } from './http.js';
 import { kalshiSigner } from './kalshi-auth.js';
 import { EvidenceStore } from './store.js';
+import { anchor } from './tsa.js';
 import { iso, sleep } from './util.js';
 
 export const NS = { shadow: 'shadow', authoritative: 'auth' };
@@ -60,7 +61,7 @@ export async function makeContext(env, { mode, ns, prefix, state, trigger, calen
   const healthPing = hc ? async (ok) => { try { await fetch(`${hc}${ok ? '' : '/fail'}`); } catch { /* optional */ } } : null;
   return {
     mode, ns, store: new EvidenceStore(env.EVIDENCE, prefix), state: state || stateStub(env), get, kalshiBase, now: () => Date.now(), sleep,
-    code: { ...codeIdentity(env), kalshi_auth: signer ? `signed:${signer.keyType}` : authError || 'not_configured' }, host: HOST, deliver, daily, healthPing,
+    code: { ...codeIdentity(env), kalshi_auth: signer ? `signed:${signer.keyType}` : authError || 'not_configured' }, host: HOST, deliver, daily, healthPing, anchor: env.TSA_ANCHOR === 'false' ? null : (h) => anchor(h, { fetchImpl }),
     calendarOverride, onlyKalshi, scheduledTime, trigger, lastFiles: () => metas,
   };
 }

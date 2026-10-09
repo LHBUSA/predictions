@@ -5,6 +5,7 @@
 // for slot snapshots, against the slot and the release. Optional prefix keeps one call inside Worker limits.
 import { deriveBook } from '../../../scripts/research/employment/collector/lib.mjs';
 import { verifyChain } from './ledger.js';
+import { inspectResponse } from './tsa.js';
 import { dec, sha256 } from './util.js';
 
 export async function verify({ store, state, ns, chain, prefix = '' }) {
@@ -59,7 +60,17 @@ export async function verify({ store, state, ns, chain, prefix = '' }) {
     for (const x of lines.filter((l) => l.type === 'TICK_SEAL')) for (const f of x.files) { sealedFiles += 1; const o = byPath.get(f.path); if (!o) problems.push(`sealed file missing ${f.path}`); else if (o.sha256 !== f.sha256 && !f.path.startsWith('calendar/bls-empsit-schedule.json')) problems.push(`sealed file changed ${f.path}`); }
     if (!v.ok) problems.push(`ledger chain broken at seq ${v.seq}: ${v.problem}`);
     else if (chain && (chain.seq !== v.seq || chain.head !== v.head)) problems.push(`ledger chain in R2 (seq ${v.seq}) differs from the Durable Object head (seq ${chain.seq})`);
-    ledger = { status: v.ok ? 'OK' : 'BROKEN', entries: lines.length, seq: v.seq, head: v.head ?? null, sealed_files: sealedFiles, matches_durable_object: !!chain && chain.seq === v.seq && chain.head === v.head };
+    // external anchors: each RFC 3161 token must be granted and echo the chain hash at its seq; genTime must not precede the entry
+    const bySeq = new Map(lines.map((l) => [l.seq, l]));
+    const anchors = [];
+    for (const o of objects.filter((x) => x.path.startsWith('ledger-anchors/'))) {
+      const seq = Number((/_seq(\d+)\.tsr$/.exec(o.path) || [])[1]); const entry = bySeq.get(seq);
+      const info = entry ? inspectResponse(await bytesOf(o.path), entry.hash) : null;
+      const ok = !!info?.granted && info.echoes_hash && !!info.gen_time_utc && Date.parse(info.gen_time_utc) >= Date.parse(entry.at_utc) - 2000;
+      if (!ok) problems.push(`anchor invalid ${o.path}`);
+      anchors.push({ seq, gen_time_utc: info?.gen_time_utc ?? null, ok });
+    }
+    ledger = { status: v.ok ? 'OK' : 'BROKEN', anchors: anchors.length, anchors_ok: anchors.filter((a) => a.ok).length, last_anchor: anchors.sort((a, b) => a.seq - b.seq).at(-1) || null, entries: lines.length, seq: v.seq, head: v.head ?? null, sealed_files: sealedFiles, matches_durable_object: !!chain && chain.seq === v.seq && chain.head === v.head };
   }
   return { prefix, objects: objects.length, objects_rehashed: objectsRehashed, files_hashed: files, hash_mismatches: bad, kalshi_snapshots: snaps, order_books_rederived: rederived, ledger_lines: ledgerLines, index_rows: rows.length, ledger_chain: ledger, timestamp_proof: timing, problems, ok: problems.length === 0 };
 }
