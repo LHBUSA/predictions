@@ -84,3 +84,29 @@ Deploy only with `scripts/deploy.mjs`. It refuses a dirty or unpushed tree, runs
 2. Re-enable the Windows tasks.
 
 The R2 archive and the historical GitHub repo are both kept. Nothing is deleted in either direction.
+
+## Update 2026-10-09 (shadow acceptance work)
+
+- **Scheduler.** The account has **255 Cron Triggers, above the Workers Paid limit of 250**. The newest registrations
+  (pbe-upsets, this Worker, pbe-upset-hunter) have zero executions in `workersInvocationsScheduled`, and one controlled
+  `wrangler triggers deploy` (10:22:46Z) changed nothing. The primary scheduler is therefore a **Durable Object alarm
+  every 5 minutes** (`src/state-do.js`). The next alarm is set before each run; alarms are retried by the platform and
+  are not subject to the cron quota. The Cron Trigger stays as a backup, and `/health` and the cron re-arm the alarm.
+- **One tick per 5-minute bucket.** A per-namespace idempotency key means alarm, cron and manual triggers can never
+  double-capture. Every tick records its `trigger`. Inventory: `D:\Workers\_research\cloudflare-cron-inventory-20261009.json`.
+- **Kalshi signing.** Both Kalshi key types are supported. The type is decided from the parsed key's PKCS#8 OID, never
+  from the PEM header:
+  - Ed25519;
+  - RSA-PSS with SHA-256 and salt 32 (PKCS#1 keys are wrapped to PKCS#8);
+  - RSA under 2048 bits is refused.
+
+  Signing is GET-only. Signer by session goodl-65, reviewed and integrated by goodl-c0.
+- **Alerts.** Cloudflare Email Routing (`send_email` binding) to the owner's already-verified destination, held in the
+  secret `ALERT_EMAIL_TO`; an optional Slack-format webhook. A daily OK digest goes out at the heartbeat; its absence is
+  the dead-man signal. Alerts carry no prices and no credentials.
+  - `/admin/test-alert`: email sent.
+  - `/admin/drill`: an isolated fault drill that injects network and TSA failures into a real tick; it delivered a real
+    `SCHEDULE_FETCH_FAILED` alert.
+- **External time anchor.** After every sealed tick, the chain head gets an RFC 3161 token from DigiCert (Sectigo as
+  fallback). Tokens are stored write-once under `ledger-anchors/` and checked by `/admin/verify`. This was verified
+  from the Workers runtime, and offline with `openssl ts -verify`.
