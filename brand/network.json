@@ -20,6 +20,11 @@
       "overview"
     ],
     [
+      "Signal 10",
+      "/markets/signal-10/",
+      "signal10"
+    ],
+    [
       "Intelligence Desk",
       "/desk/",
       "desk"
@@ -70,6 +75,10 @@
     [
       "Overview",
       "/"
+    ],
+    [
+      "Signal 10",
+      "/markets/signal-10/"
     ],
     [
       "Intelligence Desk",
