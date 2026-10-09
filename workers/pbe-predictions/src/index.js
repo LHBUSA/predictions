@@ -527,6 +527,9 @@ export default {
             generated_at: now,
             window,
             latest_forecast: latestForecast,
+            // the stored forecast before the latest one (same window): lets the page show observed feature changes between
+            // two real snapshots. Same public fields as latest_forecast; no new data.
+            previous_forecast: forecasts.length > 1 ? forecasts.at(-2) : null,
             forecast_path: forecasts.map((x) => ({ t: x.captured_at, p_up: Number(x.p_up) })),
             venue_path: {
               kalshi: obs.filter((x) => x.venue === 'kalshi').map((x) => ({ t: x.captured_at, mid: x.mid == null ? null : Number(x.mid) })),

@@ -8,7 +8,7 @@
 <link rel="canonical" href="https://predictions.propbetedge.ai/crypto/">
 <meta name="theme-color" content="#07111f">
 <link rel="stylesheet" href="/site.css?v=20261009ia4">
-<link rel="stylesheet" href="/crypto/crypto.css?v=20261007f1">
+<link rel="stylesheet" href="/crypto/crypto.css?v=20261009n3">
 <link rel="stylesheet" href="/kalshi-offer.css?v=20261008kxo">
 </head>
 <body class="crypto-page">
@@ -30,57 +30,54 @@
 <!-- /network:header -->
 
 <main>
-<section class="cx-hero"><div class="wrap">
-  <div class="cx-command">
-    <div class="cx-command-copy">
-      <div class="cx-eyebrow-row"><span class="overline">PBE CRYPTO NOWCAST</span><span class="cx-live-chip"><i></i> BTC · 15 MIN · LIVE</span><span class="badge b-shadow">Research · Shadow</span></div>
-      <h1>BTC 15-Minute<br><span>Nowcast.</span></h1>
-      <div class="cx-hero-marketline">
-        <div class="cx-hero-price"><span>Robinhood BTC</span><strong class="num" id="hero-spot">—</strong><small id="hero-price-age">live execution reference</small></div>
-        <div class="cx-hero-count"><span>Window closes in</span><strong class="num" id="countdown">--:--</strong><small id="window-times">—</small></div>
-      </div>
-      <div class="cx-decision">
-        <div class="cx-decision-main">
-          <span>PBE probability · UP</span>
-          <strong class="num" id="hero-pbe-up">—</strong>
-          <div class="cx-signal-meter"><span id="hero-meter"></span><i></i></div>
-        </div>
-        <div class="cx-decision-grid">
-          <div><span>Kalshi UP</span><strong class="num" id="hero-kalshi">—</strong></div>
-          <div><span>PBE vs market</span><strong class="num" id="hero-gap">—</strong></div>
-          <div><span>Reference</span><strong class="num" id="hero-reference">—</strong></div>
-        </div>
-      </div>
-      <div class="cx-callout"><i></i><span id="hero-signal-copy">Waiting for live forecast</span></div>
-      <div class="cx-hero-proof"><span><b>1 min</b> PBE model cadence</span><span><b>5 sec</b> Robinhood tape</span><span><b>0%</b> market-price leakage</span></div>
+<section class="cx-hero cx3-hero"><div class="wrap">
+  <div class="cx3-head">
+    <div class="cx3-title">
+      <div class="cx-eyebrow-row"><span class="overline">PBE CRYPTO NOWCAST</span><span class="badge b-shadow">Research · Shadow</span></div>
+      <h1>BTC 15-Minute <span>Nowcast</span></h1>
+      <p>Will BTC finish this 15-minute window at or above its opening reference? PBE's own probability, raced against the Kalshi price for the same contract. Every point on the chart is a stored observation.</p>
     </div>
-
-    <div class="cx-command-chart">
-      <div class="cx-chart-topline">
-        <div><span class="overline">LIVE PROBABILITY PATH</span><h2>Model vs market</h2></div>
-        <div class="cx-chart-hud"><div><span>PBE</span><strong class="num" id="chart-pbe">—</strong></div><div><span>Kalshi</span><strong class="num" id="chart-kalshi">—</strong></div><div><span>Gap</span><strong class="num" id="chart-gap">—</strong></div></div>
-      </div>
-      <div class="cx-chart-wrap cx-chart-hero">
-        <svg id="prob-chart" viewBox="0 0 900 360" role="img" aria-label="PBE and market probability path"></svg>
-        <div class="cx-chart-tooltip" id="chart-tooltip" hidden></div>
-      </div>
-      <div class="cx-legend"><span><i class="pbe"></i>PBE model</span><span><i class="kalshi"></i>Kalshi</span><span><i class="poly"></i>Polymarket</span><span class="cx-legend-note">Hover for point-in-time values</span></div>
-      <div class="cx-chart-intel">
-        <div><span>Distance to reference</span><strong class="num" id="chart-distance">—</strong><small id="chart-distance-sub">live BTC vs open</small></div>
-        <div><span>Distance · z</span><strong class="num" id="chart-z">—</strong><small>standardized move</small></div>
-        <div><span>Realized vol · 60m</span><strong class="num" id="chart-vol">—</strong><small>annualized</small></div>
-        <div><span>Robinhood friction</span><strong class="num" id="chart-friction">—</strong><small>fee-adjusted execution</small></div>
-      </div>
+    <div class="cx3-clock" aria-live="off">
+      <div class="cx3-status" id="cx-status" data-state="loading"><i aria-hidden="true"></i><span id="cx-status-text">Connecting</span></div>
+      <div class="cx3-count"><span>Window closes in</span><strong class="num" id="countdown">--:--</strong></div>
+      <div class="cx3-progress" aria-hidden="true"><i id="cx-progress"></i></div>
+      <small class="num" id="window-times">—</small>
     </div>
   </div>
 
-  <div class="cx-kpis">
-    <div class="cx-kpi"><span>PBE reference</span><strong class="num" id="target">—</strong><small>derived exchange proxy at window open</small></div>
-    <div class="cx-kpi"><span>Robinhood now</span><strong class="num" id="spot">—</strong><small id="spot-sub">fee-adjusted midpoint</small></div>
-    <div class="cx-kpi"><span>Distance</span><strong class="num" id="distance">—</strong><small id="distance-sub">from reference</small></div>
-    <div class="cx-kpi cx-prob"><span>PBE up</span><strong class="num" id="pbe-up">—</strong><small id="model-meta">awaiting forecast</small></div>
-    <div class="cx-kpi"><span>Kalshi up</span><strong class="num" id="kalshi-up">—</strong><small id="kalshi-meta">same contract benchmark</small></div>
-    <div class="cx-kpi"><span>Model vs market</span><strong class="num" id="divergence">—</strong><small>percentage-point gap</small></div>
+  <div class="cx3-race">
+    <div class="cx3-main">
+      <div class="cx3-hud" aria-live="polite">
+        <div class="cx3-h cx3-pbe"><span>PBE · P(up)</span><strong class="num" id="hero-pbe-up">—</strong><small id="model-meta">waiting for first forecast</small></div>
+        <div class="cx3-h cx3-kal"><span>Kalshi</span><strong class="num" id="hero-kalshi">—</strong><small id="kalshi-meta">—</small></div>
+        <div class="cx3-h cx3-gap"><span>Model vs Kalshi</span><strong class="num" id="hero-gap">—</strong><small id="gap-meta">—</small></div>
+        <div class="cx3-h cx3-poly"><span>Polymarket</span><strong class="num" id="hero-poly">—</strong><small id="poly-meta">benchmark only · never compared</small></div>
+        <div class="cx3-h cx3-btc"><span>BTC vs open</span><strong class="num" id="chart-distance">—</strong><small id="chart-distance-sub">—</small></div>
+      </div>
+      <div class="cx3-chart" id="cx-chart-box">
+        <svg id="prob-chart" viewBox="0 0 1200 440" tabindex="0" role="img" aria-label="PBE, Kalshi and Polymarket probability that BTC finishes the window up" aria-describedby="cx-readout"></svg>
+        <div class="cx3-chart-msg" id="cx-chart-msg" hidden></div>
+      </div>
+      <div class="cx3-readout" id="cx-readout" aria-live="polite"></div>
+      <div class="cx3-legend">
+        <span><i class="pbe"></i>PBE model</span><span><i class="kalshi"></i>Kalshi (same contract)</span><span><i class="poly"></i>Polymarket (different price index)</span>
+        <span class="cx3-legend-note">Steps hold each stored value until the next one; lines break where no observation was stored for 2.5 min. Hover, tap or use ← → to inspect.</span>
+      </div>
+      <details class="cx3-table"><summary>Observations in this window (table)</summary><div id="cx-table"></div></details>
+    </div>
+    <aside class="cx3-side">
+      <section class="cx3-drivers" aria-labelledby="drivers-title">
+        <span class="overline">WHAT CHANGED</span><h2 id="drivers-title">Since the previous forecast</h2>
+        <div id="cx-drivers"><p class="cx3-note">Waiting for the first forecast of this window.</p></div>
+        <p class="cx3-note">Observed changes in the model's stored inputs between two snapshots. Measured inputs, not a causal explanation; market prices never enter the model.</p>
+      </section>
+      <section class="cx3-btc-card">
+        <span class="overline">ROBINHOOD BTC · READ-ONLY</span>
+        <div class="cx3-btc-row"><span>Now</span><strong class="num" id="hero-spot">—</strong></div>
+        <div class="cx3-btc-row"><span>Open reference</span><strong class="num" id="hero-reference">—</strong></div>
+        <small id="hero-price-age">—</small>
+      </section>
+    </aside>
   </div>
 </div></section>
 
@@ -148,7 +145,7 @@
 <p class="nf-fine"><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a> · Predictions is part of the PropBetEdge intelligence network.</p>
 </div></footer>
 <!-- /network:footer -->
-<script src="/crypto/crypto.js?v=20261009i1" defer></script>
+<script src="/crypto/crypto.js?v=20261009n3" defer></script>
 <script type="module">
 // Kalshi PERPETUALS partner offer (kalshi-partner/2): one module; copy + link from /kalshi-partner.js only.
 import { loadPartnerConfig, partnerOffer } from '/kalshi-partner.js?v=20261008kxo';
