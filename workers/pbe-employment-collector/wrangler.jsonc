@@ -8,10 +8,11 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
-  // BACKUP trigger only. The account is over its 250 Cron Trigger limit (255 on 2026-10-09; the newest crons never run), so
-  // the primary scheduler is a Durable Object alarm every 5 min (src/state-do.js; ticks at :45:03, :50:03, :55:03 in slot
-  // windows). Kept so cron delivery resumes automatically if slots are freed; one tick per 5-min bucket either way.
-  "triggers": { "crons": ["*/5 * * * *"] },
+  // NO Cron Trigger. The account is over its 250 Cron Trigger limit (255 on 2026-10-09; new crons never execute), so the
+  // scheduler is a Durable Object alarm every 5 min (src/state-do.js; ticks at :45:03, :50:03, :55:03 in slot windows),
+  // proven by 7 consecutive alarm ticks 10:35-11:05Z. The never-firing cron was removed 2026-10-09 to free an account slot.
+  // GET /health and POST /admin/start re-arm the alarm; scheduled() stays in code so a cron can be re-added any time.
+  "triggers": { "crons": [] },
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "pbe-employment-evidence" }],
   "durable_objects": { "bindings": [{ "name": "STATE", "class_name": "CollectorState" }] },
