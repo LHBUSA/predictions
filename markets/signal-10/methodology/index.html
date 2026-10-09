@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en" class="s10">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signal 10 · Methodology | PropBetEdge Predictions</title>
+<meta name="description" content="How PBE Signal 10 works: universe, features and weights, portfolio-manager rules, fills and costs, data sources, coverage, survivorship bias and pre-registration.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://predictions.propbetedge.ai/markets/signal-10/methodology/">
+<meta name="theme-color" content="#14110d">
+<link rel="stylesheet" href="/site.css?v=20261009ia4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<link rel="stylesheet" href="/markets/signal-10/signal10.css?v=20261009s10a">
+</head>
+<body class="s10-page" data-page="methodology">
+<!-- network:header -->
+<link rel="stylesheet" href="/pbe-consent-v1.css"><script src="/pbe-consent-v1.js"></script><header class="topbar"><div class="wrap">
+<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>
+<nav class="nav" aria-label="Predictions"><a href="/">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/crypto/">Crypto</a><a href="/markets/" aria-current="page">Markets AI</a><a href="/insights/">Insights</a><a href="/track-record/">Track Record</a><details class="nav-drop"><summary>Research<span aria-hidden="true" class="nav-caret"></span></summary><div class="nav-menu"><a href="/calendar/">Calendar</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a></div></details></nav>
+<div class="top-right">
+<button type="button" class="theme-btn" data-theme-toggle aria-label="Theme: Light. Switch to Dark" title="Theme: Light (click for Dark)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span class="theme-label">Light</span></button>
+<a class="net-link" href="https://propbetedge.ai/" data-pbe-placement="predictions_header_network"><span class="net-long">PropBetEdge Network</span><span class="net-short">Network</span> <span aria-hidden="true">↗</span></a>
+<a class="mem-chip" id="mem-chip" href="#" data-pbe-signin data-state="loading" aria-label="Account"><span class="mem-state">Account</span></a>
+<a class="aa-pill" href="https://propbetedge.ai/pro" data-acct-cta data-pbe-placement="predictions_header_all_access" aria-label="Get PropBetEdge All Access, $29/month">Get All Access</a>
+</div></div>
+<nav class="subnav" aria-label="Predictions sections"><div class="subnav-track"><a href="/">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/crypto/">Crypto</a><a href="/markets/" aria-current="page">Markets AI</a><a href="/insights/">Insights</a><a href="/track-record/">Track Record</a><a href="/calendar/">Calendar</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a><a class="subnav-net" href="https://propbetedge.ai/">PropBetEdge ↗</a></div></nav>
+</header>
+<script src="/access.js?v=20261005aa1" defer></script>
+<script src="/theme.js?v=20261004t1" defer></script>
+<!-- /network:header -->
+
+<main id="main">
+<section class="s10-mast"><div class="wrap">
+  <div class="s10-kicker"><span>PBE Signal 10</span><span aria-hidden="true">·</span><span>The $10,000 Experiment</span><span class="s10-rule" aria-hidden="true"></span><span>Markets AI</span></div>
+  <h1 class="s10-h1">Methodology</h1>
+  <p class="s10-dek">Every rule, number and known limitation of the Signal 10 model and its paper portfolio manager — written down before any result was computed.</p>
+  <p class="s10-disclosure" role="note"><b>HYPOTHETICAL / SIMULATED</b><span>Paper results only. Not actual trading. Not investment advice. Scores are a 0–100 rank index, not a probability.</span></p>
+  <nav class="s10-tabs" aria-label="Signal 10 sections"><a href="/markets/signal-10/">Top 10 Today</a><a href="/markets/signal-10/live/">Live $10k Portfolio</a><a href="/markets/signal-10/backtest/">Historical Backtest</a><a href="/markets/signal-10/ledger/">Trade Ledger</a><a href="/markets/signal-10/methodology/" aria-current="page">Methodology</a></nav>
+</div></section>
+<div class="wrap s10-body">
+<section class="s10-sec" aria-labelledby="m-proof-h">
+  <span class="s10-over">The record so far · public proof</span>
+  <h2 class="s10-h2" id="m-proof-h">What the evidence says today</h2>
+  <div id="s10-proof"><div class="s10-loading" style="min-height:140px" aria-hidden="true"></div></div>
+</section>
+
+<nav class="s10-sec" aria-label="On this page">
+  <ul class="s10-toc">
+    <li><a href="#universe">Universe</a></li><li><a href="#features">Features &amp; weights</a></li><li><a href="#score">What a score means</a></li>
+    <li><a href="#manager">Manager rules</a></li><li><a href="#execution">Fills &amp; costs</a></li><li><a href="#benchmarks">Benchmarks</a></li>
+    <li><a href="#data">Data sources</a></li><li><a href="#coverage">Coverage &amp; bias</a></li><li><a href="#identity">Identity traps</a></li>
+    <li><a href="#limits">Not in v1</a></li><li><a href="#prereg">Pre-registration</a></li><li><a href="#separation">Forward vs backtest</a></li><li><a href="#faq">FAQ</a></li>
+  </ul>
+</nav>
+
+<article class="s10-sec s10-prose">
+<p>PBE Signal 10 is a deterministic ranking model (<code>signal10-rank/1.0.0</code>) plus a rules-based paper portfolio manager (<code>signal10-manager/1.0.0</code>). Each trading day it ranks the point-in-time S&amp;P&nbsp;500 and the manager decides, at the close, what a $10,000 simulated account would do at the next open. There is no discretion, no fitted parameter and no real money.</p>
+
+<h2 id="universe">1. Universe: point-in-time S&amp;P 500</h2>
+<p>Membership comes from the MIT-licensed <a href="https://github.com/fja05680/sp500" rel="noopener">fja05680/sp500</a> “S&amp;P 500 Historical Components &amp; Changes” file, compiled from the public S&amp;P 500 change record. Each row is the member list effective on a date; a decision date D uses the latest row on or before D. A company that joined the index in 2023 cannot be held in 2019; a company removed in 2020 stays eligible until its removal date. The forward lane re-reads the current file at every end-of-day run (a bundled copy is the fallback, and the snapshot records which one was used).</p>
+<h3>Eligibility at the close of D (all knowable that day)</h3>
+<ul>
+  <li>At least <b>253</b> daily bars of history (a 12-month lookback plus one), which also excludes new listings for their first year.</li>
+  <li>Unadjusted close of at least <b>$5</b>.</li>
+  <li>63-session median of unadjusted close × volume of at least <b>$25 million</b>.</li>
+  <li>No more than <b>5</b> missing market sessions inside the 253-bar window (halts and suspensions).</li>
+</ul>
+<p>Names that fail are counted by reason (for example <code>insufficient_history</code>, <code>price_below_5</code>, <code>illiquid</code>, <code>trading_gap</code>, <code>uncovered</code>) and published with each snapshot.</p>
+
+<h2 id="features">2. Features and weights</h2>
+<p>Every feature reads only bars dated on or before D (a test asserts that appending future bars never changes a past rank). Momentum and trend use dividend- and split-adjusted closes.</p>
+<dl>
+  <dt>12-1 momentum · 35%</dt><dd>Adjusted close 21 sessions ago ÷ adjusted close 252 sessions ago − 1: the 12-month return skipping the most recent month.</dd>
+  <dt>6-month momentum · 20%</dt><dd>Adjusted close today ÷ adjusted close 126 sessions ago − 1.</dd>
+  <dt>Risk-adjusted momentum · 20%</dt><dd>12-1 momentum ÷ the annualized standard deviation of 252 daily log returns.</dd>
+  <dt>Trend vs 200-day · 15%</dt><dd>Adjusted close ÷ its 200-day simple moving average − 1.</dd>
+  <dt>Low volatility · 10%</dt><dd>Minus the annualized 63-day volatility of daily log returns (calmer names rank higher).</dd>
+</dl>
+<p>Each feature is converted to a cross-sectional percentile among the eligible names (ties share the average rank). The composite is the weighted mean of those percentiles. Rank 1 is the highest composite; exact ties are broken alphabetically by symbol.</p>
+
+<h2 id="score">3. What a score means</h2>
+<p>The score is the composite’s own percentile among that day’s eligible names, × 100, rounded to one decimal. A score of 99.2 means the name’s composite was above roughly 99.2% of eligible names that day. <b>It is an index from 0 to 100, not a probability</b> and not an expected return. Scores are relative: a name can fall because others rose.</p>
+
+<h2 id="manager">4. Portfolio manager rules</h2>
+<p>Decisions are made at the close of D from that day’s snapshot and become orders for the next regular-session open. Every decision — including every WAIT — is written to the ledger with its reason.</p>
+<h3>Account and sizing</h3>
+<ul>
+  <li>$10,000.00 of simulated cash; at most <b>10</b> positions; a new entry targets <b>10%</b> of NAV at the decision close.</li>
+  <li>Whole shares only (no fractions); leftover cash stays as cash and earns 0%. Minimum order: <b>$100</b>.</li>
+  <li><b>Initial window:</b> the first <b>10</b> trading sessions are the deployment window. There is <b>no forced buy</b> at the end of it — if nothing qualifies, the account stays in cash.</li>
+  <li><b>Staged entry:</b> never more than <b>3</b> new names (including adds) per session.</li>
+  <li><b>Regime filter:</b> new buys only while SPY’s adjusted close is at or above its 200-day average. Risk-off means hold or exit only.</li>
+</ul>
+<h3>Actions</h3>
+<dl>
+  <dt>WAIT</dt><dd>A top-10 name that is not held and does not meet an entry setup, or is blocked by the regime filter, the 3-per-session limit, cash (<code>WAIT_CASH</code>, under $100 available) or full slots (<code>ROTATION_CANDIDATE</code>). Only ranks 1–10 are entry candidates, and only in an uptrend: close &gt; 50-day SMA &gt; 200-day SMA. A one-day drop of <b>8%</b> or more is treated as a possible broken thesis, not a dip: WAIT.</dd>
+  <dt>BUY · DIP_ENTRY</dt><dd>Close at least <b>3%</b> below its 10-session high while the uptrend is intact.</dd>
+  <dt>BUY · PERSISTENCE_ENTRY</dt><dd>In the top 10 for at least <b>5</b> consecutive closes and still in an uptrend.</dd>
+  <dt>ADD</dt><dd>A held top-10 name whose weight has drifted below <b>6%</b> of NAV, when a dip entry triggers (risk-on, uptrend, no ≥ 8% one-day drop): topped up toward 10%.</dd>
+  <dt>HOLD</dt><dd>Still in the top 10, or ranked inside the exit band (rank ≤ 30).</dd>
+  <dt>TRIM</dt><dd>A holding above <b>20%</b> of NAV is sold back to <b>15%</b>.</dd>
+  <dt>RANK_EXIT</dt><dd>Sell when the rank falls below 30 (rank &gt; 30). The gap between the top-10 entry band and the 30 exit band is deliberate hysteresis. A name that leaves the index or fails eligibility is sold as <code>NOT_RANKED</code>.</dd>
+  <dt>TRAILING_STOP</dt><dd>Sell when the adjusted close is <b>20%</b> or more below the highest adjusted close since entry.</dd>
+  <dt>STOP_LOSS</dt><dd>Sell when the position is down <b>15%</b> or more from cost <i>and</i> below its 50-day average.</dd>
+  <dt>ROTATE</dt><dd>Only when all 10 slots are full: a qualifying candidate ranked in the top <b>3</b> replaces the weakest holding if that holding ranks worse than <b>15</b> and the score gap is at least <b>15</b> points. At most <b>1</b> rotation per session.</dd>
+</dl>
+
+<h2 id="execution">5. Fills, costs and corporate actions</h2>
+<ul>
+  <li><b>Fills at the next regular-session open</b> after the decision close (D+1), at the unadjusted open reported by the source. If the symbol has no bar that session, the order <b>expires</b>. Sells execute before buys.</li>
+  <li><b>Slippage: 10 bps per side</b>, applied to the open (buys pay more, sells receive less). <b>Commission: $0.</b></li>
+  <li>A buy that cannot afford one whole share or $100 is logged as <code>ORDER_UNFILLED</code>.</li>
+  <li><b>Dividends</b> are credited to cash on the ex-date (the source has no pay date). <b>Splits</b> are explicit ledger events; a fractional result is paid as cash in lieu at the open.</li>
+  <li><b>Delisting:</b> a held symbol whose source series ends (no bar for 3 sessions and none later) is liquidated at its last observed close and flagged as an <b>estimate</b>.</li>
+  <li><b>NAV</b> = cash + Σ shares × observed unadjusted close (end of day) or quote (intraday). The live NAV is shown as complete only when every held quote is within 20 minutes during the session; otherwise it is labelled PARTIAL and the last end-of-day NAV is the authoritative value.</li>
+  <li>Forward account timing: opening fills are booked from 09:45 ET using the source open, then reconciled against the final daily bar; a difference above 0.1% is recorded as <code>FILL_OPEN_DISCREPANCY</code>, never silently restated. Intraday marks are persisted every 5 minutes from 09:30 to 16:05 ET. The end-of-day run starts after 16:20 ET once SPY shows a final close.</li>
+</ul>
+
+<h2 id="benchmarks">6. Benchmarks and the comparator</h2>
+<ul>
+  <li><b>SPY and QQQ:</b> $10,000 buys whole shares at the first fill-session open (+10 bps), then buy-and-hold with dividends to cash — the same conventions as the strategy. The forward account has its own same-inception SPY and QQQ paper benchmarks.</li>
+  <li><b>Comparator — immediately-invested static top-10:</b> the same ranks, but it buys the top 10 at once and exits only when a name ranks worse than 30 or becomes ineligible. No timing, no regime filter, no stops. It isolates what the manager’s timing rules added or cost.</li>
+</ul>
+
+<h2 id="data">7. Data sources and checks</h2>
+<ul>
+  <li><b>Prices:</b> the Yahoo Finance public chart endpoint — <b>unofficial and not exchange-licensed</b>; quotes may be delayed. Every live price is shown with the source’s own trade timestamp, never our fetch time. Daily bars supply unadjusted open/close (fills, NAV) and adjusted close (features).</li>
+  <li><b>Cross-check:</b> 50 of 50 sampled backtest fill opens matched Nasdaq’s published historical open within 0.2%.</li>
+  <li><b>Membership:</b> fja05680/sp500 (MIT), as above.</li>
+</ul>
+
+<h2 id="coverage">8. Coverage and survivorship bias</h2>
+<p>Coverage is the share of point-in-time member-days for which the source has a price series:</p>
+<div class="s10-tbl-wrap" tabindex="0" role="region" aria-label="Coverage by year">
+<table class="s10-tbl"><caption>Priced share of point-in-time member-days</caption>
+<thead><tr><th scope="col">Year</th><th scope="col" class="r">Coverage</th></tr></thead>
+<tbody><tr><th scope="row">2018</th><td class="num">86.4%</td></tr><tr><th scope="row">2019</th><td class="num">88.9%</td></tr><tr><th scope="row">2020</th><td class="num">90.9%</td></tr><tr><th scope="row">2021</th><td class="num">92.1%</td></tr><tr><th scope="row">2022</th><td class="num">93.6%</td></tr><tr><th scope="row">2023</th><td class="num">95.2%</td></tr><tr><th scope="row">2024</th><td class="num">96.2%</td></tr><tr><th scope="row">2025</th><td class="num">97.5%</td></tr><tr><th scope="row">2026</th><td class="num">98.9%</td></tr></tbody>
+</table></div>
+<p>About <b>130</b> delisted or acquired former members — for example SIVB, FRC, ATVI and TWTR — have no history at the source, so the backtest could never hold them. This is <b>residual survivorship bias</b>: the reconstructed universe is tilted toward companies that still trade. Bias of this kind usually makes a backtest look better than reality; its size here has not been measured. It is labelled wherever backtest results appear.</p>
+
+<h2 id="identity">9. Identity traps found and fixed</h2>
+<p>A ticker is not an identity. The price source files history under the <i>current</i> symbol, and some old symbols now belong to different companies. Found in the 2026-10-09 audit:</p>
+<ul>
+  <li><b>PARA</b> now resolves to Banzai International at the source — <b>blocked</b> (with CBS and VIAC); those member-days count as uncovered rather than being priced with the wrong company.</li>
+  <li><b>BBT → TFC</b>: BB&amp;T renamed Truist Financial (2019-12-09); “BBT” now carries an unrelated bank’s history.</li>
+  <li><b>FB → META</b>: “FB” is now an unrelated 2025 ETF.</li>
+  <li><b>IR before 2020-03-02 → TT</b>: Ingersoll-Rand plc became Trane Technologies; after that date “IR” is the former Gardner Denver.</li>
+</ul>
+<p>Only true renames of the same listed security are aliased. Mergers into a different security, spin-offs and share-class collapses are not aliased; they stay uncovered and count against coverage.</p>
+
+<h2 id="limits">10. What v1 does not do</h2>
+<ul>
+  <li>No fundamentals or valuation — there is no point-in-time fundamentals lane yet, and using today’s fundamentals on past dates would leak the future.</li>
+  <li>No intraday dip detection — every decision is made at the close.</li>
+  <li>No sector data or sector caps, no shorting, leverage or options, no taxes; idle cash earns 0%.</li>
+</ul>
+
+<h2 id="prereg">11. Pre-registration</h2>
+<p>The model and manager rules were committed to git (<code>bd75be9</code>, 2026-10-09 13:24 CDT) <b>before any backtest result was computed</b>. The weights and thresholds are textbook momentum, trend and low-volatility conventions chosen in advance, not fitted. The backtest is <b>untuned but not blind</b>: the author knows broad market history (the 2020 crash, the 2022 bear market, the 2023–25 AI rally). Any rule change ships as a new version string, and the old version’s records stay exactly as they are.</p>
+
+<h3 id="variants">Research variants (post-hoc)</h3>
+<p>After seeing the v1.0.0 result, we ran a small set of variants over the same 2018–2026 history to understand it: v1.0.0 without the trailing-stop and stop-loss exits; v1.0.0 without the regime filter; both removed (entry timing kept); the immediately-invested top-10 comparator; and a pure 12-1 momentum rank with immediate entry. These were <b>defined after the result and are in-sample</b>, so they are not out-of-sample evidence of anything. They are listed as research notes on the Historical Backtest page (members) and <b>none of them replaces the pre-registered v1.0.0 record</b>, which is the only Signal 10 backtest and the rule set the forward paper account runs.</p>
+
+<h2 id="separation">12. Forward paper account vs backtest</h2>
+<p>There are two record populations, and they are never merged, summed or drawn on the same line:</p>
+<ul>
+  <li><span class="s10-tag s10-tag-bt">HISTORICAL_REPLAY</span> — <b>BACKTEST · HYPOTHETICAL · RECONSTRUCTED HISTORY</b>, 2018-01-02 to 2026-10-08. Reproducible artifacts with dataset, ledger and NAV SHA-256 hashes.</li>
+  <li><span class="s10-tag s10-tag-fw">FORWARD_PAPER</span> — <b>PBE PAPER ACCOUNT · STARTING $10,000 · SIMULATED</b>, from inception at the 2026-10-09 close, with first fills at the next session open. Its ledger is append-only and hash-chained: each event’s SHA-256 covers the previous event’s hash plus the event body.</li>
+</ul>
+<p>The Live page also shows the backtest’s final holdings marked at live quotes as a clearly labelled hypothetical continuation. Those values are never added to the paper account.</p>
+
+<h2 id="faq">13. Questions</h2>
+<div class="s10-faq">
+  <details><summary>Is any real money involved?</summary><p>No. Both accounts are simulations with $10,000 of simulated cash. No orders are sent to any broker.</p></details>
+  <details><summary>Did the strategy beat the market in the backtest?</summary><p>No. Over the reconstructed history it underperformed both SPY and QQQ; the headline numbers are in the proof block at the top of this page, and every month, including every losing month, is on the Historical Backtest page.</p></details>
+  <details><summary>Why is a top-10 name not bought?</summary><p>A rank is not a buy signal by itself. The manager needs a qualifying setup (a dip of at least 3% from the 10-day high, or five consecutive closes in the top 10), an uptrend, a risk-on regime, a free slot and cash. Otherwise it logs a WAIT with the reason.</p></details>
+  <details><summary>How fresh are the prices?</summary><p>Each price shows the source’s own trade time. The source is unofficial and may be delayed. A live NAV is only called complete when every held price is less than 20 minutes old during the session.</p></details>
+  <details><summary>Can I follow these trades?</summary><p>This is research, not advice. Prices may be delayed, fills are simulated at the open with assumed slippage, and the results are hypothetical.</p></details>
+</div>
+
+<p class="s10-statusline" role="note"><b>DISCLOSURE</b> HYPOTHETICAL / SIMULATED PAPER RESULTS. Not actual trading. Not investment advice. Backtested results are reconstructed history and have inherent limitations, including survivorship bias and the benefit of hindsight.</p>
+</article>
+
+</div>
+</main>
+
+<!-- network:footer -->
+<footer class="footer net-footer"><div class="wrap">
+<div class="nf-grid">
+<div class="nf-col"><strong>Predictions</strong><a href="/">Overview</a><a href="/desk/">Intelligence Desk</a><a href="/track-record/">Track Record</a><a href="/calendar/">Prediction Calendar</a><a href="/crypto/">Crypto Nowcast</a><a href="/markets/">Markets AI</a><a href="/insights/">Insights</a><a href="/models/">Models</a><a href="/methodology/">Methodology</a><a href="/insights/rss.xml">RSS</a></div>
+<div class="nf-col nf-sports"><strong>PropBetEdge Sports</strong><div class="nf-sports-grid"><a href="https://mlb.propbetedge.ai/" target="_blank" rel="noopener">MLB</a><a href="https://nfl.propbetedge.ai/" target="_blank" rel="noopener">NFL</a><a href="https://nba.propbetedge.ai/" target="_blank" rel="noopener">NBA</a><a href="https://nhl.propbetedge.ai/" target="_blank" rel="noopener">NHL</a><a href="https://wnba.propbetedge.ai/" target="_blank" rel="noopener">WNBA</a><a href="https://ufc.propbetedge.ai/" target="_blank" rel="noopener">UFC</a><a href="https://tennis.propbetedge.ai/" target="_blank" rel="noopener">Tennis</a><a href="https://soccer.propbetedge.ai/" target="_blank" rel="noopener">Soccer</a><a href="https://golf.propbetedge.ai/" target="_blank" rel="noopener">Golf</a><a href="https://f1.propbetedge.ai/" target="_blank" rel="noopener">F1</a></div></div>
+<div class="nf-col"><strong>All Access</strong><a href="https://members.propbetedge.ai/" target="_blank" rel="noopener">Command Center</a><a href="https://compare.propbetedge.ai/" target="_blank" rel="noopener">Compare</a><a href="https://predictions.propbetedge.ai/" target="_blank" rel="noopener">Predictions</a></div>
+<div class="nf-col"><strong>Network</strong><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a><a href="https://propbetedge.ai/news" target="_blank" rel="noopener">PropBetEdge News</a><a href="https://learn.propbetedge.ai/" target="_blank" rel="noopener">Learn PropBetEdge</a></div>
+<div class="nf-col"><strong>Trust</strong><a href="/methodology/#immutable">Immutable forecasts</a><a href="/methodology/#evidence">Evidence &amp; sources</a><a href="/methodology/#scoring">Scoring methodology</a><a href="/models/">Model states &amp; limitations</a><a href="https://propbetedge.ai/about">About PropBetEdge</a><a href="https://propbetedge.ai/terms">Terms</a><a href="https://propbetedge.ai/legal">Legal</a><a href="https://propbetedge.ai/support">Support</a><span class="nf-note">Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model.</span></div>
+</div>
+<p class="nf-line"><a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_footer_all_access"><strong>PropBetEdge All Access</strong></a> — 10 sports + Predictions + Compare for $29/month.</p>
+<p class="nf-fine"><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a> · Predictions is part of the PropBetEdge intelligence network.</p>
+</div></footer>
+<!-- /network:footer -->
+<script type="module" src="/markets/signal-10/signal10-core.js?v=20261009s10a"></script>
+<script src="/markets/signal-10/signal10.js?v=20261009s10a" defer></script>
+</body></html>

@@ -7,6 +7,7 @@ import SUMMARY from '../../../data/signal10/backtest-summary.json' with { type: 
 import NAV from '../../../data/signal10/backtest-nav.json' with { type: 'json' };
 import LEDGER from '../../../data/signal10/backtest-ledger.json' with { type: 'json' };
 import RANKS from '../../../data/signal10/backtest-ranks.json' with { type: 'json' };
+import VARIANTS from '../../../data/signal10/research-variants.json' with { type: 'json' };
 import { ACCOUNT, fetchChart, quoteFromChart, navFromQuotes, nyClock, isWeekday, restoreState, runOpen, runEod, runMark, due } from '../../../src/signal10/forward.js';
 import { MODEL_VERSION, POLICY_VERSION, MANAGER, RANK, DISCLOSURE } from '../../../src/signal10/policy.js';
 
@@ -78,15 +79,23 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
 
   if (p === '/v1/signal10/backtest') {
     const { contributions, final_holdings, ...rest } = SUMMARY;
-    return privateJson({ ...rest, contributions: { top: contributions.slice(0, 15), bottom: contributions.slice(-15).reverse(), count: contributions.length }, final_holdings, nav: NAV, access });
+    return privateJson({ ...rest, contributions: { top: contributions.slice(0, 15), bottom: contributions.slice(-15).reverse(), count: contributions.length }, final_holdings, nav: NAV, research_variants: VARIANTS, access });
   }
   if (p === '/v1/signal10/backtest/ranks') return privateJson({ ...RANKS, access });
   if (p === '/v1/signal10/ledger') {
     const origin = url.searchParams.get('origin') || 'HISTORICAL_REPLAY';
     if (origin === 'HISTORICAL_REPLAY') return privateJson({ origin, ledger_sha256: LEDGER.ledger_sha256, events: LEDGER.events.filter((e) => e.type !== 'ORDER'), access });
     if (origin !== 'FORWARD_PAPER') return privateJson({ error: 'origin must be HISTORICAL_REPLAY or FORWARD_PAPER' }, 400);
-    const rows = await store.select('pred_s10_events', { account: `eq.${ACCOUNT}`, type: 'neq.STATE', select: 'seq,type,d,payload,hash,prev_hash,inserted_at' }, { order: 'seq.asc' });
-    return privateJson({ origin, account: ACCOUNT, events: rows, access });
+    // Every row, STATE included, so a reader can recompute the whole hash chain. Bounded: ?since=<seq> (exclusive),
+    // ?d=YYYY-MM-DD for one session, ?limit (default 2000, max 5000).
+    const q = { account: `eq.${ACCOUNT}`, select: 'seq,type,d,payload,hash,prev_hash,model_version,policy_version,inserted_at' };
+    const since = Number.parseInt(url.searchParams.get('since') || '', 10);
+    if (Number.isFinite(since) && since > 0) q.seq = `gt.${since}`;
+    const day = url.searchParams.get('d');
+    if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) q.d = `eq.${day}`;
+    const limit = Math.min(5000, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '2000', 10) || 2000));
+    const rows = await store.select('pred_s10_events', q, { order: 'seq.asc', limit });
+    return privateJson({ origin, account: ACCOUNT, verify: 'hash = sha256(prev_hash + canonical({account,origin,seq,type,d,payload,model_version,policy_version})), canonical = JSON with sorted keys', events: rows.map((r) => ({ ...r, account: ACCOUNT, origin })), access });
   }
   if (p === '/v1/signal10/today') {
     const snaps = await store.select('pred_s10_snapshots', { select: 'd,model_version,frozen_at,eligible,excluded,ranks,held_ranks,regime,members,content_sha256,data_cutoff' }, { limit: 2, order: 'd.desc' });
@@ -104,7 +113,7 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
     const held = new Set(st ? Object.keys(st.positions) : []);
     const pending = st ? st.pending.map((o) => pick(o, ['side', 'symbol', 'qty', 'targetCents', 'reason', 'rank', 'score'])) : [];
     const top = cur.ranks.slice(0, 30).map((r) => ({ ...r, prevRank: prevRank.get(r.symbol) ?? null, held: held.has(r.symbol), streak: st?.streak?.[r.symbol] || 0,
-      status: !prev ? 'NEW' : !prevRank.has(r.symbol) || prevRank.get(r.symbol) > 10 ? (r.rank <= 10 ? 'NEW' : null) : r.rank < prevRank.get(r.symbol) ? 'RISING' : r.rank > prevRank.get(r.symbol) ? 'FALLING' : 'HOLDING' }));
+      status: r.rank > 10 && (!prevRank.has(r.symbol) || prevRank.get(r.symbol) > 10) ? null : !prev || !prevRank.has(r.symbol) || prevRank.get(r.symbol) > 10 ? 'NEW' : r.rank < prevRank.get(r.symbol) ? 'RISING' : r.rank > prevRank.get(r.symbol) ? 'FALLING' : 'HOLDING' }));
     return privateJson({ origin: 'FORWARD_PAPER', model: cur.model_version, d: cur.d, frozen_at: cur.frozen_at, data_cutoff: cur.data_cutoff, eligible: cur.eligible, excluded: cur.excluded, regime: cur.regime,
       members: cur.members, content_sha256: cur.content_sha256, prev_d: prev?.d || null, top, exited, pending, access });
   }
@@ -120,6 +129,7 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
     if (h.state) { ({ st, bench } = restoreState(h.state.payload)); syms = [...new Set([...Object.keys(st.positions), ...syms])]; }
     const q = (await quotes([...new Set(syms)], ctx)).filter(Boolean);
     const qBy = Object.fromEntries(q.map((x) => [x.symbol, x]));
+    if (session.state === 'OPEN' && session.ny.minutes >= 9 * 60 + 45 && qBy.SPY && nyClock(qBy.SPY.quoteTime).date !== session.ny.date) Object.assign(session, { state: 'CLOSED_HOLIDAY', label: 'MARKET CLOSED · NO SESSION TODAY · LAST CLOSE' });
     if (st) {
       const nav = navFromQuotes(st, q, now);
       const eod = await store.select('pred_s10_marks', { account: `eq.${ACCOUNT}`, kind: 'eq.EOD_CLOSE', select: 'd,observed_at,nav_cents,cash_cents,benchmarks' }, { order: 'd.asc' });

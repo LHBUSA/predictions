@@ -67,7 +67,7 @@ export function percentiles(values) {
 // Rank the point-in-time universe at date D.
 // universe: [{ ticker, symbol }] members on D (symbol = resolved price-source symbol, null if uncovered).
 // prepared: Map symbol -> prepared series. Returns { date, model, eligible, excluded, ranks:[...] } sorted by rank.
-export function rankUniverse(date, universe, prepared) {
+export function rankUniverse(date, universe, prepared, weights = RANK.weights) {
   const rows = [], excluded = {};
   const seen = new Set();
   for (const u of universe) {
@@ -79,7 +79,7 @@ export function rankUniverse(date, universe, prepared) {
     if (!f.eligible) { excluded[f.reason] = (excluded[f.reason] || 0) + 1; continue; }
     rows.push({ ticker: u.ticker, symbol: u.symbol, name: p.name, f });
   }
-  const W = RANK.weights;
+  const W = weights;
   const keys = Object.keys(W);
   const pct = Object.fromEntries(keys.map((k) => [k, percentiles(rows.map((r) => r.f[k]))]));
   rows.forEach((r, k) => { r.composite = keys.reduce((s, key) => s + W[key] * pct[key][k], 0); });

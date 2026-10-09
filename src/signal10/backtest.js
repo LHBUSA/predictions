@@ -26,7 +26,7 @@ export function regimeAt(mkt, d) {
 }
 
 // Run one account from decision date `start` (funding at its close) through `end`.
-export function runAccount(mkt, { start, end, origin = 'HISTORICAL_REPLAY', mode = 'MANAGER', snapshots, slippageBps }) {
+export function runAccount(mkt, { start, end, origin = 'HISTORICAL_REPLAY', mode = 'MANAGER', snapshots, slippageBps, variant = {} }) {
   const st = newAccount({ origin, inception: start, slippageBps });
   const nav = [];
   const cal = mkt.calendar.filter((d) => d >= start && d <= end);
@@ -39,7 +39,7 @@ export function runAccount(mkt, { start, end, origin = 'HISTORICAL_REPLAY', mode
     }
     const snap = snapshots ? snapshots.get(d) : rankUniverse(d, mkt.universeOn(d), mkt.prepared);
     const m = mark(st, d, mkt.prepared);
-    decide(st, d, snap, regimeAt(mkt, d), m, mkt.prepared, { mode });
+    decide(st, d, snap, regimeAt(mkt, d), m, mkt.prepared, { mode, variant });
     nav.push({ d, nav: m.navCents, cash: m.cashCents, mv: m.marketValueCents, n: m.positions.length, stale: m.stale.length, window: Math.min(st.fillSessions, MANAGER.initialWindowSessions + 1) });
   }
   return { state: st, nav };

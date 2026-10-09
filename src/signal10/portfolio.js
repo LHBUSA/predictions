@@ -120,7 +120,7 @@ export function mark(st, d, prepared) {
 
 // --- decision at the close of D -> orders for the next session open ---------------------------------------------
 // snap = rankUniverse(...) result, regime = { riskOn, spyAdj, spySma200 }, m = mark(st, D)
-export function decide(st, D, snap, regime, m, prepared, { mode = 'MANAGER' } = {}) {
+export function decide(st, D, snap, regime, m, prepared, { mode = 'MANAGER', variant = {} } = {}) {
   const byS = new Map(snap.ranks.map((r) => [r.symbol, r]));
   const top = snap.ranks.slice(0, MANAGER.entryMaxRank);
   const topSet = new Set(top.map((r) => r.symbol));
@@ -146,8 +146,8 @@ export function decide(st, D, snap, regime, m, prepared, { mode = 'MANAGER' } = 
     let why = null;
     if (!r) why = 'NOT_RANKED: left the index or failed eligibility';
     else if (r.rank > MANAGER.exitRank) why = `RANK_EXIT: rank ${r.rank} > ${MANAGER.exitRank}`;
-    else if (mode === 'MANAGER' && p.adj[i] / pos.peakAdj - 1 <= MANAGER.trailingStop) why = `TRAILING_STOP: ${((p.adj[i] / pos.peakAdj - 1) * 100).toFixed(1)}% from peak`;
-    else if (mode === 'MANAGER' && pnl <= MANAGER.stopLoss && r.f.adj < r.f.sma50) why = `STOP_LOSS: ${(pnl * 100).toFixed(1)}% vs cost and below SMA50`;
+    else if (mode === 'MANAGER' && !variant.noStops && p.adj[i] / pos.peakAdj - 1 <= MANAGER.trailingStop) why = `TRAILING_STOP: ${((p.adj[i] / pos.peakAdj - 1) * 100).toFixed(1)}% from peak`;
+    else if (mode === 'MANAGER' && !variant.noStops && pnl <= MANAGER.stopLoss && r.f.adj < r.f.sma50) why = `STOP_LOSS: ${(pnl * 100).toFixed(1)}% vs cost and below SMA50`;
     if (why) { exiting.add(sym); order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: pos.qty, reason: why, rank: r?.rank ?? null, score: r?.score ?? null }); continue; }
     if (mode === 'MANAGER' && value / nav > MANAGER.trimAboveWeight) {
       const qty = Math.ceil((value - MANAGER.trimToWeight * nav) / (p.c[i] * 100));
@@ -166,7 +166,7 @@ export function decide(st, D, snap, regime, m, prepared, { mode = 'MANAGER' } = 
 
   const qualifies = (r) => {
     if (mode !== 'MANAGER') return { ok: true, trigger: 'IMMEDIATE (comparator)' };
-    if (!regime.riskOn) return { ok: false, why: 'WAIT: market regime risk-off (SPY below its 200-day average); no new names' };
+    if (!regime.riskOn && !variant.noRegime) return { ok: false, why: 'WAIT: market regime risk-off (SPY below its 200-day average); no new names' };
     if (!r.f.uptrend) return { ok: false, why: 'WAIT: not in an uptrend (needs close > SMA50 > SMA200)' };
     if (r.f.ret1 <= MANAGER.brokenDayDrop) return { ok: false, why: `WAIT: ${(r.f.ret1 * 100).toFixed(1)}% one-day drop treated as possible broken thesis, not a dip` };
     if (r.f.pullback10 <= MANAGER.dipFrom10dHigh) return { ok: true, trigger: `DIP_ENTRY: ${(r.f.pullback10 * 100).toFixed(1)}% below 10-day high, trend intact` };
@@ -202,7 +202,7 @@ export function decide(st, D, snap, regime, m, prepared, { mode = 'MANAGER' } = 
     budget -= amt; slots--; buys++;
   }
   // adds: an underweight top-10 holding on a qualified dip
-  if (mode === 'MANAGER' && regime.riskOn) for (const sym of heldAfter) {
+  if (mode === 'MANAGER' && (regime.riskOn || variant.noRegime)) for (const sym of heldAfter) {
     const r = byS.get(sym); if (!r || r.rank > MANAGER.entryMaxRank || buys >= maxBuys) continue;
     const w = valueOf(sym) / nav;
     if (w >= MANAGER.addBelowWeight || !r.f.uptrend || r.f.ret1 <= MANAGER.brokenDayDrop || r.f.pullback10 > MANAGER.dipFrom10dHigh) continue;
