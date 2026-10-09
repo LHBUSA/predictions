@@ -1,6 +1,7 @@
 // SQLite-backed Durable Object implementing the state contract of state.js over RPC. Tables are append-only except
 // kv (scheduler state) and lease. No method deletes ledger, index or tick rows.
 import { DurableObject } from 'cloudflare:workers';
+import { nextBoundary, runAll } from './runner.js';
 
 export class CollectorState extends DurableObject {
   constructor(ctx, env) {
@@ -28,4 +29,18 @@ export class CollectorState extends DurableObject {
   ledgerTail(ns, n = 50) { return this.sql.exec('SELECT seq, json FROM ledger WHERE ns = ? ORDER BY seq DESC LIMIT ?', ns, n).toArray().reverse().map((r) => ({ seq: r.seq, ...JSON.parse(r.json) })); }
   addTick(ns, rec) { this.sql.exec('INSERT INTO ticks (ns, at, json) VALUES (?, ?, ?)', ns, rec.at_utc, JSON.stringify(rec)); }
   ticks(ns, n = 50) { return this.sql.exec('SELECT json FROM ticks WHERE ns = ? ORDER BY id DESC LIMIT ?', ns, n).toArray().reverse().map((r) => JSON.parse(r.json)); }
+  // PRIMARY SCHEDULER. Durable Object alarms are not subject to the account's Cron Trigger quota (255 registered vs the
+  // 250 limit on 2026-10-09: the newest crons, this Worker's included, never execute). The next alarm is set BEFORE the
+  // run, so one failed run can never break the chain; runAll's per-5-minute idempotency key makes a duplicate firing a no-op.
+  async alarm() {
+    const at = Date.now();
+    await this.ctx.storage.setAlarm(nextBoundary(at));
+    try { await runAll(this.env, { trigger: 'alarm', scheduledTime: at, state: this }); } catch (e) { console.error('alarm run failed', String(e?.message || e)); }
+  }
+  // idempotent: (re)arm the alarm if none is pending; returns the pending alarm time
+  async ensureAlarm() {
+    let t = await this.ctx.storage.getAlarm();
+    if (!t) { t = nextBoundary(Date.now()); await this.ctx.storage.setAlarm(t); }
+    return new Date(t).toISOString();
+  }
 }

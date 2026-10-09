@@ -210,6 +210,10 @@ export async function tick(c) {
   const holder = `${c.mode}:${crypto.randomUUID()}`;
   if (!(await c.state.acquire(c.ns, holder, 10 * 60000, c.now()))) return { skipped: 'locked' };
   const st = await c.state.getState(c.ns);
+  // idempotency: at most one tick per namespace per 5-minute bucket, whichever trigger (alarm, cron, manual) comes first
+  const bucket = Math.floor(c.now() / 300000);
+  if (st.last_bucket === bucket) { await c.state.release(c.ns, holder); return { skipped: 'bucket_already_ticked', bucket_utc: iso(bucket * 300000), trigger: c.trigger || null }; }
+  st.last_bucket = bucket;
   st.alerts ||= {}; st.throttle ||= {};
   const entries = [];
   c.ledger = (type, data = {}) => { const e = { type, at_utc: iso(c.now()), collector: COLLECTOR_VERSION, mode: c.mode, ...data }; entries.push(e); };
@@ -267,6 +271,13 @@ export async function tick(c) {
       c.ledger('HEARTBEAT', { next_slots: next, ledger_chain: integrity, code: c.code });
       if (integrity.status === 'BROKEN') await c.alert('LEDGER_CHAIN_BROKEN', JSON.stringify(integrity).slice(0, 280));
       st.heartbeat_day = day; did.push('heartbeat');
+      // daily OK digest (its absence is the human-visible dead-man signal); counts and keys only, no prices
+      if (c.daily) {
+        const recent = (await c.state.ticks(c.ns, 300)).filter((t) => Date.parse(t.at_utc) > now - 86400000);
+        const by = recent.reduce((a, t) => ((a[t.trigger || 'unknown'] = (a[t.trigger || 'unknown'] || 0) + 1), a), {});
+        const res = await c.daily([`Mode: ${c.mode}`, `Ticks in the last 24 h: ${recent.length} (${Object.entries(by).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}); errors: ${recent.filter((t) => t.error).length}`, `Ledger chain: ${integrity.status}${st.chain ? ` at seq ${st.chain.seq}` : ''}`, `Next slots: ${next.map((x) => `${x.key} ${x.at}`).join('; ') || 'none'}`, `Kalshi auth: ${c.code.kalshi_auth}`].join('\n'));
+        c.ledger('DAILY_DIGEST', { results: res });
+      }
     }
     const ck = clockCheck(c.lastFiles?.() || []);
     if (ck.median_server_minus_worker_ms !== null && Math.abs(ck.median_server_minus_worker_ms) > 2000) await c.alert('CLOCK', `server Date headers differ from the Workers clock by ${ck.median_server_minus_worker_ms} ms (median of ${ck.samples})`);
@@ -297,7 +308,7 @@ export async function tick(c) {
   if (error) st.last_error = { at_utc: iso(now), error }; else st.last_ok_utc = iso(now);
   for (const [k, d] of Object.entries(st.alerts)) if (d < etParts(now - 3 * 86400000).date) delete st.alerts[k];
   await c.state.putState(c.ns, st);
-  const rec = { at_utc: iso(now), scheduled_utc: c.scheduledTime ? iso(c.scheduledTime) : null, did: did.join('; ') || '-', files_written: c.store.written.length, ledger: sealed, alerts: deliveries, error };
+  const rec = { at_utc: iso(now), trigger: c.trigger || null, scheduled_utc: c.scheduledTime ? iso(c.scheduledTime) : null, did: did.join('; ') || '-', files_written: c.store.written.length, ledger: sealed, alerts: deliveries, error };
   await c.state.addTick(c.ns, rec);
   await c.state.release(c.ns, holder);
   if (c.healthPing) await c.healthPing(!error);

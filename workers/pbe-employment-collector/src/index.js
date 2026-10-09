@@ -6,68 +6,20 @@
 // + namespace "auth" (only after the owner approves the cutover); "off" = nothing.
 // REHEARSAL (var, optional JSON {id, release}) adds an isolated cutoff-window rehearsal: Kalshi slots only, R2 under
 // rehearsal/<id>/, its own namespace, no external alerts.
-// Routes: GET /health (public, no secrets); /admin/* with Bearer ADMIN_TOKEN.
+// Scheduling: a Durable Object alarm every 5 minutes is the primary trigger (runner.js / state-do.js); the Cron Trigger is
+// a backup that also re-arms the alarm. Each tick records its trigger; one tick per 5-minute bucket at most.
+// Routes: GET /health (public, no secrets; also re-arms the alarm); /admin/* with Bearer ADMIN_TOKEN.
 import { plan, slotTimes } from '../../../scripts/research/employment/collector/lib.mjs';
-import { COLLECTOR_VERSION, indexView, kalshiSnapshot, tick } from './collector.js';
-import { makeGet } from './http.js';
-import { kalshiSigner } from './kalshi-auth.js';
+import { COLLECTOR_VERSION, indexView, kalshiSnapshot } from './collector.js';
 import { chainEntries } from './ledger.js';
+import { NS, codeIdentity, deliverAll, makeContext, rehearsalOf, runAll, stateStub } from './runner.js';
 import { EvidenceStore } from './store.js';
-import { dec, iso, sha256, sleep } from './util.js';
+import { dec, iso, sha256 } from './util.js';
 import { verify } from './verify.js';
 
 export { CollectorState } from './state-do.js';
 
-const NS = { shadow: 'shadow', authoritative: 'auth' };
-const PREFIX = { shadow: 'shadow/', authoritative: '' };
-const HOST = 'cloudflare-workers:pbe-employment-collector';
 const prefixOf = (ns) => (ns === 'auth' ? '' : ns === 'shadow' ? 'shadow/' : `rehearsal/${ns.slice('rehearsal:'.length)}/`);
-
-const stateStub = (env) => env.STATE.get(env.STATE.idFromName('employment-collector'));
-export function codeIdentity(env) {
-  return { version: COLLECTOR_VERSION, worker: 'pbe-employment-collector', commit: env.CODE_COMMIT || null, files: env.CODE_FILES || null, worker_version_id: env.CF_VERSION_METADATA?.id || null, worker_version_tag: env.CF_VERSION_METADATA?.tag || null, rules: 'scripts/research/employment/collector/lib.mjs (shared with the Windows collector)' };
-}
-function rehearsalOf(env) { try { return env.REHEARSAL ? JSON.parse(env.REHEARSAL) : null; } catch { return null; } }
-
-async function deliverWebhook(env, title, message) {
-  const url = env.ALERT_WEBHOOK_URL;
-  if (!url) return 'not configured';
-  const ntfy = /^https:\/\/ntfy\.sh\/[A-Za-z0-9_-]+$/.test(url);
-  const r = await fetch(url, ntfy
-    ? { method: 'POST', headers: { Title: title, Priority: 'high', Tags: 'warning' }, body: message }
-    : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: `${title}: ${message}` }) });
-  return r.status;
-}
-
-export async function makeContext(env, { mode, ns, prefix, calendarOverride = null, onlyKalshi = false, scheduledTime = null, fetchImpl = fetch }) {
-  let signer = null; let authError = null;
-  try { signer = await kalshiSigner(env); } catch (e) { authError = e.message; }
-  const kalshiBase = env.KALSHI_BASE || 'https://api.elections.kalshi.com/trade-api/v2';
-  const rawGet = makeGet({ fetchImpl, signer, kalshiBase });
-  const metas = [];
-  const get = async (u, o) => { const r = await rawGet(u, o); metas.push(r.meta); return r; };
-  const authoritative = mode === 'authoritative';
-  const deliver = mode === 'rehearsal' ? null : async (kind, message) => {
-    if (!authoritative && env.SHADOW_ALERTS !== 'true') return { webhook: 'shadow: suppressed (SHADOW_ALERTS != true)' };
-    try { return { webhook: await deliverWebhook(env, `${authoritative ? '' : '[SHADOW] '}Employment collector: ${kind}`, message) }; } catch (e) { return { webhook: `failed: ${String(e.message).slice(0, 120)}` }; }
-  };
-  const hc = authoritative ? env.HEALTHCHECK_URL : mode === 'shadow' ? env.SHADOW_HEALTHCHECK_URL : null;
-  const healthPing = hc ? async (ok) => { try { await fetch(`${hc}${ok ? '' : '/fail'}`); } catch { /* the dead-man's switch alerts on silence anyway */ } } : null;
-  return {
-    mode, ns, store: new EvidenceStore(env.EVIDENCE, prefix), state: stateStub(env), get, kalshiBase, now: () => Date.now(), sleep,
-    code: { ...codeIdentity(env), kalshi_auth: signer ? 'signed' : authError || 'not_configured' }, host: HOST, deliver, healthPing,
-    calendarOverride, onlyKalshi, scheduledTime, lastFiles: () => metas,
-  };
-}
-
-async function runAll(env, scheduledTime) {
-  const out = {};
-  const mode = env.MODE || 'off';
-  if (NS[mode]) out[mode] = await tick(await makeContext(env, { mode, ns: NS[mode], prefix: PREFIX[mode], scheduledTime }));
-  const r = rehearsalOf(env);
-  if (r && Date.now() < Date.parse(r.release.release_at)) out.rehearsal = await tick(await makeContext(env, { mode: 'rehearsal', ns: `rehearsal:${r.id}`, prefix: `rehearsal/${r.id}/`, calendarOverride: [r.release], onlyKalshi: true, scheduledTime }));
-  return out;
-}
 
 // Cutover step (owner-approved only): the historical Windows evidence is first uploaded byte-for-byte into the R2 root by
 // scripts/upload-historical.mjs (from the git-verified clone; each object's sha256 checked by R2). This route then seeds
@@ -110,7 +62,7 @@ async function authorized(req, env) {
 }
 
 export default {
-  async scheduled(event, env) { await runAll(env, event.scheduledTime); },
+  async scheduled(event, env) { await stateStub(env).ensureAlarm(); await runAll(env, { trigger: 'cron', scheduledTime: event.scheduledTime }); },
   async fetch(req, env) {
     const url = new URL(req.url); const mode = env.MODE || 'off'; const ns = url.searchParams.get('ns') || NS[mode] || 'shadow';
     const state = stateStub(env);
@@ -119,8 +71,9 @@ export default {
       const st = await state.getState(hns); const ticks = await state.ticks(hns, 1);
       const age = st.last_tick_utc ? Math.round((Date.now() - Date.parse(st.last_tick_utc)) / 1000) : null;
       const next = (st.calendar || []).flatMap((r) => slotTimes(r).map((s) => ({ key: `${r.release_date}/${s.slot}`, at: iso(s.at) }))).filter((s) => Date.parse(s.at) > Date.now()).slice(0, 3);
+      const nextAlarm = await state.ensureAlarm();
       const healthy = age !== null && age <= 900 && !ticks[0]?.error && !(st.unsealed || []).length;
-      return json({ worker: 'pbe-employment-collector', mode, healthy, last_tick_utc: st.last_tick_utc || null, last_tick_age_s: age, last_tick: ticks[0] || null, last_error: st.last_error || null, ledger_chain: st.chain ? { seq: st.chain.seq, head: st.chain.head.slice(0, 16) } : null, unsealed_entries: (st.unsealed || []).length, next_slots: next, code: codeIdentity(env) }, healthy ? 200 : 503);
+      return json({ worker: 'pbe-employment-collector', mode, healthy, last_tick_utc: st.last_tick_utc || null, last_tick_age_s: age, last_tick: ticks[0] || null, last_error: st.last_error || null, next_alarm_utc: nextAlarm, ledger_chain: st.chain ? { seq: st.chain.seq, head: st.chain.head.slice(0, 16) } : null, unsealed_entries: (st.unsealed || []).length, next_slots: next, code: codeIdentity(env) }, healthy ? 200 : 503);
     }
     if (!url.pathname.startsWith('/admin/')) return json({ error: 'not_found' }, 404);
     if (!(await authorized(req, env))) return json({ error: 'unauthorized' }, 401);
@@ -135,7 +88,8 @@ export default {
       const st = await state.getState(ns);
       return json(await verify({ store: new EvidenceStore(env.EVIDENCE, prefixOf(ns)), state, ns, chain: st.chain, prefix: url.searchParams.get('prefix') || '' }));
     }
-    if (url.pathname === '/admin/tick' && req.method === 'POST') return json(await runAll(env, null));
+    if (url.pathname === '/admin/tick' && req.method === 'POST') return json(await runAll(env, { trigger: 'manual' }));
+    if (url.pathname === '/admin/start' && req.method === 'POST') return json({ next_alarm_utc: await state.ensureAlarm() });
     // Cutover step 1 (owner-approved only): one historical evidence file, byte-for-byte, into the R2 root. The body's sha256
     // must equal x-content-sha256; write-once like every other evidence write. Refused outside shadow mode, after seeding,
     // and for any path inside the shadow, rehearsal or live-ledger namespaces.
@@ -156,7 +110,7 @@ export default {
     }
     // labelled ADHOC capture of the next release, SHADOW namespace only (live side-by-side comparison; never a slot)
     if (url.pathname === '/admin/adhoc' && req.method === 'POST') {
-      const c = await makeContext(env, { mode: 'shadow', ns: 'shadow', prefix: 'shadow/' });
+      const c = await makeContext(env, { mode: 'shadow', ns: 'shadow', prefix: 'shadow/', trigger: 'manual' });
       const st = await state.getState('shadow'); const rel = (st.calendar || []).find((r) => Date.parse(r.release_at) > Date.now());
       if (!rel) return json({ error: 'no calendar yet: wait for the first shadow tick' }, 409);
       c.ledger = () => {}; c.alert = async () => {};
@@ -164,12 +118,10 @@ export default {
       return json({ dir: `shadow/kalshi/${rel.release_date}/ADHOC`, status: s.status, started_utc: s.started_utc, completed_utc: s.completed_utc, series: Object.fromEntries(Object.entries(s.series).map(([k, v]) => [k, { status: v.status, markets: v.markets_listed, orderbooks_ok: v.orderbooks_ok, fee: v.fee }])), kalshi_auth: c.code.kalshi_auth, files_written: c.store.written.length });
     }
     if (url.pathname === '/admin/test-alert' && req.method === 'POST') {
-      // always exercises the webhook (even in shadow) so the channel itself is proven before cutover
-      const msg = 'Validation of off-machine alert delivery (expected; no action needed).';
-      let webhook; try { webhook = await deliverWebhook(env, `${mode === 'authoritative' ? '' : '[SHADOW] '}Employment collector: TEST`, msg); } catch (e) { webhook = `failed: ${e.message}`; }
-      const hc = mode === 'authoritative' ? env.HEALTHCHECK_URL : env.SHADOW_HEALTHCHECK_URL; let healthcheck = 'not configured';
-      if (hc) { try { healthcheck = (await fetch(hc)).status; } catch (e) { healthcheck = `failed: ${e.message}`; } }
-      return json({ webhook, healthcheck });
+      // exercises every configured channel (even in shadow) and records the result in the ledger
+      const results = await deliverAll(env, `${mode === 'authoritative' ? '' : '[SHADOW] '}Employment collector: TEST`, 'Validation of alert delivery (expected; no action needed). No research data is included in alerts.');
+      await state.appendLedger(NS[mode] || 'shadow', [{ type: 'ALERT_TEST', at_utc: iso(Date.now()), collector: COLLECTOR_VERSION, mode, results }]);
+      return json(results);
     }
     return json({ error: 'not_found' }, 404);
   },

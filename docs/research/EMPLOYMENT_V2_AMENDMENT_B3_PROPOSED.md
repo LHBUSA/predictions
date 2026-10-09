@@ -1,42 +1,95 @@
-# Employment V2: proposed Amendment B3. Cloud-native capture validity (PROPOSED; NOT ADOPTED)
+# Employment V2 — Amendment B3: Cloudflare-native capture validity (PROPOSED · NOT ADOPTED)
 
-Status: **PROPOSED, awaiting owner decision.** The frozen protocol (`EMPLOYMENT_V2_PROTOCOL.md`) is unchanged until the
-owner adopts this text. Raised 2026-10-09, after the owner's direction to remove GitHub from the collector runtime.
+**Status:** for owner approval. Nothing here takes effect, and no capture changes status, until the owner adopts B3 in
+writing. The frozen protocol (`EMPLOYMENT_V2_PROTOCOL.md`) is unchanged until then.
 
-## Requirements that name GitHub today
+**Not retroactive:** shadow captures stay shadow evidence forever. Captures in the historical GitHub repository keep
+their GitHub push record as proof.
 
-| Document | Text | Effect if GitHub pushes stop |
+**Replaces:** the GitHub clause of V2 protocol B2.5 ("pushed before 08:30 ET on release day, as shown by the GitHub push
+record"). The rest of B2.5 (single scheduled collector, ownership) is unchanged. Tier B wording stays on HOLD.
+
+## 1. When an R2 capture is valid
+
+A Kalshi slot snapshot counts only if **all** of the following hold. Any failure means the slot is **MISSED** (§4).
+
+| # | Condition | Evidence |
 |---|---|---|
-| V2 protocol **B2.5** (frozen) | Capture files count only if written by the single scheduled collector and pushed before 08:30 ET on release day, as shown by the GitHub push record, not the git commit date. | No Tier A capture made by the cloud collector could count. |
-| V2 protocol, prospective forecasts step 3 (Tier B, HOLD) | Write one JSON per release and commit + push it before the 08:30 ET release; the commit time is the proof. | Tier B could not start as written. |
-| Collection proposal, "Where it runs" | Host is the owner's Windows machine; it does not use Cloudflare. The GitHub push record is the external timestamp. | Superseded by the owner's direction of 2026-10-09 (Cloudflare Workers is the permanent runtime). |
-| Tier A authorization 2026-10-08, item 5 | A private GitHub evidence trail. | Superseded by the owner's direction of 2026-10-09 for new evidence; the historical repo stays intact. |
+| V1 | Written by `pbe-employment-collector` in the **authoritative** namespace (`MODE=authoritative`, R2 root), after an owner-approved cutover | Capture metadata: `code.mode`, `code.commit`, `code.files` (sha256 of every bundled source), `worker_version_id` |
+| V2 | Collection completed **before the slot time**: the last order-book response finished before the slot, by the Worker clock | `completed_before_slot = true`; per-request `request_started_utc` / `response_completed_utc` |
+| V3 | The Worker clock agreed with Kalshi's clock: the median of (server `Date` − completion) is within ±2 s | `clock_check` in the capture |
+| V4 | Stored promptly: the R2-assigned upload time of every object in the capture is ≤ slot + 5 min, and before 08:30 ET on release day | R2 object `uploaded` (set by R2; the Worker cannot set it) |
+| V5 | Content is intact: each object's bytes hash to the sha256 that R2 stored at upload, which equals the hash recorded in the capture metadata and in its `TICK_SEAL` | `/admin/verify` and the independent verifier (§3) |
+| V6 | The audit chain verifies: the `TICK_SEAL` holding these hashes is in an unbroken `seq/prev/hash` chain from the cutover `IMPORT` entry to the current head, and the R2 ledger head equals the Durable Object head | `/admin/verify` chain report |
+| V7 | **External anchor (new):** an RFC 3161 timestamp token over the `TICK_SEAL` entry hash, from an independent public Time-Stamping Authority, with `genTime` ≤ slot + 5 min, stored beside the ledger | Token (DER) under `ledger-anchors/`, verified against the TSA certificate |
 
-## What the GitHub record proved, and the Cloudflare equivalent
+BLS, DOL and terms captures use V1 and V4–V7, with "before 08:30 ET on release day" as the deadline.
 
-| Property | GitHub mechanism | Cloudflare mechanism (built, `pbe-employment-collector`) |
-|---|---|---|
-| External, non-backdatable time of storage | Push record (GitHub's clock) | The R2 object **upload time**, assigned by R2 and not settable by the Worker. A later re-upload can only carry a later time, and write-once storage plus bucket locks forbid re-uploads anyway. |
-| Content integrity | Git object ids | sha256 per object, verified by R2 on upload and stored with the object; recorded again in each capture's metadata |
-| Append-only history; deletion and rewrite detection | Commit chain + branch protection (no force-push, no delete) | Hash-chained audit ledger (`seq`, `prev`, `hash`). Every tick's `TICK_SEAL` entry carries the sha256 of every evidence object written in that tick. The ledger is held twice, as write-once R2 objects and as append-only Durable Object rows. **R2 bucket lock rules** make evidence prefixes non-deletable and non-overwritable at the platform level. |
-| Single writer | One scheduled collector + ownership rule | One Durable Object lease per namespace; the authoritative namespace is written only in `MODE=authoritative` |
-| Audit | `git log`, `fsck` | `GET /admin/verify`, which re-checks:<br>- every object hash;<br>- every recorded file hash;<br>- every order book;<br>- MISSED vs OK per slot;<br>- the chain end to end, matched against the Durable Object head;<br>- every sealed file still present with its sealed hash;<br>- and reports a per-capture `timestamp_proof` (R2 upload time vs recorded completion, slot and release). |
+## 2. How completion-before-cutoff is verified
 
-## Proposed text (replaces the GitHub clause of B2.5; the rest of B2.5 is unchanged)
+1. Read every object of the capture and its R2 metadata, read-only (S3 API or `/admin/verify`).
+2. Recompute V2 from the per-request timestamps; never trust the stored flag alone.
+3. Check V3 from the recorded server `Date` headers.
+4. Check V4 against R2's `uploaded` time.
+5. Check V7 against the anchor's `genTime`.
 
-> Capture files count only if:
-> - they were written by the single scheduled collector (`pbe-employment-collector`, authoritative namespace);
-> - their R2 upload time, as assigned by R2, is before 08:30 ET on release day; and
-> - they are sealed in the hash-chained audit ledger by a `TICK_SEAL` whose chain verifies end to end.
->
-> For Kalshi slot snapshots, the existing `completed_before_slot` rule still decides on-time status; the R2 upload time
-> must also be before the slot plus 5 minutes, or the snapshot is void. Captures in the historical GitHub repository
-> keep their GitHub push record as proof.
+A capture passes only if the Worker-clock evidence (V2, V3) agrees with **two independent clocks**: R2's upload time
+(V4) and the TSA's time (V7).
 
-Tier B wording (forecast JSON "committed and pushed") would need the same substitution when Tier B is authorized; it
-stays on HOLD and is not changed here.
+## 3. Hash and audit-chain validation
 
-## Owner decision needed
+- **Per object:** sha256(bytes) = R2 stored checksum = metadata hash = `TICK_SEAL` hash.
+- **Chain:** recompute every entry's `hash = sha256(prev ‖ canonical entry)` from `IMPORT` to the head. `seq` must have
+  no gaps. The R2 ledger objects and the Durable Object rows must be identical.
+- **Anchors:** every anchored `TICK_SEAL` hash must equal the hash recomputed in the chain check.
+- **Who checks:**
+  - `/admin/verify`, inside the Worker.
+  - An **independent offline verifier** (`scripts/research/employment/collector/verify-r2.mjs`, written on adoption)
+    re-runs every check with a read-only R2 credential, outside the Worker that wrote the data.
 
-Adopt B3 as written, adopt it with changes, or keep a GitHub anchor. Until the decision, cloud captures are **shadow
-evidence only**. No authoritative cutover is proposed before B3, or an equivalent, is adopted.
+## 4. Missed windows
+
+- A slot with no capture satisfying V1–V7 by the end of its window is **MISSED**.
+- The collector writes a sealed `MISSED.json` (slot, reason, detected time). The slot counts as missed in coverage.
+- A missed slot is **never backfilled.**
+- A capture that arrives after the window, or fails any of V1–V7, is kept and labelled `LATE` or `INVALID` with its
+  reason. It never counts and never replaces `MISSED`.
+
+## 5. Duplicate prevention
+
+- One capture per `(release, slot)` key. The Durable Object holds the single-writer lease and the capture index; the
+  first capture that satisfies V1–V7 is the record.
+- Every R2 evidence write is write-once: a conditional put that refuses an existing key and never overwrites.
+- A later attempt for the same key is refused and logged in the ledger. It is never stored as an alternative.
+- Shadow and rehearsal captures live under `shadow/` and `rehearsal/` and can never satisfy V1.
+
+## 6. Privileged Cloudflare administrators
+
+R2 bucket-lock rules stop the Worker and ordinary credentials from overwriting or deleting evidence, but an account
+administrator can change or remove those rules. B3 therefore does not rely on bucket locks for **time** or
+**authenticity**:
+
+| An administrator could… | Effect |
+|---|---|
+| Insert a fabricated "pre-cutoff" capture later | **Prevented** by V4 (a new upload carries a new R2 time) and V7 (a TSA cannot issue a past `genTime`). |
+| Alter an existing capture | **Detected** by V5: the hash no longer matches the anchored `TICK_SEAL`. |
+| Delete a capture or ledger objects | **Detected** by a chain gap or a missing anchored hash. The slot becomes MISSED, with the deletion on record. |
+| Change or remove lock policies | **Recorded** in the Cloudflare account audit log (visible to the owner). The evidence rule does not depend on the locks. |
+
+Residual risk: an administrator can destroy evidence, which turns a slot into MISSED. They cannot make an invalid or
+late capture count.
+
+## 7. Implementation required before B3 can be used
+
+- **V7 anchoring:** about one request per tick to a free public RFC 3161 TSA, with a second TSA as fallback. No
+  account or signup. A slot whose token cannot be obtained before slot + 5 min is MISSED.
+- **The independent verifier script.**
+- No capture made before both exist can count.
+
+## Owner decision
+
+- **(a)** Adopt B3 as written, effective from the first authoritative capture after cutover.
+- **(b)** Adopt it with changes.
+- **(c)** Keep a GitHub anchor.
+
+Until a decision, every cloud capture is shadow evidence only, and no cutover is proposed.

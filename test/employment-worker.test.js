@@ -157,3 +157,14 @@ test('a failed ledger write never advances the chain and carries the entries to 
   assert.equal((await verifyChain(all)).ok, true);
   assert.ok(all.some((x) => x.type === 'INIT'), 'the entries from the failed tick were sealed, not lost');
 });
+
+test('one tick per 5-minute bucket: a second trigger (alarm + cron + manual) in the same bucket never double-captures', async () => {
+  const bucket = new FakeBucket(); const state = new MemoryState();
+  clockNow = SLOT - 14 * 60000; // inside the T-1D window
+  const first = await tick({ ...(await ctx({ bucket, state })), trigger: 'alarm' });
+  assert.match(first.did, /T-1D OK/); assert.equal(first.trigger, 'alarm');
+  clockNow += 20000; // a cron firing 20 s later, same bucket
+  const second = await tick({ ...(await ctx({ bucket, state })), trigger: 'cron' });
+  assert.equal(second.skipped, 'bucket_already_ticked');
+  assert.equal([...bucket.m.keys()].filter((k) => k.endsWith('snapshot.json')).length, 1);
+});

@@ -8,12 +8,17 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
-  // every 5 minutes, like the Windows task: slot windows [20:00 ET - 15 min, 20:00 ET) get ticks at :45, :50, :55
+  // BACKUP trigger only. The account is over its 250 Cron Trigger limit (255 on 2026-10-09; the newest crons never run), so
+  // the primary scheduler is a Durable Object alarm every 5 min (src/state-do.js; ticks at :45:03, :50:03, :55:03 in slot
+  // windows). Kept so cron delivery resumes automatically if slots are freed; one tick per 5-min bucket either way.
   "triggers": { "crons": ["*/5 * * * *"] },
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "pbe-employment-evidence" }],
   "durable_objects": { "bindings": [{ "name": "STATE", "class_name": "CollectorState" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CollectorState"] }],
+  // alerts + daily OK digest through Cloudflare Email Routing (propbetedge.ai, already enabled); the destination is the
+  // owner's already-verified routing address, held in the ALERT_EMAIL_TO secret (never in this public file)
+  "send_email": [{ "name": "EMAIL" }],
   "vars": {
     // "shadow" (R2 shadow/ only) -> "authoritative" (R2 root = the evidence archive) ONLY after owner-approved cutover; "off" stops it
     "MODE": "shadow",
@@ -24,7 +29,7 @@
     "REHEARSAL": "{\"id\":\"cloud-20261009\",\"release\":{\"reference_month\":\"2026-10\",\"release_date\":\"2026-10-10\",\"release_time_et\":\"08:30\",\"release_at\":\"2026-10-10T12:30:00.000Z\"}}",
     "SHADOW_ALERTS": "true"
   }
-  // secrets (wrangler secret put; never in source): KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (Ed25519 PKCS#8 PEM), ADMIN_TOKEN,
-  // ALERT_WEBHOOK_URL (ntfy.sh topic or Slack incoming webhook), SHADOW_HEALTHCHECK_URL / HEALTHCHECK_URL (dead-man's switch).
+  // secrets (wrangler secret put; never in source): KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (Ed25519 or RSA, type detected
+  // from the parsed key), ADMIN_TOKEN, ALERT_EMAIL_TO; optional ALERT_WEBHOOK_URL (Slack-format), HEALTHCHECK_URL.
   // No GitHub token: the Worker has no GitHub, git or SSH dependency.
 }
