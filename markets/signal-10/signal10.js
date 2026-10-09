@@ -196,33 +196,17 @@
     // =====================================================================================================
     // TOP 10 TODAY
     // =====================================================================================================
-    async function today() {
+    async function today(host = page === 'now' ? document.getElementById('s10-rank') : app) {
       const r = await api('today');
-      if (handleGate(r, 'today’s Signal 10 rankings', today)) return;
+      if (handleGate(r, 'today’s Signal 10 rankings', () => today(host), host)) return;
       const d = r.data;
-      app.dataset.state = 'ready';
-      if (d.origin === 'FORWARD_PAPER') return todayForward(d);
-      const p = await proof();
-      const max = 100;
-      app.innerHTML = `<section class="s10-sec s10-hypo" aria-labelledby="t-h">
-<span class="s10-tag s10-tag-bt">HISTORICAL_REPLAY · BACKTEST · HYPOTHETICAL</span>
-<h2 class="s10-h2" id="t-h" style="margin-top:10px">${esc(d.label)}</h2>
-<ul class="s10-meta"><li>Model <b>${esc(d.model)}</b></li><li>Snapshot <b>${esc(fmtDate(d.d))}</b> close</li><li><b>${fmtInt(d.eligible)}</b> eligible point-in-time S&amp;P 500 members</li><li>Change vs the previous replay close</li></ul>
-<ol class="s10-top">${d.top.slice(0, 10).map((t) => {
-        const mv = C.rankMove(t.rank, t.prevRank);
-        return `<li class="s10-rank"><span class="s10-rank-n" aria-label="Rank ${t.rank}">${t.rank}</span>
-<div class="s10-rank-id"><span class="s10-sym">${esc(t.symbol)}</span></div>
-<div class="s10-bar" aria-label="Score ${t.score} of 100 (index, not a probability)"><span class="s10-bar-track"><span class="s10-bar-fill" style="width:${Math.max(0, Math.min(100, (t.score / max) * 100))}%"></span></span><b>${t.score.toFixed(1)} <small>/ 100</small></b></div>
-<div class="s10-rank-meta"><span class="s10-chip ${mv.dir}" title="${t.prevRank ? `Previous rank ${t.prevRank}` : 'Not in the previous top 10'}">${mv.dir === 'new' ? 'NEW' : mv.dir === 'same' ? 'SAME RANK' : mv.text}</span></div></li>`;
-      }).join('')}</ol>
-<p class="s10-note">Replay snapshots carry ranks and scores only; factor detail, holdings and order badges arrive with the forward lane’s first frozen snapshot. Score = percentile of the composite among eligible names — an index from 0 to 100, not a probability.</p>
-</section>
-${forwardStatusLine(p)}
-${links()}`;
+      host.dataset.state = 'ready';
+      if (d.origin === 'FORWARD_PAPER' && Array.isArray(d.top)) return todayForward(d, host);
+      host.innerHTML = `${forwardStatusLine(await proof())}<p class="s10-note">Rankings appear here as soon as the algorithm freezes its first live snapshot after a U.S. market close (16:20 ET run).</p>${page === 'now' ? '' : links()}`;
     }
     function links() {
       return `<nav class="s10-sec" aria-label="More Signal 10"><span class="s10-over">Continue</span><ul class="s10-toc">
-<li><a href="/markets/signal-10/live/">Live $10k paper portfolio →</a></li><li><a href="/markets/signal-10/backtest/">Historical backtest →</a></li><li><a href="/markets/signal-10/ledger/">Trade ledger →</a></li><li><a href="/markets/signal-10/methodology/">How the rank works →</a></li></ul></nav>`;
+<li><a href="/markets/signal-10/">Live algorithm →</a></li><li><a href="/markets/signal-10/live/">Live $10k paper portfolio →</a></li><li><a href="/markets/signal-10/ledger/">Live trade ledger →</a></li><li><a href="/markets/signal-10/methodology/">How the algorithm works →</a></li><li><a href="/markets/signal-10/backtest/">Backtest (research) →</a></li></ul></nav>`;
     }
     function factorChips(f) {
       if (!f) return '';
@@ -233,7 +217,7 @@ ${links()}`;
       if (o.side === 'BUY') return `ORDER QUEUED · next open · BUY ≈ ${fmtUSD(o.targetCents, { dp: 0 })}`;
       return `ORDER QUEUED · next open · SELL ${fmtQty(o.qty)} sh`;
     }
-    async function todayForward(d) {
+    async function todayForward(d, host = app) {
       const pend = new Map((d.pending || []).map((o) => [o.symbol, o]));
       const statusChip = (t) => {
         if (t.status === 'NEW') return '<span class="s10-chip new">NEW</span>';
@@ -257,8 +241,8 @@ ${links()}`;
 ${factorChips(t.f)}<p class="s10-why" data-why hidden></p></li>`;
       };
       const watch = d.top.slice(10, 30);
-      app.innerHTML = `<section class="s10-sec" aria-labelledby="t-h">
-<span class="s10-tag s10-tag-fw">FORWARD_PAPER · FROZEN SNAPSHOT</span>
+      host.innerHTML = `<section class="s10-sec" aria-labelledby="t-h">
+<span class="s10-tag s10-tag-fw">LIVE ALGORITHM · FROZEN DAILY SNAPSHOT</span>
 <h2 class="s10-h2" id="t-h" style="margin-top:10px">Top 10 at the ${esc(fmtDate(d.d))} close</h2>
 <ul class="s10-meta"><li>Frozen <b>${esc(etDateTime(d.frozen_at))}</b></li><li>Data cutoff <b>${esc(d.data_cutoff || '—')}</b></li><li><b>${fmtInt(d.eligible)}</b> eligible of <b>${fmtInt(d.members?.count)}</b> members${excl ? ` (excluded: ${esc(excl)})` : ''}</li><li>Model <b>${esc(d.model)}</b></li><li>Snapshot hash <span class="s10-hash" title="${esc(d.content_sha256 || '')}">${esc(short(d.content_sha256))}</span></li></ul>
 <p style="margin:0 0 12px"><span class="s10-regime ${rg.riskOn ? 'on' : 'off'}">${rg.riskOn ? 'RISK-ON' : 'RISK-OFF'} · SPY ${above == null ? '' : `${fmtPct(above)} vs`} its 200-day average · ${rg.riskOn ? 'new buys allowed' : 'no new names (hold / exit only)'}</span></p>
@@ -271,13 +255,13 @@ ${tbl('Pending paper orders', ['Side', 'Symbol', 'r:Size', 'r:Rank', 'r:Score', 
 ${(d.exited || []).length ? `<section class="s10-sec" aria-labelledby="x-h"><h2 class="s10-h2" id="x-h">Exited the top 10</h2>${tbl('Names that left the top 10 since the previous close', ['Symbol', 'r:Previous rank', 'r:Rank now'], d.exited.map((x) => `<tr>${symCell(x.symbol, x.name)}<td class="num">${x.prevRank}</td><td class="num">${x.rank ?? 'not ranked'}</td></tr>`))}</section>` : ''}
 ${watch.length ? `<section class="s10-sec" aria-labelledby="w-h"><h2 class="s10-h2" id="w-h">Watch band · ranks 11–30</h2><p class="s10-sub">Holdings in this band are kept (exit at rank &gt; 30). Names here are not entry candidates until they reach the top 10.</p>
 ${tbl('Ranks 11 to 30', ['r:Rank', 'Symbol', 'r:Score', 'Change', 'Held'], watch.map((t) => `<tr><td class="num">${t.rank}</td>${symCell(t.ticker || t.symbol, t.name)}<td class="num">${Number(t.score).toFixed(1)}</td><td>${statusChip(t) || '—'}</td><td>${t.held ? '<span class="s10-chip held">HELD</span>' : 'not held'}</td></tr>`))}</section>` : ''}
-${links()}`;
+${page === 'now' ? '' : links()}`;
       // WAIT / HOLD reasons for today's decisions come from the forward ledger (annotated after first paint)
       const lr = await api(`ledger?origin=FORWARD_PAPER&d=${encodeURIComponent(d.d)}`);
       if (lr.status !== 200 || !lr.data?.events) return;
       const dec = new Map();
       for (const e of lr.data.events.map(C.flattenEvent)) if (e.type === 'DECISION' && e.d === d.d && e.symbol) dec.set(e.symbol, e);
-      for (const li of document.querySelectorAll('#s10-top10 [data-sym]')) {
+      for (const li of host.querySelectorAll('#s10-top10 [data-sym]')) {
         const e = dec.get(li.dataset.sym); const p = li.querySelector('[data-why]');
         if (e && p) { const why = String(e.reason || ''); const head = why.split(':')[0]; p.innerHTML = e.action && why.startsWith(e.action) ? `<b>${esc(head)}</b>${esc(why.slice(head.length))}` : `<b>${esc(e.action || 'DECISION')}</b> ${esc(why)}`; p.hidden = false; }
       }
@@ -301,7 +285,7 @@ ${links()}`;
       const ms = C.pollMs(L.data?.session?.state, document.visibilityState === 'visible');
       if (ms) L.timer = setTimeout(live, ms);
     }
-    if (page === 'live') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') live(); else clearTimeout(L.timer); });
+    if (page === 'live' || page === 'now') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') live(); else clearTimeout(L.timer); });
 
     function quoteTimes(d) {
       return [...(d.forward?.positions || []).map((p) => p.quoteTime), d.benchmarksQuotes?.SPY?.quoteTime, d.benchmarksQuotes?.QQQ?.quoteTime].filter(Boolean);
@@ -321,7 +305,8 @@ ${links()}`;
 <section class="s10-sec" aria-labelledby="e-h" id="s10-eod-sec"><h2 class="s10-h2" id="e-h">Daily closes since inception</h2><div id="s10-eod"></div></section></div>`
           : `<section class="s10-term" aria-labelledby="acct-h"><div class="s10-term-head"><h2 id="acct-h">PBE PAPER ACCOUNT · $10,000 SIMULATED · AWAITING FIRST CLOSE</h2><span id="s10-sess">PAPER ACCOUNT · NOT YET FUNDED</span></div>
 <div class="s10-kpis">${kpi('Planned starting capital', '$10,000', 'No funding event recorded yet')}${kpi('First scheduled EOD', 'Oct 9 · 4:20 PM ET', 'Only after source validation')}${kpi('First possible fills', 'Next market open', 'Subject to actual frozen signals')}</div>${forwardStatusLine(L.proof).replace('s10-statusline', 's10-term-foot')}</section>
-<section class="s10-sec" aria-labelledby="wait-h"><span class="s10-over">FORWARD_PAPER · NEW TRACK RECORD</span><h2 class="s10-h2" id="wait-h">Waiting for the first verified paper-account snapshot</h2><p class="s10-sub">This page shows only this account's recorded simulated funding, positions, orders and marks. Historical backtest holdings never appear here.</p><p class="s10-note"><a href="/markets/signal-10/backtest/">See the historical backtest separately →</a></p></section>`}
+<section class="s10-sec" aria-labelledby="wait-h"><span class="s10-over">FORWARD_PAPER · NEW TRACK RECORD</span><h2 class="s10-h2" id="wait-h">Waiting for the first verified paper-account snapshot</h2><p class="s10-sub">This page shows only this account's recorded simulated funding, positions, orders and marks. Historical backtest holdings never appear here.</p></section>`}
+<p class="s10-note">Quotes: ${esc(d.quoteSource || '')}. Cached up to ${fmtInt(d.quoteCacheSeconds)} s. This page refreshes every 20 s while the regular session is open and this tab is visible, every 2 min otherwise, and pauses while hidden.</p>
 `;
       }
       if (f) { renderHero(d, f, sessionHTML); renderHoldings(f); renderBench(d, f); renderIntra(f); renderEod(f); }
@@ -537,7 +522,7 @@ ${tbl('Post-hoc research variants, same period', ['Variant', 'r:End value', 'r:T
     const LG = { origin: 'HISTORICAL_REPLAY', rows: [], type: '', sym: '', page: 1, data: null };
     async function ledger() {
       const q = new URLSearchParams(location.search);
-      LG.origin = q.get('origin') === 'FORWARD_PAPER' ? 'FORWARD_PAPER' : 'HISTORICAL_REPLAY';
+      LG.origin = q.get('origin') === 'HISTORICAL_REPLAY' ? 'HISTORICAL_REPLAY' : 'FORWARD_PAPER';
       LG.type = q.get('type') || ''; LG.sym = q.get('symbol') || ''; LG.page = Number(q.get('page')) || 1;
       const r = await api(`ledger?origin=${LG.origin}`);
       if (handleGate(r, 'the Signal 10 trade ledgers', ledger)) return;
@@ -549,7 +534,7 @@ ${tbl('Post-hoc research variants, same period', ['Variant', 'r:End value', 'r:T
       let status = '';
       if (fw && !LG.rows.length) status = forwardStatusLine(await proof());
       app.innerHTML = `<section class="s10-sec ${fw ? '' : 's10-hypo'}" aria-labelledby="l-h">
-<div class="s10-switch" role="group" aria-label="Ledger origin"><a href="?origin=HISTORICAL_REPLAY"${fw ? '' : ' aria-current="page"'}>Backtest ledger</a><a href="?origin=FORWARD_PAPER"${fw ? ' aria-current="page"' : ''}>Forward paper ledger</a></div>
+<div class="s10-switch" role="group" aria-label="Ledger origin"><a href="?origin=FORWARD_PAPER"${fw ? ' aria-current="page"' : ''}>Live paper ledger</a><a href="?origin=HISTORICAL_REPLAY"${fw ? '' : ' aria-current="page"'}>Backtest ledger (research)</a></div>
 <p style="margin:12px 0 0"><span class="s10-tag ${fw ? 's10-tag-fw' : 's10-tag-bt'}">${fw ? 'FORWARD_PAPER · PBE PAPER ACCOUNT · SIMULATED' : 'HISTORICAL_REPLAY · BACKTEST · HYPOTHETICAL · RECONSTRUCTED HISTORY'}</span></p>
 <h2 class="s10-h2" id="l-h" style="margin-top:10px">${fw ? 'Forward paper ledger' : 'Backtest ledger'}</h2>
 <p class="s10-sub">${fw ? `Account ${esc(LG.data.account || '')}. Append-only and hash-chained: each event’s SHA-256 covers the previous event’s hash plus the event body. Every row is listed, including STATE account checkpoints, so the whole chain can be recomputed.` : `Every simulated fill, dividend, split and unfilled order from ${esc(fmtDate(LG.rows[0]?.d))} to ${esc(fmtDate(LG.rows.at(-1)?.d))}. Ledger SHA-256 <span class="s10-hash">${esc(LG.data.ledger_sha256 || '')}</span>.`}</p>
@@ -597,16 +582,17 @@ ${LG.rows.length ? `<form class="s10-filters" id="lg-f" role="search" aria-label
       if (!p) { box.innerHTML = '<p class="s10-statusline" role="status"><b>PROOF RECORD UNAVAILABLE</b> The public proof record could not be loaded just now. Retrying in 60 s.</p>'; setTimeout(methodology, 60000); return; }
       const bt = p.backtest || {}; const s = bt.strategy || {};
       const row = (k, x) => `<tr><th scope="row">${k}</th><td class="num">${fmtUSD(x?.endCents, { dp: 0 })}</td><td class="num">${pct(x?.totalReturn)}</td><td class="num">${pct(x?.cagr, { dp: 2 })}</td><td class="num">${pct(x?.maxDrawdown)}</td></tr>`;
-      box.innerHTML = `<div class="s10-grid2"><div><span class="s10-tag s10-tag-bt">${esc(bt.origin || 'HISTORICAL_REPLAY')} · ${esc(bt.label || '')}</span>
+      box.innerHTML = `<div class="s10-grid2"><div><span class="s10-tag s10-tag-fw">LIVE ALGORITHM · FORWARD_PAPER</span><div style="margin-top:10px">${forwardStatusLine(p)}</div>
+<ul class="s10-meta" style="display:grid;gap:6px;margin-top:12px"><li>Model <b>${esc(p.model)}</b> · policy <b>${esc(p.policy)}</b></li><li>Dataset SHA-256 <span class="s10-hash">${esc(bt.dataset_sha256 || '')}</span></li><li>Ledger SHA-256 <span class="s10-hash">${esc(bt.ledger_sha256 || '')}</span></li><li>NAV SHA-256 <span class="s10-hash">${esc(bt.nav_sha256 || '')}</span></li>${p.generated_at ? `<li>Record generated ${esc(etDateTime(p.generated_at))}</li>` : ''}</ul></div>
+<div><span class="s10-tag s10-tag-bt">RESEARCH · ${esc(bt.origin || 'HISTORICAL_REPLAY')} · ${esc(bt.label || '')}</span>
 <p class="s10-sub" style="margin-top:10px">$10,000 of hypothetical capital, ${esc(fmtDate(s.start))} to ${esc(fmtDate(s.end))}.</p>
 ${tbl('Backtest headline (public)', ['Series', 'r:End value', 'r:Total', 'r:CAGR', 'r:Max DD'], [row('Signal 10', s), row('SPY', bt.SPY), row('QQQ', bt.QQQ)])}
-<p class="s10-note">${s.endCents < (bt.SPY?.endCents ?? -1) && s.endCents < (bt.QQQ?.endCents ?? -1) ? '<b>The backtest underperformed both SPY and QQQ.</b> ' : ''}Backtest results are reconstructed history with residual survivorship bias; see coverage below.</p></div>
-<div><span class="s10-tag s10-tag-fw">FORWARD_PAPER</span><div style="margin-top:10px">${forwardStatusLine(p)}</div>
-<ul class="s10-meta" style="display:grid;gap:6px;margin-top:12px"><li>Model <b>${esc(p.model)}</b> · policy <b>${esc(p.policy)}</b></li><li>Dataset SHA-256 <span class="s10-hash">${esc(bt.dataset_sha256 || '')}</span></li><li>Ledger SHA-256 <span class="s10-hash">${esc(bt.ledger_sha256 || '')}</span></li><li>NAV SHA-256 <span class="s10-hash">${esc(bt.nav_sha256 || '')}</span></li>${p.generated_at ? `<li>Record generated ${esc(etDateTime(p.generated_at))}</li>` : ''}</ul></div></div>
+<p class="s10-note">${s.endCents < (bt.SPY?.endCents ?? -1) && s.endCents < (bt.QQQ?.endCents ?? -1) ? '<b>The backtest underperformed both SPY and QQQ.</b> ' : ''}Backtest results are reconstructed history with residual survivorship bias; see coverage below.</p></div></div>
 <p class="s10-statusline" style="margin-top:14px" role="note"><b>DISCLOSURE</b> ${esc(p.disclosure || 'HYPOTHETICAL / SIMULATED PAPER RESULTS. Not actual trading. Not investment advice.')}</p>`;
     }
 
-    const run = { today, live, backtest, ledger, methodology }[page];
+    const now = () => { live(); today(); };
+    const run = { now, today, live, backtest, ledger, methodology }[page];
     if (run) run();
   }
 })();

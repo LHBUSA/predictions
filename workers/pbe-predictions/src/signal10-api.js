@@ -101,11 +101,8 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
     const snaps = await store.select('pred_s10_snapshots', { select: 'd,model_version,frozen_at,eligible,excluded,ranks,held_ranks,regime,members,content_sha256,data_cutoff' }, { limit: 2, order: 'd.desc' });
     const h = await forwardHead(store);
     const st = h.state ? restoreState(h.state.payload).st : null;
-    if (!snaps.length) {
-      const last = RANKS.rows.at(-1); const prev = RANKS.rows.at(-2);
-      return privateJson({ origin: 'HISTORICAL_REPLAY', label: `Replay snapshot · ${last[0]} close (the forward lane has not frozen its first snapshot yet)`, model: MODEL_VERSION, d: last[0], eligible: last[1],
-        top: last[2].map(([symbol, score], i) => ({ rank: i + 1, symbol, score, prevRank: (prev[2].findIndex((x) => x[0] === symbol) + 1) || null })), access });
-    }
+    // The live algorithm only: before the first frozen forward snapshot there is nothing to rank yet (no replay fallback).
+    if (!snaps.length) return privateJson({ origin: 'FORWARD_PAPER', status: 'AWAITING_FIRST_SNAPSHOT', next_run: 'first U.S. trading-day close >= ' + (env.SIGNAL10_START || ''), model: MODEL_VERSION, access });
     const [cur, prev] = snaps;
     const prevRank = new Map((prev?.ranks || []).map((r) => [r.symbol, r.rank]));
     const curTop = new Set(cur.ranks.slice(0, 10).map((r) => r.symbol));
@@ -150,10 +147,8 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
         streak: st.streak, benchmarks: benchLive, eodHistory: eod, intraday, ledgerSeq: h.lastSeq, ledgerHeadHash: h.lastHash, stateAsOf: h.state.d
       };
     }
-    const continuation = { origin: 'HISTORICAL_REPLAY', label: 'Backtested Holdings · hypothetical continuation', asOf: SUMMARY.data_cutoff,
-      cashCents: SUMMARY.strategy.cashCents, holdings: bt.map((x) => ({ ...pick(x, ['symbol', 'name', 'qty', 'close', 'closeDate', 'costCents', 'valueCents', 'entryDate']), price: qBy[x.symbol]?.price ?? null, quoteTime: qBy[x.symbol]?.quoteTime ?? null })) };
     return privateJson({ now, session, quoteSource: 'Yahoo Finance public chart endpoint (source trade timestamps shown; may be delayed; not exchange-licensed)', quoteCacheSeconds: QUOTE_TTL_S,
-      forward: fwd, continuation, benchmarksQuotes: { SPY: qBy.SPY || null, QQQ: qBy.QQQ || null }, disclosure: DISCLOSURE, access });
+      forward: fwd, benchmarksQuotes: { SPY: qBy.SPY || null, QQQ: qBy.QQQ || null }, disclosure: DISCLOSURE, access });
   }
   return privateJson({ error: 'not_found' }, 404);
 }
