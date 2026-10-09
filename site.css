@@ -1052,3 +1052,5 @@ html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-
 }
 @media (max-width:560px){.pulse,.sb-grid{grid-template-columns:1fr}.sb-rows li{grid-template-columns:auto minmax(0,1fr)}.sb-rows li .sb-kind{display:none}.sb-rows li small{grid-column:1/-1}}
 @media (max-width:380px){.spot-nums{grid-template-columns:1fr 1fr}.spot-nums .sn-d{grid-column:1/-1}}
+/* 901-1100px: seven nav items + Research no longer fit beside the account controls; tighten, drop the network link (still in the footer) */
+@media (min-width:901px) and (max-width:1100px){.nav{margin-left:0}.nav a,.nav-drop>summary{padding:7px 7px;font-size:13.5px}.top-right .net-link{display:none}.topbar .wrap{gap:14px}}
