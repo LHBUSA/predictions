@@ -20,7 +20,7 @@ if (origin && origin !== head) fail(`local HEAD ${head} != GitHub main ${origin}
 const token = readFileSync(tokenFile, 'utf8').trim();
 const out = { head, uploaded: 0, existed: 0, files: [] };
 for (const line of git('ls-files', '-s').split('\n')) {
-  const [, blob, , path] = line.match(/^(\d+) ([0-9a-f]{40}) (\d)\t(.+)$/);
+  const [, , blob, , path] = line.match(/^(\d+) ([0-9a-f]{40}) (\d)\t(.+)$/);
   const bytes = readFileSync(join(clone, path));
   const gitId = createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${bytes.length}\0`), bytes])).digest('hex');
   if (gitId !== blob) fail(`${path}: working file differs from the committed blob`);
