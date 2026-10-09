@@ -1,3 +1,8 @@
+> **ADOPTED by the owner 2026-10-09T13:57:42Z** (Issue #3 comment 6082392799, author LHBUSA, association OWNER). It applies
+> to new Cloudflare captures made after the authoritative GENESIS `effective_at`. There is no retroactive promotion: Windows,
+> GitHub and shadow evidence are never authoritative. The legacy-import path (§ cutover) is withdrawn and replaced by a fresh
+> genesis. The file name keeps "_PROPOSED" for link stability; the text below is the adopted rule.
+
 # Employment V2 — Amendment B3: Cloudflare-native capture validity (PROPOSED · NOT ADOPTED)
 
 **Status:** for owner approval. Nothing here takes effect, and no capture changes status, until the owner adopts B3 in

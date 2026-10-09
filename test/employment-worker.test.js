@@ -189,3 +189,33 @@ test('RFC 3161 anchor: the request is a valid TimeStampReq; tick stores the toke
   bucket.m.get(k).bytes = fakeToken('cd'.repeat(32), '20261010000000Z');
   assert.ok((await verify({ store, state, ns: 'shadow', chain: st.chain })).problems.some((p) => p.startsWith('anchor invalid')));
 });
+
+test('GENESIS: fresh authoritative ledger only on an empty namespace + empty R2 root, anchored, never a legacy import', async () => {
+  const { genesis, preflight } = await import('../workers/pbe-employment-collector/src/genesis.js');
+  const gt = () => new Date(clockNow + 1000).toISOString().replace(/[-:T]/g, '').replace(/\.\d+Z$/, 'Z');
+  const fakeToken = (hashHex) => Uint8Array.from([0x30, 0x82, 0, 0, 0x30, 0x03, 0x02, 0x01, 0x00, ...hashHex.match(/../g).map((x) => parseInt(x, 16)), 0x18, 15, ...new TextEncoder().encode(gt())]);
+  const anchorOk = async (h) => ({ ok: true, tsa: 'test-tsa', bytes: fakeToken(h), gen_time_utc: new Date(clockNow + 1000).toISOString() });
+  clockNow = Date.parse('2026-10-09T14:00:00Z');
+  // shadow/drill objects do not block; an authoritative-root object does
+  const bucket = new FakeBucket(); const state = new MemoryState(); const store = new EvidenceStore(bucket, '');
+  await new EvidenceStore(bucket, 'shadow/').put('kalshi/x.json', '{}'); await new EvidenceStore(bucket, 'drill/').put('a.json', '{}');
+  assert.equal((await preflight({ store, state })).empty, true);
+  // anchor failure: nothing written
+  const failed = await genesis({ store, state, anchor: async () => ({ ok: false, errors: ['down'] }), now: () => clockNow, code: {}, approval: 'test', windows: null });
+  assert.match(failed.error, /anchor failed/); assert.equal((await preflight({ store, state })).empty, true);
+  const g = await genesis({ store, state, anchor: anchorOk, now: () => clockNow, code: { version: 't' }, approval: 'owner', windows: { tick: 'Disabled' } });
+  assert.equal(g.chain.seq, 1); assert.equal(g.effective_at, '2026-10-09T14:00:00.000Z');
+  // second genesis refused
+  assert.match((await genesis({ store, state, anchor: anchorOk, now: () => clockNow, code: {}, approval: 'x' })).error, /not empty/);
+  // the first authoritative tick continues the chain from the genesis head, and verify passes end to end
+  clockNow += 5 * 60000;
+  const c = await ctx({ bucket, state, mode: 'authoritative' }); c.anchor = anchorOk; c.calendarOverride = []; 
+  await tick(c);
+  const st = await state.getState('auth');
+  const v = await verify({ store, state, ns: 'auth', chain: st.chain });
+  assert.equal(v.ok, true, JSON.stringify(v.problems)); assert.equal(v.ledger_chain.entries, st.chain.seq);
+  assert.ok(v.ledger_chain.anchors_ok >= 1);
+  const lines = [...bucket.m.keys()].filter((k) => k.startsWith('ledger-ticks/')).sort();
+  assert.match(lines[0], /_genesis\.jsonl$/);
+  assert.ok(![...bucket.m.keys()].some((k) => k.startsWith('ledger-imported/')), 'no legacy import');
+});

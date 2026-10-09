@@ -11,48 +11,16 @@
 // Routes: GET /health (public, no secrets; also re-arms the alarm); /admin/* with Bearer ADMIN_TOKEN.
 import { plan, slotTimes } from '../../../scripts/research/employment/collector/lib.mjs';
 import { COLLECTOR_VERSION, indexView, kalshiSnapshot, tick } from './collector.js';
-import { chainEntries } from './ledger.js';
+import { genesis, preflight } from './genesis.js';
+import { anchor } from './tsa.js';
 import { NS, codeIdentity, deliverAll, makeContext, rehearsalOf, runAll, stateStub } from './runner.js';
 import { EvidenceStore } from './store.js';
-import { dec, iso, sha256 } from './util.js';
+import { iso } from './util.js';
 import { verify } from './verify.js';
 
 export { CollectorState } from './state-do.js';
 
 const prefixOf = (ns) => (ns === 'auth' ? '' : ns === 'shadow' ? 'shadow/' : `rehearsal/${ns.slice('rehearsal:'.length)}/`);
-
-// Cutover step (owner-approved only): the historical Windows evidence is first uploaded byte-for-byte into the R2 root by
-// scripts/upload-historical.mjs (from the git-verified clone; each object's sha256 checked by R2). This route then seeds
-// the "auth" namespace FROM R2 (index, enabled_at, calendar) and opens the auth ledger chain with an IMPORT entry that
-// seals every imported object's sha256. Refused once the auth namespace has ticked or been seeded.
-async function seedAuthFromR2(env) {
-  const state = stateStub(env); const st = await state.getState('auth');
-  if (st.last_tick_utc || st.chain) return { error: 'auth namespace already active or seeded; refused' };
-  const store = new EvidenceStore(env.EVIDENCE, '');
-  const objects = (await store.list('')).filter((o) => !/^(shadow|rehearsal)\//.test(o.path));
-  if (!objects.length) return { error: 'no historical evidence in the R2 root: run scripts/upload-historical.mjs first' };
-  const rows = []; let cfg = null; let cal = null;
-  for (const o of objects.filter((x) => x.path.endsWith('.json'))) {
-    const j = JSON.parse(dec.decode(await store.getBytes(o.path))); const dir = o.path.replace(/\/[^/]+$/, '');
-    if (o.path === 'collector.json') cfg = j;
-    if (o.path === 'calendar/bls-empsit-schedule.json') cal = j;
-    if (j.kind === 'KALSHI_SNAPSHOT') rows.push({ kind: 'KALSHI_SNAPSHOT', key: `${j.release.release_date}/${j.slot}`, ok: j.status === 'OK' && j.completed_before_slot === true, status: j.status, at: j.completed_utc, path: dir });
-    if (j.kind === 'MISSED') rows.push({ kind: 'MISSED', key: `${j.release.release_date}/${j.slot}`, ok: false, at: j.detected_utc, path: dir });
-    if (j.kind === 'KALSHI_SETTLEMENT') rows.push({ kind: 'KALSHI_SETTLEMENT', key: `${j.release.release_date}/${j.tag}`, ok: true, at: j.captured_utc, path: dir });
-    if (j.kind === 'BLS_EMPSIT') rows.push({ kind: j.which === 'current' ? 'BLS_CURRENT' : 'BLS_ARCHIVE', key: j.release.reference_month, ok: j.status === 'OK', at: j.file?.response_completed_utc, path: dir });
-    if (j.kind === 'DOL_WEEKLY_CLAIMS') rows.push({ kind: 'DOL_WEEKLY', key: dir.split('/').at(-1), ok: true, at: j.first_seen_utc, path: dir });
-    if (j.kind === 'DOL_PRESS_ARCHIVE') rows.push({ kind: 'DOL_PRESS', key: dir.split('/').slice(-2).join('/'), ok: true, at: j.file?.response_completed_utc, path: dir });
-  }
-  for (const o of objects.filter((x) => /^kalshi\/terms\/[0-9a-f]{64}\.pdf$/.test(x.path))) rows.push({ kind: 'TERMS', key: o.path.slice(13, 77), ok: true });
-  if (!cfg?.enabled_at) return { error: 'collector.json with enabled_at not found in the R2 root' };
-  await state.addIndex('auth', rows);
-  const { out, chain } = await chainEntries([{ type: 'IMPORT', at_utc: iso(Date.now()), collector: COLLECTOR_VERSION, mode: 'authoritative', note: 'Windows-collected evidence (historical GitHub repo, git-verified) uploaded byte-for-byte to the R2 root at cutover', index_rows: rows.length, files: objects.map((o) => ({ path: o.path, sha256: o.sha256, r2_uploaded_utc: o.uploaded })) }], null);
-  const key = `ledger-ticks/${iso(Date.now()).slice(0, 7)}/${iso(Date.now()).replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}_import.jsonl`;
-  await store.put(key, out.map((x) => JSON.stringify(x)).join(String.fromCharCode(10)) + String.fromCharCode(10), 'application/x-ndjson');
-  await state.appendLedger('auth', out);
-  await state.putState('auth', { enabled_at: cfg.enabled_at, calendar: cal?.releases || null, chain, last_ledger_key: key, seeded: { at_utc: iso(Date.now()), objects: objects.length, index_rows: rows.length } });
-  return { objects: objects.length, index_rows: rows.length, enabled_at: cfg.enabled_at, chain };
-}
 
 const json = (o, status = 200) => new Response(JSON.stringify(o, null, 1), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 async function authorized(req, env) {
@@ -99,23 +67,15 @@ export default {
       return json({ drill: true, tick: await tick(c) });
     }
     if (url.pathname === '/admin/start' && req.method === 'POST') return json({ next_alarm_utc: await state.ensureAlarm() });
-    // Cutover step 1 (owner-approved only): one historical evidence file, byte-for-byte, into the R2 root. The body's sha256
-    // must equal x-content-sha256; write-once like every other evidence write. Refused outside shadow mode, after seeding,
-    // and for any path inside the shadow, rehearsal or live-ledger namespaces.
-    if (url.pathname === '/admin/historical' && req.method === 'PUT') {
-      if (mode !== 'shadow') return json({ error: 'historical upload only while MODE=shadow' }, 409);
-      if ((await state.getState('auth')).chain) return json({ error: 'auth namespace already seeded' }, 409);
-      const path = url.searchParams.get('path') || '';
-      if (!/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/.test(path) || path.includes('..') || /^(shadow|rehearsal|ledger-ticks)\//.test(path)) return json({ error: 'path_not_allowed' }, 400);
-      const bytes = new Uint8Array(await req.arrayBuffer());
-      const got = await sha256(bytes);
-      if (got !== req.headers.get('x-content-sha256')) return json({ error: 'sha256 mismatch: nothing written', got }, 422);
-      const r = await new EvidenceStore(env.EVIDENCE, '').put(path, bytes);
-      return json({ path: r.path, sha256: r.sha256, existed: r.existed });
-    }
-    if (url.pathname === '/admin/seed-auth' && req.method === 'POST') {
-      if (mode !== 'shadow') return json({ error: 'seed only while MODE=shadow (before the authoritative deploy)' }, 409);
-      return json(await seedAuthFromR2(env));
+    // GENESIS of the authoritative ledger (owner adoption of B3 + cloud-only cutover, Issue #3 comment 6082392799).
+    // Only while MODE=shadow (before the authoritative deploy); fails closed unless the auth namespace and R2 root are empty
+    // and the genesis record is RFC 3161-anchored. No legacy import.
+    if (url.pathname === '/admin/genesis-preflight') return json(await preflight({ store: new EvidenceStore(env.EVIDENCE, ''), state }));
+    if (url.pathname === '/admin/genesis' && req.method === 'POST') {
+      if (mode !== 'shadow') return json({ error: 'genesis only while MODE=shadow (before the authoritative deploy)' }, 409);
+      const body = await req.json().catch(() => ({}));
+      const r = await genesis({ store: new EvidenceStore(env.EVIDENCE, ''), state, anchor: (hh) => anchor(hh), now: () => Date.now(), code: codeIdentity(env), approval: 'https://github.com/LHBUSA/pbe-employment-evidence/issues/3#issuecomment-6082392799 (OWNER, 2026-10-09T13:57:42Z): adopt Amendment B3; immediate cloud-only cutover; fresh genesis; no legacy import', windows: body.windows || null });
+      return json(r, r.error ? 409 : 200);
     }
     // labelled ADHOC capture of the next release, SHADOW namespace only (live side-by-side comparison; never a slot)
     if (url.pathname === '/admin/adhoc' && req.method === 'POST') {

@@ -1,3 +1,11 @@
+> **SUPERSEDED 2026-10-09T13:57Z by the owner's directive** (Issue #3 comment 6082392799):
+> - B3 adopted; immediate cloud-only cutover.
+> - The Windows/GitHub history import (steps 2-4 below) is **rejected**. It is replaced by a fresh authoritative GENESIS:
+>   `POST /admin/genesis`, which requires an empty auth namespace and an empty R2 root, and an RFC 3161 anchor.
+> - **Windows is not a rollback.** Rollback is Cloudflare-only: deploy MODE=shadow or off, or roll back the Worker version.
+> - `upload-historical.mjs` and the `/admin/historical` and `/admin/seed-auth` routes are removed.
+> - The actual cutover record is in Issue #3.
+
 # Employment Tier A: Cloudflare cutover package (PREPARED; NOT APPROVED, NOT EXECUTED)
 
 Status 2026-10-09. Windows remains the authoritative collector. The cutover runs only after the owner's explicit approval

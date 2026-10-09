@@ -5,12 +5,13 @@
 // for slot snapshots, against the slot and the release. Optional prefix keeps one call inside Worker limits.
 import { deriveBook } from '../../../scripts/research/employment/collector/lib.mjs';
 import { verifyChain } from './ledger.js';
+import { NON_AUTH_PREFIXES } from './genesis.js';
 import { inspectResponse } from './tsa.js';
 import { dec, sha256 } from './util.js';
 
 export async function verify({ store, state, ns, chain, prefix = '' }) {
-  // the authoritative root never includes the shadow or rehearsal namespaces
-  const objects = (await store.list(prefix)).filter((o) => store.prefix !== '' || !/^(shadow|rehearsal)\//.test(o.path));
+  // the authoritative root never includes the shadow, rehearsal, drill or lock-test namespaces
+  const objects = (await store.list(prefix)).filter((o) => store.prefix !== '' || !NON_AUTH_PREFIXES.test(o.path));
   const byPath = new Map(objects.map((o) => [o.path, o]));
   let files = 0; let bad = 0; let snaps = 0; let rederived = 0; let ledgerLines = 0; let objectsRehashed = 0; const problems = []; const timing = [];
   const bytesOf = async (p) => store.getBytes(p);
