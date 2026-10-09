@@ -15,15 +15,16 @@
   "durable_objects": { "bindings": [{ "name": "STATE", "class_name": "CollectorState" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CollectorState"] }],
   "vars": {
-    // "shadow" (R2 shadow/ only, never GitHub) -> "authoritative" (R2 root + GitHub mirror) at cutover; "off" stops it
+    // "shadow" (R2 shadow/ only) -> "authoritative" (R2 root = the evidence archive) ONLY after owner-approved cutover; "off" stops it
     "MODE": "shadow",
     "KALSHI_BASE": "https://api.elections.kalshi.com/trade-api/v2",
-    "GITHUB_REPO": "LHBUSA/pbe-employment-evidence",
-    // optional isolated cutoff rehearsal: {"id":"...","release":{reference_month,release_date,release_time_et,release_at}}
-    "REHEARSAL": "",
-    "SHADOW_ALERTS": "false"
+    // cloud cutoff rehearsal 2026-10-09: fictitious release 2026-10-10 (real KXU3-26OCT / KXPAYROLLS-26OCT books), T-1D slot
+    // 2026-10-10T00:00Z (Fri 20:00 EDT), window 23:45Z-00:00Z; expires at the fictitious release time. Same shape as the
+    // 2026-10-08 Windows rehearsal. Optional isolated cutoff rehearsal: {"id":"...","release":{reference_month,release_date,release_time_et,release_at}}
+    "REHEARSAL": "{\"id\":\"cloud-20261009\",\"release\":{\"reference_month\":\"2026-10\",\"release_date\":\"2026-10-10\",\"release_time_et\":\"08:30\",\"release_at\":\"2026-10-10T12:30:00.000Z\"}}",
+    "SHADOW_ALERTS": "true"
   }
-  // secrets (wrangler secret put; never in source): KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (Ed25519 PKCS#8 PEM),
-  // GITHUB_TOKEN (fine-grained: LHBUSA/pbe-employment-evidence only, Contents RW + Issues RW), ADMIN_TOKEN,
-  // ALERT_WEBHOOK_URL (ntfy.sh topic or Slack incoming webhook), HEALTHCHECK_URL / SHADOW_HEALTHCHECK_URL (dead-man's switch)
+  // secrets (wrangler secret put; never in source): KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (Ed25519 PKCS#8 PEM), ADMIN_TOKEN,
+  // ALERT_WEBHOOK_URL (ntfy.sh topic or Slack incoming webhook), SHADOW_HEALTHCHECK_URL / HEALTHCHECK_URL (dead-man's switch).
+  // No GitHub token: the Worker has no GitHub, git or SSH dependency.
 }

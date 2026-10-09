@@ -1,7 +1,9 @@
-// R2 evidence store. Keys mirror the evidence repo layout under a mode prefix ('' authoritative, 'shadow/', 'rehearsal/<id>/').
+// R2 evidence store (the authoritative archive). Keys keep the evidence-repo layout under a mode prefix ('' authoritative,
+// 'shadow/', 'rehearsal/<id>/').
 // Evidence is write-once: an existing key may only be "written" again with identical bytes; anything else is an
 // IMMUTABLE_VIOLATION and the tick fails. R2 verifies the sha256 of every upload server-side. The only mutable key is the
-// derived calendar (its raw source pages are immutable). Every write is remembered for the GitHub mirror.
+// derived calendar (its raw source pages are immutable). R2 bucket lock rules enforce the same at the platform level.
+// Every write is remembered so the tick's TICK_SEAL can bind its sha256 into the hash-chained ledger.
 import { jsonBytes, sha256, toBytes } from './util.js';
 
 const MUTABLE = new Set(['calendar/bls-empsit-schedule.json']);
@@ -27,7 +29,7 @@ export class EvidenceStore {
   async getJson(path) { const b = await this.getBytes(path); return b ? JSON.parse(new TextDecoder().decode(b)) : null; }
   async list(prefix) {
     const out = []; let cursor;
-    do { const r = await this.bucket.list({ prefix: this.key(prefix), cursor, limit: 1000, include: ['customMetadata'] }); out.push(...r.objects.map((o) => ({ path: o.key.slice(this.prefix.length), size: o.size, sha256: o.customMetadata?.sha256 }))); cursor = r.truncated ? r.cursor : undefined; } while (cursor);
+    do { const r = await this.bucket.list({ prefix: this.key(prefix), cursor, limit: 1000, include: ['customMetadata'] }); out.push(...r.objects.map((o) => ({ path: o.key.slice(this.prefix.length), size: o.size, sha256: o.customMetadata?.sha256, uploaded: o.uploaded ? new Date(o.uploaded).toISOString() : null }))); cursor = r.truncated ? r.cursor : undefined; } while (cursor);
     return out;
   }
 }

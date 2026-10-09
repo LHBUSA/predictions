@@ -2,11 +2,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { tick } from '../workers/pbe-employment-collector/src/collector.js';
-import { GitHubMirror } from '../workers/pbe-employment-collector/src/github.js';
 import { makeGet } from '../workers/pbe-employment-collector/src/http.js';
 import { MemoryState } from '../workers/pbe-employment-collector/src/state.js';
 import { EvidenceStore } from '../workers/pbe-employment-collector/src/store.js';
-import { gitBlobSha, sha256 } from '../workers/pbe-employment-collector/src/util.js';
+import { verifyChain } from '../workers/pbe-employment-collector/src/ledger.js';
+import { sha256 } from '../workers/pbe-employment-collector/src/util.js';
+import { verify } from '../workers/pbe-employment-collector/src/verify.js';
 
 const KB = 'https://api.elections.kalshi.com/trade-api/v2';
 // fake release: T-1D slot = 2026-10-10T00:00Z (Fri 20:00 EDT), window from 23:45Z
@@ -16,9 +17,9 @@ const SLOT = Date.parse('2026-10-10T00:00:00Z');
 class FakeBucket {
   constructor() { this.m = new Map(); }
   async head(k) { const o = this.m.get(k); return o ? { customMetadata: o.meta } : null; }
-  async put(k, bytes, opts) { this.m.set(k, { bytes: new Uint8Array(bytes), meta: opts.customMetadata }); }
+  async put(k, bytes, opts) { this.m.set(k, { bytes: new Uint8Array(bytes), meta: opts.customMetadata, uploaded: new Date(clockNow + 500) }); }
   async get(k) { const o = this.m.get(k); return o ? { arrayBuffer: async () => o.bytes.buffer.slice(o.bytes.byteOffset, o.bytes.byteOffset + o.bytes.byteLength) } : null; }
-  async list({ prefix }) { return { objects: [...this.m.keys()].filter((k) => k.startsWith(prefix)).map((k) => ({ key: k, size: this.m.get(k).bytes.length, customMetadata: this.m.get(k).meta })), truncated: false }; }
+  async list({ prefix }) { return { objects: [...this.m.keys()].filter((k) => k.startsWith(prefix)).map((k) => ({ key: k, size: this.m.get(k).bytes.length, customMetadata: this.m.get(k).meta, uploaded: this.m.get(k).uploaded })), truncated: false }; }
 }
 const body = (o) => new TextEncoder().encode(JSON.stringify(o));
 function kalshiFetch(calls) {
@@ -35,9 +36,9 @@ function kalshiFetch(calls) {
   };
 }
 let clockNow = 0;
-async function ctx({ bucket = new FakeBucket(), state = new MemoryState(), signer = async () => ({ 'KALSHI-ACCESS-SIGNATURE': 'sig' }), calls = [], mirror = null, mode = 'shadow' } = {}) {
+async function ctx({ bucket = new FakeBucket(), state = new MemoryState(), signer = async () => ({ 'KALSHI-ACCESS-SIGNATURE': 'sig' }), calls = [], mode = 'shadow' } = {}) {
   const fetchImpl = kalshiFetch(calls);
-  return { mode, ns: mode === 'authoritative' ? 'auth' : 'shadow', store: new EvidenceStore(bucket, mode === 'authoritative' ? '' : 'shadow/'), state, get: makeGet({ fetchImpl, signer, kalshiBase: KB, now: () => clockNow, sleep: async () => {} }), kalshiBase: KB, now: () => clockNow, sleep: async () => { clockNow += 120; }, code: { version: 'test' }, host: 'test', calendarOverride: [REL], onlyKalshi: true, mirror, deliver: async () => ({ external: 'test' }) };
+  return { mode, ns: mode === 'authoritative' ? 'auth' : 'shadow', store: new EvidenceStore(bucket, mode === 'authoritative' ? '' : 'shadow/'), state, get: makeGet({ fetchImpl, signer, kalshiBase: KB, now: () => clockNow, sleep: async () => {} }), kalshiBase: KB, now: () => clockNow, sleep: async () => { clockNow += 120; }, code: { version: 'test' }, host: 'test', calendarOverride: [REL], onlyKalshi: true, deliver: async () => ({ external: 'test' }) };
 }
 
 test('evidence is write-once: identical bytes are idempotent, different bytes are refused', async () => {
@@ -105,35 +106,54 @@ test('the lease stops overlapping ticks', async () => {
   assert.deepEqual(await tick(await ctx({ state })), { skipped: 'locked' });
 });
 
-test('authoritative mirror: failures queue in order and are retried; shadow never touches GitHub', async () => {
-  const state = new MemoryState(); const bucket = new FakeBucket(); let fail = true; const commits = [];
-  const mirror = { repo: 'x/y', remoteHistory: async () => ({ status: 'OK' }), commit: async (files, ledger, msg) => { if (fail) throw new Error('github 503'); commits.push({ files: files.map((f) => f.path), ledger, msg }); return `c${commits.length}`; } };
-  clockNow = SLOT - 14 * 60000;
-  const r1 = await tick(await ctx({ bucket, state, mirror, mode: 'authoritative' }));
-  assert.equal(r1.mirror.ok, false); assert.equal((await state.pendingMirror('auth')).length, 1);
-  fail = false; clockNow += 5 * 60000;
-  const r2 = await tick(await ctx({ bucket, state, mirror, mode: 'authoritative' }));
-  assert.equal(r2.mirror.ok, true); assert.equal((await state.pendingMirror('auth')).length, 0);
-  assert.ok(commits[0].files.some((p) => p.endsWith('snapshot.json')), 'the queued snapshot was mirrored first');
-  assert.equal((await state.getState('auth')).last_pushed_head, 'c2');
-  assert.ok(![...bucket.m.keys()].some((k) => k.startsWith('shadow/')), 'authoritative writes the R2 root only');
+const lines = (bucket, prefix) => [...bucket.m.keys()].filter((k) => k.startsWith(`${prefix}ledger-ticks/`)).sort().flatMap((k) => new TextDecoder().decode(bucket.m.get(k).bytes).trim().split(String.fromCharCode(10)).map((l) => JSON.parse(l)));
+
+test('audit ledger: every tick is hash-chained and seals the sha256 of every evidence file it wrote', async () => {
+  const bucket = new FakeBucket(); const state = new MemoryState();
+  clockNow = SLOT - 14 * 60000; await tick(await ctx({ bucket, state }));
+  clockNow += 5 * 60000; await tick(await ctx({ bucket, state }));
+  const all = lines(bucket, 'shadow/');
+  const v = await verifyChain(all);
+  assert.equal(v.ok, true); assert.equal(v.seq, all.length);
+  assert.deepEqual((await state.getState('shadow')).chain, { seq: v.seq, head: v.head }, 'Durable Object head = R2 chain head');
+  const seal = all.find((x) => x.type === 'TICK_SEAL' && x.files.some((f) => f.path.endsWith('snapshot.json')));
+  for (const f of seal.files) assert.equal(f.sha256, bucket.m.get(`shadow/${f.path}`).meta.sha256);
+  // tampering with, dropping or reordering any entry breaks the chain
+  const edited = all.map((x, i) => (i === 2 ? { ...x, message: 'edited' } : x));
+  assert.equal((await verifyChain(edited)).ok, false);
+  assert.equal((await verifyChain(all.filter((_, i) => i !== 1))).ok, false);
+  assert.equal((await verifyChain([all[1], all[0], ...all.slice(2)])).ok, false);
 });
 
-test('GitHub mirror checks every blob id against the bytes and never forces the ref', async () => {
-  const seen = [];
-  const api = async (url, init) => {
-    const u = new URL(url); const p = u.pathname.replace('/repos/o/r', ''); seen.push(`${init.method} ${p}`);
-    const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s });
-    if (p === '/git/ref/heads/main') return J({ object: { sha: 'head1' } });
-    if (p === '/git/commits/head1') return J({ tree: { sha: 'tree1' } });
-    if (p === '/git/blobs') { const b = JSON.parse(init.body); return J({ sha: await gitBlobSha(Uint8Array.from(atob(b.content), (ch) => ch.charCodeAt(0))) }); }
-    if (p.startsWith('/contents/')) return new Response('{"old":1}\n', { status: 200 });
-    if (p === '/git/trees') return J({ sha: 'tree2' });
-    if (p === '/git/commits') return J({ sha: 'commit2' });
-    if (p === '/git/refs/heads/main') { assert.equal(JSON.parse(init.body).force, false); return J({}); }
-    return J({}, 404);
-  };
-  const m = new GitHubMirror({ token: 't', repo: 'o/r', fetchImpl: api });
-  assert.equal(await m.commit([{ path: 'kalshi/a.json', bytes: new TextEncoder().encode('{"x":1}') }], { path: 'ledger/2026-10.jsonl', text: '{"new":1}\n' }, 'capture: test'), 'commit2');
-  assert.ok(seen.includes('PATCH /git/refs/heads/main'));
+test('verify: hashes, books, chain and R2 upload-time proof pass; a changed evidence byte is detected', async () => {
+  const bucket = new FakeBucket(); const state = new MemoryState();
+  clockNow = SLOT - 14 * 60000; await tick(await ctx({ bucket, state }));
+  const store = new EvidenceStore(bucket, 'shadow/');
+  const st = await state.getState('shadow');
+  const ok = await verify({ store, state, ns: 'shadow', chain: st.chain });
+  assert.equal(ok.ok, true, JSON.stringify(ok.problems));
+  assert.equal(ok.ledger_chain.status, 'OK'); assert.equal(ok.ledger_chain.matches_durable_object, true);
+  assert.equal(ok.order_books_rederived, 4);
+  const t = ok.timestamp_proof.find((x) => x.kind === 'KALSHI_SNAPSHOT');
+  assert.equal(t.uploaded_before_slot, true);
+  const k = [...bucket.m.keys()].find((x) => x.includes('orderbook_KXU3'));
+  bucket.m.get(k).bytes = new TextEncoder().encode('{"orderbook_fp":{"yes_dollars":[["0.99","1"]],"no_dollars":[]}}');
+  const bad = await verify({ store, state, ns: 'shadow', chain: st.chain });
+  assert.equal(bad.ok, false); assert.ok(bad.problems.some((x) => x.startsWith('r2-sha')) && bad.problems.some((x) => x.startsWith('hash ')));
+});
+
+test('a failed ledger write never advances the chain and carries the entries to the next tick', async () => {
+  const bucket = new FakeBucket(); const state = new MemoryState();
+  clockNow = SLOT - 3 * 3600000;
+  const realPut = bucket.put.bind(bucket); let failLedger = true;
+  bucket.put = async (k, b, o) => { if (failLedger && k.includes('ledger-ticks/')) throw new Error('r2 503'); return realPut(k, b, o); };
+  const r1 = await tick(await ctx({ bucket, state }));
+  assert.match(r1.error, /ledger write failed/);
+  assert.equal((await state.getState('shadow')).chain, undefined);
+  const carried = (await state.getState('shadow')).unsealed.length; assert.ok(carried > 0);
+  failLedger = false; clockNow += 5 * 60000;
+  await tick(await ctx({ bucket, state }));
+  const all = lines(bucket, 'shadow/');
+  assert.equal((await verifyChain(all)).ok, true);
+  assert.ok(all.some((x) => x.type === 'INIT'), 'the entries from the failed tick were sealed, not lost');
 });

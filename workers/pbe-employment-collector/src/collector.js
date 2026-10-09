@@ -1,14 +1,16 @@
 // Employment Tier A collector, Cloudflare Workers runtime. A port of scripts/research/employment/collector/collect.mjs
 // (employment-collector/2, verified on Windows 2026-10-08) with the infrastructure replaced: R2 instead of the local disk,
-// a Durable Object instead of .state/ files and the lock, the GitHub REST API instead of git + SSH, Cloudflare's clock
-// instead of SNTP. The RULES are shared, not copied: slots, windows, MISSED/no-backfill, book derivation and fees come
-// from the same lib.mjs the Windows collector runs. DATA AND PRICES ONLY: no fitting, no forecasts, no trading.
+// a Durable Object instead of .state/ files and the lock, a hash-chained R2 audit ledger + R2 bucket locks instead of git
+// history, pushes and branch protection (no GitHub at runtime), Cloudflare's clock instead of SNTP. The RULES are shared,
+// not copied: slots, windows, MISSED/no-backfill, book derivation and fees come from the same lib.mjs the Windows collector runs. DATA AND PRICES ONLY: no fitting, no forecasts, no trading.
 import { SERIES, TICK_GAP_MS, compactUtc, deriveBook, etParts, eventTicker, parseBlsSchedule, plan, slotTimes, takerFee } from '../../../scripts/research/employment/collector/lib.mjs';
 import { clockCheck } from './http.js';
+import { chainEntries } from './ledger.js';
 import { dec, iso, sha256 } from './util.js';
 
 export const COLLECTOR_VERSION = 'employment-collector/3-worker';
 const CAL = 'calendar/bls-empsit-schedule.json';
+const NL = String.fromCharCode(10);
 const parseJ = (bytes) => JSON.parse(dec.decode(bytes));
 
 // one capture directory: raw bodies exactly as received + a meta list with sha256 per file
@@ -203,7 +205,7 @@ export function indexView(rows) {
 }
 
 // ---------- one tick ----------
-// c: { mode, ns, store, state, get, kalshiBase, now, sleep, code, host, mirror?, deliver?, healthPing?, calendarOverride?, onlyKalshi? }
+// c: { mode, ns, store, state, get, kalshiBase, now, sleep, code, host, deliver?, healthPing?, calendarOverride?, onlyKalshi? }
 export async function tick(c) {
   const holder = `${c.mode}:${crypto.randomUUID()}`;
   if (!(await c.state.acquire(c.ns, holder, 10 * 60000, c.now()))) return { skipped: 'locked' };
@@ -222,7 +224,7 @@ export async function tick(c) {
     deliveries.push(kind);
     c.ledger('ALERT_DELIVERY', { kind, results });
   };
-  const did = []; let error = null; let mirrored = null;
+  const did = []; let error = null;
   const now = c.now();
   try {
     if (!st.enabled_at) { st.enabled_at = iso(now); c.ledger('INIT', { code: c.code, enabled_at: st.enabled_at, note: `${c.mode} namespace initialised` }); }
@@ -261,9 +263,9 @@ export async function tick(c) {
     }
     if (st.heartbeat_day !== day) {
       const next = calendar.flatMap((r) => slotTimes(r).map((s) => ({ key: `${r.release_date}/${s.slot}`, at: iso(s.at) }))).filter((s) => Date.parse(s.at) > now).slice(0, 3);
-      const history = c.mirror ? await c.mirror.remoteHistory(st.last_pushed_head) : { status: 'NOT_MIRRORED' };
-      c.ledger('HEARTBEAT', { next_slots: next, remote_history: history, code: c.code });
-      if (history.status === 'REWRITTEN') await c.alert('HISTORY_REWRITTEN', `${c.mirror.repo} ${history.remote_head} no longer contains last pushed ${history.last_pushed}`);
+      const integrity = await chainTailCheck(c, st);
+      c.ledger('HEARTBEAT', { next_slots: next, ledger_chain: integrity, code: c.code });
+      if (integrity.status === 'BROKEN') await c.alert('LEDGER_CHAIN_BROKEN', JSON.stringify(integrity).slice(0, 280));
       st.heartbeat_day = day; did.push('heartbeat');
     }
     const ck = clockCheck(c.lastFiles?.() || []);
@@ -273,55 +275,42 @@ export async function tick(c) {
     did.push('ERROR');
     try { await c.alert('TICK_ERROR', String(e?.message || e).slice(0, 300)); } catch { /* best effort */ }
   }
-  // ledger: append-only rows in the Durable Object + one immutable R2 object per tick
+  // Audit ledger: every entry is hash-chained to the previous one (seq, prev, hash), and a TICK_SEAL entry binds the
+  // sha256 of every evidence object written this tick into the chain. The chained lines become ONE write-once R2 object
+  // per tick (R2 assigns its upload time; it cannot be backdated) and append-only Durable Object rows. If the R2 write
+  // fails the chain does not advance and the entries are carried to the next tick, never dropped.
+  let sealed = null;
   try {
-    if (entries.length) {
-      await c.state.appendLedger(c.ns, entries);
-      await c.store.put(`ledger-ticks/${iso(now).slice(0, 7)}/${compactUtc(now)}.jsonl`, entries.map((x) => JSON.stringify(x)).join('\n') + '\n', 'application/x-ndjson');
+    const evidence = c.store.written.map((w) => ({ path: w.path, sha256: w.sha256 }));
+    const pending = [...(st.unsealed || []), ...entries];
+    if (evidence.length || pending.length) {
+      pending.push({ type: 'TICK_SEAL', at_utc: iso(c.now()), collector: COLLECTOR_VERSION, mode: c.mode, tick_utc: iso(now), files: evidence });
+      const { out, chain } = await chainEntries(pending, st.chain);
+      const key = `ledger-ticks/${iso(now).slice(0, 7)}/${compactUtc(now)}.jsonl`;
+      await c.store.put(key, out.map((x) => JSON.stringify(x)).join(NL) + NL, 'application/x-ndjson');
+      await c.state.appendLedger(c.ns, out);
+      st.chain = chain; st.last_ledger_key = key; st.unsealed = [];
+      sealed = { seq: chain.seq, head: chain.head.slice(0, 16), entries: out.length, files: evidence.length };
     }
-  } catch (e) { error ||= `ledger write failed: ${String(e?.message || e).slice(0, 200)}`; }
-  // GitHub mirror (authoritative only): this tick's files + ledger lines; failures queue for retry, R2 keeps the originals
-  if (c.mirror) mirrored = await mirrorTick(c, st, entries, did, now);
-  if (st.push_failing_since && now - st.push_failing_since > 20 * 60000) {
-    const pf = `evidence mirror failing since ${iso(st.push_failing_since)}`;
-    const day = etParts(now).date;
-    if (st.alerts[`PUSH_FAILING|${pf.slice(0, 60)}`] !== day) { st.alerts[`PUSH_FAILING|${pf.slice(0, 60)}`] = day; if (c.deliver) await c.deliver('PUSH_FAILING', pf); await c.state.appendLedger(c.ns, [{ type: 'ALERT', at_utc: iso(c.now()), collector: COLLECTOR_VERSION, mode: c.mode, kind: 'PUSH_FAILING', message: pf }]); }
-  }
+  } catch (e) { st.unsealed = [...(st.unsealed || []), ...entries].slice(-500); error ||= `ledger write failed: ${String(e?.message || e).slice(0, 200)}`; }
   st.last_tick_utc = iso(now);
   if (error) st.last_error = { at_utc: iso(now), error }; else st.last_ok_utc = iso(now);
   for (const [k, d] of Object.entries(st.alerts)) if (d < etParts(now - 3 * 86400000).date) delete st.alerts[k];
   await c.state.putState(c.ns, st);
-  const rec = { at_utc: iso(now), scheduled_utc: c.scheduledTime ? iso(c.scheduledTime) : null, did: did.join('; ') || '-', files_written: c.store.written.length, mirror: mirrored, alerts: deliveries, error };
+  const rec = { at_utc: iso(now), scheduled_utc: c.scheduledTime ? iso(c.scheduledTime) : null, did: did.join('; ') || '-', files_written: c.store.written.length, ledger: sealed, alerts: deliveries, error };
   await c.state.addTick(c.ns, rec);
   await c.state.release(c.ns, holder);
-  if (c.healthPing) await c.healthPing(!error && mirrored?.ok !== false);
+  if (c.healthPing) await c.healthPing(!error);
   return rec;
 }
 
-async function mirrorTick(c, st, entries, did, now) {
-  const ledgerText = (list) => list.map((x) => JSON.stringify(x)).join('\n') + (list.length ? '\n' : '');
-  const item = { paths: c.store.written.filter((w) => !w.path.startsWith('ledger-ticks/')).map((w) => w.path), ledger: ledgerText(entries), ledger_path: `ledger/${iso(now).slice(0, 7)}.jsonl`, message: `capture: ${did.join('; ') || 'ledger'}` };
-  const queue = [...(await c.state.pendingMirror(c.ns)), item];
-  let last = null; let itemDone = false;
-  for (const q of queue) {
-    if (q === item) itemDone = true;
-    if (!q.paths.length && !q.ledger) { if (q.id) await c.state.clearMirror(c.ns, q.id); continue; }
-    try {
-      const files = [];
-      for (const p of q.paths) files.push({ path: p, bytes: c.store.written.find((w) => w.path === p)?.bytes || await c.store.getBytes(p) });
-      const sha = await c.mirror.commit(files, { path: q.ledger_path, text: q.ledger }, `${q.message}\n\ncollector ${COLLECTOR_VERSION} code ${c.code.commit} worker ${c.code.worker_version_id} (${c.mode})`);
-      if (sha) st.last_pushed_head = sha;
-      st.push_failing_since = null;
-      if (q.id) await c.state.clearMirror(c.ns, q.id);
-      last = { ok: true, commit: sha, files: files.length };
-    } catch (e) {
-      st.push_failing_since ||= now;
-      if (q === item) itemDone = false;
-      last = { ok: false, error: String(e?.message || e).slice(0, 200), queued: queue.length };
-      break;
-    }
-  }
-  // anything not committed this tick (this tick's item included) stays queued, in order, for the next tick
-  if (!itemDone) await c.state.queueMirror(c.ns, item);
-  return last;
+// Daily: the last sealed ledger object in R2 must still end at the chain head held by the Durable Object.
+async function chainTailCheck(c, st) {
+  if (!st.chain) return { status: 'EMPTY' };
+  try {
+    const b = await c.store.getBytes(st.last_ledger_key);
+    if (!b) return { status: 'BROKEN', reason: 'last ledger object missing', key: st.last_ledger_key };
+    const last = JSON.parse(dec.decode(b).trim().split(NL).at(-1));
+    return last.hash === st.chain.head && last.seq === st.chain.seq ? { status: 'OK', seq: st.chain.seq, head: st.chain.head } : { status: 'BROKEN', reason: 'tail mismatch', key: st.last_ledger_key, r2_seq: last.seq, do_seq: st.chain.seq };
+  } catch (e) { return { status: 'CHECK_FAILED', error: String(e?.message || e).slice(0, 160) }; }
 }

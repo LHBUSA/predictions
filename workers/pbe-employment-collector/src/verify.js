@@ -1,13 +1,17 @@
 // verify: re-hash every evidence object in R2 against both its recorded capture metadata and the sha256 stored at upload,
-// re-derive every order book, check MISSED vs OK per slot, parse every ledger line, and cross-check the Durable Object
-// capture index against R2. Optional prefix keeps one call inside Worker limits as the archive grows.
+// re-derive every order book, check MISSED vs OK per slot, verify the hash-chained ledger end to end (and that every
+// TICK_SEAL'd file is still in R2 with the sealed sha256), cross-check the Durable Object index, and report the timestamp
+// proof: each capture's R2 upload time (assigned by R2, cannot be backdated) against its recorded completion time and,
+// for slot snapshots, against the slot and the release. Optional prefix keeps one call inside Worker limits.
 import { deriveBook } from '../../../scripts/research/employment/collector/lib.mjs';
+import { verifyChain } from './ledger.js';
 import { dec, sha256 } from './util.js';
 
-export async function verify({ store, state, ns, mirror, lastPushed, prefix = '' }) {
-  const objects = await store.list(prefix);
+export async function verify({ store, state, ns, chain, prefix = '' }) {
+  // the authoritative root never includes the shadow or rehearsal namespaces
+  const objects = (await store.list(prefix)).filter((o) => store.prefix !== '' || !/^(shadow|rehearsal)\//.test(o.path));
   const byPath = new Map(objects.map((o) => [o.path, o]));
-  let files = 0; let bad = 0; let snaps = 0; let rederived = 0; let ledgerLines = 0; let objectsRehashed = 0; const problems = [];
+  let files = 0; let bad = 0; let snaps = 0; let rederived = 0; let ledgerLines = 0; let objectsRehashed = 0; const problems = []; const timing = [];
   const bytesOf = async (p) => store.getBytes(p);
   for (const o of objects) {
     const b = await bytesOf(o.path); objectsRehashed += 1;
@@ -19,6 +23,14 @@ export async function verify({ store, state, ns, mirror, lastPushed, prefix = ''
         files += 1;
         const fb = await bytesOf(`${dir}/${m.file}`);
         if (!fb || (await sha256(fb)) !== m.sha256) { bad += 1; problems.push(`hash ${o.path} ${m.file}`); }
+      }
+      const doneAt = j.completed_utc || j.captured_utc || j.first_seen_utc || j.file?.response_completed_utc;
+      if (doneAt && o.uploaded) {
+        const lag = (Date.parse(o.uploaded) - Date.parse(doneAt)) / 1000;
+        const t = { path: dir, kind: j.kind, completed_utc: doneAt, r2_uploaded_utc: o.uploaded, upload_lag_s: +lag.toFixed(1) };
+        if (j.kind === 'KALSHI_SNAPSHOT' && j.slot_at_utc) Object.assign(t, { slot_at_utc: j.slot_at_utc, uploaded_before_slot: Date.parse(o.uploaded) < Date.parse(j.slot_at_utc), uploaded_before_release: Date.parse(o.uploaded) < Date.parse(j.release.release_at) });
+        timing.push(t);
+        if (lag < -2) problems.push(`recorded completion is after the R2 upload time ${dir}`);
       }
       if (j.kind === 'KALSHI_SNAPSHOT') {
         snaps += 1;
@@ -37,7 +49,17 @@ export async function verify({ store, state, ns, mirror, lastPushed, prefix = ''
   for (const r of rows.filter((x) => x.kind === 'MISSED')) if (okKeys.has(r.key)) problems.push(`MISSED and OK both present for ${r.key}`);
   for (const o of objects.filter((x) => x.path.endsWith('/MISSED.json'))) { const key = o.path.slice('kalshi/'.length, -'/MISSED.json'.length); if (okKeys.has(key)) problems.push(`MISSED and OK both present for ${key}`); }
   for (const r of rows.filter((x) => x.path && x.kind === 'KALSHI_SNAPSHOT' && x.path.startsWith(prefix))) if (!byPath.has(`${r.path}/snapshot.json`)) problems.push(`index without evidence ${r.path}`);
-  const remote = mirror ? await mirror.remoteHistory(lastPushed) : { status: 'NOT_MIRRORED' };
-  if (remote.status === 'REWRITTEN') problems.push(`remote history rewritten: ${JSON.stringify(remote)}`);
-  return { prefix, objects: objects.length, objects_rehashed: objectsRehashed, files_hashed: files, hash_mismatches: bad, kalshi_snapshots: snaps, order_books_rederived: rederived, ledger_lines: ledgerLines, index_rows: rows.length, remote_history: remote, problems, ok: problems.length === 0 };
+  // the ledger chain, end to end (only meaningful for an unfiltered verify of the namespace)
+  let ledger = { status: 'SKIPPED (prefix filter)' };
+  if (!prefix) {
+    const lines = [];
+    for (const o of objects.filter((x) => x.path.startsWith('ledger-ticks/')).sort((a, b) => a.path.localeCompare(b.path))) lines.push(...dec.decode(await bytesOf(o.path)).split(String.fromCharCode(10)).filter(Boolean).map((l) => JSON.parse(l)));
+    const v = await verifyChain(lines);
+    let sealedFiles = 0;
+    for (const x of lines.filter((l) => l.type === 'TICK_SEAL')) for (const f of x.files) { sealedFiles += 1; const o = byPath.get(f.path); if (!o) problems.push(`sealed file missing ${f.path}`); else if (o.sha256 !== f.sha256 && !f.path.startsWith('calendar/bls-empsit-schedule.json')) problems.push(`sealed file changed ${f.path}`); }
+    if (!v.ok) problems.push(`ledger chain broken at seq ${v.seq}: ${v.problem}`);
+    else if (chain && (chain.seq !== v.seq || chain.head !== v.head)) problems.push(`ledger chain in R2 (seq ${v.seq}) differs from the Durable Object head (seq ${chain.seq})`);
+    ledger = { status: v.ok ? 'OK' : 'BROKEN', entries: lines.length, seq: v.seq, head: v.head ?? null, sealed_files: sealedFiles, matches_durable_object: !!chain && chain.seq === v.seq && chain.head === v.head };
+  }
+  return { prefix, objects: objects.length, objects_rehashed: objectsRehashed, files_hashed: files, hash_mismatches: bad, kalshi_snapshots: snaps, order_books_rederived: rederived, ledger_lines: ledgerLines, index_rows: rows.length, ledger_chain: ledger, timestamp_proof: timing, problems, ok: problems.length === 0 };
 }

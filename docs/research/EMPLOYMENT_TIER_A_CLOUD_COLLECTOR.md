@@ -1,104 +1,86 @@
 # Employment Tier A collector on Cloudflare Workers (`pbe-employment-collector`)
 
-Owner direction, 2026-10-09: move the Tier A collector off the Windows PC and onto Cloudflare Workers, keeping every
-approved collection rule and every evidence-integrity rule. Scope is unchanged: data and market prices only. No model
-fitting, no forecasts, no trading. Tier B stays on HOLD. CPI SHADOW, pbe-predictions, tkmln and customer-facing systems
-are not touched; this is a separate Worker.
+## Decisions and scope
+
+- **2026-10-09, owner direction:** Cloudflare Workers is the permanent runtime for the Tier A collector.
+- **Resources approved** ("yes, create it", under $1/month): Worker `pbe-employment-collector`, R2 bucket `pbe-employment-evidence`, Durable Object `CollectorState`, a 5-minute cron.
+- **2026-10-09, owner correction:** no GitHub at runtime. R2 is the authoritative evidence archive. The historical GitHub evidence repo stays intact and read-only.
+- **Scope is unchanged:** data and market prices only. No fitting, no forecasts, no trading. Tier B stays on HOLD.
+- **Isolation:** this is a separate Worker. CPI SHADOW, pbe-predictions, tkmln and customer-facing systems are not touched.
 
 ## What stays identical
 
-The rules module is **shared, not copied**. `workers/pbe-employment-collector` imports
-`scripts/research/employment/collector/lib.mjs`, the same file the Windows collector runs. That module defines:
-- the T-7D / T-3D / T-1D slots at 20:00 America/New_York, with the window [slot - 15 min, slot);
+The rules are **shared, not copied**: the Worker imports `scripts/research/employment/collector/lib.mjs`, the module
+the Windows collector runs. It covers:
+- the T-7D/T-3D/T-1D slots at 20:00 America/New_York, with the window [slot - 15 min, slot);
 - MISSED with no backfill, and the enabled-at guard;
-- settlement captures at +1 day and +3 days;
-- the BLS current and archive capture windows;
+- settlement captures at +1 and +3 days;
+- the BLS capture windows;
 - order-book derivation (YES ask = 1 - best NO bid);
 - the quadratic taker fee.
 
-`src/collector.js` is a line-for-line port of `collect.mjs`: the same requests, the same file names, the same
-`snapshot.json`, `capture.json` and `settlement.json` fields, and the same ledger entry types and alert kinds.
+`src/collector.js` ports `collect.mjs` line for line. It keeps the same requests, the same file names, the same
+snapshot, capture and settlement fields, and the same ledger and alert kinds.
 
-**Replay equivalence: PASS (2026-10-09).** `scripts/replay-equivalence.mjs` served the raw bytes recorded by the
-Windows collector, URL for URL, to the Worker's capture code and compared every derived field.
-- All 4 snapshots tested are equivalent: the 3 rehearsal T-1D captures and the real ADHOC capture.
-- File names, URLs, statuses, byte counts and sha256s match.
-- All 27 order books, the fees, the rules hashes, the market records, completeness and the close-date checks match.
-- Negative control: changing one order-book byte makes the check fail on both the series and the files.
+**Replay equivalence: PASS.** `scripts/replay-equivalence.mjs` replays the bytes the Windows collector recorded through
+the Worker code:
+- 4/4 snapshots are identical (the 3 rehearsal T-1D captures and the real ADHOC capture);
+- all 27 books, the fees, rules hashes, file sha256s and statuses match;
+- negative control: a single tampered byte is detected.
 
-## What is replaced
+## Architecture (no GitHub, git, SSH or local disk)
 
-| Windows | Cloudflare |
+| Need | Cloudflare mechanism |
 |---|---|
-| Task Scheduler, every 5 min while signed in | Cron Trigger `*/5 * * * *` |
-| `E:\` evidence clone | R2 bucket `pbe-employment-evidence`. Write-once: rewriting a key with different bytes fails the tick. R2 verifies each upload's sha256 server-side. |
-| `.state/` files and lock file | SQLite Durable Object `CollectorState`: lease (single writer), scheduler state, capture index, append-only ledger, tick log, mirror retry queue |
-| git + SSH deploy key push | GitHub REST API (fine-grained token). Each blob's git object id is checked against our bytes, and refs are updated without force (branch protection unchanged). Failures queue and retry; R2 keeps the originals. |
-| SNTP + Windows Time | Cloudflare's NTP-disciplined runtime clock. Every response's server `Date` header is kept, and the median difference is checked (CLOCK alert above 2 s). |
-| Windows toast + `gh` issue | ntfy/Slack webhook + GitHub issue + `/health` (503 when stale) + healthchecks.io dead-man's switch |
-| Node `fs` / `child_process` | none: R2, Durable Object and `fetch` only |
+| Schedule | Cron Trigger `*/5 * * * *` (slot windows get ticks at :45, :50 and :55) |
+| Original bytes | R2 `pbe-employment-evidence`. Write-once in code: a rewrite with different bytes fails the tick. R2 checks each upload's sha256 server-side and stores it as metadata. **R2 bucket lock rules** make evidence prefixes non-deletable and non-overwritable at the platform level. |
+| State, idempotency, concurrency | SQLite Durable Object `CollectorState`:<br>- one lease per namespace;<br>- scheduler state;<br>- capture index (written only after the bytes are in R2);<br>- append-only ledger and tick rows. |
+| Audit trail | Hash-chained ledger (`seq`/`prev`/`hash`). Each tick's `TICK_SEAL` entry seals the sha256 of every evidence object it wrote. The chain is held as one write-once R2 object per tick (`ledger-ticks/`) plus Durable Object rows. A failed ledger write never advances the chain and carries the entries to the next tick. The daily heartbeat checks the R2 tail against the Durable Object head. |
+| Timestamps | Cloudflare's NTP-disciplined runtime clock. Every response's server `Date` header is kept, and the median difference is checked (CLOCK alert above 2 s). The external, non-backdatable time of storage is the R2 upload time (see verify). |
+| Kalshi | Signed Ed25519 reads (`src/kalshi-auth.js`, vendored from propsports-markets). Unsigned requests from Cloudflare are rate-limited, so **without a key no trade-API request is sent**. |
+| Health / alerts | `GET /health` (503 when the last tick is over 15 min old, errored, or has unsealed entries). Every alert goes to the ledger and to the ntfy/Slack webhook ([SHADOW]-prefixed in shadow). A healthchecks.io ping each tick acts as the dead-man's switch. |
+| Verification | `GET /admin/verify?ns=` checks, end to end:<br>- object hashes and recorded file hashes;<br>- order-book re-derivation;<br>- MISSED vs OK per slot;<br>- the ledger chain against the Durable Object head;<br>- sealed files still present with their sealed hash;<br>- `timestamp_proof` (R2 upload time vs completion, slot and release). |
 
-## Cloudflare compatibility (measured 2026-10-09 09:21Z from the Workers runtime, colo ORD)
+## Cloudflare compatibility (measured 2026-10-09 from the Workers runtime)
 
-| Source | Result |
-|---|---|
-| BLS schedule, `empsit.htm`, dated archive | 200, bytes identical to a direct fetch |
-| DOL `ui/data.pdf`, `oui.doleta.gov/press/2026/` | 200, bytes identical |
-| Kalshi contract-terms PDFs (`assets.kalshi.com`) | 200, identical; sha256 `bb568889…` = the stored U3 terms |
-| Kalshi trade API, **unsigned** | **Blocked**: HTTP 429 from Cloudflare egress on both documented hosts (recorded 2026-10-03, CloudFront). Not re-probed, on owner instruction. |
-| Kalshi trade API, **signed** (Ed25519 API key) | Works from Cloudflare (propsports-markets since 2026-10-03; read budget 200/s). The collector uses ~35 reads per snapshot. |
+- BLS schedule, current and archive pages; DOL `data.pdf` and the press listing; Kalshi terms PDFs: all 200, byte-identical to direct downloads.
+- Kalshi trade API, unsigned: blocked (429 from Cloudflare egress, recorded 2026-10-03; not re-probed).
+- Kalshi trade API, signed: works (propsports-markets, read budget 200/s). This collector needs about 35 reads per snapshot.
+- Limits: about 40 subrequests per tick against 10,000; a snapshot takes about 10 s against a 15-minute cron wall limit.
 
-The existing `propsports-markets` `/admin/kalshi` passthrough was not used, for three reasons:
-- its path allowlist excludes `/markets/{ticker}/orderbook`;
-- it re-serializes the body, so the original bytes are lost;
-- it requires the broad admin token.
+## GitHub requirements (flagged, not changed)
 
-The collector therefore signs its own requests with `src/kalshi-auth.js`, vendored unchanged from propsports-markets
-@ 6ca6c0e. **Without a key it fails closed and sends no trade-API request.**
+V2 protocol B2.5 (frozen) defines capture validity by the GitHub push record. **Proposed Amendment B3**
+(`EMPLOYMENT_V2_AMENDMENT_B3_PROPOSED.md`) gives the cloud-native equivalent. It awaits the owner's decision; until
+then cloud captures are shadow evidence only.
 
-Limits: Workers Paid allows 10,000 subrequests per invocation; the largest tick (one snapshot) makes about 40. Cron
-wall time can reach 15 minutes; a snapshot takes about 10 s.
+## Modes
 
-## Modes, shadow and cutover
+| `MODE` | Writes | Alerts / healthcheck |
+|---|---|---|
+| `shadow` (deployed) | R2 `shadow/`, namespace `shadow` | webhook `[SHADOW]`, `SHADOW_HEALTHCHECK_URL` |
+| `authoritative` (only after owner-approved cutover) | R2 root, namespace `auth` | webhook, `HEALTHCHECK_URL` |
+| `off` | nothing | none |
 
-| `MODE` | Writes | GitHub | Alerts |
-|---|---|---|---|
-| `shadow` | R2 `shadow/`, namespace `shadow` | never | webhook only if `SHADOW_ALERTS=true` |
-| `authoritative` | R2 root, namespace `auth` | mirror to `LHBUSA/pbe-employment-evidence` | webhook + issue + healthcheck |
-| `off` | nothing | nothing | none |
+`REHEARSAL` adds an isolated cutoff-window rehearsal under `rehearsal/<id>/`: Kalshi slots only, no external alerts.
+Deploy only with `scripts/deploy.mjs`. It refuses a dirty or unpushed tree, runs the tests, and stamps `CODE_COMMIT` and
+`CODE_FILES` (the sha256 of each source file) into every capture.
 
-A single authoritative writer is guaranteed by construction:
-- shadow never writes GitHub or the R2 root;
-- the Windows tasks are disabled before `MODE=authoritative` is deployed.
+## Proposed cutover (NOT approved; needs separate owner approval and an adopted B3)
 
-`REHEARSAL` adds an isolated cutoff-window run under `rehearsal/<id>/`: Kalshi slots only, no GitHub, no external alerts.
+1. `Disable-ScheduledTask` for `EmploymentCollector-Tick` and `-Wake`. Wait for the last tick and confirm it pushed (git log).
+2. `node scripts/upload-historical.mjs E:\Workers\employment-evidence <worker-url> <admin-token-file>`. It requires:
+   - a clean clone;
+   - `git fsck --strict`;
+   - HEAD = GitHub main;
+   - every file equal to its committed blob.
 
-**Cutover**, after the shadow passes:
-1. Disable the Windows tasks `EmploymentCollector-Tick` and `-Wake`.
-2. Confirm their last push.
-3. Run `POST /admin/import-github`. It copies the GitHub evidence byte-for-byte (git object id checked) into the R2 root and seeds the `auth` index, `enabled_at` and the last pushed head.
-4. Deploy with `MODE=authoritative`.
-5. Run `/admin/verify?ns=auth`.
+   It uploads byte-for-byte into the R2 root through `PUT /admin/historical`, where the sha256 is checked before writing.
+3. `POST /admin/seed-auth`. This builds the `auth` index from R2 and opens the auth chain with an IMPORT entry that seals every imported object.
+4. `wrangler deploy` with `MODE=authoritative` (through `deploy.mjs`), then run `/admin/verify?ns=auth`.
 
 **Rollback:**
-1. Deploy with `MODE=shadow` (or roll back the Worker version).
+1. Redeploy with `MODE=shadow` (or roll back the Worker version).
 2. Re-enable the Windows tasks.
 
-The GitHub evidence repo remains the shared audit trail throughout, so no evidence is lost in either direction.
-
-Deploy only with `scripts/deploy.mjs`. It refuses a dirty or unpushed tree, runs the tests, and stamps `CODE_COMMIT` and
-`CODE_FILES` (the sha256 of each source file, including the rules lib) into every capture's `code`.
-
-## Owner prerequisites (not created yet)
-
-- Approval of the resources (estimate below).
-- Kalshi API key secrets (`KALSHI_API_KEY_ID`, `KALSHI_PRIVATE_KEY`).
-- A fine-grained GitHub token for the evidence repo only.
-- The alert channel.
-
-Estimated incremental cost, on the existing Workers Paid plan:
-- **R2:** about 0.5 GB per year (≤ $0.01/month), plus about 5,000 writes per month (≈ $0.02).
-- **Worker:** 8,928 cron runs per month, inside the plan's included requests and CPU.
-- **Durable Object:** about 9,000 requests per month, inside the included allowance.
-
-Expected total: **under $0.10/month**; worst case under $1/month.
+The R2 archive and the historical GitHub repo are both kept. Nothing is deleted in either direction.
