@@ -316,7 +316,10 @@ export async function tick(c) {
         st.last_anchor = { seq: st.chain.seq, head: st.chain.head, tsa: a.tsa, gen_time_utc: a.gen_time_utc, key };
       } else {
         sealed.anchor = { failed: a.errors };
-        if (c.deliver) await c.deliver('ANCHOR_FAILED', `RFC 3161 anchor for ledger seq ${st.chain.seq} failed at every TSA`);
+        const msg = `RFC 3161 anchor for ledger seq ${st.chain.seq} failed at every TSA`;
+        const results = c.deliver ? await c.deliver('ANCHOR_FAILED', msg) : { external: 'disabled' };
+        // the chain is already sealed for this tick: carry the alert into the next tick's seal (never lost)
+        st.unsealed = [...(st.unsealed || []), { type: 'ALERT', at_utc: iso(c.now()), collector: COLLECTOR_VERSION, mode: c.mode, kind: 'ANCHOR_FAILED', message: msg, errors: a.errors }, { type: 'ALERT_DELIVERY', at_utc: iso(c.now()), collector: COLLECTOR_VERSION, mode: c.mode, kind: 'ANCHOR_FAILED', results }];
       }
     } catch (e) { sealed.anchor = { failed: String(e?.message || e).slice(0, 160) }; }
   }
