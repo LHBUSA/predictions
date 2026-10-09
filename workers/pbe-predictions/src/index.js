@@ -28,6 +28,7 @@ import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './i
 import { cachedInsightsDesk } from './insights/page-cache.js';
 import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from './insights/render.js';
 import { VERTICALS, storyBySlug } from './insights/stories.js';
+import { handleSignal10, signal10Tick } from './signal10-api.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
 import { runIntradayScoring, intradayReport, intradayScoringDue, shadowCompareReport } from './intraday-scoring.js';
@@ -103,6 +104,9 @@ export default {
       // CPI V1 PRIVATE SHADOW (sql/015): :09 and :39, own waitUntil, never inside the core cycle. Kill switch CPI_SHADOW.
       if (env.CPI_SHADOW === 'true' && cpiShadowDue(minuteAt)) ctx.waitUntil(runCpiShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), now: minuteAt })
         .then((r) => console.log(JSON.stringify({ cpi_shadow: r }))).catch((e) => console.error('cpi shadow failed', e.stack || e.message)));
+      // PBE Signal 10 paper account (issue #52, sql/016): time-gated OPEN/EOD/MARK jobs, own waitUntil. Kill switch SIGNAL10.
+      if (env.SIGNAL10 === 'true') ctx.waitUntil(signal10Tick({ ...env, __store: storeFor(env) }, minuteAt)
+        .then((r) => { if (Object.keys(r).length) console.log(JSON.stringify({ signal10: r })); }).catch((e) => console.error('signal10 failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })
         .then((r) => console.log(JSON.stringify({ btc_shadow: r }))).catch((e) => console.error('btc shadow failed', e.stack || e.message)));
@@ -456,6 +460,10 @@ export default {
         const exclude = new Set(st.events);
         const related = d.events.filter((e) => e.category === live?.event.category && !exclude.has(e.slug) && e.state !== 'MARKET_MONITORING').sort((x, y) => y.max_abs_divergence - x.max_abs_divergence).slice(0, 4);
         return html(renderArticle(st, item.built, { live, related, model: FAMILIES.find((f) => f.id === live?.event.model_family) || null, words: item.words }).replace('content="index,follow,max-image-preview:large"', 'content="noindex"'), 200, 'no-store');
+      }
+      if (p.startsWith('/v1/signal10') || p.startsWith('/admin/signal10')) {
+        const r = await handleSignal10({ req, env, ctx, p, url, store: storeFor(env), requireAllAccess, privateJson, json, tokenMatches });
+        if (r) return r;
       }
       if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405, 'no-store');
       const store = storeFor(env);

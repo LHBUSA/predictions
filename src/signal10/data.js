@@ -32,7 +32,10 @@ export function parseYahooChart(json, { cutoffDate } = {}) {
   for (let i = 0; i < res.timestamp.length; i++) {
     const d = nyDate(res.timestamp[i], off);
     if (cutoffDate && d > cutoffDate) continue;
-    const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i], v = q.volume?.[i], a = adj[i];
+    const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i], v = q.volume?.[i];
+    let a = adj[i];
+    // an in-progress session bar can arrive without adjclose: no dividend adjustment exists after it yet, so adj = close
+    if (!(typeof a === 'number' && a > 0) && typeof c === 'number' && c > 0 && i === res.timestamp.length - 1) { a = c; issues.push({ d, issue: 'adj_missing_last_bar' }); }
     if (seen.has(d)) { issues.push({ d, issue: 'duplicate_bar' }); continue; }
     if (![o, h, l, c, a].every((x) => typeof x === 'number' && x > 0)) { issues.push({ d, issue: 'incomplete_bar' }); continue; }
     seen.add(d);
