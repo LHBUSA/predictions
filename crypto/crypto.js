@@ -5,12 +5,14 @@ const pct=(v)=>v==null?'—':`${(Number(v)*100).toFixed(1)}%`;
 const usd=(v,d=2)=>v==null?'—':Number(v).toLocaleString(undefined,{style:'currency',currency:'USD',minimumFractionDigits:d,maximumFractionDigits:d});
 const ago=(iso)=>{if(!iso)return'—';const sec=Math.max(0,Math.round((Date.now()-Date.parse(iso))/1000));return sec<10?'just now':sec<60?`${sec}s ago`:sec<3600?`${Math.round(sec/60)}m ago`:`${Math.round(sec/3600)}h ago`;};
 const digits=(v)=>{const n=Math.abs(Number(v));return n>=1000?2:n>=1?4:n>=.01?5:8};
+// Simple Icons no longer publishes avalanche, aave, uniswap, shiba-inu, arbitrum, ethereumclassic (404 on 2026-10-09):
+// those coins use the text badge directly instead of a failing request.
 const COIN_BRAND={
   BTC:['bitcoin','F7931A'],ETH:['ethereum','627EEA'],SOL:['solana','14F195'],DOGE:['dogecoin','C2A633'],
-  XRP:['xrp','25A768'],ADA:['cardano','0D1E30'],LINK:['chainlink','375BD2'],AVAX:['avalanche','E84142'],
-  LTC:['litecoin','345D9D'],BCH:['bitcoincash','8DC351'],AAVE:['aave','B6509E'],UNI:['uniswap','FF007A'],
-  DOT:['polkadot','E6007A'],XLM:['stellar','7D00FF'],SHIB:['shiba-inu','FFA409'],ARB:['arbitrum','28A0F0'],
-  OP:['optimism','FF0420'],ETC:['ethereumclassic','328332']
+  XRP:['xrp','25A768'],ADA:['cardano','0D1E30'],LINK:['chainlink','375BD2'],
+  LTC:['litecoin','345D9D'],BCH:['bitcoincash','8DC351'],
+  DOT:['polkadot','E6007A'],XLM:['stellar','7D00FF'],
+  OP:['optimism','FF0420']
 };
 function coinLogo(asset){
   const x=COIN_BRAND[String(asset||'').toUpperCase()];
