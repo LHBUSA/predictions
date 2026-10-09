@@ -23,6 +23,7 @@ import { publicEventShell, premiumEventView, eventCsv, deskPreview, ALL_ACCESS_R
 import { storyImage } from './insights/images.js';
 import { eventCard, cardSvg } from './og-render.js';
 import { publishedStories, storyForSlug, storiesForEvent, buildStory } from './insights/service.js';
+import { cachedInsightsDesk } from './insights/page-cache.js';
 import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from './insights/render.js';
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
@@ -801,18 +802,20 @@ export default {
       if (p === '/news-sitemap.xml') return xml(newsSitemapXml(await publishedStories(store)));
       if (p === '/pages/insights' || p.startsWith('/pages/insights/')) {
         const rest = decodeURIComponent(p.slice('/pages/insights'.length).replace(/^\//, ''));
-        const items = await publishedStories(store);
-        if (!items.length) return html(renderNotFound('/insights/'), 404);
         if (!rest || VERTICALS[rest]) {
-          if (rest && !items.some((i) => i.story.vertical === rest)) return html(renderNotFound(`/insights/${rest}/`), 404);
-          const d = await desk(store);
-          const gaps = d.events.filter((e) => e.headline?.divergence_pts !== null && e.headline?.divergence_pts !== undefined && e.state !== 'MARKET_MONITORING' && (!rest || e.category.toLowerCase().replace('_', '-') === rest)).sort((a, b) => Math.abs(b.headline.divergence_pts) - Math.abs(a.headline.divergence_pts)).slice(0, 6);
-          const cal = (await calendar(store)).events.filter((e) => !rest || e.category.toLowerCase().replace('_', '-') === rest).slice(0, 6);
-          const mods = (await models(store)).families.filter((f) => f.state !== 'SHADOW' && f.state !== 'MONITORING');
-          return html(renderDesk({ items, vertical: rest || null, gaps, calendar: cal, models: mods }), 200, 'public, max-age=120');
+          return cachedInsightsDesk(rest || 'all', async () => {
+            const [items, d, calData, modelData] = await Promise.all([
+              publishedStories(store), desk(store), calendar(store), models(store),
+            ]);
+            if (!items.length || (rest && !items.some((i) => i.story.vertical === rest))) return html(renderNotFound('/insights/'), 404);
+            const gaps = d.events.filter((e) => e.headline?.divergence_pts !== null && e.headline?.divergence_pts !== undefined && e.state !== 'MARKET_MONITORING' && (!rest || e.category.toLowerCase().replace('_', '-') === rest)).sort((a, b) => Math.abs(b.headline.divergence_pts) - Math.abs(a.headline.divergence_pts)).slice(0, 6);
+            const cal = calData.events.filter((e) => !rest || e.category.toLowerCase().replace('_', '-') === rest).slice(0, 6);
+            const mods = modelData.families.filter((f) => f.state !== 'SHADOW' && f.state !== 'MONITORING');
+            return html(renderDesk({ items, vertical: rest || null, gaps, calendar: cal, models: mods }), 200, 'public, max-age=120');
+          });
         }
         if (!/^[a-z0-9-]{3,160}$/.test(rest)) return html(renderNotFound(`/insights/${rest}`), 404);
-        const item = items.find((i) => i.story.slug === rest);
+        const item = await storyForSlug(store, rest);
         if (!item) return html(renderNotFound(`/insights/${rest}`), 404);
         const [live, d] = await Promise.all([eventRecord(store, item.story.primary), desk(store)]);
         const cat = live?.event.category;
