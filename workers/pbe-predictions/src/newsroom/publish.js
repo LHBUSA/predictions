@@ -7,6 +7,7 @@
 // story stores its trigger, cutoff and claims and is rebuilt from the immutable ledger and re-validated on every
 // render (a story that no longer validates is not served). No LLM text anywhere.
 import { loadEventPacket } from '../insights/packet.js';
+import { pool } from '../../../../src/engine/store.js';
 import { buildMover, buildResolution } from './templates.js';
 import { validateStory } from './engine.js';
 import { NEWSROOM_RULES, MOVER } from './config.js';
@@ -93,6 +94,7 @@ export async function autoPublish(store, report, { cycleAt, engineCompletedAt = 
 
 let cache = { at: 0, items: [] };
 const TTL = 5 * 60 * 1000;
+const REBUILD_CONCURRENCY = 6; // Workers allow 6 simultaneous outbound connections per request
 
 async function rebuild(store, row, loadPacket = loadEventPacket) {
   const t = row.evidence.trigger;
@@ -134,20 +136,22 @@ export async function publishedNewsroomStories(store, { fresh = false, loadPacke
   let pubs;
   try { pubs = await store.select('pred_newsroom_transitions', { select: 'story_id,at', state: 'eq.PUBLISHED' }); } catch (e) { console.log(JSON.stringify({ newsroom: 'read_failed', error: e.message })); return cache.items; }
   const stories = pubs.length ? await store.selectIn('pred_newsroom_stories', { select: '*' }, 'story_id', pubs.map((p) => p.story_id)) : [];
-  const items = [];
-  for (const row of stories) {
+  // Rebuild + revalidate every published story, a few at a time (each loads an event packet: a serial loop made
+  // the cold Insights desk take 18-26 s). Same rules, same per-story isolation; results keep the input order.
+  const built = await pool(stories, REBUILD_CONCURRENCY, async (row) => {
     const pub = pubs.find((p) => p.story_id === row.story_id);
     try {
-      if (!PUBLISHABLE_CLASSES.includes(row.story_class)) continue;
+      if (!PUBLISHABLE_CLASSES.includes(row.story_class)) return null;
       const { packet, built } = await rebuild(store, row, loadPacket);
       const problems = built.ok ? validateStory(built, packet, row.story_cutoff) : [built.reason];
-      if (problems.length) { console.log(JSON.stringify({ newsroom: 'published_story_failed_revalidation', story_id: row.story_id, problems })); continue; }
-      items.push({
+      if (problems.length) { console.log(JSON.stringify({ newsroom: 'published_story_failed_revalidation', story_id: row.story_id, problems })); return null; }
+      return {
         story: { slug: row.slug, story_id: row.story_id, family: row.story_class, family_label: FAMILY[row.story_class], vertical: VERTICAL[packet.event.category] || 'weather', events: [packet.event.slug], primary: packet.event.slug, as_of: row.story_cutoff, published_at: new Date(pub.at).toISOString(), link_title: built.title, automated: true, ...imageSubject(row, packet) },
         built, words: null,
-      });
-    } catch (e) { console.log(JSON.stringify({ newsroom: 'published_story_error', story_id: row.story_id, error: e.message })); }
-  }
+      };
+    } catch (e) { console.log(JSON.stringify({ newsroom: 'published_story_error', story_id: row.story_id, error: e.message })); return null; }
+  });
+  const items = built.filter(Boolean);
   cache = { at: Date.now(), items };
   return items;
 }
