@@ -5,7 +5,7 @@
 <meta property="og:type" content="website"><meta property="og:site_name" content="PropBetEdge Predictions"><meta property="og:title" content="Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge Predictions"><meta property="og:description" content="Every tracked real-world event market on Kalshi and Polymarket — weather, rates, macro, business, space, public health and energy — with close times, live prices and, with All Access, the PBE probability and model-vs-market divergence.">
 <meta property="og:url" content="https://predictions.propbetedge.ai/desk/"><meta property="og:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge Predictions"><meta name="twitter:description" content="Every tracked real-world event market on Kalshi and Polymarket — weather, rates, macro, business, space, public health and energy — with close times, live prices and, with All Access, the PBE probability and model-vs-market divergence."><meta name="twitter:image" content="https://predictions.propbetedge.ai/og/predictions-card.jpg">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261009ia1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/site.css?v=20261009ia2">
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "NewsMediaOrganization", "@id": "https://propbetedge.ai/#organization", "name": "PropBetEdge", "url": "https://propbetedge.ai/", "logo": {"@type": "ImageObject", "@id": "https://propbetedge.ai/#logo", "url": "https://propbetedge.ai/logo/pbe-full-400.png", "width": 400, "height": 100}}, {"@type": "WebSite", "@id": "https://predictions.propbetedge.ai/#website", "name": "PropBetEdge Predictions", "url": "https://predictions.propbetedge.ai/", "publisher": {"@id": "https://propbetedge.ai/#organization"}, "isPartOf": {"@id": "https://propbetedge.ai/#website"}, "image": {"@type": "ImageObject", "@id": "https://predictions.propbetedge.ai/#logo", "url": "https://predictions.propbetedge.ai/brand/predictions-logo-512.png", "width": 512, "height": 512}, "inLanguage": "en"}, {"@type": "WebPage", "@id": "https://predictions.propbetedge.ai/desk/#webpage", "name": "Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge Predictions", "url": "https://predictions.propbetedge.ai/desk/", "description": "Every tracked real-world event market on Kalshi and Polymarket — weather, rates, macro, business, space, public health and energy — with close times, live prices and, with All Access, the PBE probability and model-vs-market divergence.", "isPartOf": {"@id": "https://predictions.propbetedge.ai/#website"}, "publisher": {"@id": "https://propbetedge.ai/#organization"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PropBetEdge", "item": "https://propbetedge.ai/"}, {"@type": "ListItem", "position": 2, "name": "Predictions", "item": "https://predictions.propbetedge.ai/"}, {"@type": "ListItem", "position": 3, "name": "Intelligence Desk", "item": "https://predictions.propbetedge.ai/desk/"}]}}]}</script>
 </head><body>
 <link rel="stylesheet" href="/pbe-consent-v1.css"><script src="/pbe-consent-v1.js"></script><header class="topbar"><div class="wrap">
@@ -27,15 +27,15 @@
 <header class="page-head"><span class="overline">INTELLIGENCE DESK</span><h1>Every event market we track</h1>
 <p class="page-lede" id="desk-sub">Every tracked event, its close time and the live market price.</p>
 <p class="note">Kalshi and Polymarket event contracts compared with PBE forecasts. PBE probabilities and model-vs-market divergence are included with All Access; events without a specialist model are market monitoring. Stocks and macro analysis live in <a href="/markets/">Markets AI</a>; crypto in the <a href="/crypto/">Crypto Nowcast</a>.</p></header>
-<div class="tape" aria-label="Live probability tape" hidden><div class="tape-track" id="tape"></div></div>
-<div id="desk-controls" hidden>
+<div class="tape" aria-label="Live probability tape"><div class="tape-track" id="tape"></div></div>
+<div id="desk-controls">
   <div class="cats desk-tabs" id="cats" role="group" aria-label="Categories"></div>
   <div class="controls" role="search">
     <label class="sr-only" for="q">Search events</label><input class="search" id="q" type="search" placeholder="Search events, cities, tenors…" autocomplete="off">
     <label class="sr-only" for="sort">Sort</label>
     <select class="sort" id="sort"><option value="div">Largest divergence</option><option value="close">Closing soonest</option><option value="fresh">Latest forecast</option></select>
   </div>
-  <div class="cats views" id="views" role="group" aria-label="Desk views" hidden></div>
+  <div class="cats views" id="views" role="group" aria-label="Desk views"></div>
 </div>
 <p class="list-count" id="desk-count" aria-live="polite"></p>
 <div class="desk" id="desk-list"><div class="card skel" style="height:78px"></div><div class="card skel" style="height:78px"></div><div class="card skel" style="height:78px"></div></div>
@@ -56,4 +56,4 @@
 </div>
 <p class="nf-line"><a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_footer_all_access"><strong>PropBetEdge All Access</strong></a> — 10 sports + Predictions + Compare for $29/month.</p>
 <p class="nf-fine"><a href="https://propbetedge.ai/" target="_blank" rel="noopener">PropBetEdge</a> · Predictions is part of the PropBetEdge intelligence network.</p>
-</div></footer><script src="/core.js?v=20261009ia1" defer></script><script src="/desk.js?v=20261009ia1" defer></script></body></html>
+</div></footer><script src="/core.js?v=20261009ia2" defer></script><script src="/desk.js?v=20261009ia2" defer></script></body></html>

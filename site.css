@@ -918,3 +918,5 @@ html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-
   .hero-overview .hero-stats.stats-4{max-width:none}
 }
 #results-overview>.result-empty{grid-column:1/-1}
+/* CLS: the desk's tabs, views and tape keep their space from first paint (filled when data arrives) */
+.desk-tabs:empty,#views:empty{min-height:38px}

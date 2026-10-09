@@ -23,7 +23,7 @@ def ld(title, desc, path):
 
 CRUMB = {'/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
 PAGE_KEY = {'/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261009ia1'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+ASSET_V = '20261009ia2'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 
@@ -89,15 +89,15 @@ desk = head('Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge 
 <header class="page-head"><span class="overline">INTELLIGENCE DESK</span><h1>Every event market we track</h1>
 <p class="page-lede" id="desk-sub">Every tracked event, its close time and the live market price.</p>
 <p class="note">Kalshi and Polymarket event contracts compared with PBE forecasts. PBE probabilities and model-vs-market divergence are included with All Access; events without a specialist model are market monitoring. Stocks and macro analysis live in <a href="/markets/">Markets AI</a>; crypto in the <a href="/crypto/">Crypto Nowcast</a>.</p></header>
-<div class="tape" aria-label="Live probability tape" hidden><div class="tape-track" id="tape"></div></div>
-<div id="desk-controls" hidden>
+<div class="tape" aria-label="Live probability tape"><div class="tape-track" id="tape"></div></div>
+<div id="desk-controls">
   <div class="cats desk-tabs" id="cats" role="group" aria-label="Categories"></div>
   <div class="controls" role="search">
     <label class="sr-only" for="q">Search events</label><input class="search" id="q" type="search" placeholder="Search events, cities, tenors…" autocomplete="off">
     <label class="sr-only" for="sort">Sort</label>
     <select class="sort" id="sort"><option value="div">Largest divergence</option><option value="close">Closing soonest</option><option value="fresh">Latest forecast</option></select>
   </div>
-  <div class="cats views" id="views" role="group" aria-label="Desk views" hidden></div>
+  <div class="cats views" id="views" role="group" aria-label="Desk views"></div>
 </div>
 <p class="list-count" id="desk-count" aria-live="polite"></p>
 <div class="desk" id="desk-list"><div class="card skel" style="height:78px"></div><div class="card skel" style="height:78px"></div><div class="card skel" style="height:78px"></div></div>
