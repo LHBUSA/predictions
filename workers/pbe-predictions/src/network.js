@@ -38,7 +38,7 @@ export function siteFooter() {
 <div class="nf-grid">
 ${col('Predictions', NET.footer_product)}
 <div class="nf-col nf-sports"><strong>PropBetEdge Sports</strong><div class="nf-sports-grid">${NET.sports.map(([label, href]) => `<a href="${href}" ${ext}>${e(label)}</a>`).join('')}</div></div>
-${col('All Access', NET.all_access_products)}
+${col('All Access', NET.all_access_products.filter(([, href]) => href !== NET.all_access.url))}
 ${col('Network', NET.network)}
 <div class="nf-col"><strong>Trust</strong>${NET.trust.map(([label, href]) => `<a href="${href}">${e(label)}</a>`).join('')}<span class="nf-note">${e(NET.disclaimer)}</span></div>
 </div>

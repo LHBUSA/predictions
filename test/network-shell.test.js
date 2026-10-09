@@ -90,10 +90,11 @@ test('article schema: canonical PropBetEdge publisher, Predictions WebSite, WebP
 
 test('every page type uses the shell and the single publisher identity', () => {
   const page = layout({ title: 't', description: 'd', canonical: 'https://predictions.propbetedge.ai/x', body: '<main></main>', jsonld: [] });
-  assert.match(page, />Get All Access</); assert.match(page, /10 sports \+ PropBetEdge Predictions for \$29\/month/);
+  // All Access line = the family v2 copy (canonical since 2026-10-05, bb4cdc8; also asserted by the footer test above)
+  assert.match(page, />Get All Access</); assert.match(page, /10 sports \+ Predictions \+ Compare for \$29\/month/);
   for (const f of ['index.html', 'models/index.html', 'methodology/index.html']) {
     const html = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-    assert.match(html, />Get All Access</, f); assert.doesNotMatch(html, /\bFREE\b/, f); assert.match(html, /10 sports \+ PropBetEdge Predictions for \$29\/month/, f);
+    assert.match(html, />Get All Access</, f); assert.doesNotMatch(html, /\bFREE\b/, f); assert.match(html, /10 sports \+ Predictions \+ Compare for \$29\/month/, f);
     assert.deepEqual([...orgIds(html)], [ORG], `${f} organization identity`);
     assert.doesNotMatch(html, /predictions\.propbetedge\.ai\/#org"/, f);
   }
