@@ -65,7 +65,7 @@ function onMembership(m) {
   if (!m?.entitled || member) return;
   member = true;
   $('desk-list').innerHTML = Array.from({ length: 6 }, () => '<div class="card skel" style="height:78px"></div>').join('');
-  loadDesk().then((ok) => { if (!ok) { member = false; $('desk-list').innerHTML = ''; } });
+  loadDesk().then((ok) => { if (!ok) { member = false; $('desk-list').innerHTML = ''; resultsLocked(); } else { loadResults(); } });
 }
 document.addEventListener('pbe:membership', (ev) => onMembership(ev.detail));
 
@@ -234,6 +234,16 @@ function cats() {
   $('cats').querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => { state.cat = b.dataset.cat; cats(); desk(); }));
 }
 
+function modelChoice(e) {
+  const choices=(e.outcomes||[]).filter(o=>Number.isFinite(o.pbe_pct));
+  if(!choices.length)return '';
+  const top=[...choices].sort((a,b)=>b.pbe_pct-a.pbe_pct || String(a.label).localeCompare(String(b.label)))[0];
+  // An exclusive bucket distribution permits a single favored outcome.
+  // Independent threshold YES contracts do not, so never call one a winner.
+  const label=e.kind==='exclusive' && choices.length===e.outcomes.length
+    ? 'Model favored outcome' : 'Highest modeled YES probability';
+  return '<div class="choice-line"><b>'+esc(label)+': '+esc(top.label)+'</b><span>PBE '+esc(top.pbe_pct)+'% · Forecast only, not an official pick</span></div>';
+}
 function desk() {
   const openWhy = new Set([...document.querySelectorAll('#desk-list .row-wrap')].filter((w) => w.querySelector('details.why-row')?.open).map((w) => w.querySelector('a.row')?.getAttribute('href')));
   const q = state.q.trim().toLowerCase();
@@ -248,7 +258,7 @@ function desk() {
     const mkt = `<div class="cell"><span>Market</span><strong class="${m.value ? 'num' : 'null-state'}">${esc(m.value || m.note)}</strong>${m.value && m.note ? `<small class="null-note">${esc(m.note)}</small>` : ''}</div>`;
     return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
       <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${modeled && h.confidence ? `<span>${esc(h.confidence.toLowerCase())} data quality</span>` : ''}${modeled ? `<span>${agoEl(h.published_at)}</span>` : ''}</div>
-      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${spark(h)}</div>
+      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${modeled ? modelChoice(e) : ''}${spark(h)}</div>
       <div class="cells">${modeled
         ? `<div class="cell"><span>PBE</span><strong class="num">${pctTxt(h.pbe_pct)}</strong></div>${mkt}${divCell(h)}`
         : `<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>${mkt}<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>`}</div>
@@ -334,15 +344,47 @@ function calendar(c) {
   $('cal').innerHTML = rows.length ? rows.map((e) => `<tr><td class="num">${new Date(e.close_time).toISOString().slice(0, 16).replace('T', ' ')} UTC</td><td><a href="${esc(e.url)}">${esc(e.title)}</a></td><td>${esc(e.category_label)}</td><td>${badge(e.state)}</td><td class="num">${e.outcomes_total}</td></tr>`).join('') : '<tr><td colspan="5" class="note">No tracked event closes in the next three weeks.</td></tr>';
 }
 
+function resultsBoard(data) {
+  const top = data.top_outcome || {matched:0,missed:0,events:0,rows:[]};
+  const prospective = data.prospective || {matched:0,missed:0,pending:0,calls:0,rows:[]};
+  const official = data.official || {matched:0,missed:0,pending:0,calls:0};
+  const overview = $('results-overview');
+  const ledger = $('results-ledger');
+  if (!overview || !ledger) return;
+  const card = (label,value,detail,kind='') => '<div class="card result-stat '+kind+'"><span>'+esc(label)+'</span><strong class="num">'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
+  overview.innerHTML = card('Temperature outcomes matched',top.matched,'Out of '+top.events+' settled events · top modeled bucket')
+    + card('Temperature outcomes missed',top.missed,'Same event-level rule, not individual NO contracts','result-stat--miss')
+    + card('Research calls',prospective.matched+'–'+prospective.missed,prospective.pending+' pending · '+prospective.calls+' frozen prospective calls')
+    + card('Official picks',official.calls ? official.matched+'–'+official.missed:'Not activated',official.calls ? official.pending+' pending' : 'No official result or win claim');
+  const table = (rows,type) => rows.length ? '<div class="result-table-wrap"><table class="result-table"><thead><tr><th>Result</th><th>Event</th><th>Model forecast</th><th>Actual outcome</th><th>Evidence</th></tr></thead><tbody>'+
+    rows.map(r => '<tr><td><span class="result-pill '+(r.result==='MATCHED'?'result-pill--hit':r.result==='MISSED'?'result-pill--miss':'result-pill--pending')+'">'+esc(r.result==='MATCHED'?'RIGHT':r.result==='MISSED'?'MISSED':'PENDING')+'</span></td><td><b>'+esc(r.title)+'</b><small>'+esc(type==='calls' ? (r.official?'Official decision':'Prospective research call') : 'Retrospective top outcome')+'</small></td><td><b>'+esc(type==='calls' ? r.side+' · '+r.label : r.picked)+'</b><small>'+esc(r.probability_pct==null?'Probability not available':r.probability_pct+'% forecast probability')+'</small></td><td><b>'+esc(r.actual || 'Not settled')+'</b></td><td><a href="/events/'+encodeURIComponent(r.slug || '')+'">Event record →</a></td></tr>').join('')+'</tbody></table></div>' : '<p class="result-empty card">No eligible settled results yet.</p>';
+  ledger.innerHTML = '<div class="result-tabs"><h4>Temperature forecast outcomes</h4><span>Retrospective · one result per event</span></div>'+
+    table(top.rows || [],'temperature')+
+    '<details class="result-prospective"><summary>Research-stage YES/NO calls ('+prospective.calls+') · not official picks</summary><p>These calls were recorded prospectively, but the policy is not yet official. PASS decisions are excluded.</p>'+table(prospective.rows || [],'calls')+'</details>';
+}
+function resultsLocked() {
+  const overview=$('results-overview'),ledger=$('results-ledger');
+  if(overview)overview.innerHTML='<div class="card result-empty"><strong>Official picks: not activated</strong><p>Recorded forecast results are available to verified All Access members. No official pick record is being claimed.</p></div>';
+  if(ledger)ledger.innerHTML='<div class="card result-empty"><b>Explore the wins and misses with All Access.</b><p>Members see the model’s selected outcome, actual winner, the result and a direct link to the evidence.</p><a href="https://propbetedge.ai/pro" class="cta-primary">Get All Access →</a></div>';
+}
+async function loadResults() {
+  if (!member) { resultsLocked(); return; }
+  try {
+    const r=await fetch(API+'/premium/results-board',{credentials:'same-origin',cache:'no-store'});
+    if(!r.ok){const el=$('results-ledger');if(el)el.textContent='Result verification temporarily unavailable.';return;}
+    resultsBoard(await r.json());
+  }catch(e){fail('results board',e);const el=$('results-ledger');if(el)el.textContent='Result verification temporarily unavailable.';}
+}
+
 function trackRecord(t) {
   const g = (d, m) => t.groups.find((x) => x.designation === d && x.method === m);
   const b = g('FINAL_PRE_RESOLUTION', 'brier'); const l = g('FINAL_PRE_RESOLUTION', 'log_loss');
   const enough = t.resolved_contracts >= t.min_for_claims;
   $('tr').innerHTML = `
     <div class="stat"><span>Resolved contracts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored' : 'first settlements pending'}</small></div>
-    <div class="stat"><span>Brier (final pre-resolution)</span><strong class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${b ? `market ${b.market_mean?.toFixed(3) ?? '—'} · n=${b.n}${enough ? '' : ` (needs ${t.min_for_claims})`}` : 'lower is better'}</small></div>
+    <div class="stat"><span>Forecast accuracy score (Brier)</span><strong class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${b ? `market ${b.market_mean?.toFixed(3) ?? '—'} · n=${b.n}${enough ? '' : ` (needs ${t.min_for_claims})`}` : 'Lower is better; not win percentage'}</small></div>
     <div class="stat"><span>Log loss</span><strong class="num">${l && enough ? l.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${l ? `market ${l.market_mean?.toFixed(3) ?? '—'}` : 'lower is better'}</small></div>
-    <div class="stat"><span>Calibration</span><strong>${enough ? 'Measurable' : 'Pending'}</strong><small>${enough ? 'see the research board' : `claims start at ${t.min_for_claims} resolved`}</small></div>`;
+    <div class="stat"><span>Statistical evidence</span><strong>${enough ? 'Measurable' : 'Pending'}</strong><small>${enough ? 'see the research board' : `claims start at ${t.min_for_claims} resolved`}</small></div>`;
 }
 
 function registry(m) {
@@ -417,6 +459,7 @@ async function main() {
   $('q').addEventListener('input', (e) => { state.q = e.target.value; desk(); });
   $('sort').addEventListener('change', (e) => { state.sort = e.target.value; desk(); });
   if (window.PBE_MEMBERSHIP) onMembership(window.PBE_MEMBERSHIP); // access.js may have resolved first
+  resultsLocked();
   const [s, c, t, m, pv] = await Promise.allSettled([getJSON('summary'), getJSON('calendar'), getJSON('track-record'), getJSON('models'), getJSON('preview/desk')]);
   if (pv.status === 'fulfilled' && !member) { live.sig.preview = JSON.stringify(pv.value); renderPreview(pv.value); }
   if (s.status === 'fulfilled') stats(s.value); else fail('summary', s.reason);

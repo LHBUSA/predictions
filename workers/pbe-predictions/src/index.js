@@ -16,6 +16,7 @@ import { prospectiveRecord } from './prospective.js';
 import { verifyDecisions, loadDecisionInputs } from './decision-ledger.js';
 import { buildDecisionRecord } from '../../../src/engine/decision-record.js';
 import { desk, summary, calendar, models, eventRecord, contractRecord, contractToSlug, queue, trackRecord, sitemapEntries } from './api.js';
+import { memberScorecard } from './results-board.js';
 import { renderEvent, renderNotFound, sitemapXml, SITE, headlineOutcome, eventIntel } from './pages.js';
 import { renderPng } from './og.js';
 import { predictionsMembership, PRIVATE_HEADERS } from './membership.js';
@@ -748,6 +749,7 @@ export default {
       if (p === '/v1/models') return json(await models(store), 200, 'public, max-age=120');
       if (p === '/v1/queue') return json(await queue(store));
       if (p === '/v1/track-record') return json(await trackRecord(store));
+      if (p === '/v1/premium/results-board') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson(await memberScorecard(store)); }
       if (p.startsWith('/v1/event/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
         const rec = await eventRecord(store, decodeURIComponent(p.slice('/v1/event/'.length)));
