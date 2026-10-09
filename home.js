@@ -234,6 +234,16 @@ function cats() {
   $('cats').querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => { state.cat = b.dataset.cat; cats(); desk(); }));
 }
 
+function modelChoice(e) {
+  const choices=(e.outcomes||[]).filter(o=>Number.isFinite(o.pbe_pct));
+  if(!choices.length)return '';
+  const top=[...choices].sort((a,b)=>b.pbe_pct-a.pbe_pct || String(a.label).localeCompare(String(b.label)))[0];
+  // An exclusive bucket distribution permits a single favored outcome.
+  // Independent threshold YES contracts do not, so never call one a winner.
+  const label=e.kind==='exclusive' && choices.length===e.outcomes.length
+    ? 'Model favored outcome' : 'Highest modeled YES probability';
+  return '<div class="choice-line"><b>'+esc(label)+': '+esc(top.label)+'</b><span>PBE '+esc(top.pbe_pct)+'% · Forecast only, not an official pick</span></div>';
+}
 function desk() {
   const openWhy = new Set([...document.querySelectorAll('#desk-list .row-wrap')].filter((w) => w.querySelector('details.why-row')?.open).map((w) => w.querySelector('a.row')?.getAttribute('href')));
   const q = state.q.trim().toLowerCase();
@@ -248,7 +258,7 @@ function desk() {
     const mkt = `<div class="cell"><span>Market</span><strong class="${m.value ? 'num' : 'null-state'}">${esc(m.value || m.note)}</strong>${m.value && m.note ? `<small class="null-note">${esc(m.note)}</small>` : ''}</div>`;
     return `<div class="row-wrap"><a class="card row" href="${esc(e.url)}">
       <div><div class="row-meta"><span class="cat">${esc(e.category_label)}</span>${badge(e.state)}${modeled && h.confidence ? `<span>${esc(h.confidence.toLowerCase())} data quality</span>` : ''}${modeled ? `<span>${agoEl(h.published_at)}</span>` : ''}</div>
-      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${spark(h)}</div>
+      <h3>${esc(e.title)}</h3><div class="sub">${modeled ? `Headline outcome: <b>${esc(h.label)}</b> · ` : ''}${e.outcomes_modeled}/${e.outcomes_total} outcomes modeled${modeled ? driverLine(h) : ''}${venueLine(h)}</div>${modeled ? modelChoice(e) : ''}${spark(h)}</div>
       <div class="cells">${modeled
         ? `<div class="cell"><span>PBE</span><strong class="num">${pctTxt(h.pbe_pct)}</strong></div>${mkt}${divCell(h)}`
         : `<div class="cell mon"><span>PBE</span><strong class="null-state">No PBE model</strong></div>${mkt}<div class="cell"><span>Div.</span><strong class="null-state">Not modeled</strong></div>`}</div>
