@@ -21,8 +21,9 @@
   // owner's already-verified routing address, held in the ALERT_EMAIL_TO secret (never in this public file)
   "send_email": [{ "name": "EMAIL" }],
   "vars": {
-    // "shadow" (R2 shadow/ only) -> "authoritative" (R2 root = the evidence archive) ONLY after owner-approved cutover; "off" stops it
-    "MODE": "shadow",
+    // AUTHORITATIVE since the owner-approved cloud-only cutover 2026-10-09 (GENESIS effective_at 14:02:49.531Z, Issue #3
+    // comment 6082392799). Rollback is Cloudflare-only: "shadow" (R2 shadow/ only) or "off"; Windows is never reactivated.
+    "MODE": "authoritative",
     "KALSHI_BASE": "https://api.elections.kalshi.com/trade-api/v2",
     // cloud cutoff rehearsal 2026-10-09: fictitious release 2026-10-10 (real KXU3-26OCT / KXPAYROLLS-26OCT books), T-1D slot
     // 2026-10-10T00:00Z (Fri 20:00 EDT), window 23:45Z-00:00Z; expires at the fictitious release time. Same shape as the
