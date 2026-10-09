@@ -105,8 +105,7 @@ late capture count.
     ("Verification OK").
   - A failed anchor alerts (`ANCHOR_FAILED`) and never blocks collection. A slot whose seal has no token with genTime
     ≤ slot + 5 min fails V7 and is MISSED.
-- **Independent offline verifier: NOT YET WRITTEN.** It is the read-only re-check of §3 with an R2 read-only token plus
-  `openssl ts -verify` on each anchor. Due before any authoritative cutover.
+- **Independent offline verifier: BUILT (2026-10-09)**, `scripts/research/employment/collector/verify-r2.mjs`. Read-only (Cloudflare REST list/get); separate chain implementation; every anchor verified cryptographically with `openssl ts -verify -digest` against the public CA bundle; per-slot V2/V3/V4/V6/V7 and B2.3 designation recomputed from per-request times and R2 upload times (stored flags are only cross-checked). Live shadow run: 8/8 objects, chain OK, 1/1 anchor OpenSSL OK. Negative control: one altered ledger line -> `no stored sha256` + `chain break`.
 - No capture made before both exist can count. Shadow captures never count (V1) in any case.
 
 ## Owner decision
