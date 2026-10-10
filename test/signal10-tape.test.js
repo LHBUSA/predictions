@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../src/signal10/tape.js';
 import * as C from '../markets/signal-10/signal10-core.js';
 import { LATEST_MEMBERS } from '../src/signal10/members-latest.js';
-import { tape, TAPE_REFRESH_S, TAPE_BUDGET, _tapeReset } from '../workers/pbe-predictions/src/signal10-api.js';
+import { TAPE_REFRESH_S } from '../workers/pbe-predictions/src/signal10-api.js';
 
 const S = (iso) => T.marketSession(iso);
 
@@ -217,97 +217,6 @@ test('head status: LIVE only with a CURRENT quote in an open session; closed nev
     { min: '2026-10-13T14:59:00.000Z', max: '2026-10-13T15:00:00.000Z' });
 });
 
-// ---------- /v1/signal10/tape ----------
-function harness(opts = {}) {
-  _tapeReset();
-  const { member = false, now = '2026-10-13T15:00:00Z', state = null, snap = null } = opts;
-  const env = 'mode' in opts ? (opts.mode === undefined ? {} : { SIGNAL10_TAPE_QUOTES: opts.mode }) : { SIGNAL10_TAPE_QUOTES: 'members' };
-  return harnessWith({ member, env, now, state, snap });
-}
-function harnessWith({ member, env, now, state, snap }) {
-  const calls = [];
-  const store = new Map();
-  globalThis.caches = { default: { async match(k) { const v = store.get(k.url); return v ? new Response(v) : undefined; }, async put(k, r) { store.set(k.url, await r.text()); } } };
-  const fetchImpl = async (url) => {
-    calls.push(url);
-    const sym = decodeURIComponent(/chart\/([^?]+)/.exec(url)[1]);
-    return new Response(JSON.stringify(bars(sym, 110, '2026-10-13T14:59:40Z', [['2026-10-12', 100], ['2026-10-13', 110]])), { status: 200 });
-  };
-  const db = { async select(table) {
-    if (table === 'pred_s10_events') return state ? [{ seq: 9, d: '2026-10-12', payload: state, hash: 'h', inserted_at: now }] : [];
-    if (table === 'pred_s10_snapshots') return snap ? [snap] : [];
-    return [];
-  } };
-  const requireAllAccess = async () => (member ? { ok: true, m: { membership: { state: 'all_access' } } } : { ok: false, res: null });
-  const privateJson = (d, status = 200) => new Response(JSON.stringify(d), { status, headers: { 'cache-control': 'private, no-store' } });
-  const pending = [];
-  const ctx = { waitUntil: (p) => pending.push(p) };
-  const run = async () => { const r = await tape({ req: new Request('https://x/v1/signal10/tape'), env, ctx, store: db, requireAllAccess, privateJson, now, fetchImpl }); await Promise.all(pending); return { r, d: await r.json() }; };
-  return { run, calls };
-}
-
-test('tape API: public visitors get symbols, session and Robinhood links — no prices, no vendor call, no premium groups', async () => {
-  const h = harness({ member: false, state: { st: 1 }, snap: { d: '2026-10-12', ranks: [{ rank: 1, symbol: 'PSX', name: 'Phillips 66' }] } });
-  const { r, d } = await h.run();
-  assert.equal(h.calls.length, 0);
-  assert.match(r.headers.get('cache-control'), /private/);
-  assert.equal(d.quotes.shown, false); assert.equal(d.quotes.withheld, 'MEMBERS_ONLY');
-  assert.equal(d.source, null);
-  assert.deepEqual(d.groups.map((g) => g.key), ['FEATURED']);
-  assert.equal(d.groups[0].rows[0].symbol, 'SPCX');
-  for (const row of d.groups[0].rows) { assert.equal(row.price, null); assert.equal(row.status, 'MEMBERS_ONLY'); assert.match(row.robinhood_url, /^https:\/\/robinhood\.com\/us\/en\/stocks\/[A-Z.]+\/$/); }
-  assert.ok(!JSON.stringify(d).includes('PSX'), 'no ranking leaks to the public');
-});
-
-test('tape API: members get source-timestamped prices + separate holdings/Top 10 groups; one vendor call per symbol, cached', async () => {
-  const st = { v: 1 };
-  const h = harness({ member: true, snap: { d: '2026-10-12', ranks: Array.from({ length: 12 }, (_, i) => ({ rank: i + 1, symbol: i === 0 ? 'SPY' : `S${i}`, ticker: `S${i}`, name: `N${i}` })) } });
-  const { d } = await h.run();
-  assert.equal(d.quotes.shown, true);
-  assert.equal(d.source.rights, 'UNLICENSED_FOR_PUBLIC_REDISTRIBUTION');
-  assert.deepEqual(d.groups.map((g) => g.key), ['FEATURED', 'TOP10']);
-  const top = d.groups[1];
-  assert.equal(top.rows.length, 10); assert.equal(top.rows[0].rank, 1);
-  const spcx = d.groups[0].rows[0];
-  assert.equal(spcx.symbol, 'SPCX'); assert.equal(spcx.price, 110); assert.equal(spcx.previous_close, 100); assert.equal(spcx.change_pct, 0.1);
-  assert.equal(spcx.price_observed_at, '2026-10-13T14:59:40.000Z'); assert.equal(spcx.status, 'CURRENT');
-  assert.ok(spcx.fetched_at, 'our fetch time is reported separately');
-  const uniq = new Set([...d.groups.flatMap((g) => g.rows.map((r) => r.symbol))]);
-  assert.equal(h.calls.length, uniq.size, 'SPY in both groups is fetched once');
-  await h.run();
-  assert.equal(h.calls.length, uniq.size, 'second viewer is served from the shared cache');
-  void st;
-});
-
-test('tape API: SIGNAL10_TAPE_QUOTES off (or unset) shows no prices to anyone and never calls the source', async () => {
-  for (const mode of ['off', undefined, 'yes']) {
-    const h = harness({ member: true, mode });
-    const { d } = await h.run();
-    assert.equal(h.calls.length, 0); assert.equal(d.quotes.shown, false); assert.equal(d.quotes.withheld, 'SOURCE_RIGHTS_HOLD');
-  }
-  const pub = harness({ member: false, mode: 'public' });
-  const { d } = await pub.run();
-  assert.equal(d.quotes.shown, true, 'public mode is an explicit, separate switch');
-});
-
-test('tape API OFF (deployed): every price/time/fetch field null for members AND public; members keep research groups, public gets FEATURED only', async () => {
-  const snap = { d: '2026-10-09', ranks: [{ rank: 1, symbol: 'PSX', name: 'Phillips 66' }, { rank: 2, symbol: 'VLO', name: 'Valero' }] };
-  for (const member of [true, false]) {
-    const h = harness({ member, mode: 'off', snap });
-    const { d } = await h.run();
-    assert.equal(h.calls.length, 0, 'zero vendor calls');
-    assert.equal(d.source, null);
-    assert.deepEqual(d.quotes, { mode: 'OFF', shown: false, withheld: 'SOURCE_RIGHTS_HOLD' });
-    assert.deepEqual(d.groups.map((g) => g.key), member ? ['FEATURED', 'TOP10'] : ['FEATURED']);
-    for (const row of d.groups.flatMap((g) => g.rows)) {
-      for (const k of ['price', 'previous_close', 'change_abs', 'change_pct', 'price_observed_at', 'session_date']) assert.equal(row[k], null, `${row.symbol}.${k}`);
-      assert.ok(!('fetched_at' in row) || row.fetched_at === null);
-      assert.equal(row.status, 'SOURCE_RIGHTS_HOLD');
-    }
-    if (!member) assert.ok(!JSON.stringify(d).includes('PSX'), 'no ranking in the public view');
-  }
-});
-
 test('static pages: the featured tape (SPCX first) is server-rendered on all five Signal 10 pages with safe new-tab links', () => {
   for (const p of ['', 'live/', 'backtest/', 'ledger/', 'methodology/']) {
     const html = readFileSync(new URL(`../markets/signal-10/${p}index.html`, import.meta.url), 'utf8');
@@ -323,38 +232,3 @@ test('static pages: the featured tape (SPCX first) is server-rendered on all fiv
   }
 });
 
-test('tape API: with a no-op edge cache (*.workers.dev) the isolate memo still serves repeat viewers without new vendor calls', async () => {
-  const h = harness({ member: true });
-  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
-  await h.run();
-  const n = h.calls.length;
-  assert.equal(n, 11);
-  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
-  await h.run();
-  assert.equal(h.calls.length, n, 'memo hit: no second fetch inside the TTL');
-});
-
-test('tape API: a hard per-isolate vendor budget; over budget a symbol fails closed instead of piling on', async () => {
-  const h = harness({ member: true, snap: { d: '2026-10-12', ranks: Array.from({ length: 10 }, (_, i) => ({ rank: i + 1, symbol: `Z${i}`, name: `Z${i}` })) } });
-  const prev = TAPE_BUDGET.perMinute;
-  TAPE_BUDGET.perMinute = 15;
-  try {
-    const { d } = await h.run();
-    assert.equal(h.calls.length, 15);
-    const rows = d.groups.flatMap((g) => g.rows);
-    assert.equal(rows.filter((r) => r.status === 'SOURCE_UNAVAILABLE').length, rows.length - 15);
-  } finally { TAPE_BUDGET.perMinute = prev; }
-});
-
-test('tape API: vendor subrequests ask the edge to cache 2xx only', async () => {
-  const seen = [];
-  _tapeReset();
-  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
-  const fetchImpl = async (url, init) => { seen.push(init?.cf); return new Response('{}', { status: 500 }); };
-  const r = await tape({ req: new Request('https://x/'), env: { SIGNAL10_TAPE_QUOTES: 'public' }, ctx: { waitUntil() {} }, store: { async select() { return []; } },
-    requireAllAccess: async () => ({ ok: false }), privateJson: (d) => new Response(JSON.stringify(d)), now: '2026-10-13T15:00:00Z', fetchImpl });
-  const d = await r.json();
-  assert.equal(seen.length, 11);
-  assert.deepEqual(seen[0].cacheTtlByStatus, { '200-299': 45, '300-599': 0 });
-  assert.ok(d.groups[0].rows.every((x) => x.status === 'SOURCE_UNAVAILABLE' && x.price === null), 'vendor 500 -> no price');
-});

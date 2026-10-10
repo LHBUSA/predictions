@@ -1,6 +1,7 @@
-// PBE Signal 10 — U.S. stock tape controller (issue #54). Classic deferred script; reads helpers from window.S10Core.
-// The featured links are server-rendered in the page (they work without JS and never shift layout); this script only fills
-// prices from GET /api/signal10/tape and appends the members-only groups to the right of the scroller.
+// PBE Market Tape on Signal 10 (issues #54, #56). Classic deferred script; reads helpers from window.S10Core.
+// The featured links are server-rendered in the page (they work without JS and never shift layout); this script reads the
+// ONE shared contract GET /api/market-tape (market-tape/1), fills whatever the rights gate allows (today: no prices), adds the
+// member-only PBE SIGNAL 10 RESEARCH badges (frozen EOD ranks, simulated paper flags) and the member groups to the right.
 // Every value shown comes from that response. Nothing is animated except a short colour cue on a changed price
 // (none under prefers-reduced-motion).
 (() => {
@@ -18,6 +19,40 @@
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let timer = null, last = null, lastAt = 0, inflight = false;
 
+    const STATUS = { LIVE_QUOTES: 'CURRENT' };
+    // market-tape/1 -> rows this controller renders (prices only ever come from the payload; null stays null)
+    function normalize(mt) {
+      const shown = mt.rights?.state === 'CLEARED';
+      const s = mt.session || {};
+      return {
+        generated_at: mt.generated_at, research: mt.research_snapshot || null, source: shown ? { name: mt.rights.provider } : null,
+        quotes: { shown, withheld: shown ? null : 'SOURCE_RIGHTS_HOLD' },
+        session: { ...s, opens_at: s.session_open_at, closes_at: s.session_close_at },
+        groups: (mt.lists || []).map((l) => ({ key: l.key, kind: l.kind, label: l.label, note: l.note, rows: l.securities.map((x) => ({
+          symbol: x.symbol, name: x.name, robinhood_url: x.robinhood_url, pinned: x.pinned, group: l.key, kind: l.kind,
+          price: x.last_price, previous_close: x.previous_regular_close, change_abs: x.change_abs, change_pct: x.change_pct, price_observed_at: x.observed_at,
+          status: STATUS[x.state] || x.state, research: x.research || null,
+          rank: l.kind === 'MODEL_RESEARCH' ? x.research?.rank ?? null : null })) })),
+      };
+    }
+    // PBE SIGNAL 10 RESEARCH badge (members): genuine frozen-snapshot evidence only; nothing for symbols outside the model
+    function rsText(r) {
+      const x = r.research;
+      if (!x) return '';
+      if (r.kind === 'MODEL_RESEARCH') return x.move === 'NEW' ? 'NEW' : x.move === 'UP' ? `▲${x.prev_rank - x.rank}` : x.move === 'DOWN' ? `▼${x.rank - x.prev_rank}` : '';
+      if (x.paper_held) return 'PAPER';
+      return x.rank ? (r.change_pct != null ? `#${x.rank}` : `S10 #${x.rank}`) : '';
+    }
+    function rsTitle(r) {
+      const x = r.research;
+      if (!x) return '';
+      if (!x.in_universe) return ' Not in the Signal 10 model universe (S&P 500).';
+      const parts = [` PBE Signal 10 research (frozen ${x.snapshot_d}): ${x.rank ? `rank ${x.rank}${x.prev_rank ? `, previously ${x.prev_rank}` : ', new'}` : 'not ranked in the latest snapshot'}.`];
+      if (x.paper_held) parts.push(' Held in the SIMULATED $10,000 paper account.');
+      return parts.join('');
+    }
+    // move colours only for the model's own ranking group; a featured badge is a neutral reference, never a gain/loss cue
+    const rsCls = (r) => `s10-tq-rs${r.research?.paper_held && r.kind !== 'MODEL_RESEARCH' ? ' paper' : ''}${r.kind === 'MODEL_RESEARCH' && r.research?.move === 'UP' ? ' up' : r.kind === 'MODEL_RESEARCH' && r.research?.move === 'DOWN' ? ' dn' : ''}`;
     const sign = (v) => (v > 0 ? 'pos' : v < 0 ? 'neg' : 'flat');
     const chg = (r) => {
       if (r.change_pct == null) return '';
@@ -26,10 +61,10 @@
     };
     const title = (r) => {
       const px = r.price != null ? `${fmtPrice(r.price)}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous close ${fmtPrice(r.previous_close)})` : ''} · source trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'SOURCE_RIGHTS_HOLD' ? 'Prices are not shown (quote source rights hold)' : 'Quote source unavailable';
-      return `${r.symbol} · ${r.name} — ${px}. Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
+      return `${r.symbol} · ${r.name} — ${px}.${rsTitle(r)} Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
     };
     const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" role="listitem" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
-      + `<span class="s10-tq-top"><b class="s10-tq-sym">${r.rank ? `<span class="s10-tq-rk">${esc(r.rank)}</span>` : ''}${esc(r.symbol)}</b><span class="s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}">${esc(chg(r))}</span></span>`
+      + `<span class="s10-tq-top"><b class="s10-tq-sym">${r.rank ? `<span class="s10-tq-rk">${esc(r.rank)}</span>` : ''}${esc(r.symbol)}</b><span class="s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}">${esc(chg(r))}</span><span class="${rsCls(r)}">${esc(rsText(r))}</span></span>`
       + `<span class="s10-tq-bot"><span class="s10-tq-px num">${pxText(r)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span>`
       + `<span class="sr-only"> ${esc(r.name)}. View ${esc(r.symbol)} on Robinhood (opens in a new tab)</span></a>`;
     function pxText(r) {
@@ -47,6 +82,11 @@
       const prev = Number(el.dataset.px);
       if (px.innerHTML !== nextPx) px.innerHTML = nextPx;
       if (ch.textContent !== nextCh) ch.textContent = nextCh;
+      let rs = el.querySelector('.s10-tq-rs');
+      const nextRs = rsText(r);
+      if (!rs && nextRs) { rs = document.createElement('span'); ch.after(rs); }
+      if (rs && rs.textContent !== nextRs) rs.textContent = nextRs;
+      if (rs) rs.className = rsCls(r);
       ch.className = `s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}`;
       el.title = title(r);
       el.dataset.status = r.status;
@@ -99,7 +139,8 @@
       } else if (d.session.state !== 'OPEN' && d.session.last_close_at) parts.push(`<span>Last close ${esc(etShort(d.session.last_close_at))}</span>`);
       if (d.session.state === 'OPEN' && d.session.closes_at && !(d.quotes.shown && C.quoteSpan(rows))) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
       if (d.session.state !== 'OPEN' && d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
-      if (d.quotes.shown) parts.push(`<span title="${esc(d.source?.delay || '')}">Yahoo Finance · may be delayed</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
+      if (d.quotes.shown) parts.push(`<span>Source: ${esc(d.source?.name || '')}</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
+      if (d.research) parts.push(`<a href="/markets/signal-10/methodology/" title="Frozen end-of-day ranks from the pre-registered Signal 10 model; research, not advice">Signal 10 research · frozen ${esc(C.fmtDate(d.research.d))}</a>`);
       return parts.join('<span aria-hidden="true"> · </span>');
     }
 
@@ -107,9 +148,9 @@
       if (inflight) return;
       inflight = true; clearTimeout(timer);
       try {
-        const r = await fetch('/api/signal10/tape', { credentials: 'same-origin', cache: 'no-store', headers: { accept: 'application/json' } });
-        const d = r.ok ? await r.json() : null;
-        if (d && Array.isArray(d.groups) && d.session) { render(d); lastAt = Date.now(); root.dataset.state = 'ready'; }
+        const r = await fetch('/api/market-tape', { credentials: 'same-origin', cache: 'no-store', headers: { accept: 'application/json' } });
+        const mt = r.ok ? await r.json() : null;
+        if (mt && mt.contract === 'market-tape/1' && Array.isArray(mt.lists) && mt.session) { render(normalize(mt)); lastAt = Date.now(); root.dataset.state = 'ready'; }
         else root.dataset.state = 'error';
       } catch { root.dataset.state = 'error'; }
       inflight = false;
@@ -127,8 +168,8 @@
       const ms = interval();
       if (!last || ms == null || Date.now() - lastAt >= Math.min(ms, 90000)) load(); else schedule();
     });
-    // sign-in completed elsewhere on the page: reload so members get prices + their groups
-    document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled && last && !last.quotes.shown && last.quotes.withheld === 'MEMBERS_ONLY') load(); });
+    // sign-in completed elsewhere on the page: reload so members get their research groups
+    document.addEventListener('pbe:membership', (ev) => { if (ev.detail?.entitled && last && !last.research) load(); });
     setInterval(() => { for (const el of root.querySelectorAll('[data-rel]')) el.textContent = relTime(el.dataset.rel); }, 15000);
     load();
   }
