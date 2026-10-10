@@ -97,7 +97,7 @@ test('member lists: EDITORIAL vs MODEL_RESEARCH vs SIMULATED_PAPER, labelled, bu
   const d = await marketTape({ env: {}, store: store({ snaps: [SNAP('2026-10-09', ['PSX', 'VLO', 'MPC', 'EXPD', 'MRNA', 'MU', 'STT', 'DELL', 'TGT', 'VTRS', 'NVDA'])] }), member: true, now: NOW_SAT });
   assert.deepEqual(d.lists.map((l) => [l.key, l.kind]), [['FEATURED', 'EDITORIAL'], ['SIGNAL10_TOP10', 'MODEL_RESEARCH']]);
   const top = d.lists[1];
-  assert.equal(top.securities.length, 10); assert.equal(top.label, 'Top 10 · frozen 2026-10-09');
+  assert.equal(top.securities.length, 10); assert.equal(top.label, 'Top 10 · as of Oct 9 close');
   assert.equal(top.securities[0].research.rank, 1);
   assert.equal(d.lists[0].securities.find((s) => s.symbol === 'NVDA').research.rank, 11, 'featured symbols carry their genuine rank');
   assert.equal(d.research_snapshot.d, '2026-10-09');

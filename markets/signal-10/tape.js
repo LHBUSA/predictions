@@ -76,7 +76,7 @@
       const x = r.research;
       if (!x) return '';
       if (!x.in_universe) return ' Not in the Signal 10 model universe (S&P 500).';
-      const parts = [` PBE Signal 10 research (frozen ${x.snapshot_d}): ${x.rank ? `rank ${x.rank}${x.prev_rank ? `, previously ${x.prev_rank}` : ', new to the stored top 50'}` : 'outside the stored top 50'}.`];
+      const parts = [` PBE Signal 10 research (as of the ${x.snapshot_d} close): ${x.rank ? `rank ${x.rank}${x.prev_rank ? `, previously ${x.prev_rank}` : ', new to the stored top 50'}` : 'outside the stored top 50'}.`];
       if (x.paper_held) parts.push(' Held in the SIMULATED $10,000 paper account.');
       return parts.join('');
     }
@@ -169,12 +169,21 @@
       metaEl.title = metaEl.textContent;
     }
     const fine = root.querySelector('.s10-tape-fine');
+    // Brand + required credit on the always-visible fine-print line: "PBE Markets" is ours (collection, normalization,
+    // display); the IEX sentence is the verbatim credit IEX requires for displaying its Historical Data (never removed).
     function setCredit(text) {
       if (!fine) return;
       let c = fine.querySelector('[data-tape-credit]');
       if (!text) { c?.remove(); return; }
-      if (!c) { c = document.createElement('a'); c.dataset.tapeCredit = '1'; c.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; c.target = '_blank'; c.rel = 'noopener noreferrer'; fine.prepend(c); }
-      if (c.textContent !== `${text} `) c.textContent = `${text} `;
+      if (!c) {
+        c = document.createElement('span'); c.dataset.tapeCredit = '1';
+        const b = document.createElement('b'); b.className = 's10-tape-brand'; b.textContent = 'PBE Markets';
+        const a = document.createElement('a'); a.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        c.append(b, document.createTextNode(' — prices collected by PropBetEdge from IEX Historical Data. '), a, document.createTextNode(' '));
+        fine.prepend(c);
+      }
+      const a = c.querySelector('a');
+      if (a.textContent !== text) a.textContent = text;
     }
     function metaHTML(d, rows) {
       if (!(d.quotes.shown && d.t1)) setCredit(null);
@@ -184,21 +193,20 @@
       const span = C.quoteSpan(rows);
       if (d.quotes.shown && d.t1) {
         const days = [...new Set(rows.filter((r) => r.price != null).map((r) => r.price_session_date))].sort();
-        if (days.length) parts.push(`<span title="Last regular-session sale on IEX for that day (not the consolidated close); published by IEX the next morning">IEX last sale · ${esc(days.map((x) => C.fmtDate(x)).join(' / '))} · IEX venue only · next-day</span>`);
+        if (days.length) parts.push(`<span title="Last regular-session sale on IEX for that day (not the consolidated close); published by IEX the next morning">PBE Markets · IEX last sale · ${esc(days.map((x) => C.fmtDate(x)).join(' / '))} · IEX venue only · next-day</span>`);
         else parts.push('<span>IEX next-day prices pending</span>');
         if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
-        else if (d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
+        else if (d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
         // the full credit line lives on the always-visible fine-print line (the meta line may be ellipsized)
         setCredit(d.t1.attribution);
       } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
         parts.push(`<span>${esc(when)}</span>`);
-      } else if (d.session.state !== 'OPEN' && d.session.last_close_at) parts.push(`<span>Last close ${esc(etShort(d.session.last_close_at))}</span>`);
+      } else if (!d.t1 && d.session.state !== 'OPEN' && d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
       if (!d.t1 && d.session.state === 'OPEN' && d.session.closes_at && !(d.quotes.shown && C.quoteSpan(rows))) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
-      if (!d.t1 && d.session.state !== 'OPEN' && d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
       if (d.quotes.shown && !d.t1) parts.push(`<span>Source: ${esc(d.source?.name || '')}</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
-      if (d.research) parts.push(`<a href="/markets/signal-10/methodology/" title="Frozen end-of-day ranks from the pre-registered Signal 10 model; research, not advice">Signal 10 research · frozen ${esc(C.fmtDate(d.research.d))}</a>`);
+      if (d.research) parts.push(`<a href="/markets/signal-10/methodology/" title="End-of-day ranks from the pre-registered Signal 10 model, set at each close; research, not advice">Signal 10 research · as of ${esc(C.fmtDate(d.research.d))} close</a>`);
       return parts.join('<span aria-hidden="true"> · </span>');
     }
 

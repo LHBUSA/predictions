@@ -76,6 +76,9 @@ function closesFrom(rows, symbols) {
 }
 async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
 
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const closeDay = (d) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || '')); return m ? `${MON[Number(m[2]) - 1]} ${Number(m[3])}` : String(d || ''); };
+
 // ---------- research (members only; read-only from the immutable Signal 10 tables) ----------
 async function research(store) {
   const snaps = await store.select('pred_s10_snapshots', { select: 'd,model_version,frozen_at,eligible,ranks,content_sha256', d: 'not.is.null' }, { limit: 2, order: 'd.desc' });
@@ -97,7 +100,7 @@ export async function marketTape({ env, store, member, now = new Date().toISOStr
     try {
       const r = await research(store);
       idx = r.idx;
-      if (idx) lists.push({ key: 'SIGNAL10_TOP10', kind: LIST_KINDS.MODEL_RESEARCH, label: `Top 10 · frozen ${idx.snapshot.d}`, note: 'PBE Signal 10 research: the model’s ranking, frozen after the close. Not advice.', items: idx.top(10) });
+      if (idx) lists.push({ key: 'SIGNAL10_TOP10', kind: LIST_KINDS.MODEL_RESEARCH, label: `Top 10 · as of ${closeDay(idx.snapshot.d)} close`, note: 'PBE Signal 10 research: the model’s ranking, set at the close. Not advice.', items: idx.top(10) });
       if (r.held.length) lists.push({ key: 'SIGNAL10_PAPER', kind: LIST_KINDS.SIMULATED_PAPER, label: 'Paper holdings · simulated', note: 'Positions in the SIMULATED $10,000 paper account. Not brokerage holdings.', items: r.held });
     } catch { /* research unavailable: the featured tape still renders, without research */ }
   }
