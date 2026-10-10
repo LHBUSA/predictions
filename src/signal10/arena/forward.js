@@ -228,15 +228,13 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   if (funding.length && funding.length === CHALLENGERS.length && funding.some((S) => coverage[S.strategy] < 0.9 || blocked[S.strategy])) {
     return { d: D, skipped: 'cohort_not_ready', coverage };
   }
+  // TWO PHASES (activation review): phase 1 computes every due account's complete records in memory — gates, ranking,
+  // decisions, snapshot and mark — with NO write. Only when every plan exists does phase 2 claim and write. A compute
+  // error therefore writes nothing for anyone, and on the funding day the cohort cannot be split by a mid-loop failure.
+  const plans = [];
   for (const S of due) {
     if (blocked[S.strategy]) { result[S.strategy] = { skipped: 'held_symbol_unavailable', missingHeld: blocked[S.strategy] }; continue; }
     if (coverage[S.strategy] < 0.9) { result[S.strategy] = { skipped: 'coverage_below_90pct', coverage: coverage[S.strategy] }; continue; }
-    if (keySuffix) { // a rerun never races a live run: the base claim must exist and be > 20 min old (beyond any invocation)
-      const [base] = await store.select(T.runs, { run_key: `eq.${S.account}:EOD:${D}`, select: 'claimed_at' }, { limit: 1 });
-      if (!base) { result[S.strategy] = { skipped: 'no_failed_run_to_rerun' }; continue; }
-      if (Date.parse(now) - Date.parse(base.claimed_at) < 20 * 60000) { result[S.strategy] = { skipped: 'original_run_may_be_live' }; continue; }
-    }
-    if (!(await claim(store, `${S.account}:EOD:${D}${keySuffix}`, S.account, 'EOD', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
     const pSha = await policyHash(S);
     let st, bench;
     if (!states[S.account]) {
@@ -283,12 +281,26 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
     snapRow.content_sha256 = await sha256Hex(canonical({ d: D, model: S.model, ranks: top }));
     st.events.push({ seq: 0, origin: ORIGIN, type: 'RANK_SNAPSHOT', d: D, model: S.model, snapshotKey: snapRow.snapshot_key, contentSha256: snapRow.content_sha256, top: top.slice(0, 10).map((r) => [r.symbol, r.score]), eligible: snap.eligible, coverage: coverage[S.strategy] });
     st.events.push({ seq: 0, origin: ORIGIN, type: 'EOD_MARK', d: D, navCents: m.navCents, cashCents: m.cashCents, marketValueCents: m.marketValueCents, positions: m.positions, exposures: exp, benchmarks: bm, stale: m.stale });
-    const w = await appendEvents(store, heads[S.account], S, pSha, [...st.events, { type: 'STATE', d: D, phase: 'EOD', state: serialize(st, bench) }]);
+    plans.push({ S, pSha, events: [...st.events, { type: 'STATE', d: D, phase: 'EOD', state: serialize(st, bench) }], snapRow,
+      markRow: { mark_key: `${S.account}:EOD:${D}`, account: S.account, d: D, kind: 'EOD_CLOSE', observed_at: new Date(spyTime * 1000).toISOString(),
+        nav_cents: m.stale.length ? null : m.navCents, cash_cents: m.cashCents, coverage: m.stale.length ? 1 - m.stale.length / Math.max(1, m.positions.length) : 1,
+        positions: m.positions, exposures: exp, benchmarks: bm },
+      summary: { nav: m.navCents, orders: st.pending.length, funded: !states[S.account] } });
+  }
+  // funding day: the whole cohort or nobody (a gate failure inside phase 1 left fewer plans than accounts)
+  if (funding.length === CHALLENGERS.length && plans.length !== CHALLENGERS.length) return { d: D, skipped: 'cohort_not_ready', ...result };
+  // phase 2: claim + write, account by account (ledger first, then snapshot and mark)
+  for (const { S, pSha, events, snapRow, markRow, summary } of plans) {
+    if (keySuffix) { // a rerun never races a live run: the base claim must exist and be > 20 min old (beyond any invocation)
+      const [base] = await store.select(T.runs, { run_key: `eq.${S.account}:EOD:${D}`, select: 'claimed_at' }, { limit: 1 });
+      if (!base) { result[S.strategy] = { skipped: 'no_failed_run_to_rerun' }; continue; }
+      if (Date.parse(now) - Date.parse(base.claimed_at) < 20 * 60000) { result[S.strategy] = { skipped: 'original_run_may_be_live' }; continue; }
+    }
+    if (!(await claim(store, `${S.account}:EOD:${D}${keySuffix}`, S.account, 'EOD', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
+    const w = await appendEvents(store, heads[S.account], S, pSha, events);
     await store.insertMany(T.snapshots, [snapRow], 'snapshot_key');
-    await store.insertMany(T.marks, [{ mark_key: `${S.account}:EOD:${D}`, account: S.account, d: D, kind: 'EOD_CLOSE', observed_at: new Date(spyTime * 1000).toISOString(),
-      nav_cents: m.stale.length ? null : m.navCents, cash_cents: m.cashCents, coverage: m.stale.length ? 1 - m.stale.length / Math.max(1, m.positions.length) : 1,
-      positions: m.positions, exposures: exp, benchmarks: bm }], 'mark_key');
-    result[S.strategy] = { ok: true, events: w.rows.length, nav: m.navCents, orders: st.pending.length, funded: !states[S.account] };
+    await store.insertMany(T.marks, [markRow], 'mark_key');
+    result[S.strategy] = { ok: true, events: w.rows.length, ...summary };
   }
   return { d: D, ...result };
 }
