@@ -69,4 +69,4 @@ keeps running the version it started with unless the owner approves a documented
 
 ## U.S. stock tape (issue #54)
 
-SPCX-first featured watchline with Robinhood stock-page handoffs, NYSE calendar and member-gated source-timestamped quotes. Rights audit, data contract, activation switch and rollback: [TAPE.md](TAPE.md).
+SPCX-first LINK-FIRST watchline (no quotes for any audience: SOURCE_RIGHTS_HOLD) with Robinhood stock-page handoffs and the NYSE calendar. Rights audit, data contract, activation switch and rollback: [TAPE.md](TAPE.md).

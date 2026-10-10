@@ -290,6 +290,24 @@ test('tape API: SIGNAL10_TAPE_QUOTES off (or unset) shows no prices to anyone an
   assert.equal(d.quotes.shown, true, 'public mode is an explicit, separate switch');
 });
 
+test('tape API OFF (deployed): every price/time/fetch field null for members AND public; members keep research groups, public gets FEATURED only', async () => {
+  const snap = { d: '2026-10-09', ranks: [{ rank: 1, symbol: 'PSX', name: 'Phillips 66' }, { rank: 2, symbol: 'VLO', name: 'Valero' }] };
+  for (const member of [true, false]) {
+    const h = harness({ member, mode: 'off', snap });
+    const { d } = await h.run();
+    assert.equal(h.calls.length, 0, 'zero vendor calls');
+    assert.equal(d.source, null);
+    assert.deepEqual(d.quotes, { mode: 'OFF', shown: false, withheld: 'SOURCE_RIGHTS_HOLD' });
+    assert.deepEqual(d.groups.map((g) => g.key), member ? ['FEATURED', 'TOP10'] : ['FEATURED']);
+    for (const row of d.groups.flatMap((g) => g.rows)) {
+      for (const k of ['price', 'previous_close', 'change_abs', 'change_pct', 'price_observed_at', 'session_date']) assert.equal(row[k], null, `${row.symbol}.${k}`);
+      assert.ok(!('fetched_at' in row) || row.fetched_at === null);
+      assert.equal(row.status, 'SOURCE_RIGHTS_HOLD');
+    }
+    if (!member) assert.ok(!JSON.stringify(d).includes('PSX'), 'no ranking in the public view');
+  }
+});
+
 test('static pages: the featured tape (SPCX first) is server-rendered on all five Signal 10 pages with safe new-tab links', () => {
   for (const p of ['', 'live/', 'backtest/', 'ledger/', 'methodology/']) {
     const html = readFileSync(new URL(`../markets/signal-10/${p}index.html`, import.meta.url), 'utf8');
