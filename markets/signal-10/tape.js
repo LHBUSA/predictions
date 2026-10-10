@@ -97,6 +97,7 @@
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
         parts.push(`<span>${esc(when)}</span>`);
       } else if (d.session.state !== 'OPEN' && d.session.last_close_at) parts.push(`<span>Last close ${esc(etShort(d.session.last_close_at))}</span>`);
+      if (d.session.state === 'OPEN' && d.session.closes_at && !(d.quotes.shown && C.quoteSpan(rows))) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
       if (d.session.state !== 'OPEN' && d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
       if (d.quotes.shown) parts.push(`<span title="${esc(d.source?.delay || '')}">Yahoo Finance · may be delayed</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
       return parts.join('<span aria-hidden="true"> · </span>');
