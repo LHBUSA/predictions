@@ -1243,3 +1243,7 @@ html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-
 @media (max-width:1859px){.nav .nl-long{display:none}.nav .nl-short{display:inline}
   .top-right .live-dot{padding:6px 8px}.top-right .live-dot #live-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 .subnav .nl-short{display:none}.subnav .nl-long{display:inline}
+@media (min-width:1860px){.nav a,.nav-drop>summary{padding:7px 8px}}
+/* ten primary destinations: the scrolling strip serves up to 1279px; the desktop nav starts at 1280px */
+@media (min-width:1181px) and (max-width:1279px){.topbar .nav{display:none}.topbar .subnav{display:block;border-top:1px solid var(--line-2);background:var(--panel)}.topbar .subnav-track{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:6px 12px}.topbar .subnav-track::-webkit-scrollbar{display:none}.topbar .subnav a{flex:0 0 auto;white-space:nowrap;font-size:12.5px;padding:6px 10px;border-radius:8px;text-decoration:none}}
+@media (max-width:1859px){.top-right #crypto-live{max-width:none;padding:6px 8px}.top-right #crypto-live>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}

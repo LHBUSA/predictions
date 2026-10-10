@@ -13,8 +13,8 @@ const OUT = arg('--out', join(tmpdir(), 'pbe-shell-qa'));
 const CHROME = arg('--chrome', 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 mkdirSync(OUT, { recursive: true });
 
-const PAGES = ['/', '/about/', '/desk/', '/methodology/', '/track-record/', '/markets/signal-10/', '/crypto/'];
-const WIDTHS = [2560, 1920, 1860, 1680, 1679, 1440, 1411, 1410, 1366, 1280, 1181, 1180, 1024, 768, 430, 390, 320];
+const PAGES = ['/', '/all-markets/', '/about/', '/desk/', '/methodology/', '/track-record/', '/markets/signal-10/', '/crypto/'];
+const WIDTHS = [2560, 1920, 1860, 1680, 1679, 1440, 1411, 1410, 1366, 1280, 1279, 1181, 1180, 1024, 768, 430, 390, 320];
 import NET from '../../brand/network.json' with { type: 'json' };
 const NAV_ICONS = NET.product.length + 1;
 const fails = [];
@@ -66,7 +66,7 @@ try {
   }
 
   // Research menu: open, inside the viewport, screenshot (light + dark)
-  for (const [w, theme] of [[1920, 'light'], [1440, 'light'], [1366, 'dark'], [1181, 'light']]) {
+  for (const [w, theme] of [[1920, 'light'], [1440, 'light'], [1366, 'dark'], [1280, 'light']]) {
     await page.setViewport({ width: w, height: 900 });
     await page.goto(origin + '/methodology/', { waitUntil: 'domcontentloaded' });
     if (theme === 'dark') await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));

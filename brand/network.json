@@ -31,6 +31,11 @@
       "Desk"
     ],
     [
+      "All Markets",
+      "/all-markets/",
+      "allmarkets"
+    ],
+    [
       "Crypto",
       "/crypto/",
       "crypto"
@@ -179,6 +184,10 @@
     [
       "Intelligence Desk",
       "/desk/"
+    ],
+    [
+      "All Markets",
+      "/all-markets/"
     ],
     [
       "Track Record",

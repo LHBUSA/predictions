@@ -91,7 +91,7 @@ desk = head('Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge 
 <main class="wrap section page-main" id="desk-top">
 <header class="page-head"><span class="overline">INTELLIGENCE DESK</span><h1>Every event market we track</h1>
 <p class="page-lede" id="desk-sub">Every tracked event, its close time and the live market price.</p>
-<p class="note">Kalshi and Polymarket event contracts compared with PBE forecasts. PBE probabilities and model-vs-market divergence are included with All Access; events without a specialist model are market monitoring. Stocks and macro analysis live in <a href="/markets/">Markets AI</a>; crypto in the <a href="/crypto/">Crypto Nowcast</a>.</p></header>
+<p class="note">Kalshi and Polymarket event contracts compared with PBE forecasts. PBE probabilities and model-vs-market divergence are included with All Access; events without a specialist model are market monitoring. Stocks and macro analysis live in <a href="/markets/">Markets AI</a>; crypto in the <a href="/crypto/">Crypto Nowcast</a>. Every non-sports market the venues list, with or without a PBE forecast, is in <a href="/all-markets/">All Markets</a>.</p></header>
 <div class="tape" aria-label="Live probability tape"><div class="tape-track" id="tape"></div></div>
 <div id="desk-controls">
   <div class="cats desk-tabs" id="cats" role="group" aria-label="Categories"></div>
