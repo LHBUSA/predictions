@@ -175,7 +175,7 @@ export function assembleTrackRecord({ scores = [], shadowForecastIds = new Set()
   const cs = new Map(contracts.map((c) => [c.contract_id, c]));
   const kept = scores.filter((x) => !shadowForecastIds.has(x.forecast_id)).map((s) => {
     const c = cs.get(s.contract_id);
-    return { ...s, lane: laneOf(c?.event_type), cluster: c?.detail?.climate_date || c?.event_id || s.contract_id };
+    return { ...s, lane: laneOf(c?.event_type), cluster: c?.climate_date || c?.detail?.climate_date || c?.event_id || s.contract_id };
   });
   const groups = {};
   for (const s of kept) {
@@ -204,7 +204,7 @@ export function assembleTrackRecord({ scores = [], shadowForecastIds = new Set()
 export async function trackRecord(store) {
   const all = await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,outcome,contract_id,forecast_id', designation: 'not.is.null' });
   const states = all.length ? await store.selectIn('pred_forecasts', { select: 'forecast_id,model_state' }, 'forecast_id', [...new Set(all.map((x) => x.forecast_id))], { chunkSize: 60 }) : [];
-  const contracts = all.length ? await store.selectIn('pred_contracts', { select: 'contract_id,event_id,event_type,detail' }, 'contract_id', [...new Set(all.map((x) => x.contract_id))], { chunkSize: 60 }) : [];
+  const contracts = all.length ? await store.selectIn('pred_contracts', { select: 'contract_id,event_id,event_type,climate_date:detail->>climate_date' }, 'contract_id', [...new Set(all.map((x) => x.contract_id))], { chunkSize: 60 }) : [];
   return assembleTrackRecord({ scores: all, shadowForecastIds: new Set(states.filter((f) => f.model_state === 'SHADOW').map((f) => f.forecast_id)), contracts });
 }
 

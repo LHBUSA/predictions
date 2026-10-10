@@ -19,17 +19,21 @@ function scoring(t) {
   const g = (d, m) => t.groups.find((x) => x.designation === d && x.method === m);
   const b = g('FINAL_PRE_RESOLUTION', 'brier'); const l = g('FINAL_PRE_RESOLUTION', 'log_loss');
   const enough = t.resolved_contracts >= t.min_for_claims;
-  const pair = (x, name) => (x && enough && x.paired_pbe_mean != null ? `<div class="stat"><span>${name} · same contracts</span><strong class="num">PBE ${f3(x.paired_pbe_mean)}</strong><small>market ${f3(x.market_mean)} on the same ${x.market_n} contracts · PBE ${f3(x.pbe_mean)} on all ${x.n}</small></div>`
+  const pair = (x, name) => (x && enough && x.paired_pbe_mean != null ? `<div class="stat"><span>${name} · same contracts, all lanes</span><strong class="num">PBE ${f3(x.paired_pbe_mean)}</strong><small>market ${f3(x.market_mean)} on the same ${x.market_n} contracts · PBE ${f3(x.pbe_mean)} on all ${x.n}</small></div>`
     : `<div class="stat"><span>${name}</span><strong class="num">Pending</strong><small>${enough ? 'no contracts with a same-time market price yet' : `scores start at ${t.min_for_claims} resolved`}</small></div>`);
-  const by = (v) => (t.lanes || []).filter((x) => x.brier?.paired?.verdict === v).map((x) => x.label);
-  const ahead = by('PBE_AHEAD'); const behind = by('MARKET_AHEAD');
+  // A lane reads 'ahead' only when Brier AND log loss agree; any lane behind makes the summary 'Mixed', never a
+  // headline 'PBE ahead' hiding a lane the market leads. This is a scoring-rule comparison, not a trading edge.
+  const both = (x, v) => x.brier?.paired?.verdict === v && x.log_loss?.paired?.verdict === v;
+  const ahead = (t.lanes || []).filter((x) => both(x, 'PBE_AHEAD')).map((x) => x.label);
+  const behind = (t.lanes || []).filter((x) => both(x, 'MARKET_AHEAD')).map((x) => x.label);
+  const head = ahead.length && behind.length ? 'Mixed' : ahead.length ? 'PBE ahead' : behind.length ? 'Market ahead' : enough ? 'None yet' : 'Pending';
   $('tr').innerHTML = `
     <div class="stat"><span>Resolved contracts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored (not wins)' : 'first settlements pending'}</small></div>
     ${pair(b, 'Brier')}${pair(l, 'Log loss')}
-    <div class="stat"><span>Evidence of an edge</span><strong>${ahead.length ? 'PBE ahead' : enough ? 'None yet' : 'Pending'}</strong><small>${[ahead.length ? `PBE ahead: ${esc(ahead.join(' · '))}` : '', behind.length ? `market ahead: ${esc(behind.join(' · '))}` : '', !ahead.length && enough ? 'enough to score · not evidence of an edge' : '', enough ? '' : `scores start at ${t.min_for_claims} resolved`].filter(Boolean).join(' · ')}</small></div>`;
+    <div class="stat"><span>Vs market · scoring, by lane</span><strong>${head}</strong><small>${[ahead.length ? `PBE ahead: ${esc(ahead.join(' · '))}` : '', behind.length ? `market ahead: ${esc(behind.join(' · '))}` : '', !ahead.length && !behind.length && enough ? 'enough to score · no lane established either way' : '', enough ? '' : `scores start at ${t.min_for_claims} resolved`].filter(Boolean).join(' · ')}</small></div>`;
   const lanes = (t.lanes || []).filter((x) => x.brier?.paired);
   $('tr-lanes').innerHTML = lanes.map((x) => { const p = x.brier.paired;
-    return `<div class="stat"><span>${esc(x.label)}</span><strong class="num">PBE ${f3(p.pbe_mean)}</strong><small>market ${f3(p.market_mean)} · Brier on the same ${p.n} contracts · ${p.clusters} ${p.clusters === 1 ? 'day/event' : 'days/events'} · difference ${p.diff >= 0 ? '+' : ''}${f3(p.diff)} [${f3(p.ci95[0])}, ${f3(p.ci95[1])}] · ${esc(VERDICT[p.verdict] || p.verdict)}</small></div>`; }).join('')
+    return `<div class="stat"><span>${esc(x.label)}</span><strong class="num">PBE ${f3(p.pbe_mean)}</strong><small>market ${f3(p.market_mean)} · Brier on the same ${p.n} contracts · ${p.clusters} ${p.clusters === 1 ? 'day/event' : 'days/events'} · PBE − market ${p.diff >= 0 ? '+' : ''}${f3(p.diff)} (negative = PBE better)${p.clusters >= 2 ? ` [${f3(p.ci95[0])}, ${f3(p.ci95[1])}]` : ''} · ${esc(VERDICT[p.verdict] || p.verdict)}</small></div>`; }).join('')
     || '<p class="note">Lane scores appear once a lane has contracts with a same-time market price.</p>';
 }
 

@@ -782,7 +782,15 @@ export default {
       if (p === '/v1/calendar') return json(await calendar(store));
       if (p === '/v1/models') return json(await models(store), 200, 'public, max-age=120');
       if (p === '/v1/queue') return json(await queue(store));
-      if (p === '/v1/track-record') return json(await trackRecord(store));
+      if (p === '/v1/track-record') {
+        // public scoreboard: subrequests grow with the ledger, so it is rebuilt at most every 5 min per colo
+        const key = new Request(`${url.origin}/v1/track-record`, { method: 'GET' });
+        const hit = await caches.default.match(key).catch(() => null);
+        if (hit) return hit;
+        const res = json(await trackRecord(store), 200, 'public, max-age=300');
+        ctx.waitUntil(caches.default.put(key, res.clone()).catch(() => {}));
+        return res;
+      }
       if (p === '/v1/premium/results-board') { const g = await requireAllAccess(req, env); if (!g.ok) return g.res; return privateJson(limitRows(await memberScorecard(store), Number.parseInt(url.searchParams.get('limit') || '', 10))); }
       if (p.startsWith('/v1/event/')) {
         const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
