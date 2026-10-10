@@ -1,0 +1,5057 @@
+{
+ "taxonomy": "pbe-sic-sectors/1.0.0",
+ "effective_from": "2026-10-10",
+ "built_at": "2026-10-10T19:03:05.074Z",
+ "sources": {
+  "members": {
+   "url": "https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv",
+   "row_date": "2026-08-18",
+   "count": 503,
+   "sha256": "36326709d46d6cd25834de5df457b16f5f96fad3a06b9beac28f7b88aa0b0d54",
+   "licence": "MIT (fja05680/sp500)"
+  },
+  "sec_company_tickers": {
+   "url": "https://www.sec.gov/files/company_tickers.json",
+   "sha256": "bb1521ff938ce1217343362f335aae521d9978b105229eabef69124ac24bbb1c",
+   "licence": "U.S. government work (SEC EDGAR)"
+  },
+  "sec_submissions": "https://data.sec.gov/submissions/CIK##########.json (per-row sha256)"
+ },
+ "counts": {
+  "members": 503,
+  "classified": 502,
+  "tech": 78,
+  "missing": 1
+ },
+ "rows": {
+  "A": {
+   "symbol": "A",
+   "cik": "0001090872",
+   "name": "AGILENT TECHNOLOGIES, INC.",
+   "sic": "3826",
+   "sic_description": "Laboratory Analytical Instruments",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "19f61284911fe4d66329ece8c1f66ce50379af6c8f1002b94aa40bc40d75616b"
+  },
+  "AAPL": {
+   "symbol": "AAPL",
+   "cik": "0000320193",
+   "name": "Apple Inc.",
+   "sic": "3571",
+   "sic_description": "Electronic Computers",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "2821703cf04e1138923243a87cc5148673feb9d3792a5b6a7747d1e1a093bf7f"
+  },
+  "ABBV": {
+   "symbol": "ABBV",
+   "cik": "0001551152",
+   "name": "AbbVie Inc.",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "c7bf7b44e4d69760946c32d21941f427c6e9f68528fba23f2e3c35e0457105c8"
+  },
+  "ABNB": {
+   "symbol": "ABNB",
+   "cik": "0001559720",
+   "name": "Airbnb, Inc.",
+   "sic": "7340",
+   "sic_description": "Services-To Dwellings & Other Buildings",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "e6178e4dcb4922d781685c131fdf57b3183c80439fba6ef98e4bd5d9742b1bb6"
+  },
+  "ABT": {
+   "symbol": "ABT",
+   "cik": "0000001800",
+   "name": "ABBOTT LABORATORIES",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "8da48bc65e54f44663c363a738a9ba4d07029b95067cd9cd7ba84dc64a9dbe0f"
+  },
+  "ACGL": {
+   "symbol": "ACGL",
+   "cik": "0000947484",
+   "name": "ARCH CAPITAL GROUP LTD.",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "1b4146f1d7415c070bcfc75d2a9371f3d45ce36c60b6dcd09f1549a24594dee5"
+  },
+  "ACN": {
+   "symbol": "ACN",
+   "cik": "0001467373",
+   "name": "Accenture plc",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "9548f2074d11f3090c5a9005213e0a61576ec3dcc5b15a62b0c7318ca51e4014"
+  },
+  "ADBE": {
+   "symbol": "ADBE",
+   "cik": "0000796343",
+   "name": "ADOBE INC.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "804c48e9b37ef34cccb3592d47e9cf6fa0c656c2339df9c4fbc33372b18e4b97"
+  },
+  "ADI": {
+   "symbol": "ADI",
+   "cik": "0000006281",
+   "name": "ANALOG DEVICES INC",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9c34d7b236a8e6111e988ea757866998c725b489604b7b1f319bb71badeba789"
+  },
+  "ADM": {
+   "symbol": "ADM",
+   "cik": "0000007084",
+   "name": "Archer-Daniels-Midland Co",
+   "sic": "2070",
+   "sic_description": "Fats & Oils",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "5bb4fb2ec2f8e2413964068fd22c4657db2e4f39c221e6c6a10f03de2ccde244"
+  },
+  "ADP": {
+   "symbol": "ADP",
+   "cik": "0000008670",
+   "name": "AUTOMATIC DATA PROCESSING INC",
+   "sic": "7374",
+   "sic_description": "Services-Computer Processing & Data Preparation",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "ba43851293f7de5c8ed1718064b44173838ec049b9b95cdcf9a774801f3466e8"
+  },
+  "ADSK": {
+   "symbol": "ADSK",
+   "cik": "0000769397",
+   "name": "Autodesk, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6be434af989da69a6c129231b9f768f4c18ef0c9e93c27b71c98237b253fc596"
+  },
+  "AEE": {
+   "symbol": "AEE",
+   "cik": "0001002910",
+   "name": "AMEREN CORP",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "62d55dbed8c9f53137f3434146c18020fb426d5b7c674959d3d0f84b0a42a678"
+  },
+  "AEP": {
+   "symbol": "AEP",
+   "cik": "0000004904",
+   "name": "AMERICAN ELECTRIC POWER CO INC",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "7a15703202c0fd04a4dfb14898d1034a6ddf067cfa2ff3484e8f8a8725701f36"
+  },
+  "AES": {
+   "symbol": "AES",
+   "cik": "0000874761",
+   "name": "AES CORP",
+   "sic": "4991",
+   "sic_description": "Cogeneration Services & Small Power Producers",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "a65acdf170530f91c4ec2da06c949c09f0f15f2058ce36a044358d5be11a9a4c"
+  },
+  "AFL": {
+   "symbol": "AFL",
+   "cik": "0000004977",
+   "name": "AFLAC INC",
+   "sic": "6321",
+   "sic_description": "Accident & Health Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "5c44beab4cca8276f012a27dd82af8041c5629d2c80b91cd7ec1169660afbe29"
+  },
+  "AIG": {
+   "symbol": "AIG",
+   "cik": "0000005272",
+   "name": "AMERICAN INTERNATIONAL GROUP, INC.",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "845f9f748711e2dcbbed12379aba8c5c37173d0cebaca05dde0516023c822265"
+  },
+  "AIZ": {
+   "symbol": "AIZ",
+   "cik": "0001267238",
+   "name": "ASSURANT, INC.",
+   "sic": "6399",
+   "sic_description": "Insurance Carriers, NEC",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "28ad54c2a68894c7a5d4d3cf257f1c71025ec0f427a99feb1f310e68c5dc77de"
+  },
+  "AJG": {
+   "symbol": "AJG",
+   "cik": "0000354190",
+   "name": "Arthur J. Gallagher & Co.",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "bdc5a93154b20e87b2c48487a5f32a6e051c6e42879a3b69ff1ffeb3dfe09816"
+  },
+  "AKAM": {
+   "symbol": "AKAM",
+   "cik": "0001086222",
+   "name": "AKAMAI TECHNOLOGIES INC",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "e6728ef05c9f61ed2b6c0e5ed1db0657d7b01bb81ee61367bbd044f220932c3a"
+  },
+  "ALB": {
+   "symbol": "ALB",
+   "cik": "0000915913",
+   "name": "ALBEMARLE CORP",
+   "sic": "2821",
+   "sic_description": "Plastic Materials, Synth Resins & Nonvulcan Elastomers",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "736dde187e9b780bbe9d983302deb69e30b131b47366e656c1f8645583c076f6"
+  },
+  "ALGN": {
+   "symbol": "ALGN",
+   "cik": "0001097149",
+   "name": "ALIGN TECHNOLOGY INC",
+   "sic": "3842",
+   "sic_description": "Orthopedic, Prosthetic & Surgical Appliances & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "ef50814490e445ffe58413c19d26a05f4bfecbc022a0e1d0888e0f2be02ba26a"
+  },
+  "ALL": {
+   "symbol": "ALL",
+   "cik": "0000899051",
+   "name": "ALLSTATE CORP",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "0d483b32fe596f1be7fe2371cfa65bf938dde778218c7bef20e765c4f1e924a9"
+  },
+  "ALLE": {
+   "symbol": "ALLE",
+   "cik": "0001579241",
+   "name": "Allegion plc",
+   "sic": "7381",
+   "sic_description": "Services-Detective, Guard & Armored Car Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5b27579bbd1b8b7b19f9d6c6ac51e1d835435c8cb97a3a2651b2924c24e797a7"
+  },
+  "AMAT": {
+   "symbol": "AMAT",
+   "cik": "0000006951",
+   "name": "APPLIED MATERIALS INC /DE",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "ed5b9d52c5c29ddb0129461fa79283054574cfd690a298070e93b40ed077d074"
+  },
+  "AMCR": {
+   "symbol": "AMCR",
+   "cik": "0001748790",
+   "name": "Amcor plc",
+   "sic": "3990",
+   "sic_description": "Miscellaneous Manufacturing Industries",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "fa624dc0b84b806bf9c42b98dcb099a29cc6ae85d7f2451ef13bdce66530a0c5"
+  },
+  "AMD": {
+   "symbol": "AMD",
+   "cik": "0000002488",
+   "name": "ADVANCED MICRO DEVICES INC",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9789d97cfb1b41fb58cc5fcebd13cfced084409dc3bbcfb6ca1382304f092493"
+  },
+  "AME": {
+   "symbol": "AME",
+   "cik": "0001037868",
+   "name": "AMETEK INC/",
+   "sic": "3823",
+   "sic_description": "Industrial Instruments For Measurement, Display, and Control",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "8b2490d240b1efae1fd1c1192eddc4123e06cb5362fd921cb8834eb52e269846"
+  },
+  "AMGN": {
+   "symbol": "AMGN",
+   "cik": "0000318154",
+   "name": "AMGEN INC",
+   "sic": "2836",
+   "sic_description": "Biological Products, (No Diagnostic Substances)",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "d5fdc99c6d7c7fbe409f15e837164367159ed34bb5d76b31b36b8a79ccdc7dd6"
+  },
+  "AMP": {
+   "symbol": "AMP",
+   "cik": "0000820027",
+   "name": "AMERIPRISE FINANCIAL INC",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "210c20b63050989cc28aa8b5f9d9a5d55bae6fbb940c4755ab8369e9ac20360c"
+  },
+  "AMT": {
+   "symbol": "AMT",
+   "cik": "0001053507",
+   "name": "AMERICAN TOWER CORP /MA/",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "f57566944b74d717fb0c42aa710966d93027b9aece81b1613b25374972caad02"
+  },
+  "AMZN": {
+   "symbol": "AMZN",
+   "cik": "0001018724",
+   "name": "AMAZON COM INC",
+   "sic": "5961",
+   "sic_description": "Retail-Catalog & Mail-Order Houses",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "1f5bb6be4033e2378bfa0d14e0d9276a08d8dfb070b263f59ca0e77d68ced058"
+  },
+  "ANET": {
+   "symbol": "ANET",
+   "cik": "0001596532",
+   "name": "Arista Networks, Inc.",
+   "sic": "3576",
+   "sic_description": "Computer Communications Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6a8c7a2160c5ba9f16cd9e44a901fa28ef5f25cb4b25376eb9ebfb6f6a104eef"
+  },
+  "AON": {
+   "symbol": "AON",
+   "cik": "0000315293",
+   "name": "Aon plc",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "36a076291f9e79c78d4ecf49cd199bab701227f3b58f197bac192787f3eb9886"
+  },
+  "AOS": {
+   "symbol": "AOS",
+   "cik": "0000091142",
+   "name": "SMITH A O CORP",
+   "sic": "3630",
+   "sic_description": "Household Appliances",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "dc64a872df45fd7a9c2a3b2fe441d29a539034d6f67880c554a2629dbdd6e4c5"
+  },
+  "APA": {
+   "symbol": "APA",
+   "cik": "0001841666",
+   "name": "APA Corp",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "5a21e18253bf9f13f1bb7d205ffad44c96db4d53c3475db501660cd2955b650d"
+  },
+  "APD": {
+   "symbol": "APD",
+   "cik": "0000002969",
+   "name": "Air Products & Chemicals, Inc.",
+   "sic": "2810",
+   "sic_description": "Industrial Inorganic Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "5b48ab91146eddc7b298a18eaafb50a8ad43f9ec9bb616e90c62c4f665c94b34"
+  },
+  "APH": {
+   "symbol": "APH",
+   "cik": "0000820313",
+   "name": "AMPHENOL CORP /DE/",
+   "sic": "3678",
+   "sic_description": "Electronic Connectors",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "8291714ed6ca58fca680f5c57ed13e9102efa526b51aed84945ee70899a6560a"
+  },
+  "APO": {
+   "symbol": "APO",
+   "cik": "0001858681",
+   "name": "Apollo Global Management, Inc.",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "858c273b90b8fa4a8d5592bd97ee4ec9d335f7bd08a5d49a03959c500c4c0dae"
+  },
+  "APP": {
+   "symbol": "APP",
+   "cik": "0001751008",
+   "name": "AppLovin Corp",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "622a27d3a1fce9089ddd1fac7012531dcc39b2c177d754e7463227dd4da9ac22"
+  },
+  "APTV": {
+   "symbol": "APTV",
+   "cik": "0001521332",
+   "name": "Aptiv PLC",
+   "sic": "3714",
+   "sic_description": "Motor Vehicle Parts & Accessories",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "01a48476ddff39ce25c20b5af9ed1783e9e054213ffa4dcc25253ab71513216b"
+  },
+  "ARE": {
+   "symbol": "ARE",
+   "cik": "0001035443",
+   "name": "ALEXANDRIA REAL ESTATE EQUITIES, INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "e5f8013d04917bf46070ac686421c42bba479c5a3afdf2660327572babc5b440"
+  },
+  "ARES": {
+   "symbol": "ARES",
+   "cik": "0001176948",
+   "name": "Ares Management Corp",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "c05b150aa9903fc0e30aca089d03e1cf964d5ac95aa2c7905d15f35a8a834a50"
+  },
+  "ATO": {
+   "symbol": "ATO",
+   "cik": "0000731802",
+   "name": "ATMOS ENERGY CORP",
+   "sic": "4924",
+   "sic_description": "Natural Gas Distribution",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "388395ac94bdccacf8e0c8215053fde5d0be68c1c02a049788697edca4de002f"
+  },
+  "AVGO": {
+   "symbol": "AVGO",
+   "cik": "0001730168",
+   "name": "Broadcom Inc.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "b3bb8094e6809c7b3c7d2d7f419363b213bfa5071b40adb2bc2534317637f061"
+  },
+  "AVY": {
+   "symbol": "AVY",
+   "cik": "0000008818",
+   "name": "Avery Dennison Corp",
+   "sic": "2670",
+   "sic_description": "Converted Paper & Paperboard Prods (No Contaners/Boxes)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "2b414c6b690293a3e57f20679f26024bbf7618bb38ea9658a9e2ee5d7d093e91"
+  },
+  "AWK": {
+   "symbol": "AWK",
+   "cik": "0001410636",
+   "name": "American Water Works Company, Inc.",
+   "sic": "4941",
+   "sic_description": "Water Supply",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "19ce1dc129f6f4fda2838ecc5b5d10d53fa7697f28307f1f378b36a1314278e5"
+  },
+  "AXON": {
+   "symbol": "AXON",
+   "cik": "0001069183",
+   "name": "AXON ENTERPRISE, INC.",
+   "sic": "3480",
+   "sic_description": "Ordnance & Accessories, (No Vehicles/Guided Missiles)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "490bd448cff890b19679ff7a0f74292e3075d275e4c526d5fba72ba6beaf4298"
+  },
+  "AXP": {
+   "symbol": "AXP",
+   "cik": "0000004962",
+   "name": "AMERICAN EXPRESS CO",
+   "sic": "6199",
+   "sic_description": "Finance Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "da953532f1c70b6894790bb609ced7c937bdc5ca90a0ceec78d996404ee724ec"
+  },
+  "AZO": {
+   "symbol": "AZO",
+   "cik": "0000866787",
+   "name": "AUTOZONE INC",
+   "sic": "5531",
+   "sic_description": "Retail-Auto & Home Supply Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "3cec158e2f8bded670849b8a8cbeeab494afadd7874c8024becb360cfdb9ebd8"
+  },
+  "BA": {
+   "symbol": "BA",
+   "cik": "0000012927",
+   "name": "BOEING CO",
+   "sic": "3721",
+   "sic_description": "Aircraft",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "6772e8d08a03911e0079a2f480d7520686ba8ad2e53651efc76f4cfc6c0a0f57"
+  },
+  "BAC": {
+   "symbol": "BAC",
+   "cik": "0000070858",
+   "name": "BANK OF AMERICA CORP /DE/",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "d2d7154a50fb16547f9cbaf7d27dbee3723cebd1e40635b7ced5ed24b45d03c3"
+  },
+  "BALL": {
+   "symbol": "BALL",
+   "cik": "0000009389",
+   "name": "BALL Corp",
+   "sic": "3411",
+   "sic_description": "Metal Cans",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "0425e84dd4616438cee1359c49c8c61df62e91177f6a8b74b2933d0d914b8a00"
+  },
+  "BAX": {
+   "symbol": "BAX",
+   "cik": "0000010456",
+   "name": "BAXTER INTERNATIONAL INC",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "a9074a980b1f043842e8d4c754686171d437fc9ca671579df20aafb307d13952"
+  },
+  "BBY": {
+   "symbol": "BBY",
+   "cik": "0000764478",
+   "name": "BEST BUY CO INC",
+   "sic": "5731",
+   "sic_description": "Retail-Radio, Tv & Consumer Electronics Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "b3e56d79c1462e4bd1848ee8716887ffbbd37b47ba8938d7a093988ceffab33a"
+  },
+  "BDX": {
+   "symbol": "BDX",
+   "cik": "0000010795",
+   "name": "BECTON DICKINSON & CO",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "dcde58662fbe82ef7b9e532683f27d13746de7a0c99a6a1d0926b5631555b4dd"
+  },
+  "BEN": {
+   "symbol": "BEN",
+   "cik": "0000038777",
+   "name": "FRANKLIN TEMPLETON INC",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "8742848b92e5b777876f3fc4a3e048f30c1817d34cbc4acf8a723c1357ce6764"
+  },
+  "BF.B": {
+   "symbol": "BF.B",
+   "cik": "0000014693",
+   "name": "BROWN FORMAN CORP",
+   "sic": "2080",
+   "sic_description": "Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "f51e793cde05c371b1c710ac8153f10e630b2a299355919015fa426ed5aa1c52"
+  },
+  "BG": {
+   "symbol": "BG",
+   "cik": "0001996862",
+   "name": "Bunge Global SA",
+   "sic": "2070",
+   "sic_description": "Fats & Oils",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "311fbebb4f266b369bbd1c7abe8419640972634c86e17d744ba9698dd9ef7b98"
+  },
+  "BIIB": {
+   "symbol": "BIIB",
+   "cik": "0000875045",
+   "name": "BIOGEN INC.",
+   "sic": "2836",
+   "sic_description": "Biological Products, (No Diagnostic Substances)",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "de4a228ec070b638e546111961944abf2f1d2c5ac5421583b1474af7c8872fb9"
+  },
+  "BKNG": {
+   "symbol": "BKNG",
+   "cik": "0001075531",
+   "name": "Booking Holdings Inc.",
+   "sic": "4700",
+   "sic_description": "Transportation Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "e5823547bd080fa5059ec4143fa2069ee7fc80ede356e791021c9f7a231c6806"
+  },
+  "BKR": {
+   "symbol": "BKR",
+   "cik": "0001701605",
+   "name": "Baker Hughes Co",
+   "sic": "3533",
+   "sic_description": "Oil & Gas Field Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "499ba6d918a9a73ee5785d638ce9f27bc5b69a973712adc30a2f03c289bfb368"
+  },
+  "BLDR": {
+   "symbol": "BLDR",
+   "cik": "0001316835",
+   "name": "Builders FirstSource, Inc.",
+   "sic": "5211",
+   "sic_description": "Retail-Lumber & Other Building Materials Dealers",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "77880db46db3c90bc651855b88a5cf8d7721a950c843d28bda1ebb0acc6f500c"
+  },
+  "BLK": {
+   "symbol": "BLK",
+   "cik": "0002012383",
+   "name": "BlackRock, Inc.",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "c0a7f0fb11f67bba4995b6d7f39eb1d0aa50e65c91a65fdea6232184dd8bf755"
+  },
+  "BMY": {
+   "symbol": "BMY",
+   "cik": "0000014272",
+   "name": "BRISTOL MYERS SQUIBB CO",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "f7a3bed1f7eac63bb5a22cd3793ab024701dbbc2618007b3fd108d6996301d71"
+  },
+  "BNY": {
+   "symbol": "BNY",
+   "cik": "0001390777",
+   "name": "Bank of New York Mellon Corp",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "c72b7eca1be7d1ce08ef70c81aa2bb2ba85a975d4cacfc5dd626f80356c2370d"
+  },
+  "BR": {
+   "symbol": "BR",
+   "cik": "0001383312",
+   "name": "BROADRIDGE FINANCIAL SOLUTIONS, INC.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f54f30d739379da831f6c57c52f94f7d1a214fafdd111ecefdb169ecc1573ed4"
+  },
+  "BRK.B": {
+   "symbol": "BRK.B",
+   "cik": "0001067983",
+   "name": "BERKSHIRE HATHAWAY INC",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ab313de3258a0251e6f41c0398573a0c5a94618fd2f67b9cf1d136f3eaad9da2"
+  },
+  "BRO": {
+   "symbol": "BRO",
+   "cik": "0000079282",
+   "name": "BROWN & BROWN, INC.",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "7dff860bb67eb65ec6ddf8297b3ce9e373acce6a57eedd6be015690261a39b94"
+  },
+  "BSX": {
+   "symbol": "BSX",
+   "cik": "0000885725",
+   "name": "BOSTON SCIENTIFIC CORP",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "5d348b260162f0ff9e72f1cdb4251338fb0cc11b7fe04da110e518e93c91f9af"
+  },
+  "BX": {
+   "symbol": "BX",
+   "cik": "0001393818",
+   "name": "Blackstone Inc.",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "0afaed5a52085b3e269e0b56e84dd876a3d9b94f0d1e6f4ba8b65f2371f2344f"
+  },
+  "BXP": {
+   "symbol": "BXP",
+   "cik": "0001037540",
+   "name": "BXP, Inc.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "ce46f05a53e1529eee972ecb320b9a92a3ea24b00a891009d5d4b4082ab8185d"
+  },
+  "C": {
+   "symbol": "C",
+   "cik": "0000831001",
+   "name": "CITIGROUP INC",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "63275894d11b00d56e91af74278bc94f8ba97ccdfa055bb37cf91d908a772637"
+  },
+  "CAH": {
+   "symbol": "CAH",
+   "cik": "0000721371",
+   "name": "CARDINAL HEALTH INC",
+   "sic": "5122",
+   "sic_description": "Wholesale-Drugs, Proprietaries & Druggists' Sundries",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "b831b14e009a440c4b45b144a2be1d0fbe141612132f4e491f70fcb85b46d585"
+  },
+  "CARR": {
+   "symbol": "CARR",
+   "cik": "0001783180",
+   "name": "CARRIER GLOBAL Corp",
+   "sic": "3585",
+   "sic_description": "Air-Cond & Warm Air Heatg Equip & Comm & Indl Refrig Equip",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "12b4872a9613f0699c232bbc749ab753ef68650701e1eeeb15566ba0a8c8d188"
+  },
+  "CASY": {
+   "symbol": "CASY",
+   "cik": "0000726958",
+   "name": "CASEYS GENERAL STORES INC",
+   "sic": "5500",
+   "sic_description": "Retail-Auto Dealers & Gasoline Stations",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "d0cb4820efd9c5c1ab600a539d0c12c8275843387de7a3bdce6708175252ef23"
+  },
+  "CAT": {
+   "symbol": "CAT",
+   "cik": "0000018230",
+   "name": "CATERPILLAR INC",
+   "sic": "3531",
+   "sic_description": "Construction Machinery & Equip",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "cd43eaa79308f1f76d62092b45c603432a39e32ae369548886e7bd923b90c278"
+  },
+  "CB": {
+   "symbol": "CB",
+   "cik": "0000896159",
+   "name": "Chubb Ltd",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "bb9b086c3c2c15653466fdb0305473750713b99384e28572763391dde4794c84"
+  },
+  "CBOE": {
+   "symbol": "CBOE",
+   "cik": "0001374310",
+   "name": "Cboe Global Markets, Inc.",
+   "sic": "6200",
+   "sic_description": "Security & Commodity Brokers, Dealers, Exchanges & Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "f6a79a01da90450d2b54bd6ff7421f4bf43e110b5306aef9c00e757c6041a0e4"
+  },
+  "CBRE": {
+   "symbol": "CBRE",
+   "cik": "0001138118",
+   "name": "CBRE GROUP, INC.",
+   "sic": "6500",
+   "sic_description": "Real Estate",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "1cecef86e7755fc952cc84a7c67da2b551d3f20df858509e1d6726a097cb3577"
+  },
+  "CCI": {
+   "symbol": "CCI",
+   "cik": "0001051470",
+   "name": "CROWN CASTLE INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "1f56488c0cecc45ad0fc5a5c65ae81d06cb46962b287d5a62e5a7bed3c5ac9d0"
+  },
+  "CCL": {
+   "symbol": "CCL",
+   "cik": "0000815097",
+   "name": "Carnival Corp Ltd.",
+   "sic": "4400",
+   "sic_description": "Water Transportation",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f82d9bc721785d7e2ed4a11e4d54d6ffda7148c37bd8c42f23065955843002f0"
+  },
+  "CDNS": {
+   "symbol": "CDNS",
+   "cik": "0000813672",
+   "name": "CADENCE DESIGN SYSTEMS INC",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6ac5ccabe66a8f56d83166a04a032d46a552d8a0e7bfe4ca5d371b88b9858067"
+  },
+  "CDW": {
+   "symbol": "CDW",
+   "cik": "0001402057",
+   "name": "CDW Corp",
+   "sic": "5961",
+   "sic_description": "Retail-Catalog & Mail-Order Houses",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "b6f7ce34358e3d77229b61237e464429fc15b8a08e883e2e67134a161ade774c"
+  },
+  "CEG": {
+   "symbol": "CEG",
+   "cik": "0001868275",
+   "name": "Constellation Energy Corp",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "b183cd67550ee33d15a7af4c5de5342b78e6b53197bf61369868ac0f01c6eb12"
+  },
+  "CF": {
+   "symbol": "CF",
+   "cik": "0001324404",
+   "name": "CF Industries Holdings, Inc.",
+   "sic": "2870",
+   "sic_description": "Agricultural Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "2aa6c4f8a248b7f543455402bac9f32f99887828638d6f89605e2ce2e8895cce"
+  },
+  "CFG": {
+   "symbol": "CFG",
+   "cik": "0000759944",
+   "name": "CITIZENS FINANCIAL GROUP INC/RI",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "0464c786a13d0e9584c51535f0d1acf4583bfe0544f2cf309a6d846edb6e2dae"
+  },
+  "CHD": {
+   "symbol": "CHD",
+   "cik": "0000313927",
+   "name": "CHURCH & DWIGHT CO INC /DE/",
+   "sic": "2840",
+   "sic_description": "Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "e22ee2da5e04777c2ac971effa2172b3fbee560ca324f0444d89fc930d9c6547"
+  },
+  "CHRW": {
+   "symbol": "CHRW",
+   "cik": "0001043277",
+   "name": "C. H. ROBINSON WORLDWIDE, INC.",
+   "sic": "4731",
+   "sic_description": "Arrangement of  Transportation of  Freight & Cargo",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "a6c0355f8f0706240d78b2cdb8337317795210777d95aefb1eedc3e4e910e596"
+  },
+  "CHTR": {
+   "symbol": "CHTR",
+   "cik": "0001091667",
+   "name": "CHARTER COMMUNICATIONS, INC. /MO/",
+   "sic": "4841",
+   "sic_description": "Cable & Other Pay Television Services",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "9e68213bcebfd7be51cd79db51a1023fc5091ae616b1ca28e9af5113fd33ca24"
+  },
+  "CI": {
+   "symbol": "CI",
+   "cik": "0001739940",
+   "name": "Cigna Group",
+   "sic": "6324",
+   "sic_description": "Hospital & Medical Service Plans",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "b869aca3ec2d02fae90f311b8eb2141139767674058e01e514fc8cec35a9b08b"
+  },
+  "CIEN": {
+   "symbol": "CIEN",
+   "cik": "0000936395",
+   "name": "CIENA CORP",
+   "sic": "3661",
+   "sic_description": "Telephone & Telegraph Apparatus",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "5fc3dde04cf6c211a78ee2ab59e1768f1a002e5102bfaaa8682bc5f619170933"
+  },
+  "CINF": {
+   "symbol": "CINF",
+   "cik": "0000020286",
+   "name": "CINCINNATI FINANCIAL CORP",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "863dc2007f1d47a8a28c7361fac3464a077e29cf4a67d71814e97c20edcab822"
+  },
+  "CL": {
+   "symbol": "CL",
+   "cik": "0000021665",
+   "name": "COLGATE PALMOLIVE CO",
+   "sic": "2844",
+   "sic_description": "Perfumes, Cosmetics & Other Toilet Preparations",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "ec08514c31d65fa388335db1242539621d23ba447da1be334a7a3374afe8bbc0"
+  },
+  "CLX": {
+   "symbol": "CLX",
+   "cik": "0000021076",
+   "name": "CLOROX CO /DE/",
+   "sic": "2842",
+   "sic_description": "Specialty Cleaning, Polishing and Sanitation Preparations",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "6dc7e47b5eb478cc8418e55742df46f3a4054de71d5d2b852ae2d6d48d690d67"
+  },
+  "CMCSA": {
+   "symbol": "CMCSA",
+   "cik": "0001166691",
+   "name": "COMCAST CORP",
+   "sic": "4841",
+   "sic_description": "Cable & Other Pay Television Services",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "1c9ee5c84527542fa21885a4d741a7610ab8d0e5f98774adb63d427c10415d52"
+  },
+  "CME": {
+   "symbol": "CME",
+   "cik": "0001156375",
+   "name": "CME GROUP INC.",
+   "sic": "6200",
+   "sic_description": "Security & Commodity Brokers, Dealers, Exchanges & Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "fb8b7c19a808dc54dd14097c491a0d7aec9f2f05de5640739dd50d94efc4b2f2"
+  },
+  "CMG": {
+   "symbol": "CMG",
+   "cik": "0001058090",
+   "name": "CHIPOTLE MEXICAN GRILL INC",
+   "sic": "5812",
+   "sic_description": "Retail-Eating  Places",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "b13956aa9e12a29527ecbec4832dcfd1e1e21c8c7b8ce3ebd98b01533a8bc2f2"
+  },
+  "CMI": {
+   "symbol": "CMI",
+   "cik": "0000026172",
+   "name": "CUMMINS INC",
+   "sic": "3510",
+   "sic_description": "Engines & Turbines",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "9ca0c93a912f7eed6ab64b929788391c0bf5ff94088626f6105736eabb4a2a21"
+  },
+  "CMS": {
+   "symbol": "CMS",
+   "cik": "0000811156",
+   "name": "CMS ENERGY CORP",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "f0e4ad7b630d4d9cb1cf8130e791d0dfb0294206d7abb15f463ff14e68748f2a"
+  },
+  "CNC": {
+   "symbol": "CNC",
+   "cik": "0001071739",
+   "name": "CENTENE CORP",
+   "sic": "6324",
+   "sic_description": "Hospital & Medical Service Plans",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "6c0ac98fa265e4e8a0980201edc9eab08df5fb9021d8fed0b336950952896bf6"
+  },
+  "CNP": {
+   "symbol": "CNP",
+   "cik": "0001130310",
+   "name": "CENTERPOINT ENERGY INC",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "a5a09576d3529b075cec959bf9fcff35f2beae018af1b1d770c261d0cc88004f"
+  },
+  "COF": {
+   "symbol": "COF",
+   "cik": "0000927628",
+   "name": "CAPITAL ONE FINANCIAL CORP",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "4d3ad9350acc452cb351010cefb383b0590519bc84b94ed36b2d873c5df3640d"
+  },
+  "COHR": {
+   "symbol": "COHR",
+   "cik": "0000820318",
+   "name": "COHERENT CORP.",
+   "sic": "3827",
+   "sic_description": "Optical Instruments & Lenses",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6a933602b4b2fa99ef1167b5863c95361f10a06bd9fbf06784f2aaf1f37faf59"
+  },
+  "COIN": {
+   "symbol": "COIN",
+   "cik": "0001679788",
+   "name": "Coinbase Global, Inc.",
+   "sic": "6199",
+   "sic_description": "Finance Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "6ebfb2484a3913e6761cbed280e76431ab60bfa894d413cbc1057de92600ee7a"
+  },
+  "COO": {
+   "symbol": "COO",
+   "cik": "0000711404",
+   "name": "COOPER COMPANIES, INC.",
+   "sic": "3851",
+   "sic_description": "Ophthalmic Goods",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "dee50d4eee129b5d72354beb5c3cf2226bad1d0660c4737e4f88c8023a9e8d9f"
+  },
+  "COP": {
+   "symbol": "COP",
+   "cik": "0001163165",
+   "name": "CONOCOPHILLIPS",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "4e16ff59a54a8891979d2c701e729c198d308ff3be7f3005833c8ad5de671f66"
+  },
+  "COR": {
+   "symbol": "COR",
+   "cik": "0001140859",
+   "name": "Cencora, Inc.",
+   "sic": "5122",
+   "sic_description": "Wholesale-Drugs, Proprietaries & Druggists' Sundries",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "2a6d92fe3130ecf77bc297c36175a4ad40a7ed0068ca2162eeb53bef5044f96d"
+  },
+  "COST": {
+   "symbol": "COST",
+   "cik": "0000909832",
+   "name": "COSTCO WHOLESALE CORP /NEW",
+   "sic": "5331",
+   "sic_description": "Retail-Variety Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "cb866c35344e14f366d2081a48426516c7c7a5336f13c2f625e2c2b9e0216688"
+  },
+  "CPAY": {
+   "symbol": "CPAY",
+   "cik": "0001175454",
+   "name": "CORPAY, INC.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f0a78a43a97101df4736882159eecd52e5323facea101e99fcaed8bed96a6b58"
+  },
+  "CPRT": {
+   "symbol": "CPRT",
+   "cik": "0000900075",
+   "name": "COPART INC",
+   "sic": "5500",
+   "sic_description": "Retail-Auto Dealers & Gasoline Stations",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "21dea1ee4aa7207bada3bc7f2cb7a0bbce7b7d70b81a3a8bfd4ab571ca661c85"
+  },
+  "CPT": {
+   "symbol": "CPT",
+   "cik": "0000906345",
+   "name": "CAMDEN PROPERTY TRUST",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "a57d2f76e5c850236409473cbc74ce9164670ef0b3a6522e8e0dff9f221378a4"
+  },
+  "CRH": {
+   "symbol": "CRH",
+   "cik": "0000849395",
+   "name": "CRH PUBLIC LTD CO",
+   "sic": "3241",
+   "sic_description": "Cement, Hydraulic",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "7a90c4862889afb71b072fc2fe8646cb3af0e425c54817a3864316529ba8abeb"
+  },
+  "CRL": {
+   "symbol": "CRL",
+   "cik": "0001100682",
+   "name": "CHARLES RIVER LABORATORIES INTERNATIONAL, INC.",
+   "sic": "8731",
+   "sic_description": "Services-Commercial Physical & Biological Research",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "ee3fd74fba0087ac52a018f1236e303b67ebc296a263b722c91075dddab7590d"
+  },
+  "CRM": {
+   "symbol": "CRM",
+   "cik": "0001108524",
+   "name": "Salesforce, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "a17395341045ab4f90af3c9a631da7a393704f21c22074ffc5d64b6d1c73f719"
+  },
+  "CRWD": {
+   "symbol": "CRWD",
+   "cik": "0001535527",
+   "name": "CrowdStrike Holdings, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "54b246ef8e3934d01bb512a0ff7b174b0863527d59685ef92e3b47782c31f30e"
+  },
+  "CSCO": {
+   "symbol": "CSCO",
+   "cik": "0000858877",
+   "name": "CISCO SYSTEMS, INC.",
+   "sic": "3576",
+   "sic_description": "Computer Communications Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "c899d5a71f802e97ab4d4b6c644d616032de876393a26dd755fe6544e91001b0"
+  },
+  "CSGP": {
+   "symbol": "CSGP",
+   "cik": "0001057352",
+   "name": "COSTAR GROUP, INC.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5c701d0589dddbcb3c753450862d1b56c0e145160fcb3604da95e35205716748"
+  },
+  "CSX": {
+   "symbol": "CSX",
+   "cik": "0000277948",
+   "name": "CSX CORP",
+   "sic": "4011",
+   "sic_description": "Railroads, Line-Haul Operating",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3a5237ffa898c72a6056dba8cd860996562d0f0057217311f5eb9c1a1daa4da6"
+  },
+  "CTAS": {
+   "symbol": "CTAS",
+   "cik": "0000723254",
+   "name": "CINTAS CORP",
+   "sic": "2320",
+   "sic_description": "Men's & Boys' Furnishgs, Work Clothg, & Allied Garments",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "dcf172df039a9fa7c13f5789d6ee2ae400c9acb62b5f04f45d4b807f76154daa"
+  },
+  "CTSH": {
+   "symbol": "CTSH",
+   "cik": "0001058290",
+   "name": "COGNIZANT TECHNOLOGY SOLUTIONS CORP",
+   "sic": "7371",
+   "sic_description": "Services-Computer Programming Services",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "23c15e5b3d5e37d79843790991999ed7d536468cdf4a55097fc8954026e81cc6"
+  },
+  "CTVA": {
+   "symbol": "CTVA",
+   "cik": "0001755672",
+   "name": "Corteva, Inc.",
+   "sic": "0100",
+   "sic_description": "Agricultural Production-Crops",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "d00f4685911c95bc206fff3c1fe2408de22380964120f5d66f9e470252d52e2c"
+  },
+  "CVNA": {
+   "symbol": "CVNA",
+   "cik": "0001690820",
+   "name": "CARVANA CO.",
+   "sic": "5500",
+   "sic_description": "Retail-Auto Dealers & Gasoline Stations",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "306495b2fa2340aa856571082996636bdb9b223cb180d329d24a7963dc73520c"
+  },
+  "CVS": {
+   "symbol": "CVS",
+   "cik": "0000064803",
+   "name": "CVS HEALTH Corp",
+   "sic": "5912",
+   "sic_description": "Retail-Drug Stores and Proprietary Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "b5a7da7d9adb7d8309467f7d3bdb15938d52afcd0d7197d5667980cfe0c56c0e"
+  },
+  "CVX": {
+   "symbol": "CVX",
+   "cik": "0000093410",
+   "name": "CHEVRON CORP",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "1c2aca29a8206b7438c67cb04be68ca883e69f85a97fd8993d52546f8aefb40b"
+  },
+  "D": {
+   "symbol": "D",
+   "cik": "0000715957",
+   "name": "DOMINION ENERGY, INC",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "b9e811f4b26697220082c6227161fa88644dd4ba5c5d379e9dcd1e471c36a7d4"
+  },
+  "DAL": {
+   "symbol": "DAL",
+   "cik": "0000027904",
+   "name": "DELTA AIR LINES, INC.",
+   "sic": "4512",
+   "sic_description": "Air Transportation, Scheduled",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3f17c777e4d7b6ccbdb6327c74c349b960695b335e5a3b1dae835b837a70b8d7"
+  },
+  "DASH": {
+   "symbol": "DASH",
+   "cik": "0001792789",
+   "name": "DoorDash, Inc.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "2fba831c657b3026962952223143deb92a889a2a34853ab855cfad9da3d335dd"
+  },
+  "DD": {
+   "symbol": "DD",
+   "cik": "0001666700",
+   "name": "DuPont de Nemours, Inc.",
+   "sic": "2821",
+   "sic_description": "Plastic Materials, Synth Resins & Nonvulcan Elastomers",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "b6b53176bfccc3c155cfa1ff062fa5338882d9401f090b460d8c0cdcd7bd3814"
+  },
+  "DDOG": {
+   "symbol": "DDOG",
+   "cik": "0001561550",
+   "name": "Datadog, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "41b99260bbdc289aac9de0de669a9fd383ed41d080ac790d4cb70e1bde46c682"
+  },
+  "DE": {
+   "symbol": "DE",
+   "cik": "0000315189",
+   "name": "DEERE & CO",
+   "sic": "3523",
+   "sic_description": "Farm Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b035010d3d0a5c22f98002e91be2241008711647d8f4d78c2e8a533f341c0469"
+  },
+  "DECK": {
+   "symbol": "DECK",
+   "cik": "0000910521",
+   "name": "DECKERS OUTDOOR CORP",
+   "sic": "3021",
+   "sic_description": "Rubber & Plastics Footwear",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "082bb5eded9fee228563773d97deded75f91160d5343a9b48b0593ed512afb09"
+  },
+  "DELL": {
+   "symbol": "DELL",
+   "cik": "0001571996",
+   "name": "Dell Technologies Inc.",
+   "sic": "3571",
+   "sic_description": "Electronic Computers",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "96f2de217327f040027dc64540bf0412b3aad0b9183181abc990c3f8ccad7354"
+  },
+  "DG": {
+   "symbol": "DG",
+   "cik": "0000029534",
+   "name": "DOLLAR GENERAL CORP",
+   "sic": "5331",
+   "sic_description": "Retail-Variety Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "a90e86cc3d7b65e4597eb27ae041f8f25b53d46db39941e50c4f341c93d5fcd3"
+  },
+  "DGX": {
+   "symbol": "DGX",
+   "cik": "0001022079",
+   "name": "QUEST DIAGNOSTICS INC",
+   "sic": "8071",
+   "sic_description": "Services-Medical Laboratories",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "7ba880497814d3baf232de52c8c90ffca42920bd3a0739f5bceecef1f7786fac"
+  },
+  "DHI": {
+   "symbol": "DHI",
+   "cik": "0000882184",
+   "name": "HORTON D R INC /DE/",
+   "sic": "1531",
+   "sic_description": "Operative Builders",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "c9a8128bf8f7d76fd90d0243253cfa4b845ed17858430aa40b4cbd98f8ace44f"
+  },
+  "DHR": {
+   "symbol": "DHR",
+   "cik": "0000313616",
+   "name": "DANAHER CORP /DE/",
+   "sic": "3823",
+   "sic_description": "Industrial Instruments For Measurement, Display, and Control",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "99e1f8af5d8ac5d293ae01d4c1e861b058cbd8a1fd39f7b379a98a6fce301545"
+  },
+  "DIS": {
+   "symbol": "DIS",
+   "cik": "0001744489",
+   "name": "Walt Disney Co",
+   "sic": "7990",
+   "sic_description": "Services-Miscellaneous Amusement & Recreation",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "4ef354bd837a3237636f6932dff49bbdca2665a294f243b59cb7350e14e14825"
+  },
+  "DLR": {
+   "symbol": "DLR",
+   "cik": "0001297996",
+   "name": "DIGITAL REALTY TRUST, INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "edcf1e281db854f00284d3645a7665c0c47ed6bb78922256405f1056a93cee2e"
+  },
+  "DLTR": {
+   "symbol": "DLTR",
+   "cik": "0000935703",
+   "name": "DOLLAR TREE, INC.",
+   "sic": "5331",
+   "sic_description": "Retail-Variety Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "9c5eb511aac764ec95a33ee6098782cda25f14b98d2bdfaf103c594b1e9ea492"
+  },
+  "DOC": {
+   "symbol": "DOC",
+   "cik": "0000765880",
+   "name": "HEALTHPEAK PROPERTIES, INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "06784a4bfb4451886cdce5cfd05ee7dd7f51c6857b33f5bf6bf8e946d7e28121"
+  },
+  "DOV": {
+   "symbol": "DOV",
+   "cik": "0000029905",
+   "name": "DOVER Corp",
+   "sic": "3530",
+   "sic_description": "Construction, Mining & Materials Handling Machinery & Equip",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "35bd8a8208c769b36fd5837c0ffc993cd479f9d1bfc5d84c78775c0883023959"
+  },
+  "DOW": {
+   "symbol": "DOW",
+   "cik": "0001751788",
+   "name": "DOW INC.",
+   "sic": "2821",
+   "sic_description": "Plastic Materials, Synth Resins & Nonvulcan Elastomers",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "7450bcf9768fc62f2941eaa564d474db96e6a563f5388a9e4c0e2f5f5c2cce86"
+  },
+  "DPZ": {
+   "symbol": "DPZ",
+   "cik": "0001286681",
+   "name": "DOMINOS PIZZA INC",
+   "sic": "5140",
+   "sic_description": "Wholesale-Groceries & Related Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "8ee5c312fd499811f622b740e49118ce17deca4bee3340286bcb7d1a6466acdb"
+  },
+  "DRI": {
+   "symbol": "DRI",
+   "cik": "0000940944",
+   "name": "DARDEN RESTAURANTS INC",
+   "sic": "5812",
+   "sic_description": "Retail-Eating  Places",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "5d1894ca3328909d5c8db25efc5b65c85e2a720e70745a6a99fa60be578ff7e4"
+  },
+  "DTE": {
+   "symbol": "DTE",
+   "cik": "0000936340",
+   "name": "DTE ENERGY CO",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "ff09433f40afb788f2d4dc66c0fb004977158c06ed5c380f7f06b5ca4fe9f3ff"
+  },
+  "DUK": {
+   "symbol": "DUK",
+   "cik": "0001326160",
+   "name": "Duke Energy CORP",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "e46091b41bc2465f03b07c98bfab4ca53efef069d0d583c2f713f4a97574cad1"
+  },
+  "DVA": {
+   "symbol": "DVA",
+   "cik": "0000927066",
+   "name": "DAVITA INC.",
+   "sic": "8090",
+   "sic_description": "Services-Misc Health & Allied Services, NEC",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "ed93d0ebc05debe616e00f5f9b4db1b26d28cf658dae2ac83805bae22038affe"
+  },
+  "DVN": {
+   "symbol": "DVN",
+   "cik": "0001090012",
+   "name": "DEVON ENERGY CORP/DE",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "c249c6fe23f2fcb250bfc3c5f49d15131c54e4c2dde9ea01ffa5a439b4a08df3"
+  },
+  "DXCM": {
+   "symbol": "DXCM",
+   "cik": "0001093557",
+   "name": "DEXCOM INC",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "cf567368a466cebba47d0fc91eda6ed0883fdbbb796f3affa1e2d7008ea5d1a2"
+  },
+  "EBAY": {
+   "symbol": "EBAY",
+   "cik": "0001065088",
+   "name": "EBAY INC",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "42afefa97fc19e1147b9abf163bdfb3adf5bb90e0ea1760c8c8b971a503a3b1e"
+  },
+  "ECHO": {
+   "symbol": "ECHO",
+   "cik": "0001415404",
+   "name": "EchoStar CORP",
+   "sic": "4899",
+   "sic_description": "Communications Services, NEC",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "62099c41d09ee04db96ea99e17e897e806603f8c2abea43dde84a4f90258cdee"
+  },
+  "ECL": {
+   "symbol": "ECL",
+   "cik": "0000031462",
+   "name": "ECOLAB INC.",
+   "sic": "2840",
+   "sic_description": "Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "02e73583077d3dd9f3136347882a37c927b48765473ee5c51e79604325fa7644"
+  },
+  "ED": {
+   "symbol": "ED",
+   "cik": "0001047862",
+   "name": "CONSOLIDATED EDISON INC",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "8166b96a97b33a99dac4ba0c08190db03a1c91bf6657d2a465fef0efe49b4e84"
+  },
+  "EFX": {
+   "symbol": "EFX",
+   "cik": "0000033185",
+   "name": "EQUIFAX INC",
+   "sic": "7320",
+   "sic_description": "Services-Consumer Credit Reporting, Collection Agencies",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5178e743fa9ee33db284d03b30749d25fa14a6db9cc0775365e973aa28fa12ec"
+  },
+  "EG": {
+   "symbol": "EG",
+   "cik": "0001095073",
+   "name": "EVEREST GROUP, LTD.",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "135df80b645ad19ed95c55fbef7f25c1fcfc0893a7de36e24bb5e70d54c1d7a3"
+  },
+  "EIX": {
+   "symbol": "EIX",
+   "cik": "0000827052",
+   "name": "EDISON INTERNATIONAL",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "fa5206e638efee41792ea0f5a93c7229d49f901acd14180bdd9a035278a61730"
+  },
+  "EL": {
+   "symbol": "EL",
+   "cik": "0001001250",
+   "name": "ESTEE LAUDER COMPANIES INC",
+   "sic": "2844",
+   "sic_description": "Perfumes, Cosmetics & Other Toilet Preparations",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "6d9ebbff25b3f0757d35e9252456ec9f699593a43de84652b3d365a22bd1d5c6"
+  },
+  "ELV": {
+   "symbol": "ELV",
+   "cik": "0001156039",
+   "name": "Elevance Health, Inc.",
+   "sic": "6324",
+   "sic_description": "Hospital & Medical Service Plans",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "f1aeafe2992be8ded1eba08207d29345123805467772865f1b94c707b48e54db"
+  },
+  "EME": {
+   "symbol": "EME",
+   "cik": "0000105634",
+   "name": "EMCOR Group, Inc.",
+   "sic": "1731",
+   "sic_description": "Electrical Work",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "e9eb63d35363e1b7c0e2b93f178f12684fad16cbc0656d44ab1f7e80e756c3a7"
+  },
+  "EMR": {
+   "symbol": "EMR",
+   "cik": "0000032604",
+   "name": "EMERSON ELECTRIC CO",
+   "sic": "3600",
+   "sic_description": "Electronic & Other Electrical Equipment (No Computer Equip)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "1158279c3401cedba05955456a910cd0abea141d413fb3a310cf66f303fd3423"
+  },
+  "EOG": {
+   "symbol": "EOG",
+   "cik": "0000821189",
+   "name": "EOG RESOURCES INC",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "e1bb80cb03180a8b924cb65c327d926a394ef8c57ea3a5718c5e7acbeb2a4554"
+  },
+  "EQIX": {
+   "symbol": "EQIX",
+   "cik": "0001101239",
+   "name": "EQUINIX INC",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "9dc56659e0c735bd4c50b22ad97ea5bb34254f1f9f1686b7b95619700d9c5fb1"
+  },
+  "EQT": {
+   "symbol": "EQT",
+   "cik": "0000033213",
+   "name": "EQT Corp",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "cd6c7ea2b4b577932e7cedccf2533cb4816b20142289d4bc4ad382b28cf8f641"
+  },
+  "ERIE": {
+   "symbol": "ERIE",
+   "cik": "0000922621",
+   "name": "ERIE INDEMNITY CO",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "d3236569a503b03cc690d46fa3c6944d6c81b0c0b7f55d0d91d6e53063d90cfe"
+  },
+  "ES": {
+   "symbol": "ES",
+   "cik": "0000072741",
+   "name": "EVERSOURCE ENERGY",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "2aa26cdfa3ee62227bd07b53a345a7abed745c8ae84a005bb388a94e13e72c83"
+  },
+  "ESS": {
+   "symbol": "ESS",
+   "cik": "0000920522",
+   "name": "ESSEX PROPERTY TRUST, INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "dbd52574798f8f444bf3096290cf4f2b15a5c67896a355d4aafcb963c02242f7"
+  },
+  "ETN": {
+   "symbol": "ETN",
+   "cik": "0001551182",
+   "name": "Eaton Corp plc",
+   "sic": "3590",
+   "sic_description": "Misc Industrial & Commercial Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c9b94128a562f639be5a2fc17e35a5365bcbf901c88eb8418d925497ba2ac3f9"
+  },
+  "ETR": {
+   "symbol": "ETR",
+   "cik": "0000065984",
+   "name": "ENTERGY CORP /DE/",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "643e87aec15c3df0584f1ac710e43f2d1e84439c79eeb4a7e8f2d26eafd85504"
+  },
+  "EVRG": {
+   "symbol": "EVRG",
+   "cik": "0001711269",
+   "name": "Evergy, Inc.",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "7e4c4a6f69778dd04d596f5df291ceadf6a8a3150038cd81ceb837b8d72d9eef"
+  },
+  "EW": {
+   "symbol": "EW",
+   "cik": "0001099800",
+   "name": "Edwards Lifesciences Corp",
+   "sic": "3842",
+   "sic_description": "Orthopedic, Prosthetic & Surgical Appliances & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "cfa8aff7eea6dd67cf59b5692b9b2218235ee1ccb636aba06ae0db1c98ef3f09"
+  },
+  "EXC": {
+   "symbol": "EXC",
+   "cik": "0001109357",
+   "name": "EXELON CORP",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "056bc779e3a5e3d7e9f4348ecb3ca400b6a1e189135ec693bcd932357edf599b"
+  },
+  "EXE": {
+   "symbol": "EXE",
+   "cik": "0000895126",
+   "name": "EXPAND ENERGY Corp",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "1f9f2861df9425a2ce23659bea8a3b92c9e0363242094244df4f172ca70d52e8"
+  },
+  "EXPD": {
+   "symbol": "EXPD",
+   "cik": "0000746515",
+   "name": "EXPEDITORS INTERNATIONAL OF WASHINGTON INC",
+   "sic": "4731",
+   "sic_description": "Arrangement of  Transportation of  Freight & Cargo",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "8898f540a3658672b9b496c7fc59ec1643583c42dfbbb6d3ea03fa14ef52fe25"
+  },
+  "EXPE": {
+   "symbol": "EXPE",
+   "cik": "0001324424",
+   "name": "Expedia Group, Inc.",
+   "sic": "4700",
+   "sic_description": "Transportation Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f4adf70f2e2f8bdb690b3f8dcac93ab929a4fb48e04f9a01a361f3c1ab874596"
+  },
+  "EXR": {
+   "symbol": "EXR",
+   "cik": "0001289490",
+   "name": "Extra Space Storage Inc.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "a73ba93756f6c3a3895ec53f2ded365e63009114011ab9372aa830d8022a2f21"
+  },
+  "F": {
+   "symbol": "F",
+   "cik": "0000037996",
+   "name": "FORD MOTOR CO",
+   "sic": "3711",
+   "sic_description": "Motor Vehicles & Passenger Car Bodies",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "ad100c44503654a40da1bdf809e768aaf2b66a2fbbe9b91cfb259927636d0b03"
+  },
+  "FANG": {
+   "symbol": "FANG",
+   "cik": "0001539838",
+   "name": "Diamondback Energy, Inc.",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "da46a19c3a2614303e37f54df988543a3437990538a0c5e822115ed314330eae"
+  },
+  "FAST": {
+   "symbol": "FAST",
+   "cik": "0000815556",
+   "name": "FASTENAL CO",
+   "sic": "5200",
+   "sic_description": "Retail-Building Materials, Hardware, Garden Supply",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "ad0b2f9a90b79877761860fd22d170d30ef3fae174b648bb9573011c5b5febf8"
+  },
+  "FCX": {
+   "symbol": "FCX",
+   "cik": "0000831259",
+   "name": "FREEPORT-MCMORAN INC",
+   "sic": "1000",
+   "sic_description": "Metal Mining",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "8a2e8a67a77d1f69e24727d8f9ae177fc532ac6fbc14558d73ea95f24456f8ec"
+  },
+  "FDS": {
+   "symbol": "FDS",
+   "cik": "0001013237",
+   "name": "FACTSET RESEARCH SYSTEMS INC",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9acc93dff4a349e9fcaa69729be4c7213a2416ba6dfaa7bdec9e01d36e67da5e"
+  },
+  "FDX": {
+   "symbol": "FDX",
+   "cik": "0001048911",
+   "name": "FEDEX CORP",
+   "sic": "4513",
+   "sic_description": "Air Courier Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3683085f8dd30c90d6ed212881fbee08c809e2d54921acb1942e2fc4c6a2f60a"
+  },
+  "FDXF": {
+   "symbol": "FDXF",
+   "cik": "0002082247",
+   "name": "FedEx Freight Holding Company, Inc.",
+   "sic": "4513",
+   "sic_description": "Air Courier Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "61c0986b0ad6be91f5b294ed7f2bbd2fbed98399a29fb63c6dd1fc62b8ec1762"
+  },
+  "FE": {
+   "symbol": "FE",
+   "cik": "0001031296",
+   "name": "FIRSTENERGY CORP",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "ba06908cce69ccb0bb70eed5968c930055bff2a7028564ceb27e232b161588f5"
+  },
+  "FERG": {
+   "symbol": "FERG",
+   "cik": "0002011641",
+   "name": "Ferguson Enterprises Inc. /DE/",
+   "sic": "5070",
+   "sic_description": "Wholesale-Hardware & Plumbing & Heating Equipment & Supplies",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c341e8ea9286f4c24268bd7e5858997fd89e4598e036ff2f77d28929668227a9"
+  },
+  "FFIV": {
+   "symbol": "FFIV",
+   "cik": "0001048695",
+   "name": "F5, INC.",
+   "sic": "3576",
+   "sic_description": "Computer Communications Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "c4e1727302ec206e4dea49558ec0cf3a62a46ad3c8a8f9c5577ce1aecd5575d6"
+  },
+  "FICO": {
+   "symbol": "FICO",
+   "cik": "0000814547",
+   "name": "FAIR ISAAC CORP",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5d9abb1b0cfea4aca0a090df6e44f0b9d78cb73df0169c1364185d455e9c0ea1"
+  },
+  "FIS": {
+   "symbol": "FIS",
+   "cik": "0001136893",
+   "name": "Fidelity National Information Services, Inc.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b1ecec79000c3e4c11c3e20e8489b49fdd2b8ade15c9bfb1063fcb19ae366a75"
+  },
+  "FISV": {
+   "symbol": "FISV",
+   "cik": "0000798354",
+   "name": "FISERV INC",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b84d17afe3f55cd2130c412903584532f1bfc5453720f89242530dc9207765e0"
+  },
+  "FITB": {
+   "symbol": "FITB",
+   "cik": "0000035527",
+   "name": "FIFTH THIRD BANCORP",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "4ac3856c528526257272c29d7af5f2775246dfdc68312b2c8bb64b56fbcdc1da"
+  },
+  "FIX": {
+   "symbol": "FIX",
+   "cik": "0001035983",
+   "name": "COMFORT SYSTEMS USA INC",
+   "sic": "1731",
+   "sic_description": "Electrical Work",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5f06a439b3286837a4245a1cd47d70be069741d5c7517e8b34160f41d8dd71f8"
+  },
+  "FLEX": {
+   "symbol": "FLEX",
+   "cik": "0000866374",
+   "name": "FLEX LTD.",
+   "sic": "3672",
+   "sic_description": "Printed Circuit Boards",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "4fb588728570db1d2fd2fc210020f7cd45a60c36a116d88ed7481c051e2a7937"
+  },
+  "FOX": {
+   "symbol": "FOX",
+   "cik": "0001754301",
+   "name": "Fox Corp",
+   "sic": "4833",
+   "sic_description": "Television Broadcasting Stations",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "601b49b334f1a9746df8441d5882b2557d96cee934e2c682d566902fdfd6f553"
+  },
+  "FOXA": {
+   "symbol": "FOXA",
+   "cik": "0001754301",
+   "name": "Fox Corp",
+   "sic": "4833",
+   "sic_description": "Television Broadcasting Stations",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "601b49b334f1a9746df8441d5882b2557d96cee934e2c682d566902fdfd6f553"
+  },
+  "FRT": {
+   "symbol": "FRT",
+   "cik": "0000034903",
+   "name": "FEDERAL REALTY INVESTMENT TRUST",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "054b3c438a78f5c9013f559bc0553cf8905be5bf3b592db19955e9ad01f58237"
+  },
+  "FSLR": {
+   "symbol": "FSLR",
+   "cik": "0001274494",
+   "name": "FIRST SOLAR, INC.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "ae7c08a561f1c1264aff9243717b0cebeefaace92eed98ab32c85c9e6f1b3379"
+  },
+  "FTNT": {
+   "symbol": "FTNT",
+   "cik": "0001262039",
+   "name": "Fortinet, Inc.",
+   "sic": "3577",
+   "sic_description": "Computer Peripheral Equipment, NEC",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "5ab4113b0ba5630a1220098e234b319dc4fb92b2b25fc4701efb03dcad0abc74"
+  },
+  "FTV": {
+   "symbol": "FTV",
+   "cik": "0001659166",
+   "name": "Fortive Corp",
+   "sic": "3823",
+   "sic_description": "Industrial Instruments For Measurement, Display, and Control",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "e040b2526a720802610470f935a6e77b471c3cecf344d3168c024530e90ea953"
+  },
+  "GD": {
+   "symbol": "GD",
+   "cik": "0000040533",
+   "name": "GENERAL DYNAMICS CORP",
+   "sic": "3730",
+   "sic_description": "Ship & Boat Building & Repairing",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "00ecded6b8d2a0823e66efcbf5b0c210663f961557b9e3f017598964aff17613"
+  },
+  "GDDY": {
+   "symbol": "GDDY",
+   "cik": "0001609711",
+   "name": "GoDaddy Inc.",
+   "sic": "7373",
+   "sic_description": "Services-Computer Integrated Systems Design",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "63de8dcf683b85e97c4d672f354dea3df03451ae8fb3c1db64f99ecea50cf0f6"
+  },
+  "GE": {
+   "symbol": "GE",
+   "cik": "0000040545",
+   "name": "GENERAL ELECTRIC CO",
+   "sic": "3600",
+   "sic_description": "Electronic & Other Electrical Equipment (No Computer Equip)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "ef3b1c78870ba9b87b5b7e92f92a4a34eceea3c11f8f5c1e5b076d2a59aab718"
+  },
+  "GEHC": {
+   "symbol": "GEHC",
+   "cik": "0001932393",
+   "name": "GE HealthCare Technologies Inc.",
+   "sic": "3844",
+   "sic_description": "X-Ray Apparatus & Tubes & Related Irradiation Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "9158645258a9985c0c0f5b479d6e25f06c7b2b029e0108805f0d5b3302caced3"
+  },
+  "GEN": {
+   "symbol": "GEN",
+   "cik": "0000849399",
+   "name": "Gen Digital Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "a9c179b53a4657a2a01b523a534fb1d14a78b0259abeb6585beb3138adc98f6b"
+  },
+  "GEV": {
+   "symbol": "GEV",
+   "cik": "0001996810",
+   "name": "GE Vernova Inc.",
+   "sic": "3600",
+   "sic_description": "Electronic & Other Electrical Equipment (No Computer Equip)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f8eb5a8119423c811385726321e96d6ed0c6cc4b18acf821edbbc595be7c63dc"
+  },
+  "GILD": {
+   "symbol": "GILD",
+   "cik": "0000882095",
+   "name": "GILEAD SCIENCES, INC.",
+   "sic": "2836",
+   "sic_description": "Biological Products, (No Diagnostic Substances)",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "9ad836542114c10c3c1a2711efcf3d8c2803230207dcba583bcf25e0e2981147"
+  },
+  "GIS": {
+   "symbol": "GIS",
+   "cik": "0000040704",
+   "name": "GENERAL MILLS INC",
+   "sic": "2040",
+   "sic_description": "Grain Mill Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "fbf16362326e3fca675cf609d6a811600b2ad4eec61c975cf25d3a494cb580f5"
+  },
+  "GL": {
+   "symbol": "GL",
+   "cik": "0000320335",
+   "name": "GLOBE LIFE INC.",
+   "sic": "6311",
+   "sic_description": "Life Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "31cf54c418020d08380d65b39819c5a72d942923083083074d4916708f838b05"
+  },
+  "GLW": {
+   "symbol": "GLW",
+   "cik": "0000024741",
+   "name": "CORNING INC /NY",
+   "sic": "3357",
+   "sic_description": "Drawing & Insulating of  Nonferrous Wire",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "e76a3f3aececa9ea36618fa66c6fb08dfe607086dc70f840110b4aa1ec1d43d8"
+  },
+  "GM": {
+   "symbol": "GM",
+   "cik": "0001467858",
+   "name": "General Motors Co",
+   "sic": "3711",
+   "sic_description": "Motor Vehicles & Passenger Car Bodies",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "8d1a3899555991bd95882883f964893201d49a726dce93d06bd652516f01e02f"
+  },
+  "GNRC": {
+   "symbol": "GNRC",
+   "cik": "0001474735",
+   "name": "GENERAC HOLDINGS INC.",
+   "sic": "3621",
+   "sic_description": "Motors & Generators",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c8a5a9ebd188e11ade72e998e6efd1339d909b4d6d32703234ab89a9419a1baf"
+  },
+  "GOOG": {
+   "symbol": "GOOG",
+   "cik": "0001652044",
+   "name": "Alphabet Inc.",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9434407b197d6322de4bece8ad3b69459c8d6ddf3a68526b4b22b02e8175d33c"
+  },
+  "GOOGL": {
+   "symbol": "GOOGL",
+   "cik": "0001652044",
+   "name": "Alphabet Inc.",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9434407b197d6322de4bece8ad3b69459c8d6ddf3a68526b4b22b02e8175d33c"
+  },
+  "GPC": {
+   "symbol": "GPC",
+   "cik": "0000040987",
+   "name": "GENUINE PARTS CO",
+   "sic": "5013",
+   "sic_description": "Wholesale-Motor Vehicle Supplies & New Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "35c552d2887f9ecb14c8f4ffe9e5a96db95e0cf8d1df519b149f46f7516c6e0b"
+  },
+  "GPN": {
+   "symbol": "GPN",
+   "cik": "0001123360",
+   "name": "GLOBAL PAYMENTS INC",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "7df864691839529ffd801b64f5cc5ede10af88deb3316e50f596ddb15102882c"
+  },
+  "GRMN": {
+   "symbol": "GRMN",
+   "cik": "0001121788",
+   "name": "GARMIN LTD",
+   "sic": "3812",
+   "sic_description": "Search, Detection, Navigation, Guidance, Aeronautical Sys",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3941ce02cf408060f1eff489e9d16894ca2c3559b5ec1d57d8845836cee4b27e"
+  },
+  "GS": {
+   "symbol": "GS",
+   "cik": "0000886982",
+   "name": "GOLDMAN SACHS GROUP INC",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "fa5b92710800fa012a86b739aeefc8a887e879f2c4d9c41c280ebf5e6bf60aa3"
+  },
+  "GWW": {
+   "symbol": "GWW",
+   "cik": "0000277135",
+   "name": "W.W. GRAINGER, INC.",
+   "sic": "5000",
+   "sic_description": "Wholesale-Durable Goods",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "52c571b2662092cfc9835301d829b6197e0803cf226f0600f477810431a80322"
+  },
+  "HAL": {
+   "symbol": "HAL",
+   "cik": "0000045012",
+   "name": "HALLIBURTON CO",
+   "sic": "1389",
+   "sic_description": "Oil & Gas Field Services, NEC",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "9010ac523279493d5999225fe489e8a656ba87c06cf3651eec7ef86c8eb550dd"
+  },
+  "HAS": {
+   "symbol": "HAS",
+   "cik": "0000046080",
+   "name": "HASBRO, INC.",
+   "sic": "3944",
+   "sic_description": "Games, Toys & Children's Vehicles (No Dolls & Bicycles)",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "43661a9375f62cd3da841df91896a9ef251948ce8cd3d186a0a200a23718f67f"
+  },
+  "HBAN": {
+   "symbol": "HBAN",
+   "cik": "0000049196",
+   "name": "HUNTINGTON BANCSHARES INC /MD/",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "781539a77e1e972711e38d78e9f019f2eb4601664289acd0af6eae943447a858"
+  },
+  "HCA": {
+   "symbol": "HCA",
+   "cik": "0000860730",
+   "name": "HCA Healthcare, Inc.",
+   "sic": "8062",
+   "sic_description": "Services-General Medical & Surgical Hospitals, NEC",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "98daa6128f1910ae147855f6fde55cc658561730757a7810f886cd059d494f87"
+  },
+  "HD": {
+   "symbol": "HD",
+   "cik": "0000354950",
+   "name": "HOME DEPOT, INC.",
+   "sic": "5211",
+   "sic_description": "Retail-Lumber & Other Building Materials Dealers",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "672ac7e954322732f26d909249186bfb4fef4157085d1f61634d447b2ccf0fba"
+  },
+  "HIG": {
+   "symbol": "HIG",
+   "cik": "0000874766",
+   "name": "HARTFORD INSURANCE GROUP, INC.",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "cb97832fc19df3ebe0acf66fc5692e3ae96fb43cb43841a54f0250b6472fd293"
+  },
+  "HII": {
+   "symbol": "HII",
+   "cik": "0001501585",
+   "name": "HUNTINGTON INGALLS INDUSTRIES, INC.",
+   "sic": "3730",
+   "sic_description": "Ship & Boat Building & Repairing",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "74440243e0eb45e75ee912c8200ecb8371f7f773588e2829894edcf51a261fea"
+  },
+  "HLT": {
+   "symbol": "HLT",
+   "cik": "0001585689",
+   "name": "Hilton Worldwide Holdings Inc.",
+   "sic": "7011",
+   "sic_description": "Hotels & Motels",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "1e54c38cff142303ce7d105de697547300b55613e4db3c055b13aaf1729fd3ab"
+  },
+  "HON": {
+   "symbol": "HON",
+   "cik": "0000773840",
+   "name": "HONEYWELL INTERNATIONAL INC",
+   "sic": "3724",
+   "sic_description": "Aircraft Engines & Engine Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "4230b15ed3f245e947f48f8a51f7c8eac7aace0444b7f87f65662b63938bb41a"
+  },
+  "HONA": {
+   "symbol": "HONA",
+   "cik": "0002089271",
+   "name": "Honeywell Aerospace Inc.",
+   "sic": "3724",
+   "sic_description": "Aircraft Engines & Engine Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "80413ca4e5a461b78ec646d2cdf949cd56d4f27a6aecfaf7d6c3a2d430da9189"
+  },
+  "HOOD": {
+   "symbol": "HOOD",
+   "cik": "0001783879",
+   "name": "Robinhood Markets, Inc.",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "1475a3d8fd3becc819bd702d67ccd2a2e4fbc8723f08a081b25064d15e5f226d"
+  },
+  "HPE": {
+   "symbol": "HPE",
+   "cik": "0001645590",
+   "name": "Hewlett Packard Enterprise Co",
+   "sic": "3570",
+   "sic_description": "Computer & office Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f7972a077c7adfbe5d4a00c0cfae0f16a5761931d7a550c620444cd61fe5dc94"
+  },
+  "HPQ": {
+   "symbol": "HPQ",
+   "cik": "0000047217",
+   "name": "HP INC",
+   "sic": "3570",
+   "sic_description": "Computer & office Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f4e2766649a5dbcca53c57398a23d880f8ae3e353fbac9555d4954f190193e6e"
+  },
+  "HRL": {
+   "symbol": "HRL",
+   "cik": "0000048465",
+   "name": "HORMEL FOODS CORP /DE/",
+   "sic": "2011",
+   "sic_description": "Meat Packing Plants",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "eaf2a27038e9c0a1c3091678b983884a8d7422b977f4d88fe0538a957d67804d"
+  },
+  "HSIC": {
+   "symbol": "HSIC",
+   "cik": "0001000228",
+   "name": "HENRY SCHEIN INC",
+   "sic": "5047",
+   "sic_description": "Wholesale-Medical, Dental & Hospital Equipment & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "64169fd062e21fc2f2590820a1fe52837a111f6999d3da711eae2cc27efd5318"
+  },
+  "HST": {
+   "symbol": "HST",
+   "cik": "0001070750",
+   "name": "HOST HOTELS & RESORTS, INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "d0b2625cee612f08b3cf595f76e5e20ec2810b538e2dde4afc5221243dbfd0ac"
+  },
+  "HSY": {
+   "symbol": "HSY",
+   "cik": "0000047111",
+   "name": "HERSHEY CO",
+   "sic": "2060",
+   "sic_description": "Sugar & Confectionery Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "fdf372ebeefb92edbe3c21f8b5f5386c3620cc3b7484bdf45ef329d0c5954b9c"
+  },
+  "HUBB": {
+   "symbol": "HUBB",
+   "cik": "0000048898",
+   "name": "HUBBELL INC",
+   "sic": "3670",
+   "sic_description": "Electronic Components & Accessories",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "09caab2f8dc52ed565a50e490eb6e6d30da2c42295d5332e02c312b4678a31a8"
+  },
+  "HUM": {
+   "symbol": "HUM",
+   "cik": "0000049071",
+   "name": "HUMANA INC",
+   "sic": "6324",
+   "sic_description": "Hospital & Medical Service Plans",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "811828df486dc7b44142d6ed6a5e807cf9fd8e1acc739120bb64016e1d838a31"
+  },
+  "HWM": {
+   "symbol": "HWM",
+   "cik": "0000004281",
+   "name": "Howmet Aerospace Inc.",
+   "sic": "3350",
+   "sic_description": "Rolling Drawing & Extruding of  Nonferrous Metals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "ac41a99c58bd8617a5e6a7dde2c4cc3b86167fc8fac4939efcf961e1a63a53a9"
+  },
+  "IBKR": {
+   "symbol": "IBKR",
+   "cik": "0001381197",
+   "name": "Interactive Brokers Group, Inc.",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "c919a19e22c0f65cdc3d2cd3a7f6f08a52ebf0dc99140c986f00e6c7ff54b444"
+  },
+  "IBM": {
+   "symbol": "IBM",
+   "cik": "0000051143",
+   "name": "INTERNATIONAL BUSINESS MACHINES CORP",
+   "sic": "3570",
+   "sic_description": "Computer & office Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "48b6180e7fe331232ccbdda20c012f61b5b1ed42251c4d74c05c6db2f07326f8"
+  },
+  "ICE": {
+   "symbol": "ICE",
+   "cik": "0001571949",
+   "name": "Intercontinental Exchange, Inc.",
+   "sic": "6200",
+   "sic_description": "Security & Commodity Brokers, Dealers, Exchanges & Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "f48f736909e1e02f414c11dc840dd80ee5285713258c6db6c1595f24bdb5d7eb"
+  },
+  "IDXX": {
+   "symbol": "IDXX",
+   "cik": "0000874716",
+   "name": "IDEXX LABORATORIES INC /DE",
+   "sic": "2835",
+   "sic_description": "In Vitro & In Vivo Diagnostic Substances",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "c3636b5ab629d95bfc536f33330e8d5fdfc111b1ef4969f08815b0b1045c1dea"
+  },
+  "IEX": {
+   "symbol": "IEX",
+   "cik": "0000832101",
+   "name": "IDEX CORP /DE/",
+   "sic": "3561",
+   "sic_description": "Pumps & Pumping Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "32a2c1fa242138c798142e70056134aff67b3fe9e87bb980517c74a96ffa677c"
+  },
+  "IFF": {
+   "symbol": "IFF",
+   "cik": "0000051253",
+   "name": "INTERNATIONAL FLAVORS & FRAGRANCES INC",
+   "sic": "2860",
+   "sic_description": "Industrial Organic Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "07cda265eb53446a9204e5c2d74fb847ca7a891485cabc27d9d2a3b31270a998"
+  },
+  "INCY": {
+   "symbol": "INCY",
+   "cik": "0000879169",
+   "name": "INCYTE CORP",
+   "sic": "8731",
+   "sic_description": "Services-Commercial Physical & Biological Research",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "c94392dd00a1945d99481ee540a7940ee371c38caf4ffa2291b751119b33ad37"
+  },
+  "INTC": {
+   "symbol": "INTC",
+   "cik": "0000050863",
+   "name": "INTEL CORP",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f04f1a2215ca448e8661d5dd6fea91c878168cf6f8edef08c7cab602659c4111"
+  },
+  "INTU": {
+   "symbol": "INTU",
+   "cik": "0000896878",
+   "name": "INTUIT INC.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "d501549242660e84f72991fb63dbd7e72e825e091414543f31d75b85eb481e6e"
+  },
+  "INVH": {
+   "symbol": "INVH",
+   "cik": "0001687229",
+   "name": "Invitation Homes Inc.",
+   "sic": "6510",
+   "sic_description": "Real Estate Operators (No Developers) & Lessors",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "52b5ba2e0dc966f2b3715099268d24cfb7994cfd090e16893b178f8fb2b9498d"
+  },
+  "IP": {
+   "symbol": "IP",
+   "cik": "0000051434",
+   "name": "INTERNATIONAL PAPER CO /NEW/",
+   "sic": "2621",
+   "sic_description": "Paper Mills",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "8c9e21a23aab4e7d9081fa95475e2980c98922acca4bd4f63357adad758f6bfb"
+  },
+  "IQV": {
+   "symbol": "IQV",
+   "cik": "0001478242",
+   "name": "IQVIA HOLDINGS INC.",
+   "sic": "8731",
+   "sic_description": "Services-Commercial Physical & Biological Research",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "dc2d66b568186febabf89a4e13d8723d0ab5c2b3db0734fb80f8bedf58468c7a"
+  },
+  "IR": {
+   "symbol": "IR",
+   "cik": "0001699150",
+   "name": "Ingersoll Rand Inc.",
+   "sic": "3560",
+   "sic_description": "General Industrial Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "48c5851aec2091f60a70283d382f202e475dfdc59762fc5de58191c7e4c3e13b"
+  },
+  "IRM": {
+   "symbol": "IRM",
+   "cik": "0001020569",
+   "name": "IRON MOUNTAIN INC",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "21a243fb0d021670819cb0d15aca1ff5fd83ef20b08651c9d2eeea513497eb7c"
+  },
+  "ISRG": {
+   "symbol": "ISRG",
+   "cik": "0001035267",
+   "name": "INTUITIVE SURGICAL INC",
+   "sic": "3842",
+   "sic_description": "Orthopedic, Prosthetic & Surgical Appliances & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "931b730b5621beae4799aa1f1e49618b1a50d2f45df817e0ded64a4ec579bd43"
+  },
+  "IT": {
+   "symbol": "IT",
+   "cik": "0000749251",
+   "name": "GARTNER INC",
+   "sic": "8741",
+   "sic_description": "Services-Management Services",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "39dd888e0319e26de9e06afe85acd96fd1fa283a2c5a0ce2d7f22e99c5748f78"
+  },
+  "ITW": {
+   "symbol": "ITW",
+   "cik": "0000049826",
+   "name": "ILLINOIS TOOL WORKS INC",
+   "sic": "3560",
+   "sic_description": "General Industrial Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "7d6ede6f27348fa8bb0e96367c7520917d009af9252b083284e1a6375e448326"
+  },
+  "IVZ": {
+   "symbol": "IVZ",
+   "cik": "0000914208",
+   "name": "Invesco Ltd.",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "9be44b32d1c86e0a6591df970894dd68aa0fe30abf340a472a46d547f249a8ae"
+  },
+  "J": {
+   "symbol": "J",
+   "cik": "0000052988",
+   "name": "JACOBS SOLUTIONS INC.",
+   "sic": "1600",
+   "sic_description": "Heavy Construction Other Than Bldg Const - Contractors",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "13583714cf6c3d849b1a8dc38c41076d9f07d21e9e368209cdaa2de12b512574"
+  },
+  "JBHT": {
+   "symbol": "JBHT",
+   "cik": "0000728535",
+   "name": "HUNT J B TRANSPORT SERVICES INC",
+   "sic": "4213",
+   "sic_description": "Trucking (No Local)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "136f4f4e8551bde20b7015f80dd6f7eca881c91ca564a0f95123fd766ef4c090"
+  },
+  "JBL": {
+   "symbol": "JBL",
+   "cik": "0000898293",
+   "name": "JABIL INC",
+   "sic": "3672",
+   "sic_description": "Printed Circuit Boards",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "99a38b676019407a758df9c76552312853054dfd82e4088250615f555c3629da"
+  },
+  "JCI": {
+   "symbol": "JCI",
+   "cik": "0000833444",
+   "name": "Johnson Controls International plc",
+   "sic": "3585",
+   "sic_description": "Air-Cond & Warm Air Heatg Equip & Comm & Indl Refrig Equip",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b2dfcb53a5ad28d04c8b908a3578838ab029260a8072fdc4cda4bd61b7b70f44"
+  },
+  "JKHY": {
+   "symbol": "JKHY",
+   "cik": "0000779152",
+   "name": "JACK HENRY & ASSOCIATES INC",
+   "sic": "7373",
+   "sic_description": "Services-Computer Integrated Systems Design",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "b2694e9c2292326dc525708043b4486a7107c72d75c4b8423b425cf7390c2645"
+  },
+  "JNJ": {
+   "symbol": "JNJ",
+   "cik": "0000200406",
+   "name": "JOHNSON & JOHNSON",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "269cec583b49d64b87a61196490d6d2a685ce697346269d4d1f8fe9d673fbfb6"
+  },
+  "JPM": {
+   "symbol": "JPM",
+   "cik": "0000019617",
+   "name": "JPMORGAN CHASE & CO",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "7b1f16c9410289f653c333770550cbc0e8a29c159abb0bd363b806ba666fff15"
+  },
+  "KDP": {
+   "symbol": "KDP",
+   "cik": "0001418135",
+   "name": "Keurig Dr Pepper Inc.",
+   "sic": "2080",
+   "sic_description": "Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "95c929fc4ecc0af9dcbcbfea65a57b1179fd1b56b4db9051d7f33b7f654dbb2e"
+  },
+  "KEY": {
+   "symbol": "KEY",
+   "cik": "0000091576",
+   "name": "KEYCORP /NEW/",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "0ae57275eadee3a51bdab9b2c8ba8c03a7176d452e37fa23bf108ccfe3baaa96"
+  },
+  "KEYS": {
+   "symbol": "KEYS",
+   "cik": "0001601046",
+   "name": "Keysight Technologies, Inc.",
+   "sic": "3823",
+   "sic_description": "Industrial Instruments For Measurement, Display, and Control",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "a2174c15fa77d2dd652593c8e94d18096cb38ef954bcbad1f221472a6ae282a6"
+  },
+  "KHC": {
+   "symbol": "KHC",
+   "cik": "0001637459",
+   "name": "Kraft Heinz Co",
+   "sic": "2030",
+   "sic_description": "Canned, Frozen & Preservd Fruit, Veg & Food Specialties",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "8a365bbeba64e9172c092459dae4503c77ed5d10ff37c1086cab8488a34834da"
+  },
+  "KIM": {
+   "symbol": "KIM",
+   "cik": "0000879101",
+   "name": "KIMCO REALTY CORP",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "2c654b012b82fcf61143a097cf59d4d6c00d404730b6098a50e25a1477424cb4"
+  },
+  "KKR": {
+   "symbol": "KKR",
+   "cik": "0001404912",
+   "name": "KKR & Co. Inc.",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "e1dadc209b31bdcd1852a3ce4316b12a224bde132648f2743094b053f60355ab"
+  },
+  "KLAC": {
+   "symbol": "KLAC",
+   "cik": "0000319201",
+   "name": "KLA CORP",
+   "sic": "3827",
+   "sic_description": "Optical Instruments & Lenses",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "8c04a72fc29c2ed1177f333d34682f200faec4d7add34d38692d0b0362f2a652"
+  },
+  "KMB": {
+   "symbol": "KMB",
+   "cik": "0000055785",
+   "name": "KIMBERLY CLARK CORP",
+   "sic": "2670",
+   "sic_description": "Converted Paper & Paperboard Prods (No Contaners/Boxes)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "ee28cb0d6ed7b5d38a7bd999b942d4cd0c844e578dcaff40d9883d371cc46201"
+  },
+  "KMI": {
+   "symbol": "KMI",
+   "cik": "0001506307",
+   "name": "KINDER MORGAN, INC.",
+   "sic": "4922",
+   "sic_description": "Natural Gas Transmission",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "fb27266cf5b7aaf85dd6430135e36260f92c2e5818418cf5862dc501b86aa3fb"
+  },
+  "KO": {
+   "symbol": "KO",
+   "cik": "0000021344",
+   "name": "COCA COLA CO",
+   "sic": "2080",
+   "sic_description": "Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "8591f2d5a02913481a2bc76458ab5c905f94e72f0856a18b6fa57e3f46235e39"
+  },
+  "KR": {
+   "symbol": "KR",
+   "cik": "0000056873",
+   "name": "KROGER CO",
+   "sic": "5411",
+   "sic_description": "Retail-Grocery Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "dcf139d759922dcb555b726ed5ae071cb0854eeb56197e28ea093ff84076cf5d"
+  },
+  "KVUE": {
+   "symbol": "KVUE",
+   "cik": "0001944048",
+   "name": "Kenvue Inc.",
+   "sic": "2844",
+   "sic_description": "Perfumes, Cosmetics & Other Toilet Preparations",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "3cf9db6697dd080ef783b8fd02ba1e6ad4b4256356fa3cc8b46cc00154ed5376"
+  },
+  "L": {
+   "symbol": "L",
+   "cik": "0000060086",
+   "name": "LOEWS CORP",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "550cf2aaf1e78ef9651df7a8aa209bdaadc292f183e210f81c703bd7defdc392"
+  },
+  "LDOS": {
+   "symbol": "LDOS",
+   "cik": "0001336920",
+   "name": "Leidos Holdings, Inc.",
+   "sic": "7373",
+   "sic_description": "Services-Computer Integrated Systems Design",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "e8ff7713eb1809b28b002739c57b644bc6ed6dc90c185b265c614cb5e19d59ed"
+  },
+  "LEN": {
+   "symbol": "LEN",
+   "cik": "0000920760",
+   "name": "LENNAR CORP /NEW/",
+   "sic": "1520",
+   "sic_description": "General Bldg Contractors - Residential Bldgs",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "b5dc5c773b48a8ad96a438021473344e89d2d6f13b9d085b372607eddbe78659"
+  },
+  "LH": {
+   "symbol": "LH",
+   "cik": "0000920148",
+   "name": "LABCORP HOLDINGS INC.",
+   "sic": "8071",
+   "sic_description": "Services-Medical Laboratories",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "40c1ddd2634a829e2cbe2fa7e66a39df69adbe6f5ad2d5a5189fd73139a076bf"
+  },
+  "LHX": {
+   "symbol": "LHX",
+   "cik": "0000202058",
+   "name": "L3HARRIS TECHNOLOGIES, INC. /DE/",
+   "sic": "3812",
+   "sic_description": "Search, Detection, Navigation, Guidance, Aeronautical Sys",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "008cea5c9e61b62abc586d7f6ac76f2fc1e47adf39be07a88d467cfa31771818"
+  },
+  "LII": {
+   "symbol": "LII",
+   "cik": "0001069202",
+   "name": "LENNOX INTERNATIONAL INC",
+   "sic": "3585",
+   "sic_description": "Air-Cond & Warm Air Heatg Equip & Comm & Indl Refrig Equip",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "2053d4c2194f945fa3c341d1f8ca9dc6952b3053a1695f15e3bf85a5f0e1bbb1"
+  },
+  "LIN": {
+   "symbol": "LIN",
+   "cik": "0001707925",
+   "name": "LINDE PLC",
+   "sic": "2810",
+   "sic_description": "Industrial Inorganic Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "3303b713cb3d4b08a0ca704dfb316ede48b14fb6a93821ed8fa03ae134e37027"
+  },
+  "LITE": {
+   "symbol": "LITE",
+   "cik": "0001633978",
+   "name": "Lumentum Holdings Inc.",
+   "sic": "3669",
+   "sic_description": "Communications Equipment, NEC",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "167475598c83b734f5edb68dd50c1a8e5c1e04f2c3fabbc87bf1de201ba3479d"
+  },
+  "LLY": {
+   "symbol": "LLY",
+   "cik": "0000059478",
+   "name": "ELI LILLY & Co",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "348fa9f3bf553504dea9240b0c949231b847757e0032e0f80a01665420161d6d"
+  },
+  "LMT": {
+   "symbol": "LMT",
+   "cik": "0000936468",
+   "name": "LOCKHEED MARTIN CORP",
+   "sic": "3760",
+   "sic_description": "Guided Missiles & Space Vehicles & Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "1239eb3139490eb2e498f793380e150a5805844ec549f1ee1966129ac61e24d4"
+  },
+  "LNT": {
+   "symbol": "LNT",
+   "cik": "0000352541",
+   "name": "ALLIANT ENERGY CORP",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "bf09b98ff4fb4dd3edb622d725316d897dda77ad165383a347fb4dad5059e8ae"
+  },
+  "LOW": {
+   "symbol": "LOW",
+   "cik": "0000060667",
+   "name": "LOWES COMPANIES INC",
+   "sic": "5211",
+   "sic_description": "Retail-Lumber & Other Building Materials Dealers",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "7a1e817a50cb89773ee6b01bc2e67c6688c1d8142ccae065169e4fd476815755"
+  },
+  "LRCX": {
+   "symbol": "LRCX",
+   "cik": "0000707549",
+   "name": "LAM RESEARCH CORP",
+   "sic": "3559",
+   "sic_description": "Special Industry Machinery, NEC",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6fceded57bafb04f3a75bd0f9f49a3820281ed0681744a8163b29b75851ab9a2"
+  },
+  "LULU": {
+   "symbol": "LULU",
+   "cik": "0001397187",
+   "name": "lululemon athletica inc.",
+   "sic": "2300",
+   "sic_description": "Apparel & Other Finishd Prods of  Fabrics & Similar Matl",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "5accc16a94637817d562cb0c5e8778e9dbe6f48dc0c993a90860a80d0a51a10c"
+  },
+  "LUV": {
+   "symbol": "LUV",
+   "cik": "0000092380",
+   "name": "SOUTHWEST AIRLINES CO",
+   "sic": "4512",
+   "sic_description": "Air Transportation, Scheduled",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c346207484cc7986abfdb292e1fad4a54ea9c42ed275f5105b60e55d90d2dcc8"
+  },
+  "LVS": {
+   "symbol": "LVS",
+   "cik": "0001300514",
+   "name": "LAS VEGAS SANDS CORP",
+   "sic": "7011",
+   "sic_description": "Hotels & Motels",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "2d6118f058f81866c27e411fb656fc5e7e6042b3602998c8e56f6ede28919ce8"
+  },
+  "LYB": {
+   "symbol": "LYB",
+   "cik": "0001489393",
+   "name": "LyondellBasell Industries N.V.",
+   "sic": "2860",
+   "sic_description": "Industrial Organic Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "9d1c9b6d9dc508030b85e2dffccecc9240e4191be4af55b52313de3a5099d6bf"
+  },
+  "LYV": {
+   "symbol": "LYV",
+   "cik": "0001335258",
+   "name": "Live Nation Entertainment, Inc.",
+   "sic": "7900",
+   "sic_description": "Services-Amusement & Recreation Services",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "b2acfbed48074f9cf15cfac0e0ce075c726e73ca57b8568655d849195bf17fd4"
+  },
+  "MA": {
+   "symbol": "MA",
+   "cik": "0001141391",
+   "name": "Mastercard Inc",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "d49ae45746c6ab84057a914366dea099f43d8b9945d0fdca04210975e164f5b0"
+  },
+  "MAA": {
+   "symbol": "MAA",
+   "cik": "0000912595",
+   "name": "MID AMERICA APARTMENT COMMUNITIES INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "dcc2ff7db0369240f8ce0b29f8f92354fdaaad90421c80639af37cc85a9898b8"
+  },
+  "MAR": {
+   "symbol": "MAR",
+   "cik": "0001048286",
+   "name": "MARRIOTT INTERNATIONAL INC /MD/",
+   "sic": "7011",
+   "sic_description": "Hotels & Motels",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "2be44c9ebec82f76c6620bb685926ada2649776bbeb6f42d99db44f3b693d708"
+  },
+  "MAS": {
+   "symbol": "MAS",
+   "cik": "0000062996",
+   "name": "MASCO CORP /DE/",
+   "sic": "3430",
+   "sic_description": "Heating Equip, Except Elec & Warm Air; & Plumbing Fixtures",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "29e2b005de435bf942640543dd50572ea79f2992733d2821655d0090f950c19c"
+  },
+  "MCD": {
+   "symbol": "MCD",
+   "cik": "0000063908",
+   "name": "MCDONALDS CORP",
+   "sic": "5812",
+   "sic_description": "Retail-Eating  Places",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "5ca5bd9a4dbc4878d898899a2ae41a8da1a0a42e24fc280a7f84e47f126f454e"
+  },
+  "MCHP": {
+   "symbol": "MCHP",
+   "cik": "0000827054",
+   "name": "MICROCHIP TECHNOLOGY INC",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "446b767cbd27d8e36e433678897c049eec94a172dad4f1d147b3893c057c36ef"
+  },
+  "MCK": {
+   "symbol": "MCK",
+   "cik": "0000927653",
+   "name": "MCKESSON CORP",
+   "sic": "5122",
+   "sic_description": "Wholesale-Drugs, Proprietaries & Druggists' Sundries",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "356d777fc786c47485a7190fd6fc148b4260f3f13514b0a257ff1beb18189946"
+  },
+  "MCO": {
+   "symbol": "MCO",
+   "cik": "0001059556",
+   "name": "MOODYS CORP /DE/",
+   "sic": "7320",
+   "sic_description": "Services-Consumer Credit Reporting, Collection Agencies",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "8faa8d6e609ff3191d6ee8e5d45a86c28ef020c2e868b275c36ff08bf698fbb1"
+  },
+  "MDLZ": {
+   "symbol": "MDLZ",
+   "cik": "0001103982",
+   "name": "Mondelez International, Inc.",
+   "sic": "2000",
+   "sic_description": "Food and Kindred Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "53cae3bdf3f918a060843a4dc5182580e75bee78678cafc5559649589bdfc39e"
+  },
+  "MDT": {
+   "symbol": "MDT",
+   "cik": "0001613103",
+   "name": "Medtronic plc",
+   "sic": "3845",
+   "sic_description": "Electromedical & Electrotherapeutic Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "b951771af29f5af5611e673ef6651e68f4ae62441d7bcaed93ac080584acd6af"
+  },
+  "MET": {
+   "symbol": "MET",
+   "cik": "0001099219",
+   "name": "METLIFE INC",
+   "sic": "6311",
+   "sic_description": "Life Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "2d655091d5c88a57c0d3ff217829b401d7d9cf2254b7feb3f0ecf1414b132233"
+  },
+  "META": {
+   "symbol": "META",
+   "cik": "0001326801",
+   "name": "Meta Platforms, Inc.",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "ffa346d3218c358a538c06c856bc758642c4065e8a0fd0d4477aee6a71d905a9"
+  },
+  "MGM": {
+   "symbol": "MGM",
+   "cik": "0000789570",
+   "name": "MGM Resorts International",
+   "sic": "7011",
+   "sic_description": "Hotels & Motels",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "a462a1dd605fbcb37193e1d3e744c0903ea39663909fe5dbc76907f0c0cd85f7"
+  },
+  "MKC": {
+   "symbol": "MKC",
+   "cik": "0000063754",
+   "name": "MCCORMICK & CO INC",
+   "sic": "2090",
+   "sic_description": "Miscellaneous Food Preparations & Kindred Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "93df3b93fa947a95a154d7f267f223e2e64553e27d7288b92194b33c99195ee5"
+  },
+  "MLM": {
+   "symbol": "MLM",
+   "cik": "0000916076",
+   "name": "MARTIN MARIETTA MATERIALS INC",
+   "sic": "1400",
+   "sic_description": "Mining & Quarrying of  Nonmetallic Minerals (No Fuels)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "033ba3b7ea36728ab07b8f1648623ab813b9aef55ae26c66c7617f9b913f4f54"
+  },
+  "MMM": {
+   "symbol": "MMM",
+   "cik": "0000066740",
+   "name": "3M CO",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "acd454cf7339bb2b7157e3541ab06df70af8babe93ae1ae660147fb2afecfcf5"
+  },
+  "MNST": {
+   "symbol": "MNST",
+   "cik": "0000865752",
+   "name": "Monster Beverage Corp",
+   "sic": "2086",
+   "sic_description": "Bottled & Canned Soft Drinks & Carbonated Waters",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "9fe76ac8f6e938b6c034c4bc97006389b5d3cdd216d99c4231ea280ab361778d"
+  },
+  "MO": {
+   "symbol": "MO",
+   "cik": "0000764180",
+   "name": "ALTRIA GROUP, INC.",
+   "sic": "2111",
+   "sic_description": "Cigarettes",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "03e9a48a5dc65d0daac5c96725a422b4e2e8c668f1e3c2b74ddd6a31839ddc47"
+  },
+  "MOS": {
+   "symbol": "MOS",
+   "cik": "0001285785",
+   "name": "MOSAIC CO",
+   "sic": "2870",
+   "sic_description": "Agricultural Chemicals",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "d2c6b66427ce364199415a7b57c72ccf11a768f1c656dc2472ca329d1db694a6"
+  },
+  "MPC": {
+   "symbol": "MPC",
+   "cik": "0001510295",
+   "name": "Marathon Petroleum Corp",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "a9f4ef318ac8fd99d842ab7bc577f0f484befecaed2a9349ca1e608537ba9826"
+  },
+  "MPWR": {
+   "symbol": "MPWR",
+   "cik": "0001280452",
+   "name": "MONOLITHIC POWER SYSTEMS, INC.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "7f1b344e27a6618e48324d2b7440be067e9d84f3af8b0fea6e26501a9ab5f6a2"
+  },
+  "MRK": {
+   "symbol": "MRK",
+   "cik": "0000310158",
+   "name": "Merck & Co., Inc.",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "0f9ba38e887d135acc0ebd2284e587d0c8df27d1eb10274b52624de4b6f51d6a"
+  },
+  "MRNA": {
+   "symbol": "MRNA",
+   "cik": "0001682852",
+   "name": "Moderna, Inc.",
+   "sic": "2836",
+   "sic_description": "Biological Products, (No Diagnostic Substances)",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "894e12d285841af5bc5b39db29b989ea3710d5467ab544f19bf62f26c02bcc08"
+  },
+  "MRSH": {
+   "symbol": "MRSH",
+   "cik": "0000062709",
+   "name": "MARSH & MCLENNAN COMPANIES, INC.",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "3ef0a9d8bb08231fbae75b1af420db296a0acf7c3eaa95bc6e1e39c19a0c1e1e"
+  },
+  "MRVL": {
+   "symbol": "MRVL",
+   "cik": "0001835632",
+   "name": "Marvell Technology, Inc.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "1268f3d2d8935ea91e0ccf8bba2afc9b9946e011181fb2bfbcd2954ccfcc0258"
+  },
+  "MS": {
+   "symbol": "MS",
+   "cik": "0000895421",
+   "name": "MORGAN STANLEY",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ced47f21626596d357c4200163a564c5ff9bca58c1a8dcf951e53e45e422e92a"
+  },
+  "MSCI": {
+   "symbol": "MSCI",
+   "cik": "0001408198",
+   "name": "MSCI Inc.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "67361365ea58f746dd3c94072f4e89ca61f10c19512fd88a5dc7cbcdcb52d1c7"
+  },
+  "MSFT": {
+   "symbol": "MSFT",
+   "cik": "0000789019",
+   "name": "MICROSOFT CORP",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "2484a2a3b5677d892a1b25af573ce4eda7b6f449f5eda41bac6b3f106dc3139c"
+  },
+  "MSI": {
+   "symbol": "MSI",
+   "cik": "0000068505",
+   "name": "Motorola Solutions, Inc.",
+   "sic": "3663",
+   "sic_description": "Radio & Tv Broadcasting & Communications Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "cc84200f1814c58badd7db6d9266f443c27afe3bc02d93f8f46bc84ea6fb82be"
+  },
+  "MTB": {
+   "symbol": "MTB",
+   "cik": "0000036270",
+   "name": "M&T BANK CORP",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "dbef0227fb1d08adb53d811e504292717b0ae9a3197d0acee064404fc90e952c"
+  },
+  "MTD": {
+   "symbol": "MTD",
+   "cik": "0001037646",
+   "name": "METTLER TOLEDO INTERNATIONAL INC/",
+   "sic": "3826",
+   "sic_description": "Laboratory Analytical Instruments",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "992d98f30be973616dc3b172de14c82b0077da44f2f1bad6108c035a76bab974"
+  },
+  "MU": {
+   "symbol": "MU",
+   "cik": "0000723125",
+   "name": "MICRON TECHNOLOGY INC",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "a13c7228713fbf072005913ff5ec9f7cec98704564d073300aae38b8871e9a40"
+  },
+  "NCLH": {
+   "symbol": "NCLH",
+   "cik": "0001513761",
+   "name": "Norwegian Cruise Line Holdings Ltd.",
+   "sic": "4400",
+   "sic_description": "Water Transportation",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "ba2aa49b7899d10e25a9a6799dcb642f0103ea16c199948793e31c95b6288d58"
+  },
+  "NDAQ": {
+   "symbol": "NDAQ",
+   "cik": "0001120193",
+   "name": "NASDAQ, INC.",
+   "sic": "6200",
+   "sic_description": "Security & Commodity Brokers, Dealers, Exchanges & Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "3acadc323a4fa1afa5309aba4edad6c6ac26f3681ae048194dc286f7b9a21b84"
+  },
+  "NDSN": {
+   "symbol": "NDSN",
+   "cik": "0000072331",
+   "name": "NORDSON CORP",
+   "sic": "3569",
+   "sic_description": "General Industrial Machinery & Equipment, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "d05f99dbdd97d23eb16d30452074ef509f173090e69061f79a3e4edfadbfb228"
+  },
+  "NEE": {
+   "symbol": "NEE",
+   "cik": "0000753308",
+   "name": "NEXTERA ENERGY INC",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "cadf20208603178b1da7eb23614a898acc798205507697e5d1472f4846bd53a7"
+  },
+  "NEM": {
+   "symbol": "NEM",
+   "cik": "0001164727",
+   "name": "NEWMONT Corp /DE/",
+   "sic": "1040",
+   "sic_description": "Gold and Silver Ores",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "5f57849d7f43256ccae323a83281302cc350ec1f2e0575307b1004f399c674b1"
+  },
+  "NFLX": {
+   "symbol": "NFLX",
+   "cik": "0001065280",
+   "name": "NETFLIX INC",
+   "sic": "7841",
+   "sic_description": "Services-Video Tape Rental",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "8eaef3227f6a13b687027cc684cf1f1dfae7dcba0ed8c091af2bcb2e9f50823d"
+  },
+  "NI": {
+   "symbol": "NI",
+   "cik": "0001111711",
+   "name": "NISOURCE INC.",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "0f8f0f8d36eea39c7306f300e296af6d0ca566c6e80acbd6fcbf80b6cdb5f112"
+  },
+  "NKE": {
+   "symbol": "NKE",
+   "cik": "0000320187",
+   "name": "NIKE, Inc.",
+   "sic": "3021",
+   "sic_description": "Rubber & Plastics Footwear",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "f2aed6a3da2bf6b1a5f1714cf2252c1c3b3c6fba4d8c83f4c0212d9b46303f35"
+  },
+  "NOC": {
+   "symbol": "NOC",
+   "cik": "0001133421",
+   "name": "NORTHROP GRUMMAN CORP /DE/",
+   "sic": "3812",
+   "sic_description": "Search, Detection, Navigation, Guidance, Aeronautical Sys",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "ac640f6178a36cb5b39e9a26f9dd240187bff3ac0c48b2fbd455ec75e8e32fb2"
+  },
+  "NOW": {
+   "symbol": "NOW",
+   "cik": "0001373715",
+   "name": "ServiceNow, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "d99f6e49b9beae1ead75a7534e0a70cb7d5acca5c521ff6039b32fb1f396cf08"
+  },
+  "NRG": {
+   "symbol": "NRG",
+   "cik": "0001013871",
+   "name": "NRG ENERGY, INC.",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "bfd21bb5294a05a424197e7a1b32bcb5341d43c3994c8c85323c9dd853ac18cf"
+  },
+  "NSC": {
+   "symbol": "NSC",
+   "cik": "0000702165",
+   "name": "NORFOLK SOUTHERN CORP",
+   "sic": "4011",
+   "sic_description": "Railroads, Line-Haul Operating",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "8ba0ba9ac6179a16a44178e03ad599101db12543ac7babf9fad30ec261565c33"
+  },
+  "NTAP": {
+   "symbol": "NTAP",
+   "cik": "0001002047",
+   "name": "NetApp, Inc.",
+   "sic": "3572",
+   "sic_description": "Computer Storage Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "9f4d34fa53f4a83caee6a85a7f65a079067c473710da4209cad37e832220667a"
+  },
+  "NTRS": {
+   "symbol": "NTRS",
+   "cik": "0000073124",
+   "name": "NORTHERN TRUST CORP",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ca5a2d9d64c67d9dd32da8cfc04bc3ca58c88795822f4525809c5c42e3d210bf"
+  },
+  "NUE": {
+   "symbol": "NUE",
+   "cik": "0000073309",
+   "name": "NUCOR CORP",
+   "sic": "3312",
+   "sic_description": "Steel Works, Blast Furnaces & Rolling Mills (Coke Ovens)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "a5862f19aa875e95f2623bb4713442de1b0cd28f822a0c70bea14b23116e0c70"
+  },
+  "NVDA": {
+   "symbol": "NVDA",
+   "cik": "0001045810",
+   "name": "NVIDIA CORP",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "a700c65f586670b6a56725f903900abc1b39a06110e7c30cf691d8ecb902e52d"
+  },
+  "NVR": {
+   "symbol": "NVR",
+   "cik": "0000906163",
+   "name": "NVR INC",
+   "sic": "1531",
+   "sic_description": "Operative Builders",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "06dd7d1e4a7e33aa11493c82678853c6e575f4d854c586c457fddb3d75fd4f30"
+  },
+  "NWS": {
+   "symbol": "NWS",
+   "cik": "0001564708",
+   "name": "NEWS CORP",
+   "sic": "2711",
+   "sic_description": "Newspapers: Publishing or  Publishing & Printing",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "c9b32b2e76056f5ca8dfcea0d1d620a5c48e3547edc56f0adc6a1c170403a4b6"
+  },
+  "NWSA": {
+   "symbol": "NWSA",
+   "cik": "0001564708",
+   "name": "NEWS CORP",
+   "sic": "2711",
+   "sic_description": "Newspapers: Publishing or  Publishing & Printing",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "c9b32b2e76056f5ca8dfcea0d1d620a5c48e3547edc56f0adc6a1c170403a4b6"
+  },
+  "NXPI": {
+   "symbol": "NXPI",
+   "cik": "0001413447",
+   "name": "NXP Semiconductors N.V.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "75150da19e4969c301d5e9bd6af79eb2d1b6c1bc6bad695d3a93d33332636be5"
+  },
+  "O": {
+   "symbol": "O",
+   "cik": "0000726728",
+   "name": "REALTY INCOME CORP",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "d764d15247fde35412c69d73905b22fbd34c7ae6bce0e5a02d2950e043157500"
+  },
+  "ODFL": {
+   "symbol": "ODFL",
+   "cik": "0000878927",
+   "name": "OLD DOMINION FREIGHT LINE, INC.",
+   "sic": "4213",
+   "sic_description": "Trucking (No Local)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "90c51efb21b8e7e464d132dea2492c25c1e4c01b6c024a2ac7c2807540442ffa"
+  },
+  "OKE": {
+   "symbol": "OKE",
+   "cik": "0001039684",
+   "name": "ONEOK INC /NEW/",
+   "sic": "4923",
+   "sic_description": "Natural Gas Transmisison & Distribution",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "8b0c65c9e3f7ddd07e7babddacc3aee514404162fc5faad5b0fdd4801712b888"
+  },
+  "OMC": {
+   "symbol": "OMC",
+   "cik": "0000029989",
+   "name": "OMNICOM GROUP INC.",
+   "sic": "7311",
+   "sic_description": "Services-Advertising Agencies",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c8300bc419f2f64a4b014a897b09aba2a684e9fe1fbb9e32322c3dff085142a4"
+  },
+  "ON": {
+   "symbol": "ON",
+   "cik": "0001097864",
+   "name": "ON SEMICONDUCTOR CORP",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "2f98631575a144f55f834fc43a00c5e60d3ea88b60f3023756c755c834725d26"
+  },
+  "ORCL": {
+   "symbol": "ORCL",
+   "cik": "0001341439",
+   "name": "ORACLE CORP",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "bed0ec89b0d273799517d3e332b3a4ba3612168f0e4e9b963759b507f857adec"
+  },
+  "ORLY": {
+   "symbol": "ORLY",
+   "cik": "0000898173",
+   "name": "O REILLY AUTOMOTIVE INC",
+   "sic": "5531",
+   "sic_description": "Retail-Auto & Home Supply Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "37178daf6b59aaf3927e63c2beb41191f733ebeaa2cc99f4a308c563d79430af"
+  },
+  "OTIS": {
+   "symbol": "OTIS",
+   "cik": "0001781335",
+   "name": "Otis Worldwide Corp",
+   "sic": "3600",
+   "sic_description": "Electronic & Other Electrical Equipment (No Computer Equip)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "ff2be3b67151412996b9a189e92718875698d475dd7017ff95a5a1ffb25e3237"
+  },
+  "OXY": {
+   "symbol": "OXY",
+   "cik": "0000797468",
+   "name": "OCCIDENTAL PETROLEUM CORP /DE/",
+   "sic": "1311",
+   "sic_description": "Crude Petroleum & Natural Gas",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "8e59343dcc85dc1ad62176976c90dcb53a0e1644f8726cf2da8fcd547d30ef40"
+  },
+  "PANW": {
+   "symbol": "PANW",
+   "cik": "0001327567",
+   "name": "Palo Alto Networks Inc",
+   "sic": "3577",
+   "sic_description": "Computer Peripheral Equipment, NEC",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "766e2349a2f648df744125d970cad093a0e35211b3f0a9662ec9ecadb5f6ea0b"
+  },
+  "PAYX": {
+   "symbol": "PAYX",
+   "cik": "0000723531",
+   "name": "PAYCHEX INC",
+   "sic": "8700",
+   "sic_description": "Services-Engineering, Accounting, Research, Management",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "20aeda12ec2baab2481c57cb85e1b606af79c38037a3b693c93a3947d8f2bf89"
+  },
+  "PCAR": {
+   "symbol": "PCAR",
+   "cik": "0000075362",
+   "name": "PACCAR INC",
+   "sic": "3711",
+   "sic_description": "Motor Vehicles & Passenger Car Bodies",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "cd5d238ed093644e2bf61ae35b22c23503d91c3b0ed1dc5a6c2ea948bb3ec952"
+  },
+  "PCG": {
+   "symbol": "PCG",
+   "cik": "0001004980",
+   "name": "PG&E Corp",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "7a1ee93b6677f7c89a627f95e519a5a74e51fd449cef4e1336d38d73934ad0b1"
+  },
+  "PEG": {
+   "symbol": "PEG",
+   "cik": "0000788784",
+   "name": "PUBLIC SERVICE ENTERPRISE GROUP INC",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "4138d318b8a187e033f5ae9d5472050f16bd785ab5b51d2f329d28bae0ddfd56"
+  },
+  "PEP": {
+   "symbol": "PEP",
+   "cik": "0000077476",
+   "name": "PEPSICO INC",
+   "sic": "2080",
+   "sic_description": "Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "7635c5ba59064225fd65ee22f928bdb2c5ecafecd04f9fc56837da270d33edae"
+  },
+  "PFE": {
+   "symbol": "PFE",
+   "cik": "0000078003",
+   "name": "PFIZER INC",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "f91e9e22732341b71e9f20aed13a9ce11eed082a5b6a8b65314ae297b188a7f6"
+  },
+  "PFG": {
+   "symbol": "PFG",
+   "cik": "0001126328",
+   "name": "PRINCIPAL FINANCIAL GROUP INC",
+   "sic": "6321",
+   "sic_description": "Accident & Health Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "8d4a53650fa32039d1646631dce8be31ef364232891cf95233935c0e3182cd09"
+  },
+  "PG": {
+   "symbol": "PG",
+   "cik": "0000080424",
+   "name": "PROCTER & GAMBLE Co",
+   "sic": "2840",
+   "sic_description": "Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "0830f11b13de75ab5a8ab636c01c5a474d8fee43052e2dcba3542c59825dd7b2"
+  },
+  "PGR": {
+   "symbol": "PGR",
+   "cik": "0000080661",
+   "name": "PROGRESSIVE CORP/OH/",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "36e6c2874a99427e99d4b6474b4096b1f5fd8f66dbb8570a79778d82363b8848"
+  },
+  "PH": {
+   "symbol": "PH",
+   "cik": "0000076334",
+   "name": "Parker-Hannifin Corp",
+   "sic": "3490",
+   "sic_description": "Miscellaneous Fabricated Metal Products",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "43514f28345568ee03436104ec71761ae003d22f8dc2f2afd35c3f8ca01a775a"
+  },
+  "PHM": {
+   "symbol": "PHM",
+   "cik": "0000822416",
+   "name": "PULTEGROUP INC/MI/",
+   "sic": "1531",
+   "sic_description": "Operative Builders",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "61d58b5a6ea3d7f910431b237a67b7d6a018108e4bb6f158453ff4dc62d46e65"
+  },
+  "PKG": {
+   "symbol": "PKG",
+   "cik": "0000075677",
+   "name": "PACKAGING CORP OF AMERICA",
+   "sic": "2650",
+   "sic_description": "Paperboard Containers & Boxes",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "38cc35fad89cb4f7c57b7bf1f41a397ec5ab4c3f04e5f7e480678d96c6b15cd2"
+  },
+  "PLD": {
+   "symbol": "PLD",
+   "cik": "0001045609",
+   "name": "Prologis, Inc.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "329e151c8db6743911eea9d8fece4a19f8d65dd4fe849af3202eadf52526b5a7"
+  },
+  "PLTR": {
+   "symbol": "PLTR",
+   "cik": "0001321655",
+   "name": "Palantir Technologies Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "52e5198f3ea5e9fd0643e98cce4fe772f799816d6b1e0134bd356512ead6f840"
+  },
+  "PM": {
+   "symbol": "PM",
+   "cik": "0001413329",
+   "name": "Philip Morris International Inc.",
+   "sic": "2111",
+   "sic_description": "Cigarettes",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "574f96454891d9c659412d46c1f7b5584130814f3fee67d07c3609602a88034d"
+  },
+  "PNC": {
+   "symbol": "PNC",
+   "cik": "0000713676",
+   "name": "PNC FINANCIAL SERVICES GROUP, INC.",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "8ed7a654b6bc59f7fc929ccce7acfce4aa3335ae5ac915c876020fc64cf591d7"
+  },
+  "PNR": {
+   "symbol": "PNR",
+   "cik": "0000077360",
+   "name": "PENTAIR plc",
+   "sic": "3550",
+   "sic_description": "Special Industry Machinery (No Metalworking Machinery)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "7f28a8b2cf542f0556390e2287bebe27bcb536bc963c988c04d22e2893262662"
+  },
+  "PNW": {
+   "symbol": "PNW",
+   "cik": "0000764622",
+   "name": "PINNACLE WEST CAPITAL CORP",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "89233c71416cb59cf90988d79b315988fbf705fc0cdd97e41da9d5389832c946"
+  },
+  "PODD": {
+   "symbol": "PODD",
+   "cik": "0001145197",
+   "name": "INSULET CORP",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "ec8fcfefc78967917fb20462b8d869d8db43a6e8d4dd73e333bd739a59df9de3"
+  },
+  "PPG": {
+   "symbol": "PPG",
+   "cik": "0000079879",
+   "name": "PPG INDUSTRIES INC",
+   "sic": "2851",
+   "sic_description": "Paints, Varnishes, Lacquers, Enamels & Allied Prods",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "719c941eb8d31a1def2169daa753c549fa487a36f719874e6943eca751193da1"
+  },
+  "PPL": {
+   "symbol": "PPL",
+   "cik": "0000922224",
+   "name": "PPL Corp",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "f9f9ed82ebf31c70223c1eaf16eb532d91d676c50def1f7523f3f47037a12610"
+  },
+  "PRU": {
+   "symbol": "PRU",
+   "cik": "0001137774",
+   "name": "PRUDENTIAL FINANCIAL INC",
+   "sic": "6311",
+   "sic_description": "Life Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "65f28b290eb8bd307ba48626fdbae83b5fdf927faf42389c614e4410df1ad9ea"
+  },
+  "PSA": {
+   "symbol": "PSA",
+   "cik": "0001393311",
+   "name": "Public Storage",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "2acba708b883d2ee8eaa330cfac1b0c42af751cf8688d2ace610c29b432aec17"
+  },
+  "PSKY": {
+   "symbol": "PSKY",
+   "cik": null,
+   "sic": null,
+   "sector": "UNCLASSIFIED",
+   "tech": false,
+   "reason": "ticker_not_in_sec_company_tickers"
+  },
+  "PSX": {
+   "symbol": "PSX",
+   "cik": "0001534701",
+   "name": "Phillips 66",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "95343a971c499f784f70db421e4304e8cd1c6bcca5d8f2cbef2b914ab6a78bb3"
+  },
+  "PTC": {
+   "symbol": "PTC",
+   "cik": "0000857005",
+   "name": "PTC INC.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "e95b365a9ae4db1f46cc6eec20280268fecd0c833c31d4dacee4a2e78fad3e49"
+  },
+  "PWR": {
+   "symbol": "PWR",
+   "cik": "0001050915",
+   "name": "QUANTA SERVICES, INC.",
+   "sic": "1731",
+   "sic_description": "Electrical Work",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "6b65a0ccfcbf82073845a3dad6b126eb79dea35d12092837c53c263c3a014a71"
+  },
+  "PYPL": {
+   "symbol": "PYPL",
+   "cik": "0001633917",
+   "name": "PayPal Holdings, Inc.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "8268fae3d202a8a0a993177ce426b7e61b3ac960382255fed9688946a37e3691"
+  },
+  "Q": {
+   "symbol": "Q",
+   "cik": "0002058873",
+   "name": "Qnity Electronics, Inc.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "4db54687fc2dffbfce542ba3053ddfe2abfee21ce72cb2c778dad095dbcac0f7"
+  },
+  "QCOM": {
+   "symbol": "QCOM",
+   "cik": "0000804328",
+   "name": "QUALCOMM INC/DE",
+   "sic": "3663",
+   "sic_description": "Radio & Tv Broadcasting & Communications Equipment",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "996cee944eb4104581c31991760bb1aaac103d56d5bedf75d99ada1c0497a39f"
+  },
+  "RCL": {
+   "symbol": "RCL",
+   "cik": "0000884887",
+   "name": "ROYAL CARIBBEAN CRUISES LTD",
+   "sic": "4400",
+   "sic_description": "Water Transportation",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3d97453cb971ccef0b24b12dede5f43f85130ee520fe76c810521bb9f69614d2"
+  },
+  "RDDT": {
+   "symbol": "RDDT",
+   "cik": "0001713445",
+   "name": "Reddit, Inc.",
+   "sic": "7374",
+   "sic_description": "Services-Computer Processing & Data Preparation",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "4e85f769aea9748f21926965324f991ae4f8267ffa17e750620d543d6f1a89af"
+  },
+  "REG": {
+   "symbol": "REG",
+   "cik": "0000910606",
+   "name": "REGENCY CENTERS CORP",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "593248711b4af2d04c713a9dbae9b03803705eeaf8d57bd0ab07cf9f6b883554"
+  },
+  "REGN": {
+   "symbol": "REGN",
+   "cik": "0000872589",
+   "name": "REGENERON PHARMACEUTICALS, INC.",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "ef532cb0a5acc4b794b950e372c800159ac47052011852b7ce4337fddb724acd"
+  },
+  "RF": {
+   "symbol": "RF",
+   "cik": "0001281761",
+   "name": "REGIONS FINANCIAL CORP",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "e4700d7f1ae3f2c16fb3bde3e133928442287fc4a9c629c41dbef7cc9e5d6d8b"
+  },
+  "RJF": {
+   "symbol": "RJF",
+   "cik": "0000720005",
+   "name": "RAYMOND JAMES FINANCIAL INC",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "91512803d08619c289923cb8d96ba8713ac25e8bca078c97d3c4ab6f989a64f1"
+  },
+  "RL": {
+   "symbol": "RL",
+   "cik": "0001037038",
+   "name": "RALPH LAUREN CORP",
+   "sic": "2320",
+   "sic_description": "Men's & Boys' Furnishgs, Work Clothg, & Allied Garments",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "5f38a731f9f164e47ec23585fb1c562bdc0d4a91a41dd34bc22eb32878ffe10e"
+  },
+  "RMD": {
+   "symbol": "RMD",
+   "cik": "0000943819",
+   "name": "RESMED INC",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "b6175438d64510e90d5385df193bce4914cd74e1b414f8f4b732480ec14c6fbf"
+  },
+  "ROK": {
+   "symbol": "ROK",
+   "cik": "0001024478",
+   "name": "ROCKWELL AUTOMATION, INC",
+   "sic": "3829",
+   "sic_description": "Measuring & Controlling Devices, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c541d303bf6d50b96f4df8a30648a26307c04b86bf15f98335df159d103f6201"
+  },
+  "ROL": {
+   "symbol": "ROL",
+   "cik": "0000084839",
+   "name": "ROLLINS INC",
+   "sic": "7340",
+   "sic_description": "Services-To Dwellings & Other Buildings",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f877be0043ef48cabc40cdc161e239c59bb604260e88893a2ff25b52b01fe6f0"
+  },
+  "ROP": {
+   "symbol": "ROP",
+   "cik": "0000882835",
+   "name": "ROPER TECHNOLOGIES INC",
+   "sic": "3823",
+   "sic_description": "Industrial Instruments For Measurement, Display, and Control",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b299a96072eab4fb93291eceac8d16b6819b9d9f31a8497a5e71b2b200028a1d"
+  },
+  "ROST": {
+   "symbol": "ROST",
+   "cik": "0000745732",
+   "name": "ROSS STORES, INC.",
+   "sic": "5651",
+   "sic_description": "Retail-Family Clothing Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "dac30041ce331a0ed131df95bd4ad8fff7206bb8d24ee8ab53acd43d4b8cdc3c"
+  },
+  "RSG": {
+   "symbol": "RSG",
+   "cik": "0001060391",
+   "name": "REPUBLIC SERVICES, INC.",
+   "sic": "4953",
+   "sic_description": "Refuse Systems",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b8e7253d1a86c671b2e7a3614d9c4163460b6c4a1733f2f81c2d13b7e453a58c"
+  },
+  "RTX": {
+   "symbol": "RTX",
+   "cik": "0000101829",
+   "name": "RTX Corp",
+   "sic": "3724",
+   "sic_description": "Aircraft Engines & Engine Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "1021b7084faacdfd54cb7caa44068804e1b9f0c167ca2644c04af9798cd2c9ac"
+  },
+  "RVTY": {
+   "symbol": "RVTY",
+   "cik": "0000031791",
+   "name": "REVVITY, INC.",
+   "sic": "3826",
+   "sic_description": "Laboratory Analytical Instruments",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "4e137a0241f22309234c85b81b2bd51001f707514bc2ba0537075fcebc3fd6e8"
+  },
+  "SBAC": {
+   "symbol": "SBAC",
+   "cik": "0001034054",
+   "name": "SBA COMMUNICATIONS CORP",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "2cfd5ea5fc9ed0afd831094265adb1168e5d79c78d89d91afefcee6a12d2fa6f"
+  },
+  "SBUX": {
+   "symbol": "SBUX",
+   "cik": "0000829224",
+   "name": "STARBUCKS CORP",
+   "sic": "5810",
+   "sic_description": "Retail-Eating & Drinking Places",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "3ba41ee11892aa52eec55ead1a66849985e11b32f2d22f9feda0214f08507c7a"
+  },
+  "SCHW": {
+   "symbol": "SCHW",
+   "cik": "0000316709",
+   "name": "SCHWAB CHARLES CORP",
+   "sic": "6211",
+   "sic_description": "Security Brokers, Dealers & Flotation Companies",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "3d5615b9f9a5caa0e5c659637c8713d5d0c5ba9a5d4fb516b0e29a90621ad3c4"
+  },
+  "SHW": {
+   "symbol": "SHW",
+   "cik": "0000089800",
+   "name": "SHERWIN WILLIAMS CO",
+   "sic": "5200",
+   "sic_description": "Retail-Building Materials, Hardware, Garden Supply",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "17a91a1ed8b6b510385eacdb1d1f4e3a22dbe11759ef26ee8360f9fbeeaca3b3"
+  },
+  "SJM": {
+   "symbol": "SJM",
+   "cik": "0000091419",
+   "name": "J M SMUCKER Co",
+   "sic": "2033",
+   "sic_description": "Canned, Fruits, Veg, Preserves, Jams & Jellies",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "57cfab6837f6cd19ef60dd50fcb2eebc5125c93a194e7130be293bfa8598a536"
+  },
+  "SLB": {
+   "symbol": "SLB",
+   "cik": "0000087347",
+   "name": "SLB LIMITED/NV",
+   "sic": "1389",
+   "sic_description": "Oil & Gas Field Services, NEC",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "dc76f768d16022f6f68feb1789188723151a031d08f3b72c3ff3e23f577caa40"
+  },
+  "SMCI": {
+   "symbol": "SMCI",
+   "cik": "0001375365",
+   "name": "Super Micro Computer, Inc.",
+   "sic": "3571",
+   "sic_description": "Electronic Computers",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "57efda7d4d37f544e9862fd65081b13d35bb566bdd1c1264f43e593535d8ec92"
+  },
+  "SNA": {
+   "symbol": "SNA",
+   "cik": "0000091440",
+   "name": "Snap-on Inc",
+   "sic": "3420",
+   "sic_description": "Cutlery, Handtools & General Hardware",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "4df8b021e728fdf0bb66c3c1e2ec77366f9ec4b6546ca8b5780cc6d907a7c806"
+  },
+  "SNDK": {
+   "symbol": "SNDK",
+   "cik": "0002023554",
+   "name": "Sandisk Corp",
+   "sic": "3572",
+   "sic_description": "Computer Storage Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "865f426ab6298fbcb0f9512378c11c6b7e4b932b517dbf60a157cdd31125e046"
+  },
+  "SNPS": {
+   "symbol": "SNPS",
+   "cik": "0000883241",
+   "name": "SYNOPSYS INC",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "bb8d1fbb0d12ca02d905a22aa91e28cad142c6a2642320d552362eb188a8dd24"
+  },
+  "SO": {
+   "symbol": "SO",
+   "cik": "0000092122",
+   "name": "SOUTHERN CO",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "1e0d276201f01e099d4488073ae9dcc9ac61e1a2fa9d156310e7ed4596eca01f"
+  },
+  "SOLV": {
+   "symbol": "SOLV",
+   "cik": "0001964738",
+   "name": "Solventum Corp",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "8aa6b3700fdf38d8b278487109a44bf05c40818797f222eae0e1670c43b90d69"
+  },
+  "SPG": {
+   "symbol": "SPG",
+   "cik": "0001063761",
+   "name": "SIMON PROPERTY GROUP INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "4622dd625ccd4f0b2328005c2a970e285a81a6ccfb52318f0ab3d64745502925"
+  },
+  "SPGI": {
+   "symbol": "SPGI",
+   "cik": "0000064040",
+   "name": "S&P Global Inc.",
+   "sic": "7320",
+   "sic_description": "Services-Consumer Credit Reporting, Collection Agencies",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "798f6b9f554c0ceac1d84a22998a5b89bc14c11bc085cebac0f18628c1c63b78"
+  },
+  "SRE": {
+   "symbol": "SRE",
+   "cik": "0001032208",
+   "name": "SEMPRA",
+   "sic": "4932",
+   "sic_description": "Gas & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "d3e5f4db20fbf98fe792fa9a60048a823006ca2b186cf5ac21712d64f6869f15"
+  },
+  "STE": {
+   "symbol": "STE",
+   "cik": "0001757898",
+   "name": "STERIS plc",
+   "sic": "3842",
+   "sic_description": "Orthopedic, Prosthetic & Surgical Appliances & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "2a5fc981a3f771cfa74bd479a906f11609bc6b660ac942668df475ca6d841e26"
+  },
+  "STLD": {
+   "symbol": "STLD",
+   "cik": "0001022671",
+   "name": "STEEL DYNAMICS INC",
+   "sic": "3312",
+   "sic_description": "Steel Works, Blast Furnaces & Rolling Mills (Coke Ovens)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "eb43831f78348194a9d116bbe25b3c6553c5d73a87b6391edd8f217d13c36ce7"
+  },
+  "STT": {
+   "symbol": "STT",
+   "cik": "0000093751",
+   "name": "STATE STREET CORP",
+   "sic": "6022",
+   "sic_description": "State Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "3e89aa635f2c20e4a5d131ca39d54795044b09897f4833123e874bdcf9fb1b09"
+  },
+  "STX": {
+   "symbol": "STX",
+   "cik": "0001137789",
+   "name": "Seagate Technology Holdings plc",
+   "sic": "3572",
+   "sic_description": "Computer Storage Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "7cf5c078227701255e87c3f0b19a1d2b138ce26da65b82b6cafecd9623231915"
+  },
+  "STZ": {
+   "symbol": "STZ",
+   "cik": "0000016918",
+   "name": "CONSTELLATION BRANDS, INC.",
+   "sic": "2080",
+   "sic_description": "Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "2aae0ffbfee611c5e60c2b55ef1a55d508eae11f090b1fd6029c46575c9d8f28"
+  },
+  "SW": {
+   "symbol": "SW",
+   "cik": "0002005951",
+   "name": "Smurfit Westrock plc",
+   "sic": "2650",
+   "sic_description": "Paperboard Containers & Boxes",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "52fb973643b6d3cad99329aaee1d9f1860929269602abe055d25602680b59c35"
+  },
+  "SWK": {
+   "symbol": "SWK",
+   "cik": "0000093556",
+   "name": "STANLEY BLACK & DECKER, INC.",
+   "sic": "3420",
+   "sic_description": "Cutlery, Handtools & General Hardware",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "714d5289337df4cfa48dda31d0c02a893aa9b755ef0c08a294904f6b768998d9"
+  },
+  "SWKS": {
+   "symbol": "SWKS",
+   "cik": "0000004127",
+   "name": "SKYWORKS SOLUTIONS, INC.",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "cc36ee13392bbdb5e5b14395e589262ddb1a90d168fd583028bf6cbaf1d7093b"
+  },
+  "SYF": {
+   "symbol": "SYF",
+   "cik": "0001601712",
+   "name": "Synchrony Financial",
+   "sic": "6199",
+   "sic_description": "Finance Services",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "0957d5e40e2ded69d6b506d37120d1d8949dc4343beedc42606001ab609eb8b7"
+  },
+  "SYK": {
+   "symbol": "SYK",
+   "cik": "0000310764",
+   "name": "STRYKER CORP",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "d18f13b2dc991b709597bfe4142001a6fd898721aec0fe83b889362e78b964f6"
+  },
+  "SYY": {
+   "symbol": "SYY",
+   "cik": "0000096021",
+   "name": "SYSCO CORP",
+   "sic": "5140",
+   "sic_description": "Wholesale-Groceries & Related Products",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "5eadfc8b182aa6a245ab22ab2b920fd6b753b777b153a6825e26d9f5820aa707"
+  },
+  "T": {
+   "symbol": "T",
+   "cik": "0000732717",
+   "name": "AT&T INC.",
+   "sic": "4813",
+   "sic_description": "Telephone Communications (No Radiotelephone)",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "b011401d1c3d848e6662e6b831aeaf85322e4643297c77806b0cdf49611d21bd"
+  },
+  "TAP": {
+   "symbol": "TAP",
+   "cik": "0000024545",
+   "name": "MOLSON COORS BEVERAGE CO",
+   "sic": "2082",
+   "sic_description": "Malt Beverages",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "3f5d2c5865f1b74e566a619210c455f8b003259e9ec6736cb05154d80d741cfd"
+  },
+  "TDG": {
+   "symbol": "TDG",
+   "cik": "0001260221",
+   "name": "TransDigm Group INC",
+   "sic": "3728",
+   "sic_description": "Aircraft Parts & Auxiliary Equipment, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "6e5b299cf8f75d4c0a5b4ac30874e47a56a50f450e6ed90b8b78c120a1070e9e"
+  },
+  "TDY": {
+   "symbol": "TDY",
+   "cik": "0001094285",
+   "name": "TELEDYNE TECHNOLOGIES INC",
+   "sic": "3812",
+   "sic_description": "Search, Detection, Navigation, Guidance, Aeronautical Sys",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3293ee41ea18f42bb7daf8178de314813184bdbeb2b003b4f9ed387f69a5d6b7"
+  },
+  "TECH": {
+   "symbol": "TECH",
+   "cik": "0000842023",
+   "name": "BIO-TECHNE Corp",
+   "sic": "2836",
+   "sic_description": "Biological Products, (No Diagnostic Substances)",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "4ca393164d42392e5525fb4354a221e96db2f861a03c19c1996476044e9b5177"
+  },
+  "TEL": {
+   "symbol": "TEL",
+   "cik": "0001385157",
+   "name": "TE Connectivity plc",
+   "sic": "5065",
+   "sic_description": "Wholesale-Electronic Parts & Equipment, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "1d6f94ba34ceb992f108de2b42befbaab257e3853f27ac94a406600768cc8e16"
+  },
+  "TER": {
+   "symbol": "TER",
+   "cik": "0000097210",
+   "name": "TERADYNE, INC",
+   "sic": "3825",
+   "sic_description": "Instruments For Meas & Testing of  Electricity & Elec Signals",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "b344237439eca1fdabbee1227e6546476c2f05e9b7013b450272f8ae0a533221"
+  },
+  "TFC": {
+   "symbol": "TFC",
+   "cik": "0000092230",
+   "name": "TRUIST FINANCIAL CORP",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "7dd4050e89a861bf730cf4a3df89e74deeb2eb12fc61fa6bd30f2a7c807aafc3"
+  },
+  "TGT": {
+   "symbol": "TGT",
+   "cik": "0000027419",
+   "name": "TARGET CORP",
+   "sic": "5331",
+   "sic_description": "Retail-Variety Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "3d133aa9e678fcf843c4ed95e51dd6c5f298df3a21cc6b6e2b84429a8b506975"
+  },
+  "TJX": {
+   "symbol": "TJX",
+   "cik": "0000109198",
+   "name": "TJX COMPANIES INC /DE/",
+   "sic": "5651",
+   "sic_description": "Retail-Family Clothing Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "00515a465f71b88ce8c2c387a2422feeec7b9adedad9d73b64077b2da2ad4f6f"
+  },
+  "TKO": {
+   "symbol": "TKO",
+   "cik": "0001973266",
+   "name": "TKO Group Holdings, Inc.",
+   "sic": "7900",
+   "sic_description": "Services-Amusement & Recreation Services",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "77fc9f3ccae6207c169b270fb411ce7b9bc3223b0097948ee9b4139a6579705e"
+  },
+  "TMO": {
+   "symbol": "TMO",
+   "cik": "0000097745",
+   "name": "THERMO FISHER SCIENTIFIC INC.",
+   "sic": "3829",
+   "sic_description": "Measuring & Controlling Devices, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "016c598138e04dd2fadacb910ac35df7fa5a91b1d4dc366ed5eb23e0e97d561f"
+  },
+  "TMUS": {
+   "symbol": "TMUS",
+   "cik": "0001283699",
+   "name": "T-Mobile US, Inc.",
+   "sic": "4812",
+   "sic_description": "Radiotelephone Communications",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "073a00f3f617c4a6fc07cea7658c550b3303b2ae8373b7efc8b27743334452cd"
+  },
+  "TPL": {
+   "symbol": "TPL",
+   "cik": "0001811074",
+   "name": "Texas Pacific Land Corp",
+   "sic": "6792",
+   "sic_description": "Oil Royalty Traders",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ce57571c9b7a16981d6a2d94ccae8979ff3eca7de614d5392b0109693ce247fa"
+  },
+  "TPR": {
+   "symbol": "TPR",
+   "cik": "0001116132",
+   "name": "TAPESTRY, INC.",
+   "sic": "3100",
+   "sic_description": "Leather & Leather Products",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "f8ce68c3da1207d1e70aadd59255b9cad9842ad58d913dda6ad5bb2c911d4696"
+  },
+  "TRGP": {
+   "symbol": "TRGP",
+   "cik": "0001389170",
+   "name": "Targa Resources Corp.",
+   "sic": "4922",
+   "sic_description": "Natural Gas Transmission",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "b103cffd745adc846041e7070b05498906f1fc806c1b6d1b96b4d6412b9c0382"
+  },
+  "TRMB": {
+   "symbol": "TRMB",
+   "cik": "0000864749",
+   "name": "TRIMBLE INC.",
+   "sic": "3829",
+   "sic_description": "Measuring & Controlling Devices, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "44bad33b79e2a0799a0c1e80fb14881c31f41cb3a5c60ecdf4e5d47763f27b77"
+  },
+  "TROW": {
+   "symbol": "TROW",
+   "cik": "0001113169",
+   "name": "PRICE T ROWE GROUP INC",
+   "sic": "6282",
+   "sic_description": "Investment Advice",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ae7f6324aef1eca02f3463e9b173a4ba2bf4e08013aa10d9f720433766462fd1"
+  },
+  "TRV": {
+   "symbol": "TRV",
+   "cik": "0000086312",
+   "name": "TRAVELERS COMPANIES, INC.",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "8907767ba0cc5829b86bedecb621d9b1467e8c4023825724bdf94e3ce14030df"
+  },
+  "TSCO": {
+   "symbol": "TSCO",
+   "cik": "0000916365",
+   "name": "TRACTOR SUPPLY CO /DE/",
+   "sic": "5200",
+   "sic_description": "Retail-Building Materials, Hardware, Garden Supply",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "cded78f39729a3805768905eefd799ec8d26afd5ace875ec0b4e5dbbe391b8da"
+  },
+  "TSLA": {
+   "symbol": "TSLA",
+   "cik": "0001318605",
+   "name": "Tesla, Inc.",
+   "sic": "3711",
+   "sic_description": "Motor Vehicles & Passenger Car Bodies",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "76ef728de78f5a7048154847052d1be4b76d32be9e790f57d8ce14a026be6c3a"
+  },
+  "TSN": {
+   "symbol": "TSN",
+   "cik": "0000100493",
+   "name": "TYSON FOODS, INC.",
+   "sic": "2015",
+   "sic_description": "Poultry Slaughtering and Processing",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "757dc33205dfd349244034648cd2be03a7150b78139886a90025d6cdd2c01913"
+  },
+  "TT": {
+   "symbol": "TT",
+   "cik": "0001466258",
+   "name": "Trane Technologies plc",
+   "sic": "3822",
+   "sic_description": "Auto Controls For Regulating Residential & Comml Environments",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "613eb0e614dc65a55c711b771ef46bacdcdc1bd32f7357f5d6422795eaf5def6"
+  },
+  "TTD": {
+   "symbol": "TTD",
+   "cik": "0001671933",
+   "name": "Trade Desk, Inc.",
+   "sic": "7370",
+   "sic_description": "Services-Computer Programming, Data Processing, Etc.",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "fc263f49dfccdb88fd31e512d6f1624b482bcaf8220f82d9859f01d1daa1b4bb"
+  },
+  "TTWO": {
+   "symbol": "TTWO",
+   "cik": "0000946581",
+   "name": "TAKE TWO INTERACTIVE SOFTWARE INC",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "35d56cde8468eaf83f7ce9a488b717993b282d6fb60945463a23effc816c9312"
+  },
+  "TXN": {
+   "symbol": "TXN",
+   "cik": "0000097476",
+   "name": "TEXAS INSTRUMENTS INC",
+   "sic": "3674",
+   "sic_description": "Semiconductors & Related Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f41410833c3b1fe551ac1dd38a696782c430e8a71a4b8b780fd38e0f13b7beb3"
+  },
+  "TXT": {
+   "symbol": "TXT",
+   "cik": "0000217346",
+   "name": "TEXTRON INC",
+   "sic": "3720",
+   "sic_description": "Aircraft & Parts",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "11a443b33a032c930fcd069adaf554981fa1e072e7d9f25b5ed74030634dddaa"
+  },
+  "TYL": {
+   "symbol": "TYL",
+   "cik": "0000860731",
+   "name": "TYLER TECHNOLOGIES INC",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "1dbcbf5eb3c894a0d3df512aca29a342dbec2281003a408b1ec544cf0d778bbd"
+  },
+  "UAL": {
+   "symbol": "UAL",
+   "cik": "0000100517",
+   "name": "United Airlines Holdings, Inc.",
+   "sic": "4512",
+   "sic_description": "Air Transportation, Scheduled",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "d3dfdebf2528e04f8f4f629bbb0e66b493ab02e198490330fda1a6a14c1703ef"
+  },
+  "UBER": {
+   "symbol": "UBER",
+   "cik": "0001543151",
+   "name": "Uber Technologies, Inc",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "c995406f241c4e6cb376abdd696ae447e2f30e1c24d7b45a715c433070ab2643"
+  },
+  "UDR": {
+   "symbol": "UDR",
+   "cik": "0000074208",
+   "name": "UDR, Inc.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "4e1e0ca4d973bd66569b6d2d054c3ee16642e4af5e27693fcfa4e23d5429b9b3"
+  },
+  "UHS": {
+   "symbol": "UHS",
+   "cik": "0000352915",
+   "name": "UNIVERSAL HEALTH SERVICES INC",
+   "sic": "8062",
+   "sic_description": "Services-General Medical & Surgical Hospitals, NEC",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "e6938f613a85148a6ffc1bc6500139e50cdc3a10484d06ee2bfc4bf61e4f23e6"
+  },
+  "ULTA": {
+   "symbol": "ULTA",
+   "cik": "0001403568",
+   "name": "Ulta Beauty, Inc.",
+   "sic": "5990",
+   "sic_description": "Retail-Retail Stores, NEC",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "0e64ef06fa3fade707e0bdaf30f0fd3e15e3484c75fffec9e19bee329005db23"
+  },
+  "UNH": {
+   "symbol": "UNH",
+   "cik": "0000731766",
+   "name": "UNITEDHEALTH GROUP INC",
+   "sic": "6324",
+   "sic_description": "Hospital & Medical Service Plans",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "94fb1cf4af39ab0f3b8370f724bb74cf918a0ab597b245e96dc9925f63ab1a5b"
+  },
+  "UNP": {
+   "symbol": "UNP",
+   "cik": "0000100885",
+   "name": "UNION PACIFIC CORP",
+   "sic": "4011",
+   "sic_description": "Railroads, Line-Haul Operating",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "74f3466470c8af7af8456ef7b1beda0880697faf91729dff54cb42ffa87cdad4"
+  },
+  "UPS": {
+   "symbol": "UPS",
+   "cik": "0001090727",
+   "name": "UNITED PARCEL SERVICE INC",
+   "sic": "4210",
+   "sic_description": "Trucking & Courier Services (No Air)",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "b5540a0075af93743150183f79308f7e86f35855b7ecaeda705cd483c7fd2a40"
+  },
+  "URI": {
+   "symbol": "URI",
+   "cik": "0001067701",
+   "name": "UNITED RENTALS, INC.",
+   "sic": "7359",
+   "sic_description": "Services-Equipment Rental & Leasing, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "ba46ae2bb050c400c7a77cb3382f9d34979fc311fc46a30508bf9fbe9e3fed0f"
+  },
+  "USB": {
+   "symbol": "USB",
+   "cik": "0000036104",
+   "name": "US BANCORP \\DE\\",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "c2d988b0c9755fa06ef7916299c3ee89cd157eb6230deab653f05bca87409122"
+  },
+  "V": {
+   "symbol": "V",
+   "cik": "0001403161",
+   "name": "VISA INC.",
+   "sic": "7389",
+   "sic_description": "Services-Business Services, NEC",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "7f985aa8d9b9b7171d7784aa41af99770be5bc86afc2b1d508aa977f5aa0dc18"
+  },
+  "VEEV": {
+   "symbol": "VEEV",
+   "cik": "0001393052",
+   "name": "VEEVA SYSTEMS INC",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "6956b6a57e1a07a3b7ebe9b0ac127007ed091a9a888d75381604a027f1d9bdc7"
+  },
+  "VICI": {
+   "symbol": "VICI",
+   "cik": "0001705696",
+   "name": "VICI PROPERTIES INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "f58358f4ae72c7721660441b3aa85616f1c4bdbdfe19db1a8345ea54999c0f10"
+  },
+  "VLO": {
+   "symbol": "VLO",
+   "cik": "0001035002",
+   "name": "VALERO ENERGY CORP/TX",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "d88e4367e269d7ff955f19b3dbb62efaebd312004d93cb3fb4644d579bfde519"
+  },
+  "VLTO": {
+   "symbol": "VLTO",
+   "cik": "0001967680",
+   "name": "Veralto Corp",
+   "sic": "3825",
+   "sic_description": "Instruments For Meas & Testing of  Electricity & Elec Signals",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "ab3713d9a8d0f174abaeef4e3dfdec8b6bc692d274b7d88654e4b6b86d6e70ce"
+  },
+  "VMC": {
+   "symbol": "VMC",
+   "cik": "0001396009",
+   "name": "Vulcan Materials CO",
+   "sic": "1400",
+   "sic_description": "Mining & Quarrying of  Nonmetallic Minerals (No Fuels)",
+   "sector": "MATERIALS",
+   "tech": false,
+   "submissions_sha256": "429fc97b884433c91975bdb574a77c7ecab9adc53968d772145ba5c7f028e5ec"
+  },
+  "VMRK": {
+   "symbol": "VMRK",
+   "cik": "0000906107",
+   "name": "VIVMARK RESIDENTIAL",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "93ee8f5ba8a3f8b403daa45f19c0f462bb3b697848884bdfd7707a7f0c07572d"
+  },
+  "VRSK": {
+   "symbol": "VRSK",
+   "cik": "0001442145",
+   "name": "Verisk Analytics, Inc.",
+   "sic": "7374",
+   "sic_description": "Services-Computer Processing & Data Preparation",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "8ed9c95c21e6af37903a1e9df017ae653f62b51ad53d5d5bb7f928dea92aecad"
+  },
+  "VRSN": {
+   "symbol": "VRSN",
+   "cik": "0001014473",
+   "name": "VERISIGN INC/CA",
+   "sic": "7371",
+   "sic_description": "Services-Computer Programming Services",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "13803c326a48dfacc2e6090ac62b8c81e165428d8f9e83be2487e0c5c8cd4055"
+  },
+  "VRT": {
+   "symbol": "VRT",
+   "cik": "0001674101",
+   "name": "Vertiv Holdings Co",
+   "sic": "3679",
+   "sic_description": "Electronic Components, NEC",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f9dfecfcd5a6b4a05770bbf388c287efd53146b4a475bb65561bdde39a72ad61"
+  },
+  "VRTX": {
+   "symbol": "VRTX",
+   "cik": "0000875320",
+   "name": "VERTEX PHARMACEUTICALS INC / MA",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "7d0f0a294edb407c6de7a5f2d3296aa0b3a99e45e91e62517635966cf257377c"
+  },
+  "VST": {
+   "symbol": "VST",
+   "cik": "0001692819",
+   "name": "Vistra Corp.",
+   "sic": "4911",
+   "sic_description": "Electric Services",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "a7b4b8483a502498c785d180541a2d5f58a543c039578a72a57fde46983f7cc0"
+  },
+  "VTR": {
+   "symbol": "VTR",
+   "cik": "0000740260",
+   "name": "Ventas, Inc.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "207c99967ba7019faf5bd83b95781e0ca85dd79f7355787f3d1d8c7418271626"
+  },
+  "VTRS": {
+   "symbol": "VTRS",
+   "cik": "0001792044",
+   "name": "Viatris Inc",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "7e60d32b067e3548f9795aa451cb754f05741c1e2dd3a70317800bc787f0339e"
+  },
+  "VZ": {
+   "symbol": "VZ",
+   "cik": "0000732712",
+   "name": "VERIZON COMMUNICATIONS INC",
+   "sic": "4813",
+   "sic_description": "Telephone Communications (No Radiotelephone)",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "e363746b797f268baae6f3ea89aa5080473ef3a76e43ffde9332708e1fe14ea0"
+  },
+  "WAB": {
+   "symbol": "WAB",
+   "cik": "0000943452",
+   "name": "WESTINGHOUSE AIR BRAKE TECHNOLOGIES CORP",
+   "sic": "3743",
+   "sic_description": "Railroad Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "3150b0a2cd14e65ef8fb62c3685d92932e683afeed0bf39bc184e2b25c6f13df"
+  },
+  "WAT": {
+   "symbol": "WAT",
+   "cik": "0001000697",
+   "name": "WATERS CORP /DE/",
+   "sic": "3826",
+   "sic_description": "Laboratory Analytical Instruments",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "dec28b2b1653fb764ba4b0acefb90d394ec9a7314d6f6e5e77faa35c8b998e54"
+  },
+  "WBD": {
+   "symbol": "WBD",
+   "cik": "0001437107",
+   "name": "Warner Bros. Discovery, Inc.",
+   "sic": "4841",
+   "sic_description": "Cable & Other Pay Television Services",
+   "sector": "COMMUNICATION",
+   "tech": false,
+   "submissions_sha256": "add5d43a8c1cccf6eabc2dedb70182573a33ba3f6a3b48dfcc942cdf26eaf8b4"
+  },
+  "WDAY": {
+   "symbol": "WDAY",
+   "cik": "0001327811",
+   "name": "Workday, Inc.",
+   "sic": "7374",
+   "sic_description": "Services-Computer Processing & Data Preparation",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "0068731711f9f88c1f37b23566756143aefd17e2f00daf9a413aa1d8f29174db"
+  },
+  "WDC": {
+   "symbol": "WDC",
+   "cik": "0000106040",
+   "name": "WESTERN DIGITAL CORP",
+   "sic": "3572",
+   "sic_description": "Computer Storage Devices",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "5eeb05ab340a1a3401ca0e57441eb57e952d2cfa67ad2e0afc8fe41c136233f5"
+  },
+  "WEC": {
+   "symbol": "WEC",
+   "cik": "0000783325",
+   "name": "WEC ENERGY GROUP, INC.",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "23cc8b1f4e034272c05aef697d36b2047bd447fb7c771394b1a1ef65a59b1eed"
+  },
+  "WELL": {
+   "symbol": "WELL",
+   "cik": "0000766704",
+   "name": "WELLTOWER INC.",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "cf46778c7a7e2d85ab8d71f069785a83e5f9defccd50acae23db525a1123be04"
+  },
+  "WFC": {
+   "symbol": "WFC",
+   "cik": "0000072971",
+   "name": "WELLS FARGO & COMPANY/MN",
+   "sic": "6021",
+   "sic_description": "National Commercial Banks",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "7386c1abe110d1a5bec3063a487b0c3580d25e522a2045582771bfb69d9370d9"
+  },
+  "WM": {
+   "symbol": "WM",
+   "cik": "0000823768",
+   "name": "WASTE MANAGEMENT INC",
+   "sic": "4953",
+   "sic_description": "Refuse Systems",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "93b71a8292860cd4cccc44de2c8e355a91f2e4b06090d94d314dd5036a326f71"
+  },
+  "WMB": {
+   "symbol": "WMB",
+   "cik": "0000107263",
+   "name": "WILLIAMS COMPANIES, INC.",
+   "sic": "4922",
+   "sic_description": "Natural Gas Transmission",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "ff1ee714576bebacb723937dc8cfb6e51cf42215ae70603fbc718b61d49c3327"
+  },
+  "WMT": {
+   "symbol": "WMT",
+   "cik": "0000104169",
+   "name": "Walmart Inc.",
+   "sic": "5331",
+   "sic_description": "Retail-Variety Stores",
+   "sector": "CONSUMER_STAPLES",
+   "tech": false,
+   "submissions_sha256": "a610193531ac16e26d076cc832c7403e43789c302fe16488d07499f1e60aac83"
+  },
+  "WRB": {
+   "symbol": "WRB",
+   "cik": "0000011544",
+   "name": "BERKLEY W R CORP",
+   "sic": "6331",
+   "sic_description": "Fire, Marine & Casualty Insurance",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "ade2c5c84d266c065089652de7f9e4b90aa80093f7a5aebfea942136854c1723"
+  },
+  "WSM": {
+   "symbol": "WSM",
+   "cik": "0000719955",
+   "name": "WILLIAMS SONOMA INC",
+   "sic": "5700",
+   "sic_description": "Retail-Home Furniture, Furnishings & Equipment Stores",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "0569917fb724442b245b25275cd5070dfb3f361917a09328245ca24e05375161"
+  },
+  "WST": {
+   "symbol": "WST",
+   "cik": "0000105770",
+   "name": "WEST PHARMACEUTICAL SERVICES INC",
+   "sic": "3841",
+   "sic_description": "Surgical & Medical Instruments & Apparatus",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "3c4d53083ac3e9e0f54f0996d2649318e9a3eb7803be205b90b3efdf22e40464"
+  },
+  "WTW": {
+   "symbol": "WTW",
+   "cik": "0001140536",
+   "name": "WILLIS TOWERS WATSON PLC",
+   "sic": "6411",
+   "sic_description": "Insurance Agents, Brokers & Service",
+   "sector": "FINANCIALS",
+   "tech": false,
+   "submissions_sha256": "777d4e5c2cd2356debed1381282c0d53a5aad3648de716d25860ca89a69ee23e"
+  },
+  "WY": {
+   "symbol": "WY",
+   "cik": "0000106535",
+   "name": "WEYERHAEUSER CO",
+   "sic": "6798",
+   "sic_description": "Real Estate Investment Trusts",
+   "sector": "REAL_ESTATE",
+   "tech": false,
+   "submissions_sha256": "7264dc0ac08e2a8f214aa3304e8334c3e5741aeadc21a1fb915ac8b0fbc43c09"
+  },
+  "WYNN": {
+   "symbol": "WYNN",
+   "cik": "0001174922",
+   "name": "WYNN RESORTS LTD",
+   "sic": "7011",
+   "sic_description": "Hotels & Motels",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "23bfaf2c7a23fd1ca2287a4fc489887a89094ce4f380f2709fc89b5a88770c84"
+  },
+  "XEL": {
+   "symbol": "XEL",
+   "cik": "0000072903",
+   "name": "XCEL ENERGY INC",
+   "sic": "4931",
+   "sic_description": "Electric & Other Services Combined",
+   "sector": "UTILITIES",
+   "tech": false,
+   "submissions_sha256": "a024267eef8d20bfa496132e04f8979113976ba588edb76bb95128e569a80fa7"
+  },
+  "XOM": {
+   "symbol": "XOM",
+   "cik": "0002115436",
+   "name": "ExxonMobil Holdings Corp",
+   "sic": "2911",
+   "sic_description": "Petroleum Refining",
+   "sector": "ENERGY",
+   "tech": false,
+   "submissions_sha256": "1a6e901c794592b13da83675297ead1bffa210bbb6a016ee13e9d41a26b1eb56"
+  },
+  "XYL": {
+   "symbol": "XYL",
+   "cik": "0001524472",
+   "name": "Xylem Inc.",
+   "sic": "3561",
+   "sic_description": "Pumps & Pumping Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "5790916122619cf375d0aa2dd14509ad75bfb09747b632bdeeae33afb32a4192"
+  },
+  "XYZ": {
+   "symbol": "XYZ",
+   "cik": "0001512673",
+   "name": "Block, Inc.",
+   "sic": "7372",
+   "sic_description": "Services-Prepackaged Software",
+   "sector": "TECHNOLOGY",
+   "tech": true,
+   "submissions_sha256": "f5ea9f975e740ecb783c1d3e978143eb49271344d36baae96efe70262e271680"
+  },
+  "YUM": {
+   "symbol": "YUM",
+   "cik": "0001041061",
+   "name": "YUM BRANDS INC",
+   "sic": "5812",
+   "sic_description": "Retail-Eating  Places",
+   "sector": "CONSUMER_DISCRETIONARY",
+   "tech": false,
+   "submissions_sha256": "40931e01d8326be05ecdb792fdc037ac6973a5511bd4bb2fb063935af6dfe73b"
+  },
+  "ZBH": {
+   "symbol": "ZBH",
+   "cik": "0001136869",
+   "name": "ZIMMER BIOMET HOLDINGS, INC.",
+   "sic": "3842",
+   "sic_description": "Orthopedic, Prosthetic & Surgical Appliances & Supplies",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "50e678cb020deb460c807a33b55ad58fcbc5c390614be710e64bfce598f4e3f9"
+  },
+  "ZBRA": {
+   "symbol": "ZBRA",
+   "cik": "0000877212",
+   "name": "ZEBRA TECHNOLOGIES CORP",
+   "sic": "3560",
+   "sic_description": "General Industrial Machinery & Equipment",
+   "sector": "INDUSTRIALS",
+   "tech": false,
+   "submissions_sha256": "f717b10420307b962483a4547131ff7a02f09c9fe361b3678318b2fa5f3e9a69"
+  },
+  "ZTS": {
+   "symbol": "ZTS",
+   "cik": "0001555280",
+   "name": "Zoetis Inc.",
+   "sic": "2834",
+   "sic_description": "Pharmaceutical Preparations",
+   "sector": "HEALTH_CARE",
+   "tech": false,
+   "submissions_sha256": "4cfe900b68bde1411441e1c527aea3ea921d25639b88405b2879b4bf63f5f799"
+  }
+ },
+ "content_sha256": "4da461401070a3104975026b81244a05fe2c9ab00399d22984e66a483b81e447"
+}
