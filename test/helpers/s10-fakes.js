@@ -13,6 +13,7 @@ export class FakeStore {
       if (op === 'gte') return row[k] >= val;
       if (op === 'lte') return row[k] <= val;
       if (op === 'in') return val.slice(1, -1).split(',').includes(String(row[k]));
+      if (op === 'like') return new RegExp(`^${val.split('*').map((x) => x.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(String(row[k]));
       throw new Error('op ' + op);
     }));
     if (order) { const [c, dir] = order.split('.'); r = [...r].sort((a, b) => (a[c] < b[c] ? -1 : a[c] > b[c] ? 1 : 0) * (dir === 'desc' ? -1 : 1)); }

@@ -30,6 +30,8 @@ import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from '.
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { handleSignal10, signal10Tick } from './signal10-api.js';
 import { handleMarketTape } from './market-tape-api.js';
+import { handleArena } from './arena-api.js';
+import { arenaTick } from '../../../src/signal10/arena/forward.js';
 import { iexHistStep, iexDue } from './iex-hist-lane.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
@@ -109,6 +111,10 @@ export default {
       // PBE Signal 10 paper account (issue #52, sql/016): time-gated OPEN/EOD/MARK jobs, own waitUntil. Kill switch SIGNAL10.
       if (env.SIGNAL10 === 'true') ctx.waitUntil(signal10Tick({ ...env, __store: storeFor(env) }, minuteAt)
         .then((r) => { if (Object.keys(r).length) console.log(JSON.stringify({ signal10: r })); }).catch((e) => console.error('signal10 failed', e.stack || e.message)));
+      // Signal 10 Strategy Arena challengers (issue #62, sql/018): OPEN fills / EOD on odd minutes, own waitUntil, separate
+      // tables + chains from the control. Kill switch SIGNAL10_ARENA (independent of SIGNAL10); cohort start SIGNAL10_ARENA_T0.
+      if (env.SIGNAL10_ARENA === 'true') ctx.waitUntil(arenaTick({ ...env, __store: storeFor(env) }, minuteAt)
+        .then((r) => { if (Object.keys(r).length) console.log(JSON.stringify({ signal10_arena: r })); }).catch((e) => console.error('signal10 arena failed', e.stack || e.message)));
       // PBE Market Tape collector (issue #56, sql/017): IEX HIST T+1, one resumable step per minute overnight, own waitUntil.
       if (env.IEX_HIST_COLLECTOR === 'true' && iexDue(minuteAt)) ctx.waitUntil(iexHistStep({ store: storeFor(env), nowIso: minuteAt })
         .then((r) => console.log(JSON.stringify({ iex_hist: r }))).catch((e) => console.error('iex hist failed', e.stack || e.message)));
@@ -468,6 +474,11 @@ export default {
       }
       if (p === '/v1/market-tape' || p === '/admin/market-tape') {
         const r = await handleMarketTape({ req, env, p, store: storeFor(env), requireAllAccess, privateJson, json, tokenMatches });
+        if (r) return r;
+      }
+      // Strategy Arena + precious metals (issues #62/#63): before the control's /v1/signal10 handler, which owns the prefix.
+      if (p.startsWith('/v1/signal10/arena') || p === '/v1/metals') {
+        const r = await handleArena({ req, env, p, url, store: storeFor(env), requireAllAccess, privateJson, json });
         if (r) return r;
       }
       if (p.startsWith('/v1/signal10') || p.startsWith('/admin/signal10')) {

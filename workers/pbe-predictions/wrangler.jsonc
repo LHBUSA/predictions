@@ -59,6 +59,11 @@
     // one-minute cron. SIMULATED ONLY, no brokerage. Kill switch: anything but "true". SIGNAL10_START = first eligible EOD.
     "SIGNAL10": "true",
     "SIGNAL10_START": "2026-10-09",
+    // Signal 10 Strategy Arena challengers (issue #62, sql/018): Tech + Diversified $10,000 simulated paper accounts. OFF until
+    // sql/018 is applied and activation is approved; SIGNAL10_ARENA_T0 = the earliest EOD date the cohort may be funded.
+    // Kill switch: anything but "true" stops challenger writes only (the control is never affected; ledgers preserved).
+    "SIGNAL10_ARENA": "false",
+    "SIGNAL10_ARENA_T0": "",
     // PBE Market Tape (market-tape/1, issues #54/#56). Prices need BOTH MARKET_TAPE_QUOTES="on" AND a provider whose RIGHTS
     // record in src/market-tape/contract.js permits the audience (a paywall is NOT redistribution permission). ON with
     // iex-hist = PUBLIC + PAID display of IEX next-day (T+1) last sales with the IEX credit line (IEX policy §15). Yahoo has
