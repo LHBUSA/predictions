@@ -118,7 +118,7 @@ test('head-to-head: three brand-new accounts, same T0, same $10,000, zero positi
   assert.equal(a.comparators.SPY[0].indexed, 10000);
   assert.equal(a.strategies[1].metrics.sharpe, null, `no Sharpe before ${SHARPE_MIN_OBS} observations`);
   // re-review N2/N3: member payloads never carry a source price or a share-count/value pair
-  assert.doesNotMatch(JSON.stringify(a.strategies.map((s) => s.holdings)), /"qty"|"value_cents"|"cost_cents"|"close"|"price"/);
+  assert.doesNotMatch(JSON.stringify(a.strategies.map((s) => [s.holdings, s.pending, s.decisions])), /"qty"|"value_cents"|"cost_cents"|"close"|"price"/);
   const mm = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true });
   assert.equal(mm.diversified_sleeve.candidates.length, 3);
   assert.doesNotMatch(JSON.stringify(mm.diversified_sleeve), /"adj"|"sma200"|"close"|"f":/);

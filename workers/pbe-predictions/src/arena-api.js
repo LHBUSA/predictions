@@ -1,8 +1,8 @@
 // PBE Signal 10 STRATEGY ARENA + PRECIOUS METALS API (issues #62 / #63).
 //   GET /v1/signal10/arena/proof   PUBLIC  versions, policy hashes, T0, ledger heads, snapshot hashes. No NAV, no holdings.
-//   GET /v1/signal10/arena         ALL ACCESS  three-way head-to-head: NAV since T0 (Original indexed to $10,000 at T0, plus
-//                                  its real lifetime record), metrics, holdings, exposures, latest decisions, comparators.
-//   GET /v1/signal10/arena/ledger  ALL ACCESS  ?account=S10-ARENA-TECH-1|S10-ARENA-DIV-1 every row (recompute the chain)
+//   GET /v1/signal10/arena         ALL ACCESS  three-way head-to-head of three new accounts from the same T0: NAV, metrics,
+//                                  holdings (weights/returns), exposures, latest decisions, SPY/QQQ comparators.
+//   GET /v1/signal10/arena/ledger  ALL ACCESS  ?account=S10-ARENA-ORIG-1|S10-ARENA-TECH-1|S10-ARENA-DIV-1 every row
 //   GET /v1/metals                 PUBLIC + member extras  metals/1: spot identity + rights state, ETF proxies with
 //                                  rights-cleared IEX next-day observations only, Diversified sleeve state for members.
 // Reads only. THREE brand-new Arena accounts (ORIGINAL = unchanged V1 rules, TECH, DIVERSIFIED) funded at the same T0.
@@ -27,7 +27,8 @@ const CARD = [ORIGINAL, TECH, DIVERSIFIED].map((S) => ({ key: S.strategy, label:
 export const LEGACY_V1 = Object.freeze({ account: 'S10-FWD-1', url: '/markets/signal-10/live/', note: 'The first Signal 10 paper account (funded 2026-10-09) continues separately as historical research. It is not an Arena competitor; its holdings and NAV are never used here.' });
 
 const sectorOfTicker = (sym) => { const r = CLASSIFICATION.rows[sym] || CLASSIFICATION.rows[String(sym).replace(/-/g, '.')]; return r?.sector || 'UNCLASSIFIED'; };
-const slimEvent = (e) => { const p = e.payload || {}; return { seq: e.seq, type: e.type, d: e.d, action: p.action || (e.type === 'ORDER' ? p.side : null), symbol: p.symbol ?? null, qty: p.qty ?? null, targetCents: p.targetCents ?? null, reason: p.reason ?? null, rank: p.rank ?? null, score: p.score ?? null }; };
+// no share quantities in member payloads (with a weight and NAV they would reveal a source price)
+const slimEvent = (e) => { const p = e.payload || {}; return { seq: e.seq, type: e.type, d: e.d, action: p.action || (e.type === 'ORDER' ? p.side : null), symbol: p.symbol ?? null, full_exit: p.full === true || undefined, targetCents: p.targetCents ?? null, reason: p.reason ?? null, rank: p.rank ?? null, score: p.score ?? null }; };
 
 async function challengerHead(store, account) {
   try { return await challengerHeadRaw(store, account); } catch { return { state: null, seq: 0, head: null, headAt: null, funding: null, unavailable: true }; }
@@ -95,7 +96,7 @@ export async function arenaPayload(store) {
     const evs = lastD ? await store.select(T.events, { account: `eq.${S.account}`, d: `eq.${lastD}`, select: 'seq,type,d,payload' }, { order: 'seq.asc' }) : [];
     out.strategies.push({ ...base, series: indexSeries(pts), metrics: seriesMetrics(pts), nav: { cents: last?.nav_cents ?? null, d: lastD, coverage: last?.coverage ?? null },
       cash_cents: st.cashCents, holdings: hold, exposure: exposureOf(hold, last?.nav_cents, last?.cash_cents ?? st.cashCents), turnover: turnover(st, pts),
-      decisions: evs.filter((e) => e.type === 'ORDER' || e.type === 'DECISION').map(slimEvent), pending: st.pending.map((o) => ({ side: o.side, symbol: o.symbol, qty: o.qty ?? null, targetCents: o.targetCents ?? null, reason: o.reason })),
+      decisions: evs.filter((e) => e.type === 'ORDER' || e.type === 'DECISION').map(slimEvent), pending: st.pending.map((o) => ({ side: o.side, symbol: o.symbol, targetCents: o.targetCents ?? null, reason: o.reason })),
       cooldown: st.cooldown || {} });
     if (S === ORIGINAL && marks.length) {
       const bench = (k) => indexSeries(marks.map((m) => ({ d: m.d, nav: m.benchmarks?.[k] ?? null })), 1_000_000);

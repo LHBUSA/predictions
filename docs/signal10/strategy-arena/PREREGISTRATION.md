@@ -26,19 +26,30 @@ receive reviewed bug fixes **before** T0, each recorded below; after T0 any beha
 ## 1. ORIGINAL = the unchanged V1 algorithm on a new account; the legacy V1 account is not touched
 ORIGINAL imports `RANK` and `MANAGER` from `src/signal10/policy.js` (not a copy), ranks with V1's `rankUniverse`
 (`src/signal10/rank.js`) on the full S&P 500 member list, decides with V1's `decide()` (`src/signal10/portfolio.js`) and
-uses V1's SPY 200-day regime rule (fewer than 200 bars = risk-off, as in V1). A test proves its funding-day orders and
-decisions equal the legacy V1 lane's on identical inputs. The only differences are Arena-wide execution conventions shared
-by all three accounts (split-adjusted sells on a split day, per-account fail-closed handling, NYSE early closes); sector
-labels on its holdings are display metadata, never a rule input.
+uses V1's SPY 200-day regime rule (fewer than 200 bars = risk-off, as in V1). A test proves that over 8 sessions every
+ORDER, DECISION and FILL equals the legacy V1 lane's on identical inputs; an independent differential probe (25 sessions,
+risk-off, crash, splits) found no other decision difference. The differences are Arena-wide execution and record
+conventions, shared by all three accounts and listed here in full:
+1. **Split on a fill day:** a SELL sized at the previous close sells the whole post-split position (the legacy lane sells
+   the pre-split share count, a known defect).
+2. **A series that ends is liquidated:** a holding whose source series stops for 3 sessions is sold at its last observed
+   close (DELIST_LIQUIDATION, flagged ESTIMATE) — the V1 backtest's rule. The legacy forward lane never liquidates such a
+   name, so from that point its cash and decisions would differ.
+3. **Stale marks are NOT AVAILABLE:** if any holding has no observed close, that day's EOD NAV is stored as NULL (coverage
+   < 1) instead of a NAV built on a stale price; the gap is never interpolated. Decisions are unaffected.
+4. **Fail-closed per account:** a held symbol whose source returns nothing is handled per §5 (the legacy lane throws on
+   every EOD after that, a known defect).
+5. **NYSE early closes:** the final-close gate is 13:00 ET on early-close days (the legacy lane skips those EODs).
+Sector labels on ORIGINAL's holdings are display metadata, never a rule input.
 
 ### The legacy account is not touched
 `S10-FWD-1`, `signal10-rank/1.0.0`, `signal10-manager/1.0.0`, its ledger, holdings, fills, scheduler, frozen ranks and
-history stay byte-for-byte and behaviour-for-behaviour as deployed. Golden proof: `test/signal10-arena.test.js` pins the
-sha256 of every control engine file and `sql/016` (captured from main 2026-10-10); a second test proves the arena code
-never names a control table, the control account or the control kill switch. The challengers import the control's pure
-accounting helpers read-only (fills at the open, splits, dividends, delist liquidation, EOD mark) so execution
-conventions are identical — selection, sizing, regime, exits and caps are challenger-specific.
-The control is **not reset**: it keeps its own inception and lifetime ledger.
+history are not modified by the Arena. Golden proof: `test/signal10-arena.test.js` pins the sha256 of the V1 algorithm
+and data files and `sql/016`; a second test proves the Arena code never names a legacy table, the legacy account or the
+legacy kill switch. All three Arena accounts use V1's pure accounting helpers read-only (fills at the open, splits,
+dividends, delist liquidation, EOD mark), so execution conventions are identical across the Arena — selection, sizing,
+regime, exits and caps are each strategy's own. The legacy account keeps its own inception and ledger as separate
+history (its writer repair is issue #69).
 
 ## 2. Securities, membership and taxonomy
 - **Membership:** S&P 500 point-in-time members from fja05680/sp500 (MIT), read at every EOD — the control's source.
@@ -54,7 +65,7 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   A snapshot never classifies a date before its effective date. Refreshes are new dated files (old hashes stay in the
   ledger snapshots); never edited in place.
 - **Out of coverage:** a member with no SEC ticker match or no SIC is UNCLASSIFIED: listed in every snapshot, never
-  traded by either challenger (2026-10-10: PSKY). A company added to the index after the snapshot is UNCLASSIFIED
+  traded by TECH or DIVERSIFIED (2026-10-10: PSKY). ORIGINAL has no taxonomy rule (V1 universe) and may trade it. A company added to the index after the snapshot is UNCLASSIFIED
   until a new dated snapshot is published; a held position keeps the sector it had when bought.
 
 ## 3. TECH / Technology Conviction (`S10-ARENA-TECH-1`)
@@ -103,7 +114,7 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
 - **Fills:** next regular-session **open** after the decision close (daily-bar open, unadjusted); no bar = order
   EXPIRES. 10 bps slippage per side, $0 commission, whole shares, $100 minimum order, idle cash 0%.
 - **Source:** the control's daily-bar source (Yahoo Finance chart endpoint; see the rights note in §7). **One** history
-  fetch per session serves both challengers (control 1× + arena 1×; never one read per account).
+  fetch per session serves all three Arena accounts (legacy lane 1× + Arena 1×; never one read per account).
 - **Missing / stale data:** no bar for a holding on D = HOLD with `NO_BAR_TODAY`, marked at its last observed close and
   flagged stale; the EOD mark then stores **NOT AVAILABLE** (`nav_cents` NULL, coverage < 1) — never an invented mark.
   A holding whose series disappears entirely is held at the close in its last persisted mark (SERIES_UNAVAILABLE) and
@@ -118,7 +129,7 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
 - **Holidays / early closes:** no SPY bar dated D = no session. The final-close gate uses the NYSE calendar
   (`market-tape/core.js`): 16:00 ET, or 13:00 ET on early-close days.
 - **Corporate actions:** splits (cash in lieu), dividends credited on the ex-date, a series that ends is liquidated at
-  its last observed close (flagged ESTIMATE) — identical to the control.
+  its last observed close (flagged ESTIMATE) after 3 missing sessions — the V1 backtest rule (see §1, difference 2).
 - **Schedule:** the existing one-minute cron (no new trigger). OPEN ≥ 09:45 ET; EOD from 16:31 ET on odd minutes (the
   control's lane, `signal10Tick` in signal10-api.js, attempts its EOD on even minutes from 16:20 ET). Kill switch `SIGNAL10_ARENA`; cohort start `SIGNAL10_ARENA_T0`.
 
@@ -142,7 +153,7 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   REITs) and some technology-coded names are unusual (e.g. First Solar SIC 3674). Rule-based, verifiable, disclosed.
 - **Survivorship:** forward-only records have no survivorship bias; the universe is the live index.
 
-## 8. Change log (pre-T0 implementation fixes; policy parameters and policy hashes unchanged)
+## 8. Change log (pre-T0; policy parameters never changed; policy hashes changed once, with the arena version, below)
 - 2026-10-10: preregistration frozen. EOD final-close gate uses the NYSE early-close calendar (found while writing §5).
 - 2026-10-10, independent adversarial review (before any forward record):
   - ledger payloads are normalised through JSON before hashing (undefined values broke verification after storage);
@@ -162,6 +173,9 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   legacy account. Added ORIGINAL (`S10-ARENA-ORIG-1`, V1 rules imported, not copied); arena version 1.0.0 → 1.1.0, so the
   TECH and DIVERSIFIED policy hashes changed (their parameters did not); sql/018 admits the ORIG account; the API,
   scoreboard and pages compare three symmetric accounts; the legacy account is shown only as separate history.
+- 2026-10-10, independent review of the three-account design (GO, conditional on disclosure): §1 now lists every
+  ORIGINAL vs legacy-lane difference (delist liquidation and NOT AVAILABLE marks were missing); stale control/challenger
+  wording fixed; member payloads no longer carry order quantities (a share count with a weight could reveal a price).
 
 ## 9. Activation record
 Filled at activation: T0, worker version, ledger FUNDING hashes, engine source hashes at T0.
