@@ -210,8 +210,12 @@ test('head status: LIVE only with a CURRENT quote in an open session; closed nev
   assert.equal(C.tapeStatus(open, [{ status: 'STALE' }]).text, 'MARKET OPEN · SOURCE UNAVAILABLE');
   assert.equal(C.tapeStatus(open, [{ status: 'MEMBERS_ONLY' }]).live, false);
   const sat = C.tapeStatus(S('2026-10-10T16:00:00Z'), [{ status: 'LAST_CLOSE' }]);
-  assert.equal(sat.live, false); assert.equal(sat.text, 'MARKET CLOSED · WEEKEND');
-  assert.equal(C.tapeStatus(S('2026-11-26T16:00:00Z'), []).text, 'MARKET CLOSED · EXCHANGE HOLIDAY');
+  assert.equal(sat.live, false); assert.equal(sat.text, 'MARKET CLOSED');
+  assert.equal(C.reopenText(S('2026-10-10T16:00:00Z')), 'Reopens Monday, October 12 at 9:30 AM ET');
+  assert.equal(C.reopenText(S('2026-11-26T16:00:00Z')), 'Thursday, November 26 is a market holiday · Markets reopen Friday, November 27 at 9:30 AM ET');
+  assert.equal(C.reopenText(S('2026-10-13T12:00:00Z')), 'Opens today at 9:30 AM ET');
+  assert.equal(C.reopenText(S('2026-10-13T15:00:00Z')).startsWith('Reopens'), true);
+  assert.equal(C.tapeStatus(S('2026-11-26T16:00:00Z'), []).text, 'MARKET HOLIDAY');
   assert.equal(C.etShort('2026-10-09T20:00:00Z'), 'Fri, Oct 9, 4:00 PM ET');
   assert.deepEqual(C.quoteSpan([{ price: 1, price_observed_at: '2026-10-13T14:59:00Z' }, { price: 2, price_observed_at: '2026-10-13T15:00:00Z' }, { price: null, price_observed_at: '2026-10-13T10:00:00Z' }]),
     { min: '2026-10-13T14:59:00.000Z', max: '2026-10-13T15:00:00.000Z' });

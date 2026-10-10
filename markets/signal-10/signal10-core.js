@@ -101,9 +101,9 @@ export function sessionBadge(session, quoteTimes = [], nowMs = Date.now()) {
   const fresh = quoteTimes.filter((t) => isFresh(t, nowMs)).length;
   if (state === 'OPEN' && fresh > 0) return { live: true, cls: 'open', text: 'LIVE · U.S. REGULAR SESSION' };
   if (state === 'OPEN') return { live: false, cls: 'stale', text: 'SESSION OPEN · QUOTES DELAYED' };
-  if (state === 'CLOSED') return { live: false, cls: 'closed', text: 'MARKET CLOSED · LAST CLOSE' };
-  if (state === 'CLOSED_WEEKEND') return { live: false, cls: 'closed', text: 'MARKET CLOSED · WEEKEND · LAST CLOSE' };
-  if (state === 'PRE_MARKET') return { live: false, cls: 'closed', text: 'PRE-MARKET · LAST CLOSE SHOWN' };
+  if (state === 'CLOSED' || state === 'CLOSED_WEEKEND') return { live: false, cls: 'closed', text: 'MARKET CLOSED' };
+  if (state === 'CLOSED_HOLIDAY') return { live: false, cls: 'closed', text: 'MARKET HOLIDAY' };
+  if (state === 'PRE_MARKET') return { live: false, cls: 'closed', text: 'MARKET CLOSED' };
   return { live: false, cls: 'closed', text: session?.label || 'SESSION UNKNOWN' };
 }
 
@@ -325,9 +325,24 @@ export function tapeStatus(session, rows = []) {
     return { cls: 'stale', live: false, text: 'MARKET OPEN · SOURCE UNAVAILABLE' };
   }
   if (st === 'AFTER_CLOSE' && has('PRIOR_SESSION')) return { cls: 'closed', live: false, text: 'MARKET CLOSED · PRIOR-SESSION PRICES' };
-  const closed = st === 'CLOSED_WEEKEND' ? 'MARKET CLOSED · WEEKEND' : st === 'CLOSED_HOLIDAY' ? 'MARKET CLOSED · EXCHANGE HOLIDAY'
-    : st === 'PRE_MARKET' ? 'PRE-MARKET · LAST CLOSE' : st === 'AFTER_CLOSE' ? 'MARKET CLOSED · LAST CLOSE' : 'MARKET HOURS UNVERIFIED';
+  const closed = st === 'CLOSED_HOLIDAY' ? 'MARKET HOLIDAY'
+    : st === 'PRE_MARKET' || st === 'CLOSED_WEEKEND' || st === 'AFTER_CLOSE' ? 'MARKET CLOSED' : 'MARKET HOURS UNVERIFIED';
   return { cls: 'closed', live: false, text: closed };
+}
+// "Monday, October 12" for a date or instant in New York
+export function etLongDay(isoOrDate) {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(isoOrDate || '')) ? `${isoOrDate}T16:00:00Z` : isoOrDate;
+  if (!iso || Number.isNaN(Date.parse(iso))) return DASH;
+  return new Intl.DateTimeFormat('en-US', { timeZone: ET, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(iso));
+}
+// Closed-market sentence: "Reopens Monday, October 12 at 9:30 AM ET", or on an exchange holiday
+// "Thursday, November 26 is a market holiday · Markets reopen Friday, November 27 at 9:30 AM ET".
+export function reopenText(session) {
+  if (!session?.next_open_at) return '';
+  const at = `${etLongDay(session.next_open_at)} at ${etTime(session.next_open_at)}`;
+  if (session.state === 'CLOSED_HOLIDAY') return `${etLongDay(session.date)} is a market holiday · Markets reopen ${at}`;
+  if (session.state === 'PRE_MARKET') return `Opens today at ${etTime(session.next_open_at)}`;
+  return `Reopens ${at}`;
 }
 // Source trade-time span across priced rows: { min, max } ISO or null.
 export function quoteSpan(rows = []) {
@@ -340,7 +355,7 @@ const API = {
   MINUS, DASH, esc, fmtUSD, fmtPrice, fmtPct, fmtInt, fmtQty, signCls, etDateTime, etTime, fmtDate, relTime, isFresh, gateFor, retryAfterMs, pollMs, sessionBadge,
   navView, pnl, investedPct, windowLabel, positionRow, changedQuotes, rankMove, flattenEvent, filterEvents, paginate, eventDetail, monthlyGrid, heat, verdict,
   extent, niceStep, niceTicks, logTicks, scale, linePath, drawdowns, nearest, dayMs, axisUSD,
-  tapePollMs, etShort, tapeStatus, quoteSpan
+  tapePollMs, etShort, tapeStatus, quoteSpan, etLongDay, reopenText
 };
 if (typeof window !== 'undefined') {
   window.S10Core = API;
