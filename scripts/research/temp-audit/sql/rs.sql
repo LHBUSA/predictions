@@ -1,0 +1,2 @@
+select r.resolution_id, r.event_id, r.contract_id, r.market_id, r.resolved_at, r.authority, r.official_outcome, r.official_value, r.official_units, r.official_source, r.official_observation_key, r.venue_result, r.venue_settlement_value, r.venue_settled_at, r.sources_agree, r.correction_of, r.outcome, r.metadata
+from pred_resolutions r where r.contract_id in (select contract_id from pred_contracts where event_type = 'MAX_TEMP_BUCKET')
