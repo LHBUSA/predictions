@@ -1,3 +1,5 @@
+// FROZEN REFERENCE (issue #69): signal10-ledger-writer/1 = src/signal10/forward.js at main 2c85084, imports re-pointed.
+// Used only by test/signal10-writer2.test.js to prove writer/2 leaves every economic outcome unchanged. Never edit.
 // PBE Signal 10 FORWARD PAPER account (origin=FORWARD_PAPER). Same rank model + manager policy as the historical replay;
 // separate capital, separate ledger, separate tables. Runs inside pbe-predictions on the existing one-minute cron:
 //   OPEN  (trading day, >= 09:45 ET)   corporate actions for D, then fills of orders frozen at the previous close, at D's
@@ -5,27 +7,16 @@
 //   EOD   (trading day, >= 16:20 ET)   freeze the D snapshot (ranks), mark NAV at the close, decide orders for D+1's open
 //   MARK  (trading day, 09:30-16:05 ET, every 5 min) persisted intraday marks from timestamped quotes (no synthetic motion)
 // Idempotency: a run claims pred_s10_runs(run_key) BEFORE writing; events are hash-chained and append-only.
-import { parseYahooChart } from './data.js';
-import { prepareSeries, rankUniverse } from './rank.js';
-import { newAccount, corporateActions, execute, mark, decide, emit } from './portfolio.js';
-import { loadComponents } from './universe.js';
-import { resolveSymbol } from './aliases.js';
-import { LATEST_MEMBERS } from './members-latest.js';
-import { MODEL_VERSION, POLICY_VERSION, MANAGER } from './policy.js';
+import { parseYahooChart } from '../../src/signal10/data.js';
+import { prepareSeries, rankUniverse } from '../../src/signal10/rank.js';
+import { newAccount, corporateActions, execute, mark, decide, emit } from '../../src/signal10/portfolio.js';
+import { loadComponents } from '../../src/signal10/universe.js';
+import { resolveSymbol } from '../../src/signal10/aliases.js';
+import { LATEST_MEMBERS } from '../../src/signal10/members-latest.js';
+import { MODEL_VERSION, POLICY_VERSION, MANAGER } from '../../src/signal10/policy.js';
 
 export const ACCOUNT = 'S10-FWD-1';
 export const ORIGIN = 'FORWARD_PAPER';
-// Ledger writer version (issue #69). writer/1 (2026-10-09..10-10) wrote a FLAT STATE payload from which appendEvents
-// removed the account's `seq`/`origin` (they are row columns), so a restored account emitted orders with
-// origin=undefined / seq=NaN and hashed `"origin":undefined`, which jsonb cannot store -> those rows could not be
-// re-verified. writer/2 changes ONLY persistence: (1) payloads are JSON-normalised before hashing (exactly the stored
-// value; a no-op for every row writer/1 wrote correctly), (2) STATE nests the account under payload.state with the
-// writer version, (3) every restore re-bases st.seq on the ledger head and st.origin on ORIGIN, so an event's local
-// seq IS its ledger seq (FILL.orderSeq = the ORDER row's seq), (4) the first restore of a legacy flat STATE records a
-// LEDGER_WRITER_UPGRADE event with per-pending-order link evidence (VERIFIED / UNVERIFIED, never invented).
-// Model, policy, ranking, sizing and fills are untouched (policy.js / rank.js / portfolio.js are byte-identical).
-export const LEDGER_WRITER = 'signal10-ledger-writer/2';
-export const LEGACY_WRITER = 'signal10-ledger-writer/1';
 export const COMPONENTS_URL = 'https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv';
 const UA = 'Mozilla/5.0 (compatible; PropBetEdge-Signal10/1.0; +https://predictions.propbetedge.ai/markets/signal-10/methodology/)';
 
@@ -81,31 +72,11 @@ export function serializeState(st, bench) {
   const b = Object.fromEntries(Object.entries(bench || {}).map(([k, v]) => { const { events: _e, ...r } = v; return [k, r]; }));
   return { ...rest, bench: b };
 }
-// Reads a writer/2 STATE (payload.state) or a legacy writer/1 flat STATE. `legacy` tells the lane to record the upgrade.
 export function restoreState(payload) {
-  const legacy = !(payload && typeof payload.state === 'object' && payload.state);
-  const { bench, ...st } = structuredClone(legacy ? payload : payload.state);
+  const { bench, ...st } = structuredClone(payload);
   st.events = [];
   const b = Object.fromEntries(Object.entries(bench || {}).map(([k, v]) => [k, { ...v, events: [] }]));
-  return { st, bench: b, legacy };
-}
-export const stateEvent = (st, bench, D, phase) => ({ type: 'STATE', d: D, phase, writer: LEDGER_WRITER, state: serializeState(st, bench) });
-
-// Re-base a restored account on the ledger head (writer/2): the next emitted event gets local seq lastSeq + 1, which is
-// exactly the ledger seq appendEvents will give it (events are appended in emission order right after the head).
-export async function rebase(store, st, head, legacy, D) {
-  st.seq = head.lastSeq; st.origin = ORIGIN;
-  if (!legacy) return;
-  const orders = await store.select('pred_s10_events', { account: `eq.${ACCOUNT}`, type: 'eq.ORDER', select: 'seq,d,payload' }, { limit: 500, order: 'seq.desc' });
-  const bySeq = new Map(orders.map((r) => [r.seq, r]));
-  const links = (st.pending || []).map((o) => {
-    const r = Number.isInteger(o.seq) ? bySeq.get(o.seq) : null;
-    const ok = !!r && r.payload?.symbol === o.symbol && r.payload?.side === o.side;
-    return { orderSeq: Number.isInteger(o.seq) ? o.seq : null, symbol: o.symbol, side: o.side, link: ok ? 'VERIFIED' : 'UNVERIFIED', ledgerSeq: ok ? r.seq : null, ledgerD: ok ? r.d : null };
-  });
-  emit(st, { type: 'LEDGER_WRITER_UPGRADE', d: D, from: LEGACY_WRITER, to: LEDGER_WRITER, legacyStateSeq: head.state.seq, legacyStateD: head.state.d,
-    restored: { seq: head.lastSeq, origin: ORIGIN }, pendingLinks: links,
-    note: 'Persistence-only upgrade: model, policy and every economic value are unchanged. Earlier rows are never rewritten.' });
+  return { st, bench: b };
 }
 
 export async function loadHead(store) {
@@ -119,8 +90,7 @@ async function appendEvents(store, head, events) {
   const rows = [];
   for (const e of events) {
     seq += 1;
-    const { seq: _s, origin: _o, type, d, ...rest } = e;
-    const payload = JSON.parse(JSON.stringify(rest)); // writer/2: hash exactly what jsonb stores (no undefined, NaN -> null)
+    const { seq: _s, origin: _o, type, d, ...payload } = e;
     const body = { account: ACCOUNT, origin: ORIGIN, seq, type, d, payload, model_version: MODEL_VERSION, policy_version: POLICY_VERSION };
     const hash = await sha256Hex(prev + canonical(body));
     rows.push({ event_key: `${ACCOUNT}:${seq}`, ...body, prev_hash: prev, hash });
@@ -193,7 +163,7 @@ export async function runOpen({ store, now, fetchImpl = fetch, workerVersion = n
   const c = nyClock(now); const D = c.date;
   const head = await loadHead(store);
   if (!head.state) return { skipped: 'not_funded' };
-  const { st, bench, legacy } = restoreState(head.state.payload);
+  const { st, bench } = restoreState(head.state.payload);
   if (st.lastOpen >= D || st.inception >= D) return { skipped: 'open_done' };
   const spy0 = quoteFromChart(await fetchChart('SPY', { range: '1d', fetchImpl }));
   if (!spy0 || nyClock(spy0.quoteTime).date !== D) return { skipped: 'no_session_today' };
@@ -202,10 +172,9 @@ export async function runOpen({ store, now, fetchImpl = fetch, workerVersion = n
   if (!mkt.ok) return { skipped: mkt.reason };
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' }; // holiday: SPY has no bar dated today
   if (!(await claim(store, `OPEN:${D}`, 'OPEN', D, workerVersion))) return { skipped: 'claimed' };
-  await rebase(store, st, head, legacy, D);
-  const pre = st.events.slice(); // LEDGER_WRITER_UPGRADE (first restore of a legacy STATE only)
   const evs = openPhase(st, bench, D, mkt);
-  const w = await appendEvents(store, head, [...pre, ...evs, stateEvent(st, bench, D, 'OPEN')]);
+  const stateEv = { type: 'STATE', d: D, phase: 'OPEN', ...serializeState(st, bench) };
+  const w = await appendEvents(store, head, [...evs, stateEv]);
   return { ok: true, d: D, events: w.rows.length, fills: evs.filter((e) => e.type === 'FILL').length };
 }
 
@@ -213,8 +182,8 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   const c = nyClock(now); const D = c.date;
   if (startDate && D < startDate) return { skipped: 'before_start' };
   const head = await loadHead(store);
-  let st, bench, legacy = false;
-  if (head.state) ({ st, bench, legacy } = restoreState(head.state.payload));
+  let st, bench;
+  if (head.state) ({ st, bench } = restoreState(head.state.payload));
   if (st && st.lastEod >= D) return { skipped: 'eod_done' };
   // cheap gate before the ~500-symbol fetch: SPY must show a FINAL bar dated today (holidays/early ticks stop here)
   const spy0 = quoteFromChart(await fetchChart('SPY', { range: '5d', fetchImpl }));
@@ -233,7 +202,6 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   const withBar = universe.filter((u) => u.symbol && mkt.prepared.get(u.symbol)?.idx.has(D)).length;
   if (withBar / universe.length < 0.9) return { skipped: 'coverage_below_90pct', withBar };
   if (!(await claim(store, `EOD:${D}`, 'EOD', D, workerVersion))) return { skipped: 'claimed' };
-  if (st) await rebase(store, st, head, legacy, D);
 
   const out = [];
   if (!st) {
@@ -267,7 +235,8 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   emit(st, { type: 'RANK_SNAPSHOT', d: D, model: MODEL_VERSION, snapshotKey: snapRow.snapshot_key, contentSha256: snapRow.content_sha256, top10: top.slice(0, 10).map((r) => [r.symbol, r.score]), eligible: snap.eligible });
   emit(st, { type: 'EOD_MARK', d: D, navCents: m.navCents, cashCents: m.cashCents, marketValueCents: m.marketValueCents, positions: m.positions, benchmarks: bm, stale: m.stale });
   out.push(...st.events);
-  const w = await appendEvents(store, head, [...out, stateEvent(st, bench, D, 'EOD')]);
+  const stateEv = { type: 'STATE', d: D, phase: 'EOD', ...serializeState(st, bench) };
+  const w = await appendEvents(store, head, [...out, stateEv]);
   await store.insertMany('pred_s10_marks', [{ mark_key: `${ACCOUNT}:EOD:${D}`, account: ACCOUNT, d: D, kind: 'EOD_CLOSE', observed_at: new Date(spyTime * 1000).toISOString(),
     nav_cents: m.navCents, cash_cents: m.cashCents, coverage: m.stale.length ? 1 - m.stale.length / Math.max(1, m.positions.length) : 1,
     positions: m.positions, benchmarks: bm }], 'mark_key');
