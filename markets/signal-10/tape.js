@@ -47,7 +47,7 @@
       const x = r.research;
       if (!x) return '';
       if (!x.in_universe) return ' Not in the Signal 10 model universe (S&P 500).';
-      const parts = [` PBE Signal 10 research (frozen ${x.snapshot_d}): ${x.rank ? `rank ${x.rank}${x.prev_rank ? `, previously ${x.prev_rank}` : ', new'}` : 'not ranked in the latest snapshot'}.`];
+      const parts = [` PBE Signal 10 research (frozen ${x.snapshot_d}): ${x.rank ? `rank ${x.rank}${x.prev_rank ? `, previously ${x.prev_rank}` : ', new to the stored top 50'}` : 'outside the stored top 50'}.`];
       if (x.paper_held) parts.push(' Held in the SIMULATED $10,000 paper account.');
       return parts.join('');
     }

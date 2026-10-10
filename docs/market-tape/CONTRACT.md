@@ -65,6 +65,7 @@ Each entry in `securities[]` has these fields:
 
 **Research.** These values are genuine model evidence only, read from the immutable `pred_s10_snapshots` and the paper STATE event. Nothing is written.
 - A symbol outside the model's S&P 500 universe has `in_universe:false` and never a rank. SPCX is outside it.
+- Snapshots store the **top 50** ranks only. `rank: null` with `in_universe: true` means "outside the stored top 50", and `move: "NEW"` means new to the stored top 50.
 - Featured placement is not a pick.
 - `paper_held` is a SIMULATED paper position, never a brokerage holding.
 

@@ -67,6 +67,7 @@ export function featuredList() {
 // ---------- Signal 10 research overlay (genuine model evidence only) ----------
 // From the two latest frozen EOD snapshots (pred_s10_snapshots) + the paper state. Rank/score are the model's 0-100 rank
 // index on its own S&P 500 point-in-time universe; a symbol outside that universe gets in_universe:false, never a rank.
+// Snapshots store the TOP 50 only: rank null + in_universe true = outside the stored top 50; move NEW = new to that top 50.
 export function researchIndex(cur, prev, heldSymbols = [], universe = null) {
   if (!cur?.ranks?.length) return null;
   const prevRank = new Map((prev?.ranks || []).map((r) => [r.symbol, r.rank]));
