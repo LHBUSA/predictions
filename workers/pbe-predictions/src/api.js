@@ -9,6 +9,7 @@ import { loadStationObservations, liveForOutcome } from './live-state.js';
 import { weatherIntel } from './weather-intel.js';
 import { engineHealth } from './engine-runs.js';
 import { CLI_STATIONS as STATIONS } from '../../../src/weather/stations.js';
+import { clusterBootstrap } from '../../../src/weather/temp-skill.js';
 
 // Per designation: PBE (stored score) vs Kalshi vs Polymarket at the SAME designated forecast timestamp. A venue
 // is scored only when comparable and observed at or before that timestamp; otherwise its reason is recorded.
@@ -150,19 +151,61 @@ async function enrichDesk(store, s, out, now) {
   }
 }
 
+// Public contract scores (track-record/2). PBE and market are compared ONLY on the same contracts (those with a
+// same-time market mid); the PBE mean over every scored contract is reported separately and never set against a
+// market mean taken over a different subset. Lanes are never blended into a single verdict: each lane carries its own
+// paired difference with a 95% CI that resamples whole climate dates (weather) or events (other lanes), because
+// contracts on the same day or event are not independent. "Enough to score" is a sample-size rule, not an edge claim.
+export const TRACK_RECORD_RULES = 'track-record/2';
+export const LANE_LABEL = Object.freeze({ MAX_TEMP_BUCKET: 'Max temperature · pre-window', PRECIP_ANY: 'Rain · any measurable', TREASURY_YIELD_PATH: 'Treasury yields' });
+const laneOf = (eventType) => (/^YIELD_PATH/.test(String(eventType || '')) ? 'TREASURY_YIELD_PATH' : String(eventType || 'OTHER'));
+export const MIN_VERDICT_CLUSTERS = 10; // fewer independent days/events than this: numbers shown, no verdict
+const r4 = (x) => (x === null || x === undefined || !Number.isFinite(x) ? null : +x.toFixed(4));
+
+function pairedBlock(rows) {
+  const n = rows.length; const all = n ? rows.reduce((a, s) => a + Number(s.score), 0) / n : null;
+  const pr = rows.filter((s) => s.benchmark_score !== null && s.benchmark_score !== undefined);
+  const ci = pr.length ? clusterBootstrap(pr.map((s) => ({ cluster: s.cluster, a: Number(s.score), b: Number(s.benchmark_score) })), { boot: 1000 }) : null;
+  // diff = PBE - market: negative means PBE scored better (lower is better for both metrics).
+  const verdict = !ci || ci.clusters < MIN_VERDICT_CLUSTERS ? 'TOO_FEW_DAYS' : ci.ci[1] < 0 ? 'PBE_AHEAD' : ci.ci[0] > 0 ? 'MARKET_AHEAD' : 'NOT_ESTABLISHED';
+  return { n, pbe_mean_all: r4(all), paired: ci ? { n: ci.n, clusters: ci.clusters, pbe_mean: r4(ci.mean_a), market_mean: r4(ci.mean_b), diff: r4(ci.diff), ci95: ci.ci.map(r4), verdict } : null };
+}
+
+export function assembleTrackRecord({ scores = [], shadowForecastIds = new Set(), contracts = [], minForClaims = MIN_RESOLVED_FOR_METRICS } = {}) {
+  const cs = new Map(contracts.map((c) => [c.contract_id, c]));
+  const kept = scores.filter((x) => !shadowForecastIds.has(x.forecast_id)).map((s) => {
+    const c = cs.get(s.contract_id);
+    return { ...s, lane: laneOf(c?.event_type), cluster: c?.climate_date || c?.detail?.climate_date || c?.event_id || s.contract_id };
+  });
+  const groups = {};
+  for (const s of kept) {
+    const k = `${s.designation}|${s.scoring_method}`;
+    const g = groups[k] || (groups[k] = { designation: s.designation, method: s.scoring_method, n: 0, pbe: 0, market_n: 0, market: 0, paired_pbe: 0 });
+    g.n += 1; g.pbe += Number(s.score);
+    if (s.benchmark_score !== null && s.benchmark_score !== undefined) { g.market_n += 1; g.market += Number(s.benchmark_score); g.paired_pbe += Number(s.score); }
+  }
+  const final = kept.filter((s) => s.designation === 'FINAL_PRE_RESOLUTION');
+  const lanes = [...new Set(final.map((s) => s.lane))].sort().map((lane) => {
+    const rows = final.filter((s) => s.lane === lane);
+    return { lane, label: LANE_LABEL[lane] || lane, contracts: new Set(rows.map((s) => s.contract_id)).size,
+      brier: pairedBlock(rows.filter((s) => s.scoring_method === 'brier')), log_loss: pairedBlock(rows.filter((s) => s.scoring_method === 'log_loss')) };
+  });
+  const resolved = new Set(kept.map((s) => s.contract_id)).size;
+  return {
+    rules: TRACK_RECORD_RULES, resolved_contracts: resolved, min_for_claims: minForClaims, enough_to_score: resolved >= minForClaims,
+    // pbe_mean = every scored contract; market_mean and paired_pbe_mean = the same market_n contracts (the only fair comparison).
+    groups: Object.values(groups).map((g) => ({ designation: g.designation, method: g.method, n: g.n, pbe_mean: r4(g.pbe / g.n), market_n: g.market_n,
+      market_mean: g.market_n ? r4(g.market / g.market_n) : null, paired_pbe_mean: g.market_n ? r4(g.paired_pbe / g.market_n) : null })),
+    lanes,
+    evidence: { note: 'Lanes are scored separately. A verdict needs a 95% CI that excludes zero; "enough to score" is a sample-size rule, not evidence of an edge.' },
+  };
+}
+
 export async function trackRecord(store) {
   const all = await store.select('pred_scores', { select: 'designation,scoring_method,score,benchmark_score,outcome,contract_id,forecast_id', designation: 'not.is.null' });
   const states = all.length ? await store.selectIn('pred_forecasts', { select: 'forecast_id,model_state' }, 'forecast_id', [...new Set(all.map((x) => x.forecast_id))], { chunkSize: 60 }) : [];
-  const shadow = new Set(states.filter((f) => f.model_state === 'SHADOW').map((f) => f.forecast_id));
-  const scores = all.filter((x) => !shadow.has(x.forecast_id));
-  const groups = {};
-  for (const s of scores) {
-    const k = `${s.designation}|${s.scoring_method}`;
-    const g = groups[k] || (groups[k] = { designation: s.designation, method: s.scoring_method, n: 0, pbe: 0, market_n: 0, market: 0 });
-    g.n += 1; g.pbe += Number(s.score);
-    if (s.benchmark_score !== null) { g.market_n += 1; g.market += Number(s.benchmark_score); }
-  }
-  return { resolved_contracts: new Set(scores.map((s) => s.contract_id)).size, min_for_claims: MIN_RESOLVED_FOR_METRICS, groups: Object.values(groups).map((g) => ({ designation: g.designation, method: g.method, n: g.n, pbe_mean: +(g.pbe / g.n).toFixed(4), market_n: g.market_n, market_mean: g.market_n ? +(g.market / g.market_n).toFixed(4) : null })) };
+  const contracts = all.length ? await store.selectIn('pred_contracts', { select: 'contract_id,event_id,event_type,climate_date:detail->>climate_date' }, 'contract_id', [...new Set(all.map((x) => x.contract_id))], { chunkSize: 60 }) : [];
+  return assembleTrackRecord({ scores: all, shadowForecastIds: new Set(states.filter((f) => f.model_state === 'SHADOW').map((f) => f.forecast_id)), contracts });
 }
 
 export async function summary(store, { now = new Date().toISOString() } = {}) {

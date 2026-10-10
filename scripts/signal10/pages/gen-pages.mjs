@@ -48,7 +48,7 @@ function page({ key, title, desc, h1, dek, body, css = null, js = null }) {
 <meta name="robots" content="noindex, follow">
 <link rel="canonical" href="${BASE}${path}">
 <meta name="theme-color" content="#14110d">
-<link rel="stylesheet" href="/site.css?v=20261010nav1">
+<link rel="stylesheet" href="/site.css?v=20261010tr64">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
