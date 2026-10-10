@@ -11,11 +11,12 @@ import { marketTape, _tapeReset } from '../workers/pbe-predictions/src/market-ta
 
 // ---------- synthetic capture builder ----------
 const ns = (iso) => BigInt(Date.parse(iso)) * 1000000n;
-function trade(sym, iso, price, size, flags = 0, type = 0x54) {
+let NEXT_ID = 100n;
+function trade(sym, iso, price, size, flags = 0, type = 0x54, id = NEXT_ID++) {
   const m = new Uint8Array(38); const dv = new DataView(m.buffer);
   m[0] = type; m[1] = flags; dv.setBigUint64(2, ns(iso), true);
   const s = sym.padEnd(8, ' '); for (let i = 0; i < 8; i++) m[10 + i] = s.charCodeAt(i);
-  dv.setUint32(18, size, true); dv.setBigInt64(22, BigInt(Math.round(price * 10000)), true); dv.setBigUint64(30, 1n, true);
+  dv.setUint32(18, size, true); dv.setBigInt64(22, BigInt(Math.round(price * 10000)), true); dv.setBigUint64(30, BigInt(id), true);
   return m;
 }
 const quote = () => { const m = new Uint8Array(42); m[0] = 0x51; return m; };
@@ -49,7 +50,7 @@ const CAPTURE = pcapng([
   packet([trade('SPCX', `${DAY}T20:00:00Z`, 162.57, 5000, 0x08)]),                  // closing cross (single-price cross)
   packet([trade('SPCX', `${DAY}T20:05:00Z`, 163.00, 100, 0x40)]),                   // after hours
   packet([trade('XYZ', `${DAY}T15:00:00Z`, 10, 1)]),                                // not in the universe
-  packet([trade('NVDA', `${DAY}T16:00:00Z`, 1, 1, 0, 0x42)]),                       // trade break
+  packet([trade('NVDA', `${DAY}T16:00:00Z`, 1, 1, 0, 0x42, 999n)]),                 // break of an unknown trade id: no effect
 ]);
 const closeNs = Date.parse(`${DAY}T20:00:00Z`) * 1e6, openNs = Date.parse(`${DAY}T13:30:00Z`) * 1e6;
 
@@ -67,6 +68,15 @@ test('TOPS parser: last regular-session last-sale-eligible trade with its exchan
   assert.equal(by.AAPL, undefined, 'no trades -> no row, never a zero');
   assert.equal(p.stats.matched, 8);
   assert.throws(() => createTopsParser(['SPCX']).feed(new Uint8Array(64)), /not a pcapng/);
+  // a break of the LAST regular print voids it: last sale falls back to the previous eligible print
+  const brk = pcapng([packet([trade('AAPL', `${DAY}T19:59:00Z`, 336.4, 100, 0, 0x54, 1n), trade('AAPL', `${DAY}T19:59:59Z`, 399.99, 100, 0, 0x54, 2n)]), packet([trade('AAPL', `${DAY}T20:01:00Z`, 399.99, 100, 0, 0x42, 2n)])]);
+  const pb = createTopsParser(['AAPL'], { sessionCloseNs: closeNs, sessionOpenNs: openNs }); pb.feed(brk);
+  const ab = pb.finish()[0];
+  assert.equal(ab.last_regular_price, 336.4); assert.equal(ab.breaks, 1);
+  // closing cross stamped just after the bell still counts; a normal print after the bell does not
+  const cx = pcapng([packet([trade('MSFT', `${DAY}T19:59:59Z`, 535, 100), trade('MSFT', `${DAY}T20:00:00.000500Z`, 535.07, 900, 0x08), trade('MSFT', `${DAY}T20:00:01Z`, 536, 100)])]);
+  const pc = createTopsParser(['MSFT'], { sessionCloseNs: closeNs, sessionOpenNs: openNs }); pc.feed(cx);
+  assert.equal(pc.finish()[0].last_regular_price, 535.07);
 });
 
 test('HIST index: picks the TOPS IEXTP1 file (newest version)', () => {

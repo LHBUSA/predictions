@@ -58,8 +58,9 @@
     "SIGNAL10": "true",
     "SIGNAL10_START": "2026-10-09",
     // PBE Market Tape (market-tape/1, issues #54/#56). Prices need BOTH MARKET_TAPE_QUOTES="on" AND a provider whose RIGHTS
-    // record in src/market-tape/contract.js permits the audience (a paywall is NOT redistribution permission). Today no
-    // provider has rights: every price field is null for every audience and no quote vendor is called. Owner: keep "off".
+    // record in src/market-tape/contract.js permits the audience (a paywall is NOT redistribution permission). ON with
+    // iex-hist = PUBLIC + PAID display of IEX next-day (T+1) last sales with the IEX credit line (IEX policy §15). Yahoo has
+    // no rights and is never displayed. Turning this "off" removes every price for every audience (no other change).
     "MARKET_TAPE_QUOTES": "on",
     // iex-hist = IEX Historical Data (TOPS, T+1): exchange-originated, display permitted to public + paid with the IEX credit
     // line (contract.js rights record). Served from our own snapshot in pred_source_observations, never per request.

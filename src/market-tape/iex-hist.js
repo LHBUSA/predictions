@@ -14,7 +14,8 @@ const T_TRADE = 0x54, T_BREAK = 0x42;
 // TOPS 1.6 sale condition flags (byte 1 of a trade report): 0x80 intermarket sweep, 0x40 extended hours, 0x20 odd lot,
 // 0x10 trade-through exempt, 0x08 single-price cross (auction). Odd lots never set last sale; extended hours never set the
 // regular-session last sale.
-const F_EXT = 0x40, F_ODD = 0x20;
+const F_EXT = 0x40, F_ODD = 0x20, F_CROSS = 0x08;
+const CROSS_GRACE_NS = 2e9; // a closing-cross print can be stamped just after the bell
 
 const enc = new TextEncoder();
 const symKey = (s) => s.toUpperCase().padEnd(8, ' ');
@@ -52,16 +53,25 @@ export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs
     const size = dv.getUint32(o + 18, true);
     const price = i64price(dv, o + 22);
     let a = out.get(sym);
-    if (!a) out.set(sym, a = { symbol: sym, trades: 0, volume: 0, breaks: 0, first: null, last: null, lastRegular: null, high: null, low: null });
-    if (isBreak) { a.breaks++; stats.breaks++; return; }
+    if (!a) out.set(sym, a = { symbol: sym, trades: 0, volume: 0, breaks: 0, first: null, last: null, lastRegular: null, recent: [], high: null, low: null });
+    const tradeId = u64(dv, o + 30);
+    if (isBreak) {
+      // a trade break voids that print: drop it from the recent eligible trades and fall back to the previous one
+      a.breaks++; stats.breaks++;
+      const i = a.recent.findIndex((x) => x.id === tradeId);
+      if (i >= 0) { a.recent.splice(i, 1); a.lastRegular = a.recent.at(-1) || null; }
+      return;
+    }
     a.trades++; a.volume += size;
     const ext = (flags & F_EXT) !== 0;
     const eligible = (flags & F_ODD) === 0;
-    const rec = { ts_ns: ts, price, size, flags };
+    const rec = { ts_ns: ts, price, size, flags, id: tradeId };
     if (!a.first) a.first = rec;
     a.last = rec;
-    if (eligible && !ext && (sessionCloseNs == null || ts <= sessionCloseNs) && (sessionOpenNs == null || ts >= sessionOpenNs)) {
+    const closeOk = sessionCloseNs == null || ts <= sessionCloseNs || ((flags & F_CROSS) !== 0 && ts <= sessionCloseNs + CROSS_GRACE_NS);
+    if (eligible && !ext && closeOk && (sessionOpenNs == null || ts >= sessionOpenNs)) {
       a.lastRegular = rec;
+      a.recent.push(rec); if (a.recent.length > 8) a.recent.shift();
       a.high = a.high == null || price > a.high ? price : a.high;
       a.low = a.low == null || price < a.low ? price : a.low;
     }

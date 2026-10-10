@@ -50,7 +50,7 @@ export async function collectSession({ store, session, symbols, fetchImpl = fetc
   const closeNs = nyInstant(session, closeMinutes(session)) * 1e6;
   const parser = createTopsParser(symbols, { sessionCloseNs: closeNs, sessionOpenNs: openNs });
   const started = Date.now();
-  const res = await fetchImpl(entry.link.includes('alt=media') ? entry.link : `${entry.link}&alt=media`);
+  const res = await fetchImpl(entry.link.includes('alt=media') ? entry.link : `${entry.link}${entry.link.includes('?') ? '&' : '?'}alt=media`);
   if (!res.ok || !res.body) throw new Error(`iex-hist: file HTTP ${res.status}`);
   const reader = res.body.pipeThrough(new DecompressionStream('gzip')).getReader();
   for (;;) { const { done, value } = await reader.read(); if (done) break; parser.feed(value); }

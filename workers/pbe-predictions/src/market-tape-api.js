@@ -5,8 +5,8 @@
 //   public visitors   FEATURED (editorial) securities: identity, session, Robinhood link. No research, no holdings.
 //   All Access        + PBE SIGNAL 10 RESEARCH overlay (frozen EOD ranks) + Top 10 (MODEL_RESEARCH) + paper holdings
 //                       (SIMULATED_PAPER). Research comes from the immutable snapshots/ledger; nothing here writes.
-//   prices            only via a provider whose RIGHTS record permits the audience (contract.quoteProvider). Today none
-//                       does, so every price field is null for everyone and no quote vendor is ever called.
+//   prices            only via a provider whose RIGHTS record permits the audience (contract.quoteProvider). Deployed:
+//                       iex-hist (IEX next-day last sales, public + paid, credit line), read from our own snapshot.
 import { buildTape, featuredList, researchIndex, rightsState, quoteProvider, PROVIDERS, LIST_KINDS, CONTRACT } from '../../../src/market-tape/contract.js';
 import { marketSession, quoteFromBars, quoteTtlSeconds } from '../../../src/market-tape/core.js';
 import { fetchChart, restoreState, ACCOUNT } from '../../../src/signal10/forward.js';
@@ -26,7 +26,7 @@ const ADAPTERS = {
 const MEMO = new Map();
 export const TAPE_BUDGET = { perMinute: 40 };
 const budget = { minute: 0, used: 0 };
-export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; }
+export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; CLOSES.at = 0; CLOSES.rows = null; }
 function spend(nowMs) {
   const m = Math.floor(nowMs / 60000);
   if (m !== budget.minute) { budget.minute = m; budget.used = 0; }
@@ -48,10 +48,18 @@ async function quoteFor(provider, symbol, session, now, fetchImpl) {
   return rec ? { ...rec } : null;
 }
 // Next-day providers read our own canonical snapshot (written by the collector lane), never the vendor, per request.
+const CLOSES = { at: 0, rows: null }; // per-isolate cache of the snapshot rows (plain data only), 60 s
 async function sessionCloses(store, providerId, symbols, now) {
   if (providerId !== 'iex-hist') return new Map();
-  const since = new Date(Date.parse(now) - 12 * 86400000).toISOString();
-  const rows = await store.select('pred_source_observations', { select: 'observation_key,source_id,observed_at,captured_at,value,data', provider: 'eq.iex', source_id: 'like.iex:TOPS:*', observed_at: `gte.${since}` }, { order: 'observed_at.desc', limit: 2000 });
+  const t = Date.parse(now);
+  if (!(CLOSES.rows && t - CLOSES.at < 60000 && t >= CLOSES.at)) {
+    const since0 = new Date(t - 12 * 86400000).toISOString();
+    CLOSES.rows = await store.select('pred_source_observations', { select: 'observation_key,source_id,observed_at,captured_at,value,data', provider: 'eq.iex', source_id: 'like.iex:TOPS:*', observed_at: `gte.${since0}` }, { order: 'observed_at.desc', limit: 2000 });
+    CLOSES.at = t;
+  }
+  return closesFrom(CLOSES.rows, symbols);
+}
+function closesFrom(rows, symbols) {
   const by = new Map();
   for (const r of rows) {
     const sym = r.source_id.slice('iex:TOPS:'.length);

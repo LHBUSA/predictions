@@ -324,6 +324,7 @@ export function tapeStatus(session, rows = []) {
     if (has('MEMBERS_ONLY') || has('SOURCE_RIGHTS_HOLD')) return { cls: 'open-idle', live: false, text: 'MARKET OPEN' };
     return { cls: 'stale', live: false, text: 'MARKET OPEN · SOURCE UNAVAILABLE' };
   }
+  if (st === 'AFTER_CLOSE' && has('PRIOR_SESSION')) return { cls: 'closed', live: false, text: 'MARKET CLOSED · PRIOR-SESSION PRICES' };
   const closed = st === 'CLOSED_WEEKEND' ? 'MARKET CLOSED · WEEKEND' : st === 'CLOSED_HOLIDAY' ? 'MARKET CLOSED · EXCHANGE HOLIDAY'
     : st === 'PRE_MARKET' ? 'PRE-MARKET · LAST CLOSE' : st === 'AFTER_CLOSE' ? 'MARKET CLOSED · LAST CLOSE' : 'MARKET HOURS UNVERIFIED';
   return { cls: 'closed', live: false, text: closed };

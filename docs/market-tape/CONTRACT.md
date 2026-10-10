@@ -46,7 +46,7 @@ Each entry in `securities[]` has these fields:
 |---|---|
 | Identity | `symbol`, `name`, `security_id`, `legal_name`, `exchange`, `mic`, `type`, `share_class`, `cusip`, `listed_on`, `pinned`, `robinhood_url` |
 | Session | `market_session`, `session_open_at`, `session_close_at`, `next_open_at`, `last_close_at` |
-| Quote | `source`, `observed_at`, `retrieved_at`, `quote_delay_known`, `state`, `last_price`, `previous_regular_close`, `change_abs`, `change_pct`, `attribution`, `rights_scope` |
+| Quote | `source`, `observed_at`, `retrieved_at`, `quote_delay_known`, `state`, `last_price`, `previous_regular_close`, `change_abs`, `change_pct`, `attribution`, `rights_scope`, `price_session_date`, `price_basis`, `venue_scope` |
 | Research (paid only) | `research: { label: "PBE SIGNAL 10 RESEARCH", snapshot_d, in_universe, rank, prev_rank, move, score, paper_held, paper_label }` |
 
 **`state`** is one of:
@@ -54,6 +54,13 @@ Each entry in `securities[]` has these fields:
 - `LIVE_QUOTES`: in session, with a source time no more than 2 minutes old.
 - `DELAYED`: in session, with a source time no more than 20 minutes old.
 - `LAST_CLOSE`: closed, and the quote is from the last session.
+- `PRIOR_SESSION` (added with the IEX provider; additive): the price is the last sale of an earlier completed session. That is the latest one while the market is open or pre-market, or one session older while the newest day isn't published yet. `price_session_date` says which day it is.
+- Next-day providers (`iex-hist`) also set:
+  - `price_basis: "IEX_LAST_SALE"`;
+  - `venue_scope: "IEX_ONLY"`;
+  - the verbatim IEX credit line in `attribution`, which every consumer must display wherever these prices show;
+  - `diagnostics.price_sessions`, the session dates of the displayed prices.
+- Consumers must treat any unknown `state` as "no price".
 - `STALE`: the row carries no price.
 - `SOURCE_UNAVAILABLE`: the source returned nothing usable.
 
