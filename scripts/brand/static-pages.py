@@ -26,7 +26,7 @@ def ld(title, desc, path):
 
 CRUMB = {'/about/': 'About', '/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
 PAGE_KEY = {'/about/': 'about', '/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261010tr64'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+ASSET_V = '20261010ts64'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 
@@ -121,6 +121,7 @@ record = head('Track Record — Forecast Results, Wins, Misses & Scoring | PropB
 <div id="rec-members" hidden>
   <div class="cats" id="rec-tabs" role="group" aria-label="Record"></div>
   <div class="cats views" id="rec-filters" role="group" aria-label="Result filter"></div>
+  <div id="rec-skill" class="rec-skill"></div>
   <p class="note" id="rec-note"></p><p class="list-count" id="rec-count" aria-live="polite"></p>
   <div id="results-ledger" class="result-ledger"></div>
   <nav class="pager" id="rec-pager" aria-label="Results pages" hidden></nav>

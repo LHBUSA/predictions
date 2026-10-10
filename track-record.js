@@ -38,13 +38,29 @@ function overview(data) {
   const pro = data.prospective || { matched: 0, missed: 0, pending: 0, calls: 0 };
   const off = data.official || { matched: 0, missed: 0, pending: 0, void: 0, calls: 0 };
   const card = (label, value, detail, kind = '') => `<div class="card result-stat ${kind}"><span>${esc(label)}</span><strong class="num">${esc(value)}</strong><small>${esc(detail)}</small></div>`;
-  $('results-overview').innerHTML = card('Temperature outcomes matched', top.matched, `Out of ${top.events} settled events · top modeled bucket`)
+  const sk = data.temperature_skill;
+  $('results-overview').innerHTML = card('Temperature outcomes matched', top.matched, `Out of ${top.events} settled events · top modeled bucket${sk ? ` · ${sk.top_bucket.expected.toFixed(1)} expected from PBE’s own probabilities` : ''}`)
     + card('Temperature outcomes missed', top.missed, 'Same event-level rule, not individual NO contracts', 'result-stat--miss')
     + card('Research calls', `${pro.matched}–${pro.missed}`, `${pro.pending} pending · ${pro.calls} frozen prospective calls`)
     + card('Official picks · rain YES/NO', off.calls ? `${off.matched}–${off.missed}` : 'Active', off.calls ? `${off.pending} pending${off.void ? ` · ${off.void} void` : ''} · since activation` : 'Activated Oct 9, 2026 · the first official pick is the next eligible rain call');
 }
 
 const TABS = { temperature: 'Temperature outcomes', calls: 'Research calls', official: 'Official picks' };
+// Temperature skill (members): the hit count beside its expectation, the market's favourite at the same moment, the
+// whole-distribution score and the guidance error by city. Pre-window forecasts only; never blended with rain picks.
+function skillPanel(t) {
+  if (!t) return '';
+  const pct = (x) => `${Math.round(x * 100)}%`; const f2 = (x) => Number(x).toFixed(2);
+  const m = t.market; const early = (v) => (v === 'TOO_FEW_DAYS' ? `early: ${t.dates} of ${t.min_days_for_verdict} days needed for a verdict` : v === 'MARKET_AHEAD' ? 'market ahead (95% range excludes zero)' : v === 'PBE_AHEAD' ? 'PBE ahead (95% range excludes zero)' : 'no difference established');
+  const stat = (label, value, detail) => `<div class="stat"><span>${esc(label)}</span><strong class="num">${esc(value)}</strong><small>${esc(detail)}</small></div>`;
+  const city = (t.by_city || []).map((c) => `${esc(c.city)} ${c.nbm_bias_f > 0 ? '+' : ''}${c.nbm_bias_f ?? '—'}°F (MAE ${c.nbm_mae_f ?? '—'}, ${c.hits}/${c.events} vs ${c.expected_hits} expected)`).join(' · ');
+  return `<h3 class="rec-skill-h">Temperature skill · pre-window forecasts</h3><div class="stats stats-4">${
+    stat('Top bucket vs expectation', `${t.top_bucket.hits} of ${t.events}`, `${t.top_bucket.expected.toFixed(1)} expected from PBE’s own probabilities · this few or fewer happens ${pct(t.top_bucket.p_at_most)} of the time by chance`)
+    + (m ? stat('Market favourite, same moment', `${m.market_hits} of ${m.events}`, `${m.market_expected.toFixed(1)} expected from the market’s prices · same favourite as PBE in ${m.same_modal}`) : '')
+    + (m ? stat('Whole-distribution log loss', `PBE ${f2(m.log_loss.mean_a)} · mkt ${f2(m.log_loss.mean_b)}`, `lower is better · ${early(m.verdict_log_loss)}`) : stat('Whole-distribution log loss', `PBE ${f2(t.pbe.log_loss)}`, 'lower is better · no same-time market ladder'))
+    + stat('Average favourite probability', pct(t.top_bucket.mean_p_modal), m ? `market ${pct(m.market_expected / m.events)}` : 'PBE')
+  }</div><p class="note">Guidance error by city (official high − National Blend forecast PBE used, mean °F): ${city}. ${t.events} events, ${t.dates} days; days share weather, so small samples move together.</p>`;
+}
 function ledger() {
   if (!board) return;
   const src = { temperature: board.top_outcome, calls: board.prospective, official: board.official }[state.tab] || board.top_outcome;
@@ -62,10 +78,11 @@ function ledger() {
   const start = (state.page - 1) * PAGE_SIZE; const shown = rows.slice(start, start + PAGE_SIZE);
   const note = { temperature: 'Retrospective · one result per settled event: the model’s highest-probability bucket vs the winning bucket.', calls: 'Prospective research calls frozen before resolution. Not official PBE picks; PASS decisions are excluded.', official: `Official PBE Picks: rain YES/NO calls by the frozen rain-v1 policy, locked before the event window, counted only from activation (${board.official?.policy?.activated_at ? String(board.official.policy.activated_at).replace('T', ' ').slice(0, 16) + ' UTC' : 'Oct 9, 2026'}). Earlier calls stay research. VOID = the venue cancelled the contract.` }[state.tab];
   $('rec-note').textContent = note;
+  $('rec-skill').innerHTML = state.tab === 'temperature' ? skillPanel(board.temperature_skill) : '';
   $('rec-count').textContent = rows.length ? `Showing ${start + 1}–${start + shown.length} of ${rows.length}` : '';
   const type = state.tab === 'temperature' ? 'temperature' : 'calls';
   $('results-ledger').innerHTML = shown.length ? `<div class="result-table-wrap"><table class="result-table"><thead><tr><th>Result</th><th>Event</th><th>Model forecast</th><th>Actual outcome</th><th>Evidence</th></tr></thead><tbody>${
-    shown.map((r) => `<tr><td><span class="result-pill ${r.result === 'MATCHED' ? 'result-pill--hit' : r.result === 'MISSED' ? 'result-pill--miss' : 'result-pill--pending'}">${esc(r.result === 'MATCHED' ? 'RIGHT' : r.result === 'MISSED' ? 'MISSED' : r.result === 'VOID' ? 'VOID' : 'PENDING')}</span></td><td><b>${esc(r.title)}</b><small>${esc(type === 'calls' ? (r.official ? 'Official decision' : 'Prospective research call') : 'Retrospective top outcome')}${r.scored_at || r.decided_at ? ` · ${esc(String(r.scored_at || r.decided_at).slice(0, 10))}` : ''}</small></td><td><b>${esc(type === 'calls' ? `${r.side} · ${r.label}` : r.picked)}</b><small>${esc(r.probability_pct == null ? 'Probability not available' : `${r.probability_pct}% forecast probability`)}</small></td><td><b>${esc(r.actual || 'Not settled')}</b></td><td><a href="/events/${encodeURIComponent(r.slug || '')}">Event record →</a></td></tr>`).join('')}</tbody></table></div>`
+    shown.map((r) => `<tr><td><span class="result-pill ${r.result === 'MATCHED' ? 'result-pill--hit' : r.result === 'MISSED' ? 'result-pill--miss' : 'result-pill--pending'}">${esc(r.result === 'MATCHED' ? 'RIGHT' : r.result === 'MISSED' ? 'MISSED' : r.result === 'VOID' ? 'VOID' : 'PENDING')}</span></td><td><b>${esc(r.title)}</b><small>${esc(type === 'calls' ? (r.official ? 'Official decision' : 'Prospective research call') : 'Retrospective top outcome')}${r.scored_at || r.decided_at ? ` · ${esc(String(r.scored_at || r.decided_at).slice(0, 10))}` : ''}</small></td><td><b>${esc(type === 'calls' ? `${r.side} · ${r.label}` : r.picked)}</b><small>${esc(r.probability_pct == null ? 'Probability not available' : `${r.probability_pct}% forecast probability`)}${type === 'temperature' && r.market_picked ? ` · market favourite ${esc(r.market_picked)} (${r.market_pct}%)` : ''}</small></td><td><b>${esc(r.actual || 'Not settled')}</b>${type === 'temperature' && r.official_f != null ? `<small>official ${r.official_f}°F${r.nbm_f != null ? ` · NBM guidance ${r.nbm_f}°F (${r.error_f > 0 ? '+' : ''}${r.error_f})` : ''}</small>` : ''}</td><td><a href="/events/${encodeURIComponent(r.slug || '')}">Event record →</a></td></tr>`).join('')}</tbody></table></div>`
     : `<p class="result-empty card">${state.tab === 'official' && !all.length ? 'Official picks are active. The first official pick will be the next eligible rain YES/NO call, locked before its event window; it will appear here as PENDING until the venue settles.' : 'No eligible results for this filter.'}</p>`;
   pager($('rec-pager'), state.page, pages, (n) => { go({ page: n }); ledger(); $('rec-top')?.scrollIntoView({ block: 'start' }); });
 }
