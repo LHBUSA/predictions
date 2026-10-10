@@ -1,0 +1,2 @@
+select c.contract_id, c.event_id, c.venue, c.market_id, c.venue_series_id, c.normalization_status, c.status_reason, c.event_type, c.comparator, c.threshold_low, c.threshold_high, c.units, c.station_id, c.station_source, c.observation_start, c.observation_end, c.timezone, c.resolution_authority, c.rounding_rule, c.outcome_label, c.close_time, c.rules_sha256, c.detail
+from pred_contracts c where c.event_id in (select event_id from pred_contracts where event_type = 'MAX_TEMP_BUCKET')
