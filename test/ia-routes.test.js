@@ -83,13 +83,17 @@ test('header: Overview, Desk, Crypto, Markets AI, Insights, Track Record + a Res
   const h = siteHeader('calendar');
   const desktop = h.match(/<nav class="nav"[\s\S]*?<\/nav>/)[0];
   for (const [, href] of NETWORK.product) assert.ok(desktop.includes(`href="${href}"`), href);
-  assert.match(desktop, /<details class="nav-drop" data-active><summary aria-current="true">Research/);
-  assert.match(desktop, /<a href="\/calendar\/" aria-current="page">Calendar<\/a>/);
+  assert.match(desktop, /<details class="nav-drop" data-active><summary aria-current="true"><svg class="nav-ic"[^>]*>[\s\S]*?<\/svg><span>Research<\/span>/);
+  assert.match(desktop, /<a href="\/calendar\/" aria-current="page"><b>Prediction calendar<\/b>/);
+  // grouped menu: the platform explainer, every methodology anchor and RSS; in-page anchors never take aria-current
+  for (const href of ['/about/', '/about/#monitor', '/methodology/', '/models/', '/methodology/#immutable', '/methodology/#evidence', '/methodology/#scoring', '/methodology/#states', '/calendar/', '/insights/rss.xml']) assert.ok(desktop.includes(`href="${href}"`), `research ${href}`);
+  assert.doesNotMatch(desktop, /#[a-z]+" aria-current/);
+  assert.match(siteHeader('about'), /<a href="\/about\/" aria-current="page"><b>What is PropBetEdge Predictions\?<\/b>/);
   const strip = h.match(/<div class="subnav-track">[\s\S]*?<\/div>/)[0];
-  for (const href of ['/', '/desk/', '/track-record/', '/calendar/', '/models/', '/methodology/']) assert.ok(strip.includes(`href="${href}"`), `strip ${href}`);
+  for (const href of ['/', '/desk/', '/track-record/', '/about/', '/calendar/', '/models/', '/methodology/']) assert.ok(strip.includes(`href="${href}"`), `strip ${href}`);
   assert.doesNotMatch(strip, /<details/);
   assert.ok(!/\/#(desk|track-record|calendar|models)"/.test(h), 'no homepage anchors in the nav');
-  assert.match(siteHeader('overview'), /<a href="\/" aria-current="page">Overview<\/a>/);
+  assert.match(siteHeader('overview'), /<a href="\/" aria-current="page"><svg class="nav-ic"[^>]*>[\s\S]*?<\/svg><span>Overview<\/span><\/a>/);
 });
 
 test('every static page uses the one shell: one consent load, one access.js, the current nav, the shared footer', () => {

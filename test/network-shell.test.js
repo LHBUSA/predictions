@@ -20,7 +20,7 @@ test('header: product nav preserved + PropBetEdge Network + Get All Access (desk
   assert.match(h, /href="https:\/\/propbetedge\.ai\/"[^>]*>.*PropBetEdge Network/);
   assert.match(h, /href="https:\/\/propbetedge\.ai\/pro"[^>]*aria-label="Get PropBetEdge All Access, \$29\/month">Get All Access</);
   assert.doesNotMatch(h, /FREE/, 'never a FREE badge');
-  assert.match(h, /aria-current="page">Insights</);
+  assert.match(h, /aria-current="page"><svg class="nav-ic"[^>]*>[\s\S]*?<\/svg><span>Insights<\/span>/);
 });
 
 test('Signal 10 is a first-class desktop and mobile destination and marks its own route active', () => {

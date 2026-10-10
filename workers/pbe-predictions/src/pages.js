@@ -9,7 +9,7 @@ export const WEBSITE_ID = `${SITE}/#website`;
 export const LOGO = { '@type': 'ImageObject', '@id': `${SITE}/#logo`, url: `${SITE}/brand/predictions-logo-512.png`, width: 512, height: 512, caption: 'PropBetEdge Predictions' };
 export const ORG_NODE = { '@type': 'NewsMediaOrganization', '@id': ORG_ID, name: 'PropBetEdge', url: 'https://propbetedge.ai/', logo: { '@type': 'ImageObject', '@id': 'https://propbetedge.ai/#logo', url: 'https://propbetedge.ai/logo/pbe-full-400.png', width: 400, height: 100 } };
 export const WEBSITE_NODE = { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'PropBetEdge Predictions', url: `${SITE}/`, publisher: { '@id': ORG_ID }, isPartOf: { '@id': NETWORK_WEBSITE_ID }, image: LOGO, inLanguage: 'en' };
-export const ASSET_V = '20261009op1';
+export const ASSET_V = '20261010nav1';
 import { siteHeader, siteFooter, THEME_BOOT } from './network.js';
 import { callBlock, factsBlock, marketView, pbeVsMarket, gradeBlock, permanentRecord, stationBlock } from './record-blocks.js';
 import { liveWeatherBlock, atmosphereLayer } from './weather-blocks.js';
@@ -240,6 +240,7 @@ export function sitemapXml(entries, insights = []) {
     { loc: `${SITE}/calendar/`, changefreq: 'hourly', priority: '0.7' },
     { loc: `${SITE}/models/`, changefreq: 'daily', priority: '0.6' },
     { loc: `${SITE}/methodology/`, changefreq: 'monthly', priority: '0.5' },
+    { loc: `${SITE}/about/`, changefreq: 'monthly', priority: '0.6' },
     ...entries.map((e) => ({ loc: `${SITE}/events/${e.slug}`, lastmod: (e.updated_at || '').slice(0, 10), changefreq: 'hourly', priority: '0.7' })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;

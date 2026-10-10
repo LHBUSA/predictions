@@ -29,11 +29,14 @@ function liveStatus(s) {
   const engState = eng?.state || null;
   const stale = engState ? engState === 'delayed' || engState === 'failed' : !!(s?.last_engine_cycle && Date.now() - Date.parse(s.last_engine_cycle) > 45 * 60000);
   const staleText = engState === 'failed' ? 'Engine cycle failed' : 'Engine delayed';
-  const dot = $('live-dot'); const txt = $('live-text');
+  const dot = $('live-dot'); const txt = $('live-text'); const tip = $('live-tip');
   if (dot && txt) {
     if (!('liveText' in dot.dataset)) dot.dataset.liveText = txt.textContent;
+    if (tip && !('liveTip' in dot.dataset)) dot.dataset.liveTip = tip.textContent;
     dot.style.background = stale ? 'var(--neg-bg)' : ''; dot.style.color = stale ? 'var(--neg)' : '';
+    if (stale) dot.dataset.stale = '1'; else delete dot.dataset.stale;
     txt.textContent = stale ? staleText : dot.dataset.liveText;
+    if (tip) tip.textContent = stale ? `${staleText}: the latest model cycle is late, so figures may be behind.` : dot.dataset.liveTip;
   }
 }
 

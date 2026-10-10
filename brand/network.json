@@ -53,7 +53,90 @@
   "research": {
     "label": "Research",
     "key": "research",
-    "items": [
+    "intro": "How PropBetEdge Predictions monitors markets, records every forecast and scores itself in public.",
+    "groups": [
+      {
+        "title": "The platform",
+        "items": [
+          [
+            "What is PropBetEdge Predictions?",
+            "/about/",
+            "about",
+            "Mission, system and the living ledger"
+          ],
+          [
+            "What we monitor",
+            "/about/#monitor",
+            null,
+            "Weather, rates, macro, crypto, equities and more"
+          ]
+        ]
+      },
+      {
+        "title": "How forecasts work",
+        "items": [
+          [
+            "Methodology",
+            "/methodology/",
+            "methodology",
+            "From contract rules to a scored forecast"
+          ],
+          [
+            "Models",
+            "/models/",
+            "models",
+            "Every model family and its live state"
+          ],
+          [
+            "Immutable forecasts",
+            "/methodology/#immutable",
+            null,
+            "Written once, never rewritten"
+          ],
+          [
+            "Evidence & sources",
+            "/methodology/#evidence",
+            null,
+            "Official data in, market prices out"
+          ],
+          [
+            "Scoring methodology",
+            "/methodology/#scoring",
+            null,
+            "Brier and log loss against the market"
+          ],
+          [
+            "Model states & limitations",
+            "/methodology/#states",
+            null,
+            "Monitoring → shadow → research → official"
+          ]
+        ]
+      },
+      {
+        "title": "Follow along",
+        "items": [
+          [
+            "Prediction calendar",
+            "/calendar/",
+            "calendar",
+            "Upcoming contract resolutions"
+          ],
+          [
+            "RSS feed",
+            "/insights/rss.xml",
+            null,
+            "Every Insights story as it publishes"
+          ]
+        ]
+      }
+    ],
+    "strip": [
+      [
+        "About",
+        "/about/",
+        "about"
+      ],
       [
         "Calendar",
         "/calendar/",
@@ -207,7 +290,7 @@
       "https://propbetedge.ai/support"
     ]
   ],
-  "disclaimer": "Research-stage probabilities, not advice. Market prices (Kalshi) are a benchmark only and never enter a PropBetEdge model.",
+  "disclaimer": "Research-stage probabilities, not advice. Market prices (Kalshi, Polymarket) are a benchmark only and never enter a PropBetEdge model.",
   "all_access_products": [
     [
       "All Access",
@@ -225,5 +308,96 @@
       "Predictions",
       "https://predictions.propbetedge.ai/"
     ]
-  ]
+  ],
+  "coverage": [
+    [
+      "Weather & climate markets",
+      "/about/#weather"
+    ],
+    [
+      "Rates & macro monitoring",
+      "/about/#macro"
+    ],
+    [
+      "Crypto market intelligence",
+      "/crypto/"
+    ],
+    [
+      "Equities & market structure",
+      "/markets/"
+    ],
+    [
+      "Sports prediction markets",
+      "/about/#sports"
+    ],
+    [
+      "Historical ledgers",
+      "/track-record/"
+    ],
+    [
+      "Emerging predictive categories",
+      "/about/#emerging"
+    ]
+  ],
+  "network_trust": [
+    [
+      "PropBetEdge",
+      "https://propbetedge.ai/"
+    ],
+    [
+      "PropBetEdge News",
+      "https://propbetedge.ai/news"
+    ],
+    [
+      "Learn PropBetEdge",
+      "https://learn.propbetedge.ai/"
+    ],
+    [
+      "About PropBetEdge Predictions",
+      "/about/"
+    ],
+    [
+      "Immutable forecasts",
+      "/methodology/#immutable"
+    ],
+    [
+      "Evidence & sources",
+      "/methodology/#evidence"
+    ],
+    [
+      "Scoring methodology",
+      "/methodology/#scoring"
+    ],
+    [
+      "Model states & limitations",
+      "/models/"
+    ],
+    [
+      "About PropBetEdge",
+      "https://propbetedge.ai/about"
+    ],
+    [
+      "Terms",
+      "https://propbetedge.ai/terms"
+    ],
+    [
+      "Legal",
+      "https://propbetedge.ai/legal"
+    ],
+    [
+      "Support",
+      "https://propbetedge.ai/support"
+    ]
+  ],
+  "mission": {
+    "title": "Predictive intelligence, built as a living ledger.",
+    "body": "PropBetEdge Predictions is a live predictive intelligence platform. It monitors prediction markets, publishes forecasts from proprietary models, keeps every forecast in an append-only ledger and scores each one against the official outcome. By studying price movement, historical outcomes, model performance and market behavior across weather, rates, macro, crypto and equities, we build new structured datasets, find where markets and models disagree, and improve the forecasting systems behind the PropBetEdge intelligence network.",
+    "pillars": [
+      "Live market monitoring",
+      "Append-only forecast ledger",
+      "Proprietary models",
+      "Scored against official outcomes"
+    ]
+  },
+  "live_tip": "Monitoring live data, models, and market activity."
 }

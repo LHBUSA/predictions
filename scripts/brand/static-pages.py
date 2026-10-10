@@ -13,6 +13,9 @@ def ld(title, desc, path):
     page = {"@type": "WebPage", "@id": f"{SITE}{path}#webpage", "name": title, "url": f"{SITE}{path}", "description": desc, "isPartOf": {"@id": f"{SITE}/#website"}, "publisher": {"@id": ORG_ID},
             "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PropBetEdge", "item": "https://propbetedge.ai/"}, {"@type": "ListItem", "position": 2, "name": "Predictions", "item": f"{SITE}/"}, {"@type": "ListItem", "position": 3, "name": CRUMB[path], "item": f"{SITE}{path}"}]}}
     graph = [ORG, SITE_NODE, page]
+    if path == '/about/':
+        page["@type"] = "AboutPage"
+        page["about"] = {"@id": f"{SITE}/#website"}
     if path == '/models/':
         page["mainEntity"] = {"@id": f"{SITE}/models/#dataset"}
         # The model registry (states, sample sizes, limitations, aggregate calibration) is intentionally public
@@ -21,9 +24,9 @@ def ld(title, desc, path):
         graph.append({"@type": "Dataset", "@id": f"{SITE}/models/#dataset", "name": "PropBetEdge Predictions model registry", "description": "Every PropBetEdge Predictions model family with its state, forecast snapshot counts, resolved sample, calibration status and known limitations.", "url": f"{SITE}/models/", "creator": {"@id": ORG_ID}, "isAccessibleForFree": True, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{SITE}/api/models"}]})
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace('<', '\\u003c')
 
-CRUMB = {'/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
-PAGE_KEY = {'/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261009op1'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+CRUMB = {'/about/': 'About', '/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
+PAGE_KEY = {'/about/': 'about', '/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
+ASSET_V = '20261010nav1'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 
@@ -70,7 +73,7 @@ meth = head('Methodology — How PropBetEdge Predictions Forecasts Real-World Ev
 <section class="card panel"><h2>3 · Point-in-time data</h2><p>Each input carries the time it became available. Weather guidance runs are used only five hours after their cycle; rates use the official Daily Treasury Par Yield Curve as published; macro inputs use never-revised daily series. Backtests apply the same rules and are evaluated on chronological holdouts.</p></section>
 <section class="card panel" id="immutable"><h2>4 · Immutable snapshots and fixed scoring roles</h2><p>A forecast is written once with its model version, feature snapshot, data cutoff, evidence and the market price observed at that moment. A later run creates a new snapshot; nothing is rewritten. The snapshots that count for scoring are fixed by rule before the outcome: FIRST_PUBLISHED, T_MINUS_24H (only if a forecast existed 24 hours before the reference time) and FINAL_PRE_RESOLUTION.</p></section>
 <section class="card panel" id="scoring"><h2>5 · Resolution and scoring</h2><p>The venue settlement and an independent official value (the NWS Daily Climate Report for the exact station, the Treasury par curve, the Federal Reserve target range) are stored separately and compared. PBE and the market are scored on the same snapshot with Brier score and log loss. Model skill is not claimed until enough contracts have resolved.</p></section>
-<section class="card panel"><h2>6 · Model states</h2><p>MONITORING (market shown, no model) → BACKTESTING → SHADOW (forecasts stored, never published) → RESEARCH (published, not validated) → VALIDATED → OFFICIAL. See the <a href="/models/">research board</a>.</p></section>
+<section class="card panel" id="states"><h2>6 · Model states and limitations</h2><p>MONITORING (market shown, no model) → BACKTESTING → SHADOW (forecasts stored, never published) → RESEARCH (published, not validated) → VALIDATED → OFFICIAL. A model moves up only when it passes a gate set before the results are known. Every family's current state, sample size and known limitations are listed live on the <a href="/models/">research board</a>.</p></section>
 <section class="card panel" id="access"><h2>7 · Access</h2><p>This methodology, the model registry and the aggregate scoring record are public. The forecasts themselves — every PBE probability, the model-vs-market comparison, the evidence ledger, forecast history and the full intelligence desk — are PropBetEdge Predictions, included with <a href="https://propbetedge.ai/pro">PropBetEdge All Access</a> ($29/month).</p></section>
 <section class="card panel" id="venue-relationships"><h2>8 · Partner relationships</h2><p>PropBetEdge participates in Kalshi's referral program for Kalshi Perpetuals. Some pages show a separate, clearly labelled Kalshi Perpetuals offer. PropBetEdge may receive compensation from qualifying Kalshi referrals; offer eligibility and terms are determined by Kalshi. That offer is kept apart from market links: "Open on Kalshi" always goes straight to the contract shown, with nothing added. Partner compensation does not affect PropBetEdge model probabilities, market comparisons, rankings, editorial conclusions, or research, and Kalshi data remains a benchmark that never enters a PBE model.</p></section>
 </main>''' + FOOT + '</body></html>\n'
@@ -105,10 +108,10 @@ desk = head('Intelligence Desk — Event Markets vs PBE Forecasts | PropBetEdge 
 ''' + GATE + '''
 </main>''' + FOOT + scripts('desk') + '</body></html>\n'
 
-record = head('Track Record — Forecast Results, Wins, Misses & Scoring | PropBetEdge Predictions', 'The PropBetEdge Predictions track record: contracts scored with Brier and log loss against the market, temperature event outcomes matched and missed, prospective research calls, and official picks (not activated), each result linked to its stored evidence.', '/track-record/') + '''
+record = head('Track Record — Forecast Results, Wins, Misses & Scoring | PropBetEdge Predictions', 'The PropBetEdge Predictions track record: contracts scored with Brier and log loss against the market, temperature event outcomes matched and missed, prospective research calls, and Official PBE Picks (rain YES/NO, active since Oct 9, 2026), each result linked to its stored evidence.', '/track-record/') + '''
 <main class="wrap section page-main">
 <header class="page-head"><span class="overline">TRACK RECORD</span><h1>What we predicted. What actually happened.</h1>
-<p class="page-lede">Three records that are never mixed: contracts scored against the market, retrospective event outcomes, and prospective research calls. Official picks are not activated, and no win claim is made for them.</p></header>
+<p class="page-lede">Records that are never mixed: contracts scored against the market, retrospective event outcomes, research calls, and Official PBE Picks (rain YES/NO, active since Oct 9, 2026), each tracked RIGHT, MISSED, PENDING or VOID.</p></header>
 <section class="rec-block"><h2>Contracts scored</h2><p class="note">Accuracy across every resolved contract (lower is better). A scored contract is not a win, and nothing here is a trading return.</p>
 <div class="stats stats-4" id="tr"><div class="card skel" style="height:96px"></div></div></section>
 <section class="rec-block" id="rec-top"><h2>Results ledger</h2>
@@ -133,7 +136,119 @@ calendar = head('Prediction Calendar — Upcoming Event Resolutions | PropBetEdg
 <div id="cal-list"><div class="card skel" style="height:240px"></div></div>
 </main>''' + FOOT + scripts('calendar') + '</body></html>\n'
 
-for d in ('models', 'methodology', 'desk', 'track-record', 'calendar'): os.makedirs(d, exist_ok=True)
+ICON = lambda d: f'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{d}</svg>'
+AB_DOES = [
+    ('<path d="M3 12h3l2.5-6 4 12 2.5-6H21"/>', 'Monitors live markets', 'Event contracts on Kalshi and Polymarket are captured continuously, with their exact rules, close times and prices.'),
+    ('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/>', 'Keeps the historical record', 'Every observation is stored with the moment it became available, so the past can be replayed exactly as it looked.'),
+    ('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>', 'Runs proprietary models', 'Specialist models turn official and public data into probabilities. Market prices never enter them.'),
+    ('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M15 16l1.5 1.5L19 15"/>', 'Maintains an ongoing ledger', 'Forecasts are append-only: each run adds a new snapshot with its model version, inputs and data cutoff.'),
+    ('<path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/>', 'Studies markets against outcomes', 'Prices, model forecasts and official results are compared over time to see where each was right, early or wrong.'),
+    ('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>', 'Builds new datasets', 'The ledger becomes structured, point-in-time data that powers new models and intelligence products.'),
+]
+AB_MONITOR = [
+    ('weather', 'Weather & climate', 'Research models', 'b-research', ['Daily rain and high-temperature contracts for named NWS climate stations', 'Forecast guidance, live station observations and climate-day rules', 'Resolved against the NWS Daily Climate Report for the exact station'], '/desk/', 'Open the Intelligence Desk'),
+    ('macro', 'Rates & macro', 'Research + shadow', 'b-shadow', ['Treasury yield-path contracts, scored against the official par yield curve', 'Federal Reserve decisions, modeled in shadow before any publication', 'Inflation and labor releases in private research until they pass validation'], '/models/', 'See every model family'),
+    ('crypto', 'Crypto', 'Live nowcast', 'b-monitoring', ['A 15-minute Bitcoin probability nowcast beside the live 15-minute contracts', 'Momentum, volatility and trend regimes across major crypto markets', 'Gaps shown only when the contract, window and data are genuinely comparable'], '/crypto/', 'Open Crypto Nowcast'),
+    ('equities', 'Equities & market structure', 'Forward paper record', 'b-monitoring', ['Signal 10: a pre-registered ranking model running a live $10k paper portfolio', 'Every trade written to a hash-chained ledger, never edited after the fact', 'Market structure and macro analysis in Markets AI'], '/markets/signal-10/', 'Follow Signal 10'),
+    ('sports', 'Sports prediction markets', 'Across the network', 'b-monitoring', ['Game and player markets are covered by the ten PropBetEdge sport platforms', 'Compare lines up venue prices for the same outcome side by side', 'The same record-keeping discipline: locked picks, versions and public results'], 'https://compare.propbetedge.ai/', 'Open Compare'),
+    ('emerging', 'Emerging categories', 'Monitoring', 'b-monitoring', ['Business, space, public health and energy contracts are tracked today', 'Market shown, no model, until a specialist model passes its gates', 'New categories are added as their settlement sources are verified'], '/calendar/', 'See what resolves next'),
+]
+AB_FLOW = [
+    ('Data ingestion', 'Official, public and venue data, each stamped with when it became available'),
+    ('Historical records', 'Point-in-time archives that replay the past exactly as it looked'),
+    ('Proprietary algorithms', 'Specialist models per category; market prices never enter them'),
+    ('Ongoing ledger', 'Append-only forecast snapshots with versions, inputs and cutoffs'),
+    ('Evaluation', 'Brier score and log loss against the market and the official result'),
+    ('New datasets', 'Structured, scored history that trains the next model generation'),
+    ('Intelligence products', 'The desk, Insights, Signal 10, Crypto Nowcast and what comes next'),
+]
+AB_DIFF = [
+    ('Immutable record', 'Nothing is rewritten. A new run is a new snapshot, and the scoring snapshots are fixed by rule before the outcome is known.'),
+    ('Ongoing performance tracking', 'Wins, misses and scores stay public in the track record, including the forecasts that went wrong.'),
+    ('Evidence-based modeling', 'Every forecast links to its inputs, its data cutoff and the exact resolution rules it was built for.'),
+    ('Proprietary workflows', 'Contract normalization, point-in-time data and leakage guards are built in-house and enforced in code and in the database.'),
+    ('Cross-market intelligence', 'Weather, rates, macro, crypto and equities share one ledger, one scoring method and one standard of evidence.'),
+    ('Expanding coverage', 'Categories enter as monitoring and earn a model only after their settlement source and backtests check out.'),
+]
+
+ab_does = ''.join(f'<li class="ab-does-item">{ICON(i)}<div><h3>{t}</h3><p>{d}</p></div></li>' for i, t, d in AB_DOES)
+ab_mon = ''.join(
+    f'<article class="ab-mon card" id="{k}"><div class="ab-mon-head"><h3>{t}</h3><span class="badge {b}">{st}</span></div>'
+    f'<ul>{"".join(f"<li>{x}</li>" for x in pts)}</ul>'
+    f'<a class="ab-mon-link" href="{h}"{" target=\"_blank\" rel=\"noopener\"" if h.startswith("http") else ""}>{l} <span aria-hidden="true">→</span></a></article>'
+    for k, t, st, b, pts, h, l in AB_MONITOR)
+ab_flow = ''.join(f'<li><span class="ab-step num">{n:02d}</span><b>{t}</b><small>{d}</small></li>' for n, (t, d) in enumerate(AB_FLOW, 1))
+ab_diff = ''.join(f'<li><h3>{t}</h3><p>{d}</p></li>' for t, d in AB_DIFF)
+
+about = head('What Is PropBetEdge Predictions? Predictive Intelligence, Built as a Living Ledger', 'PropBetEdge Predictions monitors prediction markets, runs proprietary forecasting models, keeps every forecast in an append-only ledger and scores each one against the official outcome, across weather, rates, macro, crypto and equities.', '/about/') + f'''
+<main class="ab">
+<section class="ab-hero"><div class="wrap ab-hero-grid">
+  <div>
+    <span class="overline">WHAT IS PROPBETEDGE PREDICTIONS?</span>
+    <h1>Predictive intelligence, built as a living ledger.</h1>
+    <p class="ab-lede">PropBetEdge Predictions is where we monitor live markets, study historical outcomes, test proprietary algorithms and build new data products that show where prediction markets and evidence disagree.</p>
+    <div class="ab-cta"><a class="cta-primary" href="/desk/">Open the Intelligence Desk</a><a class="cta-secondary" href="/methodology/">Read the methodology</a></div>
+  </div>
+  <figure class="ab-record" aria-label="Anatomy of one forecast record">
+    <figcaption><span class="ab-rec-dot" aria-hidden="true"></span>Anatomy of a forecast record</figcaption>
+    <dl>
+      <dt>Contract</dt><dd>Exact rules, station, window and threshold</dd>
+      <dt>Model</dt><dd>Family and version, e.g. pbe-weather-precip 1.1.0</dd>
+      <dt>Data cutoff</dt><dd>Only inputs available before this time</dd>
+      <dt>Feature snapshot</dt><dd>Hashed inputs, market data excluded</dd>
+      <dt>Market at publish</dt><dd>Stored beside the forecast as a benchmark</dd>
+      <dt>Scoring role</dt><dd>FIRST_PUBLISHED · T-24H · FINAL</dd>
+      <dt>Resolution</dt><dd>Venue settlement + independent official value</dd>
+    </dl>
+    <p class="ab-rec-foot">Written once. Never edited. Scored after the outcome.</p>
+  </figure>
+</div></section>
+
+<section class="wrap ab-sec" aria-labelledby="ab-does-h">
+  <header class="ab-sec-head"><span class="overline">01 · WHAT THIS PLATFORM DOES</span><h2 id="ab-does-h">One system, from market tick to scored result</h2></header>
+  <ul class="ab-does">{ab_does}</ul>
+</section>
+
+<section class="ab-band" id="monitor" aria-labelledby="ab-mon-h"><div class="wrap ab-sec">
+  <header class="ab-sec-head"><span class="overline">02 · WHAT WE MONITOR</span><h2 id="ab-mon-h">Coverage across real-world events, crypto and markets</h2><p>Each category shows where it stands today. A category earns a published model only after its settlement source is verified and its backtests pass. Live states for every model family are on the <a href="/models/">research board</a>.</p></header>
+  <div class="ab-mon-grid">{ab_mon}</div>
+</div></section>
+
+<section class="wrap ab-sec" aria-labelledby="ab-why-h">
+  <header class="ab-sec-head"><span class="overline">03 · WHY IT EXISTS</span><h2 id="ab-why-h">A proprietary data and intelligence engine, built in the open</h2></header>
+  <div class="ab-why">
+    <div class="card panel"><h3>A public research surface</h3><p>The methodology, the model registry and the scored track record are public. Anyone can see what we forecast, how it was made and how it turned out. Insights explains the moves as they happen.</p></div>
+    <div class="card panel"><h3>An operating layer for new data</h3><p>Behind the pages, the same engine produces point-in-time datasets, model generations and market intelligence that feed the wider PropBetEdge network, from the sport platforms to Compare.</p></div>
+  </div>
+</section>
+
+<section class="ab-band" aria-labelledby="ab-sys-h"><div class="wrap ab-sec">
+  <header class="ab-sec-head"><span class="overline">04 · THE SYSTEM</span><h2 id="ab-sys-h">How the pieces fit together</h2></header>
+  <ol class="ab-flow">{ab_flow}</ol>
+</div></section>
+
+<section class="wrap ab-sec" aria-labelledby="ab-diff-h">
+  <header class="ab-sec-head"><span class="overline">05 · WHAT MAKES IT DIFFERENT</span><h2 id="ab-diff-h">Standards we hold every forecast to</h2></header>
+  <ul class="ab-diff">{ab_diff}</ul>
+</section>
+
+<section class="wrap ab-sec" aria-labelledby="ab-trust-h">
+  <div class="card panel ab-trust">
+    <span class="overline">06 · IMPORTANT</span><h2 id="ab-trust-h">Research and intelligence, not advice</h2>
+    <ul>
+      <li>PropBetEdge Predictions publishes research-stage probabilities and market intelligence. Nothing here is financial or betting advice.</li>
+      <li>Market prices are a reference benchmark. They are stored beside each forecast and never enter a PropBetEdge model.</li>
+      <li>Models evolve. Each change is a new version with its own record; earlier forecasts keep the version that made them.</li>
+      <li>Coverage will expand. New categories start in monitoring and are labeled with their state everywhere they appear.</li>
+    </ul>
+    <p class="ab-trust-links"><a href="/methodology/#immutable">Immutable forecasts</a><a href="/methodology/#evidence">Evidence &amp; sources</a><a href="/methodology/#scoring">Scoring methodology</a><a href="/methodology/#states">Model states &amp; limitations</a><a href="/track-record/">Track record</a></p>
+  </div>
+  <p class="ab-close">PropBetEdge Predictions is included with <a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_about_all_access">PropBetEdge All Access</a> — 10 sports + Predictions + Compare for $29/month.</p>
+</section>
+</main>''' + FOOT + '</body></html>\n'
+
+for d in ('about', 'models', 'methodology', 'desk', 'track-record', 'calendar'): os.makedirs(d, exist_ok=True)
+io.open('about/index.html', 'w', encoding='utf-8', newline='\n').write(about)
 io.open('models/index.html', 'w', encoding='utf-8', newline='\n').write(models)
 io.open('methodology/index.html', 'w', encoding='utf-8', newline='\n').write(meth)
 io.open('desk/index.html', 'w', encoding='utf-8', newline='\n').write(desk)

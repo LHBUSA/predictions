@@ -1,21 +1,20 @@
-// Generates the five static Signal 10 pages from the shared crypto/index.html network header + footer.
+// Generates the five static Signal 10 pages with the shared network header + footer.
 // node scripts/signal10/pages/gen-pages.mjs   (run from the repo root; writes markets/signal-10/**/index.html)
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { FEATURED, robinhoodUrl } from '../../../src/signal10/tape.js';
+import { siteHeader, siteFooter } from '../../../workers/pbe-predictions/src/network.js';
 
 const ROOT = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const V = '20261010tape1';
-const crypto = readFileSync(join(ROOT, 'crypto/index.html'), 'utf8');
-const cut = (a, b) => { const i = crypto.indexOf(a); const j = crypto.indexOf(b) + b.length; if (i < 0 || j < b.length) throw new Error(`marker ${a}`); return crypto.slice(i, j); };
-let header = cut('<!-- network:header -->', '<!-- /network:header -->');
-const footer = cut('<!-- network:footer -->', '<!-- /network:footer -->');
-// aria-current moves from Crypto to Markets AI (both navs); the crypto-only heartbeat chip is not part of these pages
-header = header.replaceAll('<a href="/crypto/" aria-current="page">Crypto</a>', '<a href="/crypto/">Crypto</a>')
-  .replaceAll('<a href="/markets/signal-10/">Signal 10</a>', '<a href="/markets/signal-10/" aria-current="page">Signal 10</a>')
-  .replace('<span class="live-dot" id="crypto-live"><i></i><span>Connecting</span></span>\n', '');
-if (header.includes('id="crypto-live"')) throw new Error('crypto live chip still present');
-if (!header.includes('<a href="/markets/signal-10/" aria-current="page">Signal 10</a>')) throw new Error('Signal 10 nav item missing from the shared header');
+// The ONE network shell (workers/pbe-predictions/src/network.js), current = Signal 10, wrapped in the same markers
+// the other static pages carry. No live chip: these pages do not load core.js, which keeps the engine chip honest.
+const header = `<!-- network:header -->
+${siteHeader('signal10', { live: false })}
+<!-- /network:header -->`;
+const footer = `<!-- network:footer -->
+${siteFooter()}
+<!-- /network:footer -->`;
 
 const BASE = 'https://predictions.propbetedge.ai';
 const TABS = [
@@ -49,7 +48,7 @@ function page({ key, title, desc, h1, dek, body }) {
 <meta name="robots" content="noindex, follow">
 <link rel="canonical" href="${BASE}${path}">
 <meta name="theme-color" content="#14110d">
-<link rel="stylesheet" href="/site.css?v=20261009op1">
+<link rel="stylesheet" href="/site.css?v=20261010nav1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">

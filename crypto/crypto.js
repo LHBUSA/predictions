@@ -200,7 +200,7 @@ function renderTable(n,s){
 }
 
 // ---- HUD, drivers, status
-function setStatus(state,text){const s=$('cx-status');if(s){s.dataset.state=state;$('cx-status-text').textContent=text;}const live=$('crypto-live');if(live){live.dataset.state=state;const sp=live.querySelector('span');if(sp)sp.textContent=text;}}
+function setStatus(state,text){const s=$('cx-status');if(s){s.dataset.state=state;$('cx-status-text').textContent=text;}const live=$('crypto-live');if(live){live.dataset.state=state;live.title=text;const sp=live.querySelector('span');if(sp)sp.textContent=text;}}
 function tickCountdown(){
   const n=S.n; const el=$('countdown'); if(!el)return;
   if(!n?.window){el.textContent='--:--';return;}
