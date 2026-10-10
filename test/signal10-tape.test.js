@@ -231,8 +231,7 @@ test('static pages: the featured tape (SPCX first) is server-rendered on all fiv
     assert.match(html, /View SPCX on Robinhood \(opens in a new tab\)/);
     assert.match(html, /<script src="\/markets\/signal-10\/tape\.js\?v=[^"]+" defer><\/script>/);
     assert.ok(html.indexOf('id="s10-tape"') < html.indexOf('class="wrap s10-body"'), 'tape sits above the page body');
-    assert.match(html, /not Signal 10 picks/);
-    assert.match(html, /not affiliated with Robinhood/);
+    assert.doesNotMatch(html, /s10-tape-fine|Featured = editorial watchline/, 'no fine-print paragraph (owner)');
   }
 });
 
