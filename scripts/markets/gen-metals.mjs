@@ -19,8 +19,8 @@ const LEARN_ALL = `<article><h3>No cash flows</h3><p>A share of a company is a c
 
 const METALS = {
   GOLD: { slug: 'gold', name: 'Gold', code: 'XAU', etf: 'GLD', fee: '0.40%',
-    learn: `<article><h3>What moves gold</h3><p>Gold is held mainly as a store of value by investors and central banks. Its price tends to respond to real (inflation-adjusted) interest rates, the U.S. dollar and demand for safety; it has no earnings to anchor it.</p></article>
-<article><h3>Reading the GLD proxy</h3><p>SPDR Gold Shares (GLD) is a grantor trust holding allocated gold; its net asset value is set from the LBMA Gold Price PM. The 0.40% annual fee slowly reduces the gold behind each share, so GLD drifts below spot over time.</p></article>` },
+    learn: `<article><h3>What moves gold</h3><p>Much of gold demand comes from investors and central banks holding it as a store of value, alongside jewelry. Its price tends to respond to real (inflation-adjusted) interest rates, the U.S. dollar and demand for safety; it has no earnings to anchor it.</p></article>
+<article><h3>Reading the GLD proxy</h3><p>SPDR Gold Shares (GLD) is a grantor trust holding allocated gold; its net asset value is set from the LBMA Gold Price PM. The 0.40% annual fee is paid in gold, so each share represents slightly less gold over time.</p></article>` },
   SILVER: { slug: 'silver', name: 'Silver', code: 'XAG', etf: 'SLV', fee: '0.50%',
     learn: `<article><h3>What moves silver</h3><p>Silver is part monetary metal, part industrial input — electronics, solar panels, brazing — so it reacts both to the forces that move gold and to the industrial cycle. It is usually more volatile than gold.</p></article>
 <article><h3>Reading the SLV proxy</h3><p>The iShares Silver Trust (SLV) holds physical silver and values it from the LBMA Silver Price. Its 0.50% annual fee reduces the silver behind each share over time; it split 10-for-1 on July 24, 2008.</p></article>` },
@@ -58,7 +58,7 @@ function page({ path, metal, title, desc, kicker, h1, dek, learnTitle, learn }) 
 </head>
 <body class="s10-page" data-page="metals"${metal ? ` data-metal="${metal}"` : ''}>
 <!-- network:header -->
-${siteHeader('metals', { live: false })}
+${siteHeader(metal ? null : 'metals', { live: false })}
 <!-- /network:header -->
 
 <main id="main">
