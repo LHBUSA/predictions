@@ -12,6 +12,7 @@ import { loadComponents } from './universe.js';
 import { resolveSymbol } from './aliases.js';
 import { LATEST_MEMBERS } from './members-latest.js';
 import { MODEL_VERSION, POLICY_VERSION, MANAGER } from './policy.js';
+import { closeMinutes } from '../market-tape/core.js';
 
 export const ACCOUNT = 'S10-FWD-1';
 export const ORIGIN = 'FORWARD_PAPER';
@@ -26,6 +27,10 @@ export const ORIGIN = 'FORWARD_PAPER';
 // Model, policy, ranking, sizing and fills are untouched (policy.js / rank.js / portfolio.js are byte-identical).
 export const LEDGER_WRITER = 'signal10-ledger-writer/2';
 export const LEGACY_WRITER = 'signal10-ledger-writer/1';
+// Scheduling compatibility (issue #69 item 4): the EOD final-close gates use the NYSE calendar's close for D (13:00 ET on
+// early-close sessions, 16:00 ET otherwise; market-tape/core.js) instead of a fixed 16:00. The EOD window itself still
+// opens at 16:20 ET, after the official close of every session. Nothing else in scheduling changes.
+export const SCHEDULE_VERSION = 'signal10-schedule/2';
 export const COMPONENTS_URL = 'https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv';
 const UA = 'Mozilla/5.0 (compatible; PropBetEdge-Signal10/1.0; +https://predictions.propbetedge.ai/markets/signal-10/methodology/)';
 
@@ -221,7 +226,7 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   if (!spy0) return { skipped: 'SPY unavailable' };
   const spyClock = nyClock(spy0.quoteTime);
   if (spyClock.date !== D) return { skipped: 'no_session_today' };
-  if (spyClock.minutes < 16 * 60) return { skipped: 'close_not_final' };
+  if (spyClock.minutes < closeMinutes(D)) return { skipped: 'close_not_final' };
   const members = await currentMembers(fetchImpl);
   const universe = members.tickers.map((t) => ({ ticker: t, symbol: resolveSymbol(t, D) }));
   const held = st ? [...Object.keys(st.positions)] : [];
@@ -229,7 +234,7 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   if (!mkt.ok) return { skipped: mkt.reason };
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' };
   const spyTime = mkt.digest.SPY.regularMarketTime;
-  if (!spyTime || nyClock(new Date(spyTime * 1000).toISOString()).minutes < 16 * 60) return { skipped: 'close_not_final' };
+  if (!spyTime || nyClock(new Date(spyTime * 1000).toISOString()).minutes < closeMinutes(D)) return { skipped: 'close_not_final' };
   const withBar = universe.filter((u) => u.symbol && mkt.prepared.get(u.symbol)?.idx.has(D)).length;
   if (withBar / universe.length < 0.9) return { skipped: 'coverage_below_90pct', withBar };
   if (!(await claim(store, `EOD:${D}`, 'EOD', D, workerVersion))) return { skipped: 'claimed' };

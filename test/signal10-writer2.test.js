@@ -208,3 +208,30 @@ test('only the persistence layer changed: model, policy, ranking and accounting 
   for (const [f, h] of Object.entries(PINNED)) assert.equal(sha(f), h, `${f} must not change`);
   assert.equal(W2.LEDGER_WRITER, 'signal10-ledger-writer/2');
 });
+
+test('signal10-schedule/2: an early-close session (13:00 ET) completes its EOD; a regular session still waits for 16:00 ET', async () => {
+  assert.equal(W2.SCHEDULE_VERSION, 'signal10-schedule/2');
+  const { closeMinutes } = await import('../src/market-tape/core.js');
+  assert.equal(closeMinutes('2026-11-27'), 13 * 60); assert.equal(closeMinutes('2026-12-24'), 13 * 60); assert.equal(closeMinutes('2026-11-25'), 16 * 60);
+  // the frozen writer/1 never completes an early-close EOD (its final bar is stamped ~13:00 ET); writer/2 does
+  const early = '2026-11-27';
+  const mk = (M) => M.runEod({ store: new JsonStore(), now: `${early}T21:30:00Z`, fetchImpl: earlySource(early), startDate: early });
+  assert.deepEqual(await mk(W1), { skipped: 'close_not_final' });
+  assert.equal((await mk(W2)).ok, true);
+  // a regular session whose bar is stamped before 16:00 ET is still not final
+  const reg = '2026-11-25';
+  assert.deepEqual(await W2.runEod({ store: new JsonStore(), now: `${reg}T21:30:00Z`, fetchImpl: earlySource(reg), startDate: reg }), { skipped: 'close_not_final' });
+});
+// a session calendar through `day` whose final bar is stamped 13:05 ET (18:05Z in November)
+function earlySource(day) {
+  const cal = weekdays('2025-01-02', 600).filter((d) => d <= day && d !== '2026-11-26');
+  return async (url) => {
+    const u = String(url);
+    if (u.includes('githubusercontent')) return new Response('nope', { status: 503 });
+    const sym = decodeURIComponent(u.match(/chart\/([^?]+)/)[1]).replace(/-/g, '.');
+    const close = cal.map((d, i) => +px(sym, i).toFixed(4));
+    const body = { chart: { result: [{ meta: { symbol: sym, gmtoffset: -18000, regularMarketPrice: close.at(-1), regularMarketTime: Math.floor(Date.parse(`${day}T18:05:00Z`) / 1000) },
+      timestamp: cal.map((d) => Date.parse(d + 'T14:30:00Z') / 1000), events: {}, indicators: { quote: [{ open: close, high: close, low: close, close, volume: close.map(() => 8e6) }], adjclose: [{ adjclose: close }] } }] } };
+    return new Response(JSON.stringify(body), { status: 200 });
+  };
+}
