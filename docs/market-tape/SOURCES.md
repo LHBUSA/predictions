@@ -35,4 +35,6 @@ Nothing else in our existing infrastructure provides permitted intraday U.S. equ
 ## Collector status
 - **Parser:** `src/market-tape/iex-hist.js` (streaming pcapng / IEX-TP / TOPS 1.6, Workers- and Node-compatible). Tested on a synthetic capture and verified on the real 2026-10-09 file: 37.7 GB decompressed, 6.5M trades, 221k matched.
 - **Lane:** `workers/pbe-predictions/src/iex-hist-lane.js`. It writes `pred_source_observations` rows keyed `iex:TOPS:<YYYYMMDD>:<SYMBOL>`, with class `official` and full provenance. It is idempotent.
-- **Nightly automation is OFF** (`IEX_HIST_COLLECTOR="false"`). One full session costs about 410 s of CPU in workerd, which is over a single invocation's 300 s cap. The replacement is a resumable decompressor that checkpoints decoder state across one-minute cron steps overnight. It needs one small checkpoint table. Until then, sessions are loaded with the same parser code.
+- **Nightly automation is ON** (`IEX_HIST_COLLECTOR="true"`, sql/017 approved and applied on 2026-10-10).
+  - **How it runs:** the resumable decoder (`src/market-tape/inflate.js`, byte-identical to zlib) checkpoints at DEFLATE block boundaries. One step per minute decodes about 1.5 GiB in 10–15 s of CPU, between 03:30 and 13:29 UTC.
+  - **Real-file proof** (2026-10-09): 25 steps, about 100 KB checkpoints, 5 minutes in total. All 61 of 61 rows were identical to the backfill.

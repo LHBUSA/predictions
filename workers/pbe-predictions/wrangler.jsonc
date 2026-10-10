@@ -65,10 +65,10 @@
     // iex-hist = IEX Historical Data (TOPS, T+1): exchange-originated, display permitted to public + paid with the IEX credit
     // line (contract.js rights record). Served from our own snapshot in pred_source_observations, never per request.
     "MARKET_TAPE_PROVIDER": "iex-hist",
-    // first-party collector (IEX HIST -> pred_source_observations). OFF: a full session is ~40 GB of decompressed pcapng
-    // (~410 s CPU measured in workerd), over one invocation's 300 s cap; the resumable multi-step collector replaces this.
-    // Sessions are loaded by the same parser code until then. Kill switch: anything but "true".
-    "IEX_HIST_COLLECTOR": "false"
+    // first-party collector (IEX HIST -> pred_source_observations): resumable steps (sql/017 checkpoints, ~1.5 GiB of
+    // decompressed pcapng per step, ~10-15 s CPU) every minute 03:30-13:29 UTC on the FAST cron; ~25 steps per session.
+    // Kill switch: anything but "true" (a running job simply pauses at its last checkpoint).
+    "IEX_HIST_COLLECTOR": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
   // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),
