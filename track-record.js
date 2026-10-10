@@ -55,11 +55,11 @@ const TABS = { temperature: 'Temperature outcomes', calls: 'Research calls', off
 function skillPanel(t) {
   if (!t) return '';
   const pct = (x) => `${Math.round(x * 100)}%`; const f2 = (x) => Number(x).toFixed(2);
-  const m = t.market; const early = (v) => (v === 'TOO_FEW_DAYS' ? `early: ${t.dates} of ${t.min_days_for_verdict} days needed for a verdict` : v === 'MARKET_AHEAD' ? 'market ahead (95% range excludes zero)' : v === 'PBE_AHEAD' ? 'PBE ahead (95% range excludes zero)' : 'no difference established');
+  const m = t.market; const early = (v) => (v === 'TOO_FEW_DAYS' ? `early: ${m?.dates ?? t.dates} of ${t.min_days_for_verdict} days needed for a verdict` : v === 'MARKET_AHEAD' ? 'market ahead (95% range excludes zero)' : v === 'PBE_AHEAD' ? 'PBE ahead (95% range excludes zero)' : 'no difference established');
   const stat = (label, value, detail) => `<div class="stat"><span>${esc(label)}</span><strong class="num">${esc(value)}</strong><small>${esc(detail)}</small></div>`;
   const city = (t.by_city || []).map((c) => `${esc(c.city)} ${c.nbm_bias_f > 0 ? '+' : ''}${c.nbm_bias_f ?? '—'}°F (MAE ${c.nbm_mae_f ?? '—'}, ${c.hits}/${c.events} vs ${c.expected_hits} expected)`).join(' · ');
   return `<h3 class="rec-skill-h">Temperature skill · pre-window forecasts</h3><div class="stats stats-4">${
-    stat('Top bucket vs expectation', `${t.top_bucket.hits} of ${t.events}`, `${t.top_bucket.expected.toFixed(1)} expected from PBE’s own probabilities · this few or fewer happens ${pct(t.top_bucket.p_at_most)} of the time by chance`)
+    stat('Top bucket vs expectation', `${t.top_bucket.hits} of ${t.events}`, `${t.top_bucket.expected.toFixed(1)} expected from PBE’s own probabilities · if they were calibrated, this few or fewer would happen ${pct(t.top_bucket.p_at_most)} of the time (same-day events share weather)`)
     + (m ? stat('Market favourite, same moment', `${m.market_hits} of ${m.events}`, `${m.market_expected.toFixed(1)} expected from the market’s prices · same favourite as PBE in ${m.same_modal}`) : '')
     + (m ? stat('Whole-distribution log loss', `PBE ${f2(m.log_loss.mean_a)} · mkt ${f2(m.log_loss.mean_b)}`, `lower is better · ${early(m.verdict_log_loss)}`) : stat('Whole-distribution log loss', `PBE ${f2(t.pbe.log_loss)}`, 'lower is better · no same-time market ladder'))
     + stat('Average favourite probability', pct(t.top_bucket.mean_p_modal), m ? `market ${pct(m.market_expected / m.events)}` : 'PBE')

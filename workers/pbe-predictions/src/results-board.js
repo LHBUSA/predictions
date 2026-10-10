@@ -22,7 +22,9 @@ const txt = x => typeof x === 'string' ? x.slice(0, 230) : '';
 export const MIN_SKILL_DAYS = 10;
 const evidenceValue = (ev, label) => { const x = Array.isArray(ev) ? ev.find((e) => String(e?.label || '').startsWith(label)) : null; return x && Number.isFinite(Number(x.value)) ? Number(x.value) : null; };
 
-export function assembleScorecard({ scores = [], forecasts = [], contracts = [], events = [], decisions = [], voids = [], ladders = [], resolutions = [], quotes = [] } = {}) {
+// requireLadder (the member route): an event whose ladder was not found is excluded (NO_LADDER), never counted on its
+// scored rows alone.
+export function assembleScorecard({ scores = [], forecasts = [], contracts = [], events = [], decisions = [], voids = [], ladders = [], resolutions = [], quotes = [], requireLadder = false } = {}) {
   const voided = new Set(voids.filter((r) => String(r.venue_result).toLowerCase() === 'void').map((r) => key(r.contract_id)));
   const fs = new Map(forecasts.map(f => [key(f.forecast_id), f]));
   const cs = new Map(contracts.map(c => [key(c.contract_id), c]));
@@ -56,6 +58,7 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
     const ev = evs.get(id);
     if (!ev || !ev.slug) { exclude('NO_EVENT'); continue; }
     const lad = ladderBy.get(id);
+    if (!lad && requireLadder) { exclude('NO_LADDER'); continue; }
     let ordered = null;
     if (lad) {
       const ob = orderBuckets(lad);
@@ -66,7 +69,10 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
     }
     const sorted = [...rows].sort((a,b) => num(b.f.probability) - num(a.f.probability) ||
       key(a.c.market_id).localeCompare(key(b.c.market_id)));
-    const favorite = sorted[0], winner = rows.find(r => Number(r.s.outcome) === 1);
+    const winner = rows.find(r => Number(r.s.outcome) === 1);
+    // With a ladder the favourite is the skill block's modal bucket (ties -> the lower bucket), so both counts agree.
+    const pbeOrdered = ordered ? eventScores(ordered.map((r) => num(r.f.probability)), ordered.indexOf(winner)) : null;
+    const favorite = pbeOrdered ? ordered[pbeOrdered.modal] : sorted[0];
     const row = {
       event_id: id, slug: txt(ev.slug), title: txt(ev.canonical_question),
       category: txt(ev.category), picked: txt(favorite.c.outcome_label),
@@ -77,17 +83,18 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
     };
     if (ordered) {
       const win = ordered.indexOf(winner);
-      const pbe = eventScores(ordered.map((r) => num(r.f.probability)), win);
+      const pbe = pbeOrdered;
       const q = ordered.map((r) => { const z = quoteBy.get(key(r.f.market_snapshot_key)); return { mid: valid(r.f.market_probability) ? num(r.f.market_probability) : null, bid: z ? num(z.bid) : null, ask: z ? num(z.ask) : null, active: z ? z.market_status === 'active' : true }; });
       const md = q.every((x) => x.mid !== null || x.active) ? marketDistribution(q) : null;
-      const market = md ? eventScores(md.probs, win) : null;
+      // same [0.01, 0.99] bounds as PBE's bucket probabilities, so a 0.5 c tail cannot tilt the log loss
+      const market = md ? eventScores(md.probs.map((p) => Math.min(0.99, Math.max(0.01, p))), win) : null;
       const official = num(resBy.get(key(winner.c.contract_id))?.official_value);
       const nbm = evidenceValue(favorite.f.evidence, 'National Blend');
       Object.assign(row, { expected_pct: pbe ? Math.round(pbe.p_modal * 100) : null,
         market_picked: market ? txt(ordered[market.modal].c.outcome_label) : null, market_pct: market ? Math.round(market.p_modal * 100) : null,
         market_result: market ? (market.hit ? 'MATCHED' : 'MISSED') : null,
         official_f: official, nbm_f: nbm, error_f: official !== null && nbm !== null ? official - nbm : null, confidence: txt(favorite.f.confidence) || null });
-      if (pbe) skillEvents.push({ date: txt(favorite.c.detail?.climate_date) || key(id), station: txt(favorite.c.station_id), city: txt(favorite.c.detail?.city_label) || txt(favorite.c.station_id), error_f: row.error_f, pbe, market });
+      if (pbe) skillEvents.push({ date: txt(favorite.c.climate_date || favorite.c.detail?.climate_date) || key(id), station: txt(favorite.c.station_id), city: txt(favorite.c.city_label || favorite.c.detail?.city_label) || txt(favorite.c.station_id), error_f: row.error_f, pbe, market });
     }
     temperature.push(row);
   }
@@ -154,7 +161,7 @@ export function assembleScorecard({ scores = [], forecasts = [], contracts = [],
   };
 }
 
-let cache = null, pending = null;
+let cache = null; // a plain result object (never a Response or a promise shared across requests)
 const TTL = 60_000;
 // Display window: counts always cover every row; `limit` only trims the row lists (homepage preview asks for 5).
 export function limitRows(card, limit) {
@@ -166,8 +173,7 @@ export function limitRows(card, limit) {
 
 export async function memberScorecard(store, { fresh = false, now = Date.now } = {}) {
   if (!fresh && cache && now() - cache.at < TTL) return cache.result;
-  if (!fresh && pending) return pending;
-  const work = (async () => {
+  const work = async () => {
     const [scores, decisions] = await Promise.all([
       store.select('pred_scores', {
         select: 'contract_id,forecast_id,designation,scoring_method,outcome,scored_at',
@@ -183,28 +189,30 @@ export async function memberScorecard(store, { fresh = false, now = Date.now } =
     const fids = [...new Set([...scores, ...decisions].map(x=>x.forecast_id).filter(Boolean))];
     if (!cids.length) return assembleScorecard();
     const [contracts, forecasts, voids] = await Promise.all([
-      store.selectIn('pred_contracts', { select: 'contract_id,event_id,market_id,outcome_label,event_type,station_id,detail' }, 'contract_id', cids, { chunkSize: 75 }),
+      store.selectIn('pred_contracts', { select: 'contract_id,event_id,market_id,outcome_label,event_type,station_id,climate_date:detail->>climate_date,city_label:detail->>city_label' }, 'contract_id', cids, { chunkSize: 75 }),
       store.selectIn('pred_forecasts', { select: 'forecast_id,contract_id,probability,captured_at,model_state,market_probability,market_snapshot_key,confidence,evidence:explanation->evidence' }, 'forecast_id', fids, { chunkSize: 75 }),
       callIds.length ? store.selectIn('pred_resolutions', { select: 'contract_id,venue_result', venue_result: 'eq.void' }, 'contract_id', callIds, { chunkSize: 75 }) : []
     ]);
     const eventIds = [...new Set(contracts.map(c=>c.event_id).filter(Boolean))];
-    const events = eventIds.length ? await store.selectIn('pred_events', {select: 'event_id,slug,canonical_question,category'}, 'event_id', eventIds, {chunkSize: 75}) : [];
-    // Temperature ladders: every bucket of each scored temperature event (to prove exhaustiveness), the official value,
-    // and the exact venue snapshot each forecast stored (for no-bid tails without a mid).
+    // Temperature ladders: every NORMALIZED bucket of each scored temperature event (to prove exhaustiveness; one row per
+    // market, newest normalisation), the official value, and the exact venue snapshot each temperature forecast stored
+    // (only for no-bid tails without a mid).
     const tempEvents = [...new Set(contracts.filter((c) => c.event_type === 'MAX_TEMP_BUCKET').map((c) => c.event_id))];
-    const ladders = tempEvents.length ? await store.selectIn('pred_contracts', { select: 'contract_id,event_id,comparator,threshold_low,threshold_high' }, 'event_id', tempEvents, { chunkSize: 75 }) : [];
-    const tempIds = ladders.map((c) => c.contract_id);
-    const keys = [...new Set(forecasts.filter((f) => f.market_snapshot_key && (f.market_probability === null || f.market_probability === undefined)).map((f) => f.market_snapshot_key))];
+    const [events, ladderRows] = await Promise.all([
+      eventIds.length ? store.selectIn('pred_events', {select: 'event_id,slug,canonical_question,category'}, 'event_id', eventIds, {chunkSize: 75}) : [],
+      tempEvents.length ? store.selectIn('pred_contracts', { select: 'contract_id,event_id,market_id,comparator,threshold_low,threshold_high,normalized_at', normalization_status: 'eq.NORMALIZED' }, 'event_id', tempEvents, { chunkSize: 75 }) : []
+    ]);
+    const latest = new Map(); for (const c of ladderRows) { const k = `${c.event_id}|${c.market_id}`; const p = latest.get(k); if (!p || String(c.normalized_at) > String(p.normalized_at)) latest.set(k, c); }
+    const ladders = [...latest.values()];
+    const tempIds = ladders.map((c) => c.contract_id); const tempSet = new Set(tempIds);
+    const keys = [...new Set(forecasts.filter((f) => tempSet.has(f.contract_id) && f.market_snapshot_key && (f.market_probability === null || f.market_probability === undefined)).map((f) => f.market_snapshot_key))];
     const [resolutions, quotes] = await Promise.all([
       tempIds.length ? store.selectIn('pred_resolutions', { select: 'contract_id,official_value' }, 'contract_id', tempIds, { chunkSize: 75 }) : [],
       keys.length ? store.selectIn('pred_venue_snapshots', { select: 'snapshot_key,bid,ask,market_status' }, 'snapshot_key', keys, { chunkSize: 40 }) : []
     ]);
-    return assembleScorecard({ scores, decisions, contracts, forecasts, events, voids, ladders, resolutions, quotes });
-  })();
-  pending = work;
-  try {
-    const result = await work;
-    cache = {at:now(),result};
-    return result;
-  } finally { if(pending===work)pending=null; }
+    return assembleScorecard({ scores, decisions, contracts, forecasts, events, voids, ladders, resolutions, quotes, requireLadder: true });
+  };
+  const result = await work();
+  cache = { at: now(), result };
+  return result;
 }

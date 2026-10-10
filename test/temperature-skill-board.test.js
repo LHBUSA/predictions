@@ -64,3 +64,34 @@ test('members panel renders the expectation, the market favourite and the early-
   assert.match(nodes['results-ledger'].innerHTML, /market favourite 82° to 83° \(70%\)/); assert.match(nodes['results-ledger'].innerHTML, /official 82°F · NBM guidance 82°F \(0\)/);
   assert.doesNotMatch(skill, /official pick|profit|ROI/i);
 });
+
+test('member route: ladders read NORMALIZED rows deduped by market, quote keys only for temperature, no ladder = excluded', async () => {
+  const e = event('A', '2026-10-04', [0.1, 0.5, 0.3, 0.1], 1, { official: 81 });
+  const calls = [];
+  const rain = { forecast_id: 'f-rain', contract_id: 'rain-1', probability: 0.8, model_state: 'RESEARCH', captured_at: '2026-10-04T05:00:00Z', market_probability: null, market_snapshot_key: 'k-rain' };
+  const store = {
+    select: async (t) => (t === 'pred_scores' ? [...e.scores, { forecast_id: 'f-rain', contract_id: 'rain-1', designation: 'FINAL_PRE_RESOLUTION', scoring_method: 'brier', outcome: 1, scored_at: '2026-10-04T12:00:00Z' }] : []),
+    selectIn: async (t, q, col, ids) => { calls.push({ t, q, col, ids });
+      if (t === 'pred_contracts' && col === 'contract_id') return [...e.contracts.map(({ comparator, threshold_low, threshold_high, detail, ...c }) => ({ ...c, climate_date: detail.climate_date, city_label: detail.city_label })), { contract_id: 'rain-1', event_id: 'R', market_id: 'MR', outcome_label: 'Rain', event_type: 'PRECIP_ANY' }];
+      if (t === 'pred_contracts' && col === 'event_id') return [...e.contracts.map((c) => ({ ...c, normalized_at: '2026-10-01' })), { ...e.contracts[1], contract_id: 'A-1-old', normalized_at: '2026-09-01' }];
+      if (t === 'pred_forecasts') return [...e.forecasts, rain];
+      if (t === 'pred_events') return e.events;
+      if (t === 'pred_resolutions') return e.resolutions;
+      return []; } };
+  const { memberScorecard } = await import('../workers/pbe-predictions/src/results-board.js');
+  const card = await memberScorecard(store, { fresh: true });
+  const lad = calls.find((c) => c.t === 'pred_contracts' && c.col === 'event_id');
+  assert.equal(lad.q.normalization_status, 'eq.NORMALIZED'); assert.deepEqual(lad.ids, ['A']);
+  assert.equal(card.temperature_skill.events, 1, 'the superseded normalisation of one market does not break the ladder');
+  const q = calls.find((c) => c.t === 'pred_venue_snapshots');
+  assert.ok(!q || !q.ids.includes('k-rain'), 'rain forecasts never fetch temperature quotes');
+  assert.match(calls.find((c) => c.t === 'pred_forecasts').q.select, /evidence:explanation->evidence/);
+  // the same rows without any ladder rows: excluded, not counted on scored rows alone
+  const bare = assembleScorecard({ ...merge(e), ladders: [], requireLadder: true });
+  assert.equal(bare.top_outcome.events, 0);
+});
+
+test('ties: the favourite in the ledger and the skill block are the same bucket (lower bucket wins)', () => {
+  const card = assembleScorecard(merge(event('T', '2026-10-04', [0.1, 0.4, 0.4, 0.1], 2)));
+  assert.equal(card.top_outcome.rows[0].picked, '80° to 81°'); assert.equal(card.top_outcome.matched, card.temperature_skill.top_bucket.hits);
+});
