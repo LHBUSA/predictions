@@ -92,7 +92,7 @@
       const px = r.price != null ? `${fmtPrice(r.price)}${r.price_basis === 'IEX_LAST_SALE' ? ` — IEX last sale ${C.fmtDate(r.price_session_date)} (IEX venue only, next-day)` : ''}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous session ${fmtPrice(r.previous_close)})` : ''} · exchange trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'SOURCE_RIGHTS_HOLD' ? 'Prices are not shown (quote source rights hold)' : 'Quote source unavailable';
       return `${r.symbol} · ${r.name} — ${px}.${rsTitle(r)} Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
     };
-    const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" role="listitem" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
+    const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
       + `<span class="s10-tq-top"><b class="s10-tq-sym">${r.rank ? `<span class="s10-tq-rk">${esc(r.rank)}</span>` : ''}${esc(r.symbol)}</b><span class="s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}">${esc(chg(r))}</span><span class="${rsCls(r)}">${esc(rsText(r))}</span></span>`
       + `<span class="s10-tq-bot"><span class="s10-tq-px num">${pxText(r)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span>`
       + `<span class="sr-only"> ${esc(r.name)}. View ${esc(r.symbol)} on Robinhood (opens in a new tab)</span></a>`;
@@ -140,7 +140,7 @@
         const sig = g.rows.map((r) => r.symbol).join(',');
         let box = rail.querySelector(`[data-tape-group="${g.key}"]`);
         if (!box || box.dataset.sig !== sig || box.dataset.label !== g.label) {
-          const html = `<span class="s10-tg" role="listitem" title="${esc(g.note)}">${esc(g.label)}</span>${g.rows.map(itemHTML).join('')}`;
+          const html = `<span class="s10-tg" title="${esc(g.note)}">${esc(g.label)}</span>${g.rows.map(itemHTML).join('')}`;
           if (!box) {
             box = document.createElement('div'); box.className = 's10-tape-grp'; box.dataset.tapeGroup = g.key; box.setAttribute('role', 'presentation');
             // order: SpaceX first, then the algorithm's latest frozen Top 10, then the rest of the watchline; paper holdings last
@@ -156,7 +156,7 @@
       // the Top 10 group sits between SPCX and the rest of the featured watchline: label that remainder so it reads apart
       let rest = rail.querySelector('[data-tape-rest]');
       const top = rail.querySelector('[data-tape-group="SIGNAL10_TOP10"]');
-      if (top && !rest) { rest = document.createElement('span'); rest.className = 's10-tg'; rest.dataset.tapeRest = '1'; rest.setAttribute('role', 'listitem'); rest.textContent = 'Watchline'; top.after(rest); }
+      if (top && !rest) { rest = document.createElement('span'); rest.className = 's10-tg'; rest.dataset.tapeRest = '1'; rest.textContent = 'Watchline'; top.after(rest); }
       if (!top && rest) rest.remove();
       syncClone();
 
@@ -168,7 +168,16 @@
       metaEl.innerHTML = metaHTML(d, rows);
       metaEl.title = metaEl.textContent;
     }
+    const fine = root.querySelector('.s10-tape-fine');
+    function setCredit(text) {
+      if (!fine) return;
+      let c = fine.querySelector('[data-tape-credit]');
+      if (!text) { c?.remove(); return; }
+      if (!c) { c = document.createElement('a'); c.dataset.tapeCredit = '1'; c.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; c.target = '_blank'; c.rel = 'noopener noreferrer'; fine.prepend(c, ' '); }
+      if (c.textContent !== text) c.textContent = text;
+    }
     function metaHTML(d, rows) {
+      if (!(d.quotes.shown && d.t1)) setCredit(null);
       const parts = [];
       if (!d.quotes.shown && d.quotes.withheld === 'SOURCE_RIGHTS_HOLD') parts.push('<span title="No licensed quote source yet: symbols, market hours and Robinhood links only">Prices: source rights hold</span>');
       if (!d.quotes.shown && d.quotes.withheld === 'MEMBERS_ONLY') parts.push('<span>Prices for <a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_signal10_tape">All Access</a> members · <a href="#" data-pbe-signin>Sign in</a></span>');
@@ -179,7 +188,8 @@
         else parts.push('<span>IEX next-day prices pending</span>');
         if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
         else if (d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
-        parts.push(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data provided for free by IEX ↗</a>`);
+        // the full credit line lives on the always-visible fine-print line (the meta line may be ellipsized)
+        setCredit(d.t1.attribution);
       } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
