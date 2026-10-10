@@ -1,0 +1,18 @@
+{
+  // PBE Predictions branded subdomains -> canonical Predictions pages (LHBUSA/predictions#66). Redirect-only, no bindings,
+  // no crons, no secrets. Custom domains create their DNS record + certificate on the propbetedge.ai Cloudflare zone.
+  // Add a host here ONLY when it is active in src/index.js HOSTS (its canonical page is live and verified).
+  "name": "pbe-vanity-redirects",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "routes": [
+    { "pattern": "crypto.propbetedge.ai", "custom_domain": true }
+  ],
+  "vars": {
+    // "308" permanent (crypto verified over HTTPS 2026-10-10); use "307" only while proving a newly added host
+    "REDIRECT_STATUS": "308"
+  }
+}
