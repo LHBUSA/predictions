@@ -90,6 +90,7 @@ test('member research: genuine frozen-snapshot ranks, moves and paper flags; SPC
   assert.equal(sp.in_universe, false); assert.equal(sp.rank, null, 'never a rank for a symbol outside the model universe');
   assert.equal(idx.of('MSFT').in_universe, true); assert.equal(idx.of('MSFT').rank, null);
   assert.equal(MT.researchIndex(null, null), null);
+  assert.equal(MT.researchIndex(cur, null).of('PSX').move, null, 'first snapshot: no move, not NEW');
 });
 
 test('member lists: EDITORIAL vs MODEL_RESEARCH vs SIMULATED_PAPER, labelled, built from the ledger only', async () => {

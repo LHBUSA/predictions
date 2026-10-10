@@ -74,7 +74,9 @@ export function researchIndex(cur, prev, heldSymbols = [], universe = null) {
   const by = new Map();
   for (const r of cur.ranks) {
     const p = prevRank.get(r.symbol) ?? null;
-    by.set(r.symbol, { rank: r.rank, prev_rank: p, move: p == null ? 'NEW' : r.rank < p ? 'UP' : r.rank > p ? 'DOWN' : 'SAME', score: Number.isFinite(r.score) ? r.score : null });
+    // no previous snapshot (the first frozen day) -> no move at all, never a wall of NEW
+    const move = !prev?.ranks?.length ? null : p == null ? 'NEW' : r.rank < p ? 'UP' : r.rank > p ? 'DOWN' : 'SAME';
+    by.set(r.symbol, { rank: r.rank, prev_rank: p, move, score: Number.isFinite(r.score) ? r.score : null });
   }
   const held = new Set(heldSymbols);
   return {
