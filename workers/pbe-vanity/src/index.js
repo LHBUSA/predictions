@@ -10,10 +10,11 @@
 export const CANONICAL = 'https://predictions.propbetedge.ai';
 export const HOSTS = Object.freeze({
   'crypto.propbetedge.ai': { path: '/crypto/', active: true },
-  // activated one by one, each after its canonical destination is live and verified (#66 phase 2)
-  'gold.propbetedge.ai': { path: '/commodities/gold/', active: false },
-  'silver.propbetedge.ai': { path: '/commodities/silver/', active: false },
-  'platinum.propbetedge.ai': { path: '/commodities/platinum/', active: false },
+  // activated one by one, each after its canonical destination is live and verified (#66 phase 2;
+  // gold/silver/platinum pages live via #75 52f84d7, verified 2026-10-10)
+  'gold.propbetedge.ai': { path: '/commodities/gold/', active: true },
+  'silver.propbetedge.ai': { path: '/commodities/silver/', active: true },
+  'platinum.propbetedge.ai': { path: '/commodities/platinum/', active: true },
   'futures.propbetedge.ai': { path: '/markets/futures/', active: false },
 });
 
@@ -22,6 +23,8 @@ export function targetFor(url, hosts = HOSTS) {
   if (!h || !h.active) return null;
   return `${CANONICAL}${h.path}${url.search}`;
 }
+// a newly activated host answers 307 (`proving: true`) until it is verified over HTTPS; then the flag is removed -> 308
+const proving = (url, hosts) => !!hosts[url.hostname.toLowerCase()]?.proving;
 
 const base = { 'x-robots-tag': 'noindex', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' };
 
@@ -32,7 +35,7 @@ export function handle(request, env = {}, hosts = HOSTS) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method not allowed', { status: 405, headers: { ...base, allow: 'GET, HEAD', 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
   }
-  const status = env.REDIRECT_STATUS === '307' ? 307 : 308;
+  const status = env.REDIRECT_STATUS === '307' || proving(url, hosts) ? 307 : 308;
   return new Response(null, { status, headers: { ...base, location: to, 'cache-control': status === 308 ? 'public, max-age=3600' : 'no-store' } });
 }
 

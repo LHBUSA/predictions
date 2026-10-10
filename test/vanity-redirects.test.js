@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { handle, HOSTS, CANONICAL } from '../workers/pbe-vanity/src/index.js';
 
 const req = (url, method = 'GET') => new Request(url, { method });
-const all = Object.fromEntries(Object.entries(HOSTS).map(([h, v]) => [h, { ...v, active: true }]));
+const all = Object.fromEntries(Object.entries(HOSTS).map(([h, v]) => [h, { ...v, active: true, proving: false }]));
 
 test('all five hosts map to their full canonical paths (when active)', () => {
   const want = {
@@ -36,7 +36,13 @@ test('crypto: permanent 308 by default, 307 while proving; query/UTM kept; any p
 });
 
 test('inactive and unknown hosts 404; the canonical host itself is never redirected (no loop)', () => {
-  for (const h of ['gold', 'silver', 'platinum', 'futures']) assert.equal(handle(req(`https://${h}.propbetedge.ai/`)).status, 404, h);
+  assert.equal(handle(req('https://futures.propbetedge.ai/')).status, 404, 'futures stays inactive (data rights)');
+  for (const m of ['gold', 'silver', 'platinum']) {
+    const r = handle(req(`https://${m}.propbetedge.ai/?utm_source=a`));
+    assert.equal(r.headers.get('location'), `https://predictions.propbetedge.ai/commodities/${m}/?utm_source=a`, m);
+    assert.equal(r.status, HOSTS[`${m}.propbetedge.ai`].proving ? 307 : 308, `${m} proves with 307, permanent 308 after`);
+  }
+  assert.equal(handle(req('https://crypto.propbetedge.ai/')).status, 308, 'verified crypto stays permanent while others prove');
   assert.equal(handle(req('https://predictions.propbetedge.ai/crypto/')).status, 404);
   assert.equal(handle(req('https://evil.example.com/')).status, 404);
   assert.equal(handle(req('https://propbetedge.ai/')).status, 404);

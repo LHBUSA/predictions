@@ -9,10 +9,13 @@
   "preview_urls": false,
   "observability": { "enabled": true },
   "routes": [
-    { "pattern": "crypto.propbetedge.ai", "custom_domain": true }
+    { "pattern": "crypto.propbetedge.ai", "custom_domain": true },
+    { "pattern": "gold.propbetedge.ai", "custom_domain": true },
+    { "pattern": "silver.propbetedge.ai", "custom_domain": true },
+    { "pattern": "platinum.propbetedge.ai", "custom_domain": true }
   ],
   "vars": {
-    // "308" permanent (crypto verified over HTTPS 2026-10-10); use "307" only while proving a newly added host
+    // "308" permanent for verified hosts; a newly activated host proves with 307 via `proving: true` in src/index.js HOSTS
     "REDIRECT_STATUS": "308"
   }
 }
