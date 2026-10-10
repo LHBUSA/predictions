@@ -6,6 +6,8 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
+  // explicit CPU headroom per invocation: the FAST cron runs the IEX HIST collector step (~5-8 s) alongside other lanes
+  "limits": { "cpu_ms": 60000 },
   // social cards: bundled Inter fonts + card background as binary Data modules (src/og.js)
   "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.jpg"], "fallthrough": true }],
   // Lanes dispatched by cron identity (src/engine-runs.js CRONS; test/engine-runs.test.js keeps these in sync):
@@ -65,10 +67,10 @@
     // iex-hist = IEX Historical Data (TOPS, T+1): exchange-originated, display permitted to public + paid with the IEX credit
     // line (contract.js rights record). Served from our own snapshot in pred_source_observations, never per request.
     "MARKET_TAPE_PROVIDER": "iex-hist",
-    // first-party collector (IEX HIST -> pred_source_observations). OFF: a full session is ~40 GB of decompressed pcapng
-    // (~410 s CPU measured in workerd), over one invocation's 300 s cap; the resumable multi-step collector replaces this.
-    // Sessions are loaded by the same parser code until then. Kill switch: anything but "true".
-    "IEX_HIST_COLLECTOR": "false"
+    // first-party collector (IEX HIST -> pred_source_observations): resumable steps (sql/017 checkpoints, ~768 MiB of
+    // decompressed pcapng per step, ~5-8 s CPU) every minute 03:30-13:29 UTC on the FAST cron; ~50 steps per session.
+    // Kill switch: anything but "true" (a running job simply pauses at its last checkpoint).
+    "IEX_HIST_COLLECTOR": "true"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
   // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),

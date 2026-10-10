@@ -114,9 +114,9 @@ test('T+1 states: weekend LAST_CLOSE, open/pre-market PRIOR_SESSION, one-older P
   assert.equal(sessionCloseFields(null, sat, P).state, 'SOURCE_UNAVAILABLE');
 });
 
-test('collector schedule: :07 in UTC 04-13 only; latest three completed sessions (holidays skipped)', () => {
+test('collector schedule: every minute 03:30-13:29 UTC; latest three completed sessions (holidays skipped)', () => {
   assert.equal(iexDue('2026-10-10T05:07:00Z'), true);
-  assert.equal(iexDue('2026-10-10T05:08:00Z'), false);
+  assert.equal(iexDue('2026-10-10T05:08:00Z'), true, 'resumable lane: every minute in the window');
   assert.equal(iexDue('2026-10-10T14:07:00Z'), false);
   assert.deepEqual(recentSessions('2026-10-10T05:07:00Z'), ['2026-10-09', '2026-10-08', '2026-10-07']);
   assert.deepEqual(recentSessions('2026-11-27T05:07:00Z'), ['2026-11-25', '2026-11-24', '2026-11-23'], 'Thanksgiving skipped');

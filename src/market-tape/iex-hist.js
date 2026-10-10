@@ -18,16 +18,25 @@ const F_EXT = 0x40, F_ODD = 0x20, F_CROSS = 0x08;
 const CROSS_GRACE_NS = 2e9; // a closing-cross print can be stamped just after the bell
 
 const enc = new TextEncoder();
+export function b64e(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+export function b64d(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
 const symKey = (s) => s.toUpperCase().padEnd(8, ' ');
 
 // symbols: iterable of tickers as IEX lists them (BRK.B style). returns { feed, finish, stats }
-export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs = null } = {}) {
+// state: optional exportState() output from an earlier step (resumable collection across Worker invocations).
+export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs = null, state = null } = {}) {
   const want = new Map(); // 8-byte key -> symbol
   for (const s of symbols) want.set(symKey(s), s.toUpperCase());
   const keys = [...want.keys()].map((k) => enc.encode(k));
-  const out = new Map(); // symbol -> aggregate
+  const out = new Map(); // symbol -> aggregate (plain JSON: safe to checkpoint)
   const stats = { blocks: 0, packets: 0, messages: 0, trades: 0, matched: 0, breaks: 0, bytes: 0 };
   let buf = new Uint8Array(0), le = true, started = false;
+  if (state) {
+    for (const a of state.aggs || []) out.set(a.symbol, a);
+    Object.assign(stats, state.stats || {});
+    le = state.le !== false; started = !!state.started;
+    if (state.buf) buf = b64d(state.buf);
+  }
 
   function matchSym(p, o) {
     // o = offset of the 8-byte symbol field
@@ -121,7 +130,8 @@ export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs
       }
       o += blen;
     }
-    buf = buf.subarray(o);
+    // COPY the unfinished block: `chunk` may be a view into a reused decoder buffer that is overwritten after we return
+    buf = o < buf.length ? buf.slice(o) : new Uint8Array(0);
   }
 
   function finish() {
@@ -132,7 +142,9 @@ export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs
       first_trade_at: nsIso(a.first?.ts_ns), last_trade_at: nsIso(a.last?.ts_ns), high: a.high, low: a.low,
     }));
   }
-  return { feed, finish, stats };
+  // everything needed to continue in a later invocation: aggregates, stats, byte order, and the partial pcapng block
+  function exportState() { return { v: 1, aggs: [...out.values()], stats: { ...stats }, le, started, buf: buf.length ? b64e(buf) : null }; }
+  return { feed, finish, stats, exportState };
 }
 
 // The HIST index for one date -> the TOPS file entry ({ link, size, version }) or null.
