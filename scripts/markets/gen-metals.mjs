@@ -6,9 +6,9 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { siteHeader, siteFooter } from '../../workers/pbe-predictions/src/network.js';
 
-const V = '20261010mt2';
+const V = '20261010mt4';
 const SITE_V = '20261010nav1';
-const S10_V = '20261010w2';
+const S10_V = '20261010cr1';
 const BASE = 'https://predictions.propbetedge.ai';
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
@@ -66,7 +66,7 @@ ${siteHeader(metal ? null : 'metals', { live: false })}
   <div class="s10-kicker"><span>Commodities</span><span aria-hidden="true">·</span><span>${esc(kicker)}</span><span class="s10-rule" aria-hidden="true"></span><span>Research</span></div>
   <h1 class="s10-h1">${h1}</h1>
   <p class="s10-dek">${esc(dek)}</p>
-  <p class="s10-disclosure" role="note"><b>RESEARCH</b><span>Education and research, not investment advice. An ETF share price is not a spot metal price.</span></p>
+  <p class="s10-disclosure" role="note"><b>RESEARCH</b><span>Education and research, not investment advice. Spot prices are indicative references (not the LBMA benchmark); an ETF share price is not a metal price per ounce.</span></p>
   ${siblings}
 </div></section>
 <div class="wrap s10-body">
@@ -89,16 +89,16 @@ ${siteFooter()}
 const out = [];
 out.push(['markets/metals/index.html', page({ path: '/markets/metals/', metal: null,
   title: 'Gold, Silver & Platinum Tracker | PropBetEdge Predictions',
-  desc: 'Gold (XAU), silver (XAG) and platinum (XPT) research tracker: spot price source rights, the GLD, SLV and PPLT exchange-traded trusts with next-day IEX prices, and how precious metals differ from stocks.',
+  desc: 'Gold, silver and platinum indicative spot prices (USD per troy ounce), the GLD, SLV and PPLT exchange-traded trusts with next-day IEX share prices, and how precious metals differ from stocks.',
   kicker: 'Precious metals', h1: 'Gold, Silver &amp; Platinum',
-  dek: 'The three precious metals in U.S. dollars per troy ounce, the exchange-traded trusts that hold them, and exactly which prices we are allowed to show you. No price appears here without a source that permits it.',
+  dek: 'Gold, silver and platinum in U.S. dollars per troy ounce: indicative spot reference prices, the exchange-traded trusts that hold the physical metal as a separate product, and what moves each one.',
   learnTitle: 'How precious metals differ from stocks', learn: LEARN_ALL })]);
 for (const [key, m] of Object.entries(METALS)) {
   out.push([`commodities/${m.slug}/index.html`, page({ path: `/commodities/${m.slug}/`, metal: key,
-    title: `${m.name} (${m.code}/USD) Tracker — Spot Rights & ${m.etf} | PropBetEdge Predictions`,
-    desc: `${m.name} (${m.code}/USD, per troy ounce) research tracker: spot price source rights, the ${m.etf} exchange-traded trust with next-day IEX prices, and what moves ${m.name.toLowerCase()}.`,
+    title: `${m.name} Price (${m.code}/USD) — Spot & ${m.etf} | PropBetEdge Predictions`,
+    desc: `${m.name} indicative spot price (USD per troy ounce), the ${m.etf} exchange-traded trust with next-day IEX share prices, and what moves ${m.name.toLowerCase()}.`,
     kicker: m.name, h1: m.name,
-    dek: `${m.name} in U.S. dollars per troy ounce, the ${m.etf} exchange-traded trust that holds it, and exactly which prices we are allowed to show you. No price appears here without a source that permits it.`,
+    dek: `${m.name} in U.S. dollars per troy ounce: the indicative spot reference price, the ${m.etf} exchange-traded trust that holds the physical metal as a separate product, and what moves ${m.name.toLowerCase()}.`,
     learnTitle: `Understanding ${m.name.toLowerCase()}`, learn: m.learn })]);
 }
 for (const [file, html] of out) {

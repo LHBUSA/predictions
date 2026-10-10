@@ -60,13 +60,15 @@ test('public Arena proof: hashes and status only — no NAV, holdings, ranks or 
   assert.match(body.disclosure, /HYPOTHETICAL/);
 });
 
-test('public metals: spot is SOURCE_RIGHTS_HOLD with null values; ETFs await an observation; no member sleeve', async () => {
+test('public metals: no stored spot observation = PRICE UNAVAILABLE (never invented); ETFs await an observation; no member sleeve', async () => {
   const r = await call('/v1/metals', null, auth(verdict('all_access')), '[]');
   assert.equal(r.r.status, 200); assert.match(r.r.headers.get('cache-control'), /public/);
   const b = JSON.parse(r.body);
   assert.equal(b.contract, 'metals/1');
   assert.deepEqual(b.spot.map((x) => x.code), ['XAU', 'XAG', 'XPT']);
-  for (const x of b.spot) { assert.equal(x.quote.state, 'SOURCE_RIGHTS_HOLD'); assert.equal(x.quote.value, null); assert.equal(x.unit, 'USD per troy ounce'); }
+  // no stored spot observation yet: every spot card awaits its first collection, value null (never invented)
+  for (const x of b.spot) { assert.equal(x.quote.state, 'UNAVAILABLE'); assert.equal(x.quote.value, null); assert.equal(x.unit, 'USD per troy ounce'); }
+  assert.doesNotMatch(JSON.stringify(b.spot), /SOURCE_RIGHTS_HOLD|RIGHTS HOLD|futures/i);
   for (const x of b.etfs) { assert.equal(x.quote.state, 'AWAITING_FIRST_OBSERVATION'); assert.equal(x.quote.value, null); }
   assert.equal(b.diversified_sleeve, undefined);
 });
@@ -81,9 +83,9 @@ test('metals: ETF prices only from the rights-cleared IEX snapshot (T+1, labelle
   assert.equal(gld.quote.value, 250); assert.equal(gld.quote.state, 'NEXT_DAY'); assert.match(gld.quote.basis, /not spot/); assert.match(gld.quote.delay, /T\+1/);
   assert.ok(Math.abs(gld.quote.change_pct - (250 / 245 - 1)) < 1e-12);
   assert.ok(on.attribution);
-  assert.equal(on.spot[0].quote.value, null, 'an ETF price never becomes a spot price');
+  assert.ok(on.spot.every((p) => p.quote.value === null), 'an ETF price never becomes a spot price');
   const off = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'off', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true, now });
-  assert.ok(off.etfs.every((x) => x.quote.value === null && x.quote.state === 'SOURCE_RIGHTS_HOLD'));
+  assert.ok(off.etfs.every((x) => x.quote.value === null && x.quote.state === 'PRICE_UNAVAILABLE'));
   const yahoo = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'yahoo-chart' }, store, member: true, now });
   assert.ok(yahoo.etfs.every((x) => x.quote.value === null), 'a provider without rights never shows a price, even to members');
   assert.ok('diversified_sleeve' in yahoo);
@@ -146,3 +148,4 @@ test('admin arena run: admin token required; kill switch off = no run', async ()
   const r2 = await worker.fetch(new Request('https://x/admin/signal10/arena/run?kind=EOD', { method: 'POST', headers: { authorization: 'Bearer secret' } }), env, { waitUntil() {} });
   assert.deepEqual(await r2.json(), { skipped: 'kill_switch_off' });
 });
+

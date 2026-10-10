@@ -15,22 +15,26 @@
   const ONLY = document.body.dataset.metal || null;
   const PAGE = { GOLD: '/commodities/gold/', SILVER: '/commodities/silver/', PLATINUM: '/commodities/platinum/' };
 
-  function spotCard(x, hold) {
+  // Indicative SPOT reference (Gold-API.com), read from our stored observations. Distinct from the ETF share prices below.
+  const etTime = (iso) => { try { return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)) + ' ET'; } catch { return iso; } };
+  function spotCard(x, attr) {
+    const q = x.quote; const has = Number.isFinite(q.value);
+    const dim = q.state === 'STALE' || q.state === 'MARKET_CLOSED';
     return `<article class="mt-card mt-${METAL[x.metal]}" aria-labelledby="mt-${x.code}-h">
-<header><span class="mt-orb" aria-hidden="true">${esc(x.code)}</span><div><h3 id="mt-${x.code}-h">${esc(x.label)}</h3><span class="mt-sym">${esc(x.code)}/USD · spot · ${esc(x.unit)}</span></div></header>
-<p class="mt-hold" role="status"><b>${esc(x.quote.label || 'QUOTE UNAVAILABLE')}</b></p>
-<p class="mt-note">${esc(hold.note)}</p>
-<dl class="mt-kv"><dt>Last legitimate observation</dt><dd>none on file</dd><dt>Instrument id</dt><dd><code>${esc(x.id)}</code></dd></dl>
+<header><span class="mt-orb" aria-hidden="true">${esc(x.code)}</span><div><h3 id="mt-${x.code}-h">${esc(x.label)}</h3><span class="mt-sym">${esc(x.code)}/USD · indicative spot · ${esc(x.unit)}</span></div></header>
+<p class="mt-price${dim ? ' mt-dimmed' : ''}">${has ? `<b class="num">${usd(q.value)}</b>${Number.isFinite(q.change_24h) ? `<span class="num ${q.change_24h > 0 ? 'pos' : q.change_24h < 0 ? 'neg' : ''}">${pct(q.change_24h)} vs 24h ago</span>` : ''}` : '<b class="mt-dim">—</b>'}</p>
+<p class="mt-state">${esc(q.label)}${has && q.captured_at ? ` · captured ${esc(etTime(q.captured_at))}` : ''}</p>
+${has ? `<p class="mt-note">Source: <a href="${esc(attr?.url || q.source_url)}" target="_blank" rel="noopener">${esc(attr?.name || q.source)}</a> (indicative reference, not the LBMA benchmark).${q.provider_updated_at ? ` Provider update ${esc(etTime(q.provider_updated_at))}.` : ''}</p>` : '<p class="mt-note">No current indicative price is available.</p>'}
 ${ONLY ? '' : `<a class="mt-more" href="${PAGE[x.metal]}">${esc(x.label)} page <span aria-hidden="true">→</span></a>`}</article>`;
   }
   function etfCard(e, attribution) {
     const q = e.quote; const has = Number.isFinite(q.value);
-    const state = q.state === 'NEXT_DAY' ? `IEX NEXT-DAY · ${esc(day(q.session_date))} session` : q.state === 'AWAITING_FIRST_OBSERVATION' ? 'AWAITING FIRST IEX OBSERVATION' : 'PRICE WITHHELD · SOURCE RIGHTS HOLD';
+    const state = q.state === 'NEXT_DAY' ? `IEX NEXT-DAY · ${esc(day(q.session_date))} session` : q.state === 'STALE' ? `STALE · LAST IEX SESSION ${esc(day(q.session_date))}` : q.state === 'AWAITING_FIRST_OBSERVATION' ? 'AWAITING FIRST IEX OBSERVATION' : 'PRICE UNAVAILABLE';
     return `<article class="mt-card mt-etf mt-${METAL[e.metal]}" aria-labelledby="mt-${e.symbol}-h">
 <header><span class="mt-orb" aria-hidden="true">${esc(e.symbol)}</span><div><h3 id="mt-${e.symbol}-h">${esc(e.symbol)} · ${esc(e.label)}</h3><span class="mt-sym">Exchange-traded trust · ${esc(e.exchange)} · not spot metal</span></div></header>
 <p class="mt-price">${has ? `<b class="num">${usd(q.value)}</b><span class="num ${q.change_pct > 0 ? 'pos' : q.change_pct < 0 ? 'neg' : ''}">${pct(q.change_pct)}${q.previous ? ` vs ${esc(day(q.previous.session_date))}` : ''}</span>` : '<b class="mt-dim">—</b>'}</p>
 <p class="mt-state">${state}</p>
-${has ? `<p class="mt-note">Last sale on the IEX exchange for that session (IEX venue only, published the next morning). Per share of the trust, in USD.${attribution ? ` <a href="${esc(attribution.url || 'https://www.iex.io/products/market-data-connectivity/hist-terms')}" target="_blank" rel="noopener">Data: IEX</a>` : ''}</p>` : ''}
+${has ? `<p class="mt-note">Last sale on the IEX exchange for that session (IEX venue only, published the next morning). Per share of the trust, in USD.${attribution ? ` <a href="${esc(attribution.url || 'https://www.iex.io/products/market-data-connectivity/hist-terms')}" target="_blank" rel="noopener">Prices: IEX Historical Data</a>` : ''}</p>` : ''}
 <dl class="mt-kv"><dt>Legal name</dt><dd>${esc(e.legal_name)}</dd><dt>Sponsor</dt><dd>${esc(e.sponsor)}</dd><dt>Structure</dt><dd>${esc(e.structure)}</dd>
 <dt>Expense ratio</dt><dd class="num">${(e.expense_ratio * 100).toFixed(2)}%</dd><dt>NAV basis</dt><dd>${esc(e.nav_basis)}</dd><dt>Listed</dt><dd>${esc(day(e.listed_on))}</dd>
 <dt>SEC CIK</dt><dd><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&amp;CIK=${esc(e.sec_cik)}" target="_blank" rel="noopener">${esc(e.sec_cik)}</a></dd>${e.cusip ? `<dt>CUSIP</dt><dd><code>${esc(e.cusip)}</code></dd>` : ''}${e.splits?.length ? `<dt>Splits</dt><dd>${e.splits.map((s) => `${s.ratio}-for-1 on ${esc(day(s.d))}`).join(', ')}</dd>` : ''}</dl></article>`;
@@ -52,12 +56,13 @@ ${rows ? `<div class="tbl-wrap"><table class="s10-tbl"><thead><tr><th scope="col
     if (!d) { box.innerHTML = '<p class="s10-statusline" role="status"><b>DATA UNAVAILABLE</b> The metals record could not be loaded. Retrying in 60 s.</p>'; setTimeout(load, 60000); return; }
     box.dataset.state = 'ready';
     for (const e of d.etfs) ETF_METAL[e.symbol] = e.metal;
-    const spot = d.spot.filter((x) => !ONLY || x.metal === ONLY);
+    const spot = (d.spot || []).filter((x) => !ONLY || x.metal === ONLY);
     const etfs = d.etfs.filter((e) => !ONLY || e.metal === ONLY);
     const one = ONLY ? spot[0]?.label?.toLowerCase() : null;
-    box.innerHTML = `<section class="mt-sec" aria-labelledby="mt-spot-h"><h2 id="mt-spot-h" class="s10-h2">${one ? `Spot ${esc(one)}` : 'Spot metal'} · USD per troy ounce</h2>
-<div class="mt-grid${ONLY ? ' mt-one' : ''}">${spot.map((x) => spotCard(x, d.rights.spot)).join('')}</div></section>
-<section class="mt-sec" aria-labelledby="mt-etf-h"><h2 id="mt-etf-h" class="s10-h2">${ONLY ? 'Listed ETF proxy' : 'Listed ETF proxies'}</h2>
+    box.innerHTML = `<section class="mt-sec" aria-labelledby="mt-spot-h"><h2 id="mt-spot-h" class="s10-h2">${one ? `${esc(spot[0].label)} spot` : 'Spot prices'} · indicative · USD per troy ounce</h2>
+<p class="s10-sub">${esc(d.spot_note || '')}</p>
+<div class="mt-grid${ONLY ? ' mt-one' : ''}">${spot.map((x) => spotCard(x, d.spot_attribution)).join('')}</div></section>
+<section class="mt-sec" aria-labelledby="mt-etf-h"><h2 id="mt-etf-h" class="s10-h2">${ONLY ? 'ETF share price' : 'ETF share prices'} · a separate product</h2>
 <p class="s10-sub">Shares of trusts that hold physical metal. Their prices follow the metal less fees and tracking differences, trade only during U.S. equity sessions, and are never a spot price.</p>
 <div class="mt-grid${ONLY ? ' mt-one' : ''}">${etfs.map((e) => etfCard(e, d.attribution)).join('')}</div></section>
 ${sleeve(d.diversified_sleeve)}

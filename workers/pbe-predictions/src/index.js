@@ -31,6 +31,7 @@ import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { handleSignal10, signal10Tick } from './signal10-api.js';
 import { handleMarketTape } from './market-tape-api.js';
 import { handleArena } from './arena-api.js';
+import { collectSpot, spotDue } from '../../../src/market-tape/goldapi.js';
 import { arenaTick } from '../../../src/signal10/arena/forward.js';
 import { iexHistStep, iexDue } from './iex-hist-lane.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
@@ -115,6 +116,10 @@ export default {
       // tables + chains from the control. Kill switch SIGNAL10_ARENA (independent of SIGNAL10); cohort start SIGNAL10_ARENA_T0.
       if (env.SIGNAL10_ARENA === 'true') ctx.waitUntil(arenaTick({ ...env, __store: storeFor(env) }, minuteAt)
         .then((r) => { if (Object.keys(r).length) console.log(JSON.stringify({ signal10_arena: r })); }).catch((e) => console.error('signal10 arena failed', e.stack || e.message)));
+      // Precious-metal indicative SPOT reference (Gold-API.com, #78): every 5 min (:02, :07, ...), 3 bounded provider calls,
+      // stored append-only in pred_source_observations; pages read the stored value. Kill switch METALS_SPOT_COLLECTOR.
+      if (env.METALS_SPOT_COLLECTOR === 'true' && spotDue(minuteAt)) ctx.waitUntil(collectSpot({ store: storeFor(env), nowIso: minuteAt })
+        .then((r) => console.log(JSON.stringify({ metals_spot: r }))).catch((e) => console.error('metals spot failed', e.stack || e.message)));
       // PBE Market Tape collector (issue #56, sql/017): IEX HIST T+1, one resumable step per minute overnight, own waitUntil.
       if (env.IEX_HIST_COLLECTOR === 'true' && iexDue(minuteAt)) ctx.waitUntil(iexHistStep({ store: storeFor(env), nowIso: minuteAt })
         .then((r) => console.log(JSON.stringify({ iex_hist: r }))).catch((e) => console.error('iex hist failed', e.stack || e.message)));

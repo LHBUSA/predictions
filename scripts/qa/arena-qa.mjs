@@ -31,6 +31,11 @@ for (const [k, d] of days.entries()) {
   await runArenaEod({ store, now: `${d}T20:35:00Z`, fetchImpl: fakeSource({ today: d, at: `${d}T20:00:00Z`, shock: B }), t0: T0, classification: CLS });
 }
 const ARENA = await arenaPayload(store); const PROOF = await arenaProof(store);
+// indicative spot reference: seed stored Gold-API observations (QA never calls the real source)
+for (const [code, px] of [['XAU', 4195.6], ['XAG', 60.949], ['XPT', 1695]]) for (const [age, f] of [[3, 1], [24 * 60, 0.99]]) {
+  const t = new Date(Date.now() - age * 60000).toISOString();
+  store.rows('pred_source_observations').push({ observation_key: `goldapi:${code}:${t.slice(0, 16)}`, provider: 'gold-api', source_id: `goldapi:${code}`, observed_at: t, captured_at: t, value: px * f, data: {} });
+}
 const METALS_PUBLIC = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: false });
 const METALS_MEMBER = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true });
 console.log('simulated:', ARENA.sample, ARENA.strategies.map((s) => `${s.key}:${s.holdings.length} holdings`).join(' '));

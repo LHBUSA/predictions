@@ -12,10 +12,11 @@ import { CHALLENGERS, ORIGINAL, TECH, DIVERSIFIED, ARENA_VERSION, DISCLOSURE } f
 import { T, restore, policyHash, runArenaEod, runArenaOpen } from '../../../src/signal10/arena/forward.js';
 import { indexSeries, seriesMetrics, turnover, SHARPE_MIN_OBS } from '../../../src/signal10/arena/metrics.js';
 import { SECTOR_LABEL, TAXONOMY_VERSION } from '../../../src/signal10/arena/taxonomy.js';
-import { METALS_CONTRACT, SPOT, METAL_ETFS, SPOT_HOLD, observation } from '../../../src/market-tape/metals.js';
+import { METALS_CONTRACT, SPOT, METAL_ETFS, observation } from '../../../src/market-tape/metals.js';
+import { GOLDAPI, latestRows, spotView } from '../../../src/market-tape/goldapi.js';
 import { rightsState, quoteProvider } from '../../../src/market-tape/contract.js';
 import { IEX_ATTRIBUTION } from '../../../src/market-tape/iex-hist.js';
-import { marketSession } from '../../../src/market-tape/core.js';
+import { marketSession, nyParts, prevTradingDay } from '../../../src/market-tape/core.js';
 import CLASSIFICATION from '../../../data/signal10/arena/classification.json' with { type: 'json' };
 
 export const THESIS = {
@@ -117,29 +118,50 @@ async function etfObservations(store) {
   return by;
 }
 
+// stored spot rows, cached per isolate for 60 s (the collector writes at most every 5 min)
+const SPOT_CACHE = { at: 0, rows: null };
+export function _spotCacheReset() { SPOT_CACHE.at = 0; SPOT_CACHE.rows = null; }
+async function cachedSpotRows(store, now) {
+  const t = Date.parse(now);
+  if (SPOT_CACHE.rows && t >= SPOT_CACHE.at && t - SPOT_CACHE.at < 60000) return SPOT_CACHE.rows;
+  const rows = await latestRows(store, now).catch(() => null);
+  if (rows) { SPOT_CACHE.rows = rows; SPOT_CACHE.at = t; }
+  return rows || {};
+}
+
 export async function metalsPayload({ env, store, member, now = new Date().toISOString() }) {
   const audience = member ? 'paid' : 'public';
   const rights = rightsState(env, audience);
   const provider = quoteProvider(env, audience);
   const obs = provider?.id === 'iex-hist' ? await etfObservations(store).catch(() => ({})) : {};
-  const spot = SPOT.map((x) => ({ ...x, quote: { ...observation({ instrument: x }), state: SPOT_HOLD.state, label: SPOT_HOLD.label } }));
+  // SPOT reference (Gold-API.com, indicative): read from our own stored observations — never fetched per visitor.
+  const spotOn = env?.METALS_SPOT_DISPLAY !== 'off';
+  const spotRows = spotOn ? await cachedSpotRows(store, now) : {};
+  const spot = SPOT.map((x) => ({ ...x, quote: { ...spotView(spotRows[x.code] || [], now, { on: spotOn }), source: GOLDAPI.name, source_url: GOLDAPI.url } }));
   const etfs = METAL_ETFS.map((e) => {
     const [cur, prev] = obs[e.symbol] || [];
     const o = observation({ instrument: e, value: cur ? Number(cur.value) : null, observed_at: cur?.observed_at ?? null, session_date: cur?.data?.session_date ?? null,
       source: cur ? 'IEX Historical Data (TOPS)' : null, rights: cur ? rights.scope : null, delay: cur ? 'T+1 (published the next morning)' : null, basis: cur ? 'IEX-venue last sale (not consolidated, not spot)' : null });
     const prevV = prev ? Number(prev.value) : null;
-    return { ...e, quote: { ...o, state: !provider ? 'SOURCE_RIGHTS_HOLD' : cur ? 'NEXT_DAY' : 'AWAITING_FIRST_OBSERVATION',
+    // T+1: the newest IEX file is the last completed session (published the next morning); one session of slack covers the
+    // overnight publication, anything older is STALE (#78 item 3) — still shown, clearly labelled, never as current
+    const oldestFresh = prevTradingDay(prevTradingDay(nyParts(Date.parse(now)).date));
+    const stale = cur && String(cur.data?.session_date || '') < oldestFresh;
+    return { ...e, quote: { ...o, state: !provider ? 'PRICE_UNAVAILABLE' : cur ? (stale ? 'STALE' : 'NEXT_DAY') : 'AWAITING_FIRST_OBSERVATION',
       previous: prev ? { value: prevV, session_date: prev.data?.session_date ?? null } : null,
       change_pct: o.value != null && prevV ? o.value / prevV - 1 : null } };
   });
-  const out = { contract: METALS_CONTRACT, generated_at: now, session: marketSession(now), audience: member ? 'member' : 'public', rights: { spot: SPOT_HOLD, etf: rights },
-    attribution: provider?.id === 'iex-hist' ? IEX_ATTRIBUTION : null, spot, etfs,
+  const out = { contract: METALS_CONTRACT, generated_at: now, session: marketSession(now), audience: member ? 'member' : 'public',
+    rights: { spot: { provider: GOLDAPI.id, note: GOLDAPI.rights_note, terms: GOLDAPI.terms, on: spotOn }, etf: rights },
+    attribution: provider?.id === 'iex-hist' ? IEX_ATTRIBUTION : null, spot_attribution: { name: GOLDAPI.name, url: GOLDAPI.url }, spot, etfs,
+    spot_note: 'Indicative spot reference prices in USD per troy ounce from Gold-API.com, collected every 5 minutes. Not the LBMA benchmark (fixing); the provider does not disclose its upstream sources. ETF share prices below are a separate product.',
     sources: [
       { source: 'LBMA Gold / Silver Price, LBMA Platinum Price (ICE Benchmark Administration)', internal: 'licence required', paid: 'licence required', public: 'licence required (delayed public display also licensed)', used: false },
       { source: 'IEX Historical Data (TOPS), GLD / SLV / PPLT', internal: 'permitted', paid: 'permitted with credit line', public: 'permitted with credit line', used: true, note: 'IEX-venue trades only, T+1; an ETF share price, never a spot price' },
       { source: 'FRED (St. Louis Fed)', internal: 'n/a', paid: 'n/a', public: 'n/a', used: false, note: 'LBMA gold/silver series removed 2022-01-31' },
-      { source: 'COMEX futures (CME Group)', internal: 'licence', paid: 'licence', public: 'fee-bearing website licence', used: false, note: 'futures are not spot' },
-      { source: 'Yahoo Finance chart endpoint', internal: 'terms restrict automated / commercial use', paid: 'no', public: 'no', used: false, note: 'never displayed' },
+      { source: 'CME Group (COMEX / NYMEX futures)', internal: 'licence', paid: 'licence', public: 'fee-bearing website licence', used: false, note: 'futures are not spot' },
+      { source: 'Gold-API.com (indicative spot reference)', internal: 'permitted', paid: 'permitted (Terms §9)', public: 'permitted (Terms §9)', used: true, note: 'commercial use permitted by the provider; upstream undisclosed; not the LBMA benchmark' },
+      { source: 'Yahoo Finance chart endpoint', internal: 'terms restrict automated / commercial use', paid: 'no', public: 'no', used: false, note: 'never displayed for metals' },
     ],
     disclosure: 'Research and education, not investment advice. ETF prices are not spot metal prices; an ETF carries fees and tracking differences.' };
   if (member) {

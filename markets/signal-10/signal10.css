@@ -351,3 +351,4 @@ html.s10[data-theme="dark"] .s10-tq.pin{border-color:#6b5520;background:linear-g
 @media (max-width:640px){
 }
 @media (prefers-reduced-motion:reduce){.s10-tape-moving .s10-tape-loop{animation:none}.s10-tape-moving .s10-tape-track{overflow-x:auto}.s10-tape-moving .s10-tape-rail[aria-hidden]{display:none}.s10-tape-dot{animation:none}.s10-tq.tick-up,.s10-tq.tick-dn{animation:none}.s10-tq{transition:none}}
+.s10-tape-credit{margin:4px 0 0;font-size:11px;line-height:1.3;color:var(--faint)}.s10-tape-credit a{color:var(--faint);text-decoration:underline;text-underline-offset:2px}

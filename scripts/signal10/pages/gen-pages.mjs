@@ -6,7 +6,7 @@ import { FEATURED, robinhoodUrl } from '../../../src/signal10/tape.js';
 import { siteHeader, siteFooter } from '../../../workers/pbe-predictions/src/network.js';
 
 const ROOT = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const V = '20261010w2';
+const V = '20261010cr1';
 // The ONE network shell (workers/pbe-predictions/src/network.js), current = Signal 10, wrapped in the same markers
 // the other static pages carry. No live chip: these pages do not load core.js, which keeps the engine chip honest.
 const header = `<!-- network:header -->
@@ -33,6 +33,7 @@ const TAPE = `<section class="s10-tape" id="s10-tape" data-state="loading" aria-
     <span class="s10-tg">Featured</span>
 ${FEATURED.map((f) => `    <a class="s10-tq${f.pinned ? ' pin' : ''}" data-sym="${f.symbol}" href="${robinhoodUrl(f.symbol)}" target="_blank" rel="noopener noreferrer external" title="${escA(`${f.symbol} · ${f.name}. Opens Robinhood’s ${f.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`)}"><span class="s10-tq-top"><b class="s10-tq-sym">${f.symbol}</b><span class="s10-tq-ch num flat"></span></span><span class="s10-tq-bot"><span class="s10-tq-px num">${escA(f.name)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span><span class="sr-only"> ${escA(f.name)}. View ${f.symbol} on Robinhood (opens in a new tab)</span></a>`).join(String.fromCharCode(10))}
   </div>
+  <p class="s10-tape-credit" data-tape-credit hidden></p>
 </div></section>`;
 const tabs = (cur) => `<nav class="s10-tabs" aria-label="Signal 10 sections">${TABS.map(([k, h, t]) => `<a href="${h}"${k === cur ? ' aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
 
