@@ -23,6 +23,8 @@ const ICON_PATHS = {
   insights: '<rect x="2.5" y="1.8" width="11" height="12.4" rx="1.5"/><path d="M5 5h6M5 7.8h6M5 10.6h3.6"/>',
   record: '<path d="M3 2.2h8.6a1.4 1.4 0 011.4 1.4v10.2H4.4A1.4 1.4 0 013 12.4z"/><path d="M3 11.2a1.4 1.4 0 011.4-1.4H13"/><path d="M5.6 5.6l1.4 1.4 2.8-2.8"/>',
   research: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4M7 5v4"/>',
+  // all markets: a 3x3 catalog grid
+  allmarkets: '<path d="M2.5 3h3v3h-3zM6.5 3h3v3h-3zM10.5 3h3v3h-3zM2.5 7h3v3h-3zM6.5 7h3v3h-3zM10.5 7h3v3h-3zM2.5 11h3v3h-3zM6.5 11h3v3h-3z"/><path d="M10.5 12.5h3"/>',
   // precious metals: two stacked ingots
   metals: '<path d="M2 13.2h5.4l-1-3.6H3z"/><path d="M8.6 13.2H14l-1-3.6H9.6z"/><path d="M5.3 8.4h5.4l-1-3.6H6.3z"/>',
 };

@@ -236,6 +236,7 @@ export function sitemapXml(entries, insights = []) {
     ...(insights.length ? [{ loc: `${SITE}/insights/`, changefreq: 'daily', priority: '0.9' }, ...[...new Set(insights.map((i) => i.vertical))].map((v) => ({ loc: `${SITE}/insights/${v}/`, changefreq: 'daily', priority: '0.6' })), ...insights.map((i) => ({ loc: `${SITE}/insights/${i.slug}`, lastmod: (i.modified || i.published_at).slice(0, 10), changefreq: 'weekly', priority: '0.8' }))] : []),
     { loc: `${SITE}/`, changefreq: 'hourly', priority: '1.0' },
     { loc: `${SITE}/desk/`, changefreq: 'hourly', priority: '0.9' },
+    { loc: `${SITE}/all-markets/`, changefreq: 'hourly', priority: '0.8' },
     { loc: `${SITE}/track-record/`, changefreq: 'daily', priority: '0.8' },
     { loc: `${SITE}/calendar/`, changefreq: 'hourly', priority: '0.7' },
     { loc: `${SITE}/models/`, changefreq: 'daily', priority: '0.6' },

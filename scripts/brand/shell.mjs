@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { siteHeader, siteFooter } from '../../workers/pbe-predictions/src/network.js';
 
-const KEYS = ['overview', 'about', 'metals', 'desk', 'record', 'calendar', 'models', 'methodology', 'crypto', 'markets', 'insights'];
+const KEYS = ['overview', 'allmarkets', 'about', 'metals', 'desk', 'record', 'calendar', 'models', 'methodology', 'crypto', 'markets', 'insights'];
 
 function rewrite(file, current) {
   let html = readFileSync(file, 'utf8');

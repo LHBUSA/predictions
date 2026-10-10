@@ -45,6 +45,11 @@
       "source": "/markets/metals",
       "destination": "/markets/metals/",
       "permanent": true
+    },
+    {
+      "source": "/all-markets",
+      "destination": "/all-markets/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -55,6 +60,14 @@
     {
       "source": "/go/kalshi-perps/config",
       "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi"
+    },
+    {
+      "source": "/api/market-catalog",
+      "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/market-catalog"
+    },
+    {
+      "source": "/api/market-catalog/health",
+      "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/market-catalog/health"
     },
     {
       "source": "/api/:path*",
