@@ -64,7 +64,7 @@ test('Track Record page: same-contract numbers, lane cards with ranges, no "Meas
   for (let i = 0; i < 30; i += 1) rows.push(sc(`z${i}`, 'PRECIP_ANY', '2026-10-04', 0.0, null));
   const { tr, lanes } = renderRecord(build(rows));
   assert.match(tr, /same contracts/); assert.match(tr, /market 0\.\d{3} on the same 12 contracts/); assert.match(tr, /on all 48/);
-  assert.doesNotMatch(tr, /Measurable/); assert.match(tr, /Not established/); assert.match(tr, /not evidence of an edge/);
+  assert.doesNotMatch(tr, /Measurable/); assert.match(tr, /None yet/); assert.match(tr, /not evidence of an edge/);
   assert.match(lanes, /Max temperature · pre-window/); assert.match(lanes, /Rain · any measurable/);
   assert.match(lanes, /6 days\/events/); assert.match(lanes, /Too few days for a verdict/); assert.match(lanes, /\[-?0\.\d{3}, -?0\.\d{3}\]/);
 });

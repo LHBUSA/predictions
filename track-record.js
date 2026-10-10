@@ -26,10 +26,10 @@ function scoring(t) {
   $('tr').innerHTML = `
     <div class="stat"><span>Resolved contracts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored (not wins)' : 'first settlements pending'}</small></div>
     ${pair(b, 'Brier')}${pair(l, 'Log loss')}
-    <div class="stat"><span>Evidence of an edge</span><strong>${ahead.length ? 'PBE ahead' : enough ? 'Not established' : 'Pending'}</strong><small>${[ahead.length ? `PBE ahead: ${esc(ahead.join(' · '))}` : '', behind.length ? `market ahead: ${esc(behind.join(' · '))}` : '', !ahead.length && enough ? 'enough to score · not evidence of an edge' : '', enough ? '' : `scores start at ${t.min_for_claims} resolved`].filter(Boolean).join(' · ')}</small></div>`;
+    <div class="stat"><span>Evidence of an edge</span><strong>${ahead.length ? 'PBE ahead' : enough ? 'None yet' : 'Pending'}</strong><small>${[ahead.length ? `PBE ahead: ${esc(ahead.join(' · '))}` : '', behind.length ? `market ahead: ${esc(behind.join(' · '))}` : '', !ahead.length && enough ? 'enough to score · not evidence of an edge' : '', enough ? '' : `scores start at ${t.min_for_claims} resolved`].filter(Boolean).join(' · ')}</small></div>`;
   const lanes = (t.lanes || []).filter((x) => x.brier?.paired);
   $('tr-lanes').innerHTML = lanes.map((x) => { const p = x.brier.paired;
-    return `<div class="stat"><span>${esc(x.label)}</span><strong class="num">PBE ${f3(p.pbe_mean)} · mkt ${f3(p.market_mean)}</strong><small>Brier on the same ${p.n} contracts · ${p.clusters} ${p.clusters === 1 ? 'day/event' : 'days/events'} · difference ${p.diff >= 0 ? '+' : ''}${f3(p.diff)} [${f3(p.ci95[0])}, ${f3(p.ci95[1])}] · ${esc(VERDICT[p.verdict] || p.verdict)}</small></div>`; }).join('')
+    return `<div class="stat"><span>${esc(x.label)}</span><strong class="num">PBE ${f3(p.pbe_mean)}</strong><small>market ${f3(p.market_mean)} · Brier on the same ${p.n} contracts · ${p.clusters} ${p.clusters === 1 ? 'day/event' : 'days/events'} · difference ${p.diff >= 0 ? '+' : ''}${f3(p.diff)} [${f3(p.ci95[0])}, ${f3(p.ci95[1])}] · ${esc(VERDICT[p.verdict] || p.verdict)}</small></div>`; }).join('')
     || '<p class="note">Lane scores appear once a lane has contracts with a same-time market price.</p>';
 }
 
