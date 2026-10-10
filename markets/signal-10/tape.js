@@ -44,6 +44,7 @@
     syncClone();
     const statusEl = root.querySelector('[data-tape-status]');
     const metaEl = root.querySelector('[data-tape-meta]');
+    const creditEl = root.querySelector('[data-tape-credit]');
     let timer = null, last = null, lastAt = 0, inflight = false;
 
     const STATUS = { LIVE_QUOTES: 'CURRENT' };
@@ -166,6 +167,13 @@
       if (statusEl.dataset.text !== nextTxt) { statusEl.dataset.text = nextTxt; statusEl.innerHTML = `${s.live ? '<i class="s10-tape-dot" aria-hidden="true"></i>' : ''}${esc(nextTxt)}`; }
       statusEl.className = `s10-tape-status ${s.cls}`;
       metaEl.innerHTML = metaHTML(d, rows);
+      // IEX's required attribution (IEX HIST terms §01), shown wherever IEX-derived prices are shown — as a quiet footnote
+      // under the tape (owner decision 2026-10-10), not in the status line
+      if (creditEl) {
+        const iex = d.quotes.shown && d.t1;
+        creditEl.hidden = !iex;
+        creditEl.innerHTML = iex ? `<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Prices: IEX Historical Data</a>` : '';
+      }
       metaEl.title = metaEl.textContent;
     }
     function metaHTML(d, rows) {
@@ -179,9 +187,6 @@
         else parts.push('<span>IEX next-day prices pending</span>');
         if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
         else if (d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
-        // compact source credit (IEX's required attribution text in the tooltip); no fine-print paragraph (owner)
-        // first in the line so the (ellipsized) meta row can never truncate it away
-        parts.unshift(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data: IEX</a>`);
       } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;

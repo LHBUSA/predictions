@@ -60,14 +60,14 @@ test('public Arena proof: hashes and status only — no NAV, holdings, ranks or 
   assert.match(body.disclosure, /HYPOTHETICAL/);
 });
 
-test('public metals: indicative spot reference awaits its first stored observation (never invented); ETFs await an observation; no member sleeve', async () => {
+test('public metals: no stored spot observation = PRICE UNAVAILABLE (never invented); ETFs await an observation; no member sleeve', async () => {
   const r = await call('/v1/metals', null, auth(verdict('all_access')), '[]');
   assert.equal(r.r.status, 200); assert.match(r.r.headers.get('cache-control'), /public/);
   const b = JSON.parse(r.body);
   assert.equal(b.contract, 'metals/1');
   assert.deepEqual(b.spot.map((x) => x.code), ['XAU', 'XAG', 'XPT']);
   // no stored spot observation yet: every spot card awaits its first collection, value null (never invented)
-  for (const x of b.spot) { assert.equal(x.quote.state, 'AWAITING_FIRST_OBSERVATION'); assert.equal(x.quote.value, null); assert.equal(x.unit, 'USD per troy ounce'); }
+  for (const x of b.spot) { assert.equal(x.quote.state, 'UNAVAILABLE'); assert.equal(x.quote.value, null); assert.equal(x.unit, 'USD per troy ounce'); }
   assert.doesNotMatch(JSON.stringify(b.spot), /SOURCE_RIGHTS_HOLD|RIGHTS HOLD|futures/i);
   for (const x of b.etfs) { assert.equal(x.quote.state, 'AWAITING_FIRST_OBSERVATION'); assert.equal(x.quote.value, null); }
   assert.equal(b.diversified_sleeve, undefined);
@@ -85,7 +85,7 @@ test('metals: ETF prices only from the rights-cleared IEX snapshot (T+1, labelle
   assert.ok(on.attribution);
   assert.ok(on.spot.every((p) => p.quote.value === null), 'an ETF price never becomes a spot price');
   const off = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'off', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true, now });
-  assert.ok(off.etfs.every((x) => x.quote.value === null && x.quote.state === 'SOURCE_RIGHTS_HOLD'));
+  assert.ok(off.etfs.every((x) => x.quote.value === null && x.quote.state === 'PRICE_UNAVAILABLE'));
   const yahoo = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'yahoo-chart' }, store, member: true, now });
   assert.ok(yahoo.etfs.every((x) => x.quote.value === null), 'a provider without rights never shows a price, even to members');
   assert.ok('diversified_sleeve' in yahoo);

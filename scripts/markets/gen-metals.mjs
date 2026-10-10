@@ -8,7 +8,7 @@ import { siteHeader, siteFooter } from '../../workers/pbe-predictions/src/networ
 
 const V = '20261010mt4';
 const SITE_V = '20261010nav1';
-const S10_V = '20261010w2';
+const S10_V = '20261010cr1';
 const BASE = 'https://predictions.propbetedge.ai';
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 

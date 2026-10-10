@@ -16,7 +16,11 @@ export const GOLDAPI = Object.freeze({
   endpoint: (code) => `https://api.gold-api.com/price/${code}`,
 });
 export const COLLECT_EVERY_MIN = 5;
-export const HEARTBEAT_MIN = 60;      // write an unchanged price at most hourly (bounds weekend rows)
+export const HEARTBEAT_MIN = 10;      // an unchanged price is re-recorded every 10 min while open (< STALE_MIN, so a healthy
+                                      // feed never reads STALE); hourly while the spot market is closed (bounds weekend rows)
+export const HEARTBEAT_CLOSED_MIN = 60;
+export const CONFIRM_MIN = 15;        // a held >20% jump is accepted when a second reading within 15 min confirms it (±2%)
+export const FETCH_TIMEOUT_MS = 5000;
 export const MAX_JUMP = 0.20;         // a >20% move vs our last stored value is held, never stored
 export const STALE_MIN = 15;          // market open and no fresh capture for 15 min -> STALE
 export const UNAVAILABLE_H = 6;       // market open and nothing for 6 h -> no value shown
@@ -59,32 +63,59 @@ export function observationRow(inst, q, capturedIso) {
 // One bounded collection tick: 3 sequential provider calls, validation, sanity vs our last value, write on change or hourly.
 export async function collectSpot({ store, nowIso, fetchImpl = fetch }) {
   const out = {};
-  const last = await latestRows(store, nowIso, 2);
-  const rows = [];
+  const last = await latestPerCode(store, GOLDAPI.id);
+  const held = await latestPerCode(store, `${GOLDAPI.id}-held`);
+  const rows = []; const heldRows = [];
   for (const inst of SPOT) {
     let parsed;
     try {
-      const r = await fetchImpl(GOLDAPI.endpoint(inst.code), { headers: { accept: 'application/json', 'user-agent': 'PropBetEdge-Predictions/1.0 (+https://predictions.propbetedge.ai/markets/metals/)' } });
+      const r = await fetchImpl(GOLDAPI.endpoint(inst.code), { headers: { accept: 'application/json', 'user-agent': 'PropBetEdge-Predictions/1.0 (+https://predictions.propbetedge.ai/markets/metals/)' }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       parsed = r.ok ? parseGoldApi(inst, await r.json(), nowIso) : { ok: false, why: `http_${r.status}` };
     } catch (e) { parsed = { ok: false, why: `fetch:${String(e?.message || e).slice(0, 80)}` }; }
     if (!parsed.ok) { out[inst.code] = { skipped: parsed.why }; continue; }
-    const prev = last[inst.code]?.[0];
-    if (prev && Math.abs(parsed.quote.price / Number(prev.value) - 1) > MAX_JUMP) { out[inst.code] = { held: 'jump_over_20pct', price: parsed.quote.price, last: Number(prev.value) }; continue; }
+    const prev = last[inst.code];
+    if (prev && Math.abs(parsed.quote.price / Number(prev.value) - 1) > MAX_JUMP) {
+      // a big move is held (never displayed) until a second reading within CONFIRM_MIN agrees within 2%
+      const h = held[inst.code];
+      const confirmed = h && Date.parse(nowIso) - Date.parse(h.captured_at) <= CONFIRM_MIN * 60000 && Math.abs(parsed.quote.price / Number(h.value) - 1) <= 0.02;
+      if (!confirmed) { heldRows.push(heldRow(inst, parsed.quote, nowIso, Number(prev.value))); out[inst.code] = { held: 'jump_over_20pct', price: parsed.quote.price, last: Number(prev.value) }; continue; }
+    }
     const ageMin = prev ? (Date.parse(nowIso) - Date.parse(prev.captured_at)) / 60000 : Infinity;
-    if (prev && Number(prev.value) === parsed.quote.price && ageMin < HEARTBEAT_MIN) { out[inst.code] = { unchanged: true }; continue; }
+    const beat = spotMarketOpen(nowIso) ? HEARTBEAT_MIN : HEARTBEAT_CLOSED_MIN;
+    if (prev && Number(prev.value) === parsed.quote.price && ageMin < beat) { out[inst.code] = { unchanged: true }; continue; }
     rows.push(observationRow(inst, parsed.quote, nowIso)); out[inst.code] = { written: parsed.quote.price };
   }
-  if (rows.length) await store.write('pred_source_observations', rows, { conflictColumn: 'observation_key' });
+  if (rows.length || heldRows.length) await store.write('pred_source_observations', [...rows, ...heldRows], { conflictColumn: 'observation_key' });
   return out;
 }
 
-// Latest `n` stored rows per code within the last 48 h (newest first).
-export async function latestRows(store, nowIso, n = 1) {
-  const since = new Date(Date.parse(nowIso) - 48 * 3600000).toISOString();
-  const rows = await store.select('pred_source_observations', { select: 'source_id,observed_at,captured_at,value,data', provider: `eq.${GOLDAPI.id}`, captured_at: `gte.${since}` }, { order: 'captured_at.desc', limit: 2000 });
-  const by = {};
-  for (const r of rows) { const code = r.source_id.split(':')[1]; (by[code] ||= []).push(r); }
-  for (const k of Object.keys(by)) by[k] = by[k].slice(0, Math.max(n, by[k].length));
+// A held (unconfirmed) reading: stored for audit under its own provider id, never read by the display.
+function heldRow(inst, q, capturedIso, lastValue) {
+  const r = observationRow(inst, q, capturedIso);
+  return { ...r, observation_key: `goldapi-held:${inst.code}:${capturedIso.slice(0, 16)}`, provider: `${GOLDAPI.id}-held`, source_id: `goldapi-held:${inst.code}`,
+    data: { ...r.data, held: 'jump_over_20pct', last_stored_value: lastValue } };
+}
+
+// Newest row per code for a provider: one small select per code (the table is append-only and indexed by provider/source).
+async function latestPerCode(store, provider) {
+  const out = {};
+  for (const inst of SPOT) {
+    const [r] = await store.select('pred_source_observations', { select: 'captured_at,value', provider: `eq.${provider}`, source_id: `eq.${provider === GOLDAPI.id ? 'goldapi' : 'goldapi-held'}:${inst.code}` }, { order: 'captured_at.desc', limit: 1 });
+    if (r) out[inst.code] = r;
+  }
+  return out;
+}
+
+// For each code: [latest row, the latest row at or before now-24h] (each a one-row select; no jsonb columns).
+export async function latestRows(store, nowIso) {
+  const by = {}; const ref = new Date(Date.parse(nowIso) - 24 * 3600000).toISOString();
+  for (const inst of SPOT) {
+    const q = { select: 'captured_at,observed_at,value', provider: `eq.${GOLDAPI.id}`, source_id: `eq.goldapi:${inst.code}` };
+    const [cur] = await store.select('pred_source_observations', { ...q, captured_at: `lte.${nowIso}` }, { order: 'captured_at.desc', limit: 1 });
+    if (!cur) continue;
+    const [old] = await store.select('pred_source_observations', { ...q, captured_at: `lte.${ref}` }, { order: 'captured_at.desc', limit: 1 });
+    by[inst.code] = old ? [cur, old] : [cur];
+  }
   return by;
 }
 
@@ -92,7 +123,7 @@ export async function latestRows(store, nowIso, n = 1) {
 export function spotView(rows, nowIso, { on = true } = {}) {
   if (!on) return { state: 'OFF', value: null, label: 'PRICE UNAVAILABLE' };
   const cur = rows?.[0];
-  if (!cur) return { state: 'AWAITING_FIRST_OBSERVATION', value: null, label: 'AWAITING FIRST OBSERVATION' };
+  if (!cur) return { state: 'UNAVAILABLE', value: null, label: 'PRICE UNAVAILABLE' };
   const open = spotMarketOpen(nowIso);
   const ageMin = (Date.parse(nowIso) - Date.parse(cur.captured_at)) / 60000;
   if (open && ageMin > UNAVAILABLE_H * 60) return { state: 'UNAVAILABLE', value: null, label: 'PRICE UNAVAILABLE', last_captured_at: cur.captured_at };
@@ -102,7 +133,7 @@ export function spotView(rows, nowIso, { on = true } = {}) {
   return {
     state: !open ? 'MARKET_CLOSED' : ageMin > STALE_MIN ? 'STALE' : 'INDICATIVE',
     label: !open ? 'SPOT MARKET CLOSED · LAST INDICATIVE PRICE' : ageMin > STALE_MIN ? 'STALE · LAST INDICATIVE PRICE' : 'INDICATIVE SPOT REFERENCE',
-    value, captured_at: cur.captured_at, provider_updated_at: cur.observed_at,
+    value, captured_at: cur.captured_at, provider_updated_at: open ? cur.observed_at : null,
     change_24h: ref ? value / Number(ref.value) - 1 : null, ref_captured_at: ref?.captured_at ?? null,
   };
 }

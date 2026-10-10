@@ -16,7 +16,7 @@ import { METALS_CONTRACT, SPOT, METAL_ETFS, observation } from '../../../src/mar
 import { GOLDAPI, latestRows, spotView } from '../../../src/market-tape/goldapi.js';
 import { rightsState, quoteProvider } from '../../../src/market-tape/contract.js';
 import { IEX_ATTRIBUTION } from '../../../src/market-tape/iex-hist.js';
-import { marketSession } from '../../../src/market-tape/core.js';
+import { marketSession, nyParts, prevTradingDay } from '../../../src/market-tape/core.js';
 import CLASSIFICATION from '../../../data/signal10/arena/classification.json' with { type: 'json' };
 
 export const THESIS = {
@@ -118,6 +118,17 @@ async function etfObservations(store) {
   return by;
 }
 
+// stored spot rows, cached per isolate for 60 s (the collector writes at most every 5 min)
+const SPOT_CACHE = { at: 0, rows: null };
+export function _spotCacheReset() { SPOT_CACHE.at = 0; SPOT_CACHE.rows = null; }
+async function cachedSpotRows(store, now) {
+  const t = Date.parse(now);
+  if (SPOT_CACHE.rows && t >= SPOT_CACHE.at && t - SPOT_CACHE.at < 60000) return SPOT_CACHE.rows;
+  const rows = await latestRows(store, now).catch(() => null);
+  if (rows) { SPOT_CACHE.rows = rows; SPOT_CACHE.at = t; }
+  return rows || {};
+}
+
 export async function metalsPayload({ env, store, member, now = new Date().toISOString() }) {
   const audience = member ? 'paid' : 'public';
   const rights = rightsState(env, audience);
@@ -125,14 +136,18 @@ export async function metalsPayload({ env, store, member, now = new Date().toISO
   const obs = provider?.id === 'iex-hist' ? await etfObservations(store).catch(() => ({})) : {};
   // SPOT reference (Gold-API.com, indicative): read from our own stored observations — never fetched per visitor.
   const spotOn = env?.METALS_SPOT_DISPLAY !== 'off';
-  const spotRows = spotOn ? await latestRows(store, now).catch(() => ({})) : {};
+  const spotRows = spotOn ? await cachedSpotRows(store, now) : {};
   const spot = SPOT.map((x) => ({ ...x, quote: { ...spotView(spotRows[x.code] || [], now, { on: spotOn }), source: GOLDAPI.name, source_url: GOLDAPI.url } }));
   const etfs = METAL_ETFS.map((e) => {
     const [cur, prev] = obs[e.symbol] || [];
     const o = observation({ instrument: e, value: cur ? Number(cur.value) : null, observed_at: cur?.observed_at ?? null, session_date: cur?.data?.session_date ?? null,
       source: cur ? 'IEX Historical Data (TOPS)' : null, rights: cur ? rights.scope : null, delay: cur ? 'T+1 (published the next morning)' : null, basis: cur ? 'IEX-venue last sale (not consolidated, not spot)' : null });
     const prevV = prev ? Number(prev.value) : null;
-    return { ...e, quote: { ...o, state: !provider ? 'SOURCE_RIGHTS_HOLD' : cur ? 'NEXT_DAY' : 'AWAITING_FIRST_OBSERVATION',
+    // T+1: the newest IEX file is the last completed session (published the next morning); one session of slack covers the
+    // overnight publication, anything older is STALE (#78 item 3) — still shown, clearly labelled, never as current
+    const oldestFresh = prevTradingDay(prevTradingDay(nyParts(Date.parse(now)).date));
+    const stale = cur && String(cur.data?.session_date || '') < oldestFresh;
+    return { ...e, quote: { ...o, state: !provider ? 'PRICE_UNAVAILABLE' : cur ? (stale ? 'STALE' : 'NEXT_DAY') : 'AWAITING_FIRST_OBSERVATION',
       previous: prev ? { value: prevV, session_date: prev.data?.session_date ?? null } : null,
       change_pct: o.value != null && prevV ? o.value / prevV - 1 : null } };
   });
