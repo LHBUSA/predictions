@@ -109,7 +109,7 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
 - **Corporate actions:** splits (cash in lieu), dividends credited on the ex-date, a series that ends is liquidated at
   its last observed close (flagged ESTIMATE) — identical to the control.
 - **Schedule:** the existing one-minute cron (no new trigger). OPEN ≥ 09:45 ET; EOD from 16:31 ET on odd minutes (the
-  control's EOD runs on even minutes). Kill switch `SIGNAL10_ARENA`; cohort start `SIGNAL10_ARENA_T0`.
+  control's lane, `signal10Tick` in signal10-api.js, attempts its EOD on even minutes from 16:20 ET). Kill switch `SIGNAL10_ARENA`; cohort start `SIGNAL10_ARENA_T0`.
 
 ## 6. Fair head-to-head
 - **T0** = the first EOD on or after `SIGNAL10_ARENA_T0` whose gates pass **for both challengers**; both fund $10,000
@@ -124,8 +124,9 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
 ## 7. Known limitations (disclosed, not fixed by tuning)
 - **Price-source rights:** the daily-bar source is the one the control uses. Yahoo's terms restrict commercial use,
   automated collection and redistribution; the owner licensing decision recorded in docs/signal10/README.md §1 is still
-  owed and applies to all three accounts equally. Raw prices are never displayed by the Arena; members see derived
-  portfolio values only.
+  owed and applies to all three accounts equally. The Arena pages and the metals tracker show weights, returns and NAV,
+  never a source price; the member ledger API (like the control's) returns full ledger payloads, which include fill and
+  mark prices, so that anyone can recompute the chain — an owner rights decision covers both lanes.
 - **Taxonomy:** SIC is coarser and older than GICS; some technology-adjacent names fall outside (Amazon, data-center
   REITs) and some technology-coded names are unusual (e.g. First Solar SIC 3674). Rule-based, verifiable, disclosed.
 - **Survivorship:** forward-only records have no survivorship bias; the universe is the live index.
@@ -141,6 +142,10 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   - a missing regime series is not risk-off; rotation respects the $100 minimum and never sells a trimmed name twice;
   - the fill check reads the ledger's FILL rows; the kill switch is enforced inside the lane; OPEN needs a T0;
   - FUNDING records the classification snapshot hash and the metal-ETF registry hash.
+- 2026-10-10, re-verification of the fixes: a pending order whose symbol loses its series now simply expires (only held
+  positions can block a run); member metals and Arena payloads carry no source prices; admin reruns require an integer
+  ≥ 2 and an original claim older than 20 minutes; a zero-share split-adjusted trim expires; DERISK never fires on a day
+  the regime series is unavailable; benchmark events carry no account-local sequence number.
 
 ## 9. Activation record
 Filled at activation: T0, worker version, ledger FUNDING hashes, engine source hashes at T0.

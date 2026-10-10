@@ -337,7 +337,8 @@ test('review #1/#2: five sessions through a JSON store — chains verify, STATE 
     const fills = ev.filter((e) => e.type === 'FILL');
     assert.ok(fills.length > 0);
     for (const f of fills) { const o = orders.get(f.payload.orderSeq); assert.ok(o, `fill ${f.seq} links to an order`); assert.equal(o.payload.symbol, f.payload.symbol); assert.ok(o.d < f.d, 'order frozen before its fill'); }
-    assert.ok(ev.filter((e) => e.type === 'BENCHMARK_FILL').every((e) => Number.isInteger(e.payload.orderSeq)));
+    const bench = ev.filter((e) => e.type.startsWith('BENCHMARK_'));
+    assert.ok(bench.length > 0 && bench.every((e) => e.payload.orderSeq === undefined && e.payload.local_seq === undefined), 'benchmark events never reuse account-local numbers');
   }
 });
 
@@ -406,4 +407,33 @@ test('review #12: the metals sleeve really enters (risk-off for equities) and st
   st.cooldown.GLD = DIVERSIFIED.manager.cooldownSessions;
   for (let k = 0; k < DIVERSIFIED.manager.cooldownSessions; k++) decideDiversified(st, D0, { ranks: [] }, [], { regime: { riskOn: false }, prepared, m });
   assert.equal(st.cooldown.GLD, undefined);
+});
+
+// ---------------- 8. re-verification regressions (N1 / N2 / N4) ----------------
+test('re-review N1: a PENDING order whose symbol loses its series expires; the account keeps running', async () => {
+  const store = new FakeStore();
+  await runEod(store, D0); // funding day: orders queued for D1's open
+  const pend = restore((await events(store, TECH.account)).filter((e) => e.type === 'STATE').at(-1).payload).st.pending.filter((o) => o.side === 'BUY');
+  assert.ok(pend.length, 'fixture: Tech queued buys');
+  const sym = pend[0].symbol;
+  const r = await runEod(store, D1, { drop: new Set([sym]) }); // OPEN never ran: late open at EOD with the symbol missing
+  assert.equal(r.TECH.ok, true, JSON.stringify(r.TECH));
+  const ev = await events(store, TECH.account);
+  assert.ok(ev.some((e) => e.type === 'ORDER_EXPIRED' && e.payload.symbol === sym && e.d === D1));
+  assert.equal((await verifyChain(ev)).ok, true);
+});
+
+test('re-review N4: admin rerun needs an integer >= 2 and a dead original run', async () => {
+  const store = new FakeStore();
+  await runEod(store, D0);
+  assert.equal((await runArenaEod({ store, now: eodAt(D1), fetchImpl: src(D1), t0: D0, classification: FIX_CLS, rerun: 'x' })).skipped, 'bad_rerun');
+  assert.equal((await runArenaEod({ store, now: eodAt(D1), fetchImpl: src(D1), t0: D0, classification: FIX_CLS, rerun: '1' })).skipped, 'bad_rerun');
+  // the original claim exists but is fresh: a rerun must not race it
+  for (const S of CHALLENGERS) store.rows(T.runs).push({ run_key: `${S.account}:EOD:${D1}`, account: S.account, kind: 'EOD', d: D1, claimed_at: `${D1}T20:30:00Z` });
+  const fresh = await runArenaEod({ store, now: `${D1}T20:35:00Z`, fetchImpl: src(D1), t0: D0, classification: FIX_CLS, rerun: '2' });
+  assert.equal(fresh.TECH.skipped, 'original_run_may_be_live');
+  const later = await runArenaEod({ store, now: `${D1}T21:05:00Z`, fetchImpl: src(D1), t0: D0, classification: FIX_CLS, rerun: '2' });
+  assert.equal(later.TECH.ok, true, JSON.stringify(later.TECH));
+  assert.ok(store.rows(T.runs).some((x) => x.run_key === `${TECH.account}:EOD:${D1}#2`));
+  assert.equal((await verifyChain(await events(store, TECH.account))).ok, true);
 });

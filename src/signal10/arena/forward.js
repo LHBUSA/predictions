@@ -128,7 +128,7 @@ function openBoth(states, D, mkt, late) {
   const out = {};
   for (const [acct, { st, bench }] of Object.entries(states)) {
     const evs = openSession(st, D, mkt.prepared);
-    for (const [k, b] of Object.entries(bench)) { const n0 = b.events.length; openSession(b, D, mkt.prepared); for (const e of b.events.slice(n0)) evs.push({ ...e, type: `BENCHMARK_${e.type}`, d: D, benchmark: k }); b.events = []; }
+    for (const [k, b] of Object.entries(bench)) { const n0 = b.events.length; openSession(b, D, mkt.prepared); for (const { seq: _bs, orderSeq: _bo, ...e } of b.events.slice(n0)) evs.push({ ...e, type: `BENCHMARK_${e.type}`, d: D, benchmark: k }); b.events = []; }
     evs.push({ type: 'SESSION', d: D, fillSession: st.fillSessions, note: late ? 'fills booked at end of day from the session OPEN in the final daily bar (open run did not complete intraday)' : 'fills at the session OPEN as reported by the source' });
     out[acct] = evs;
   }
@@ -166,7 +166,12 @@ export async function runArenaOpen({ store, now, fetchImpl = fetch, workerVersio
 
 // EOD for both challengers from ONE market build. t0 = earliest date a challenger may be funded (SIGNAL10_ARENA_T0).
 export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion = null, t0, classification = CLASSIFICATION, rerun = null }) {
-  const keySuffix = rerun ? `#${Number.parseInt(rerun, 10)}` : '';
+  let keySuffix = '';
+  if (rerun != null && rerun !== '') {
+    const n = Number(rerun);
+    if (!Number.isInteger(n) || n < 2) return { skipped: 'bad_rerun', note: 'rerun must be an integer >= 2' };
+    keySuffix = `#${n}`;
+  }
   const D = nyClock(now).date;
   if (!t0 || D < t0) return { skipped: 'before_t0' };
   const cls = classificationFor(D, classification);
@@ -186,7 +191,7 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   if (sc.minutes < closeMinutes(D)) return { skipped: 'close_not_final' };
   const members = await currentMembers(fetchImpl);
   const U = universes(members.tickers, D, cls);
-  const held = Object.values(states).flatMap(({ st, bench }) => [st, ...Object.values(bench)].flatMap((a) => [...Object.keys(a.positions), ...a.pending.map((o) => o.symbol)]));
+  const held = Object.values(states).flatMap(({ st, bench }) => [st, ...Object.values(bench)].flatMap((a) => [...Object.keys(a.positions), ...a.pending.map((o) => o.symbol)])); // fetched; only positions can block
   const mkt = await buildMarket(['SPY', 'QQQ', ...U.div.map((u) => u.symbol).filter(Boolean), ...METAL_ETFS.map((x) => x.symbol), ...held], D, fetchImpl, '2y');
   if (!mkt.ok) return { skipped: mkt.reason };
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' };
@@ -198,7 +203,8 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   const blocked = {};
   for (const S of due) {
     const s0 = states[S.account]; if (!s0) continue;
-    const mine = [s0.st, ...Object.values(s0.bench)].flatMap((a) => [...Object.keys(a.positions), ...a.pending.map((o) => o.symbol)]);
+    // only HELD positions can block (re-review N1): a pending order whose symbol has no series expires at the open
+    const mine = [s0.st, ...Object.values(s0.bench)].flatMap((a) => Object.keys(a.positions));
     const missing = [...new Set(mine)].filter((x) => !mkt.prepared.has(x));
     if (!missing.length) continue;
     const [lastMark] = await store.select(T.marks, { account: `eq.${S.account}`, select: 'd,positions' }, { limit: 1, order: 'd.desc' });
@@ -223,6 +229,11 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   for (const S of due) {
     if (blocked[S.strategy]) { result[S.strategy] = { skipped: 'held_symbol_unavailable', missingHeld: blocked[S.strategy] }; continue; }
     if (coverage[S.strategy] < 0.9) { result[S.strategy] = { skipped: 'coverage_below_90pct', coverage: coverage[S.strategy] }; continue; }
+    if (keySuffix) { // a rerun never races a live run: the base claim must exist and be > 20 min old (beyond any invocation)
+      const [base] = await store.select(T.runs, { run_key: `eq.${S.account}:EOD:${D}`, select: 'claimed_at' }, { limit: 1 });
+      if (!base) { result[S.strategy] = { skipped: 'no_failed_run_to_rerun' }; continue; }
+      if (Date.parse(now) - Date.parse(base.claimed_at) < 20 * 60000) { result[S.strategy] = { skipped: 'original_run_may_be_live' }; continue; }
+    }
     if (!(await claim(store, `${S.account}:EOD:${D}${keySuffix}`, S.account, 'EOD', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
     const pSha = await policyHash(S);
     let st, bench;

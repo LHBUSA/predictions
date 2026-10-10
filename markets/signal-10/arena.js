@@ -76,7 +76,7 @@
         g += `<path class="ar-ln ${CLS[s.key]}" d="${d}"/>`;
       }
       const legend = series.map((s) => { const last = s.pts.filter((p) => Number.isFinite(p.indexed)).at(-1); return `<li><i class="ar-sw ${CLS[s.key]}" aria-hidden="true"></i>${esc(s.label)} <b class="num">${last ? esc(fmtUSD(Math.round(last.indexed * 100), { dp: 0 })) : '—'}</b></li>`; }).join('');
-      const table = `<table class="sr-only"><caption>Indexed value, $10,000 at T0</caption><thead><tr><th scope="col">Date</th>${series.map((s) => `<th scope="col">${esc(s.label)}</th>`).join('')}</tr></thead><tbody>${dates.map((d) => `<tr><th scope="row">${esc(d)}</th>${series.map((s) => { const p = s.pts.find((q) => q.d === d); return `<td>${p && Number.isFinite(p.indexed) ? esc(fmtUSD(Math.round(p.indexed * 100))) : 'not available'}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
+      const table = `<div class="sr-only"><table><caption>Indexed value, $10,000 at T0</caption><thead><tr><th scope="col">Date</th>${series.map((s) => `<th scope="col">${esc(s.label)}</th>`).join('')}</tr></thead><tbody>${dates.map((d) => `<tr><th scope="row">${esc(d)}</th>${series.map((s) => { const p = s.pts.find((q) => q.d === d); return `<td>${p && Number.isFinite(p.indexed) ? esc(fmtUSD(Math.round(p.indexed * 100))) : 'not available'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
       return `<figure class="ar-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Value of $10,000 since T0 for the three strategies and SPY/QQQ; the table below has every value">${g}</svg><figcaption><ul class="ar-legend">${legend}</ul><span>$10,000 at T0 · Original indexed for display only · gaps = NOT AVAILABLE marks</span></figcaption>${table}</figure>`;
     }
 

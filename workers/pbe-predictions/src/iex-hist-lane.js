@@ -10,6 +10,7 @@
 // Not a price feed for trading: IEX venue only (not the consolidated tape), next-day.
 import { createTopsParser, topsEntry, IEX_HIST_INDEX, IEX_ATTRIBUTION, IEX_TERMS_URL, b64e, b64d } from '../../../src/market-tape/iex-hist.js';
 import { createInflater, parseGzipHeader, GzipHeaderIncomplete } from '../../../src/market-tape/inflate.js';
+import { METAL_ETF_SYMBOLS } from '../../../src/market-tape/metals.js';
 import { FEATURED, nyParts, nyInstant, isTradingDay, closeMinutes, covered, prevTradingDay } from '../../../src/market-tape/core.js';
 import { restoreState, ACCOUNT } from '../../../src/signal10/forward.js';
 
@@ -44,7 +45,8 @@ export function observationRow(session, a, captured, file) {
 }
 
 export async function tapeUniverse(store) {
-  const syms = new Set(FEATURED.map((f) => f.symbol));
+  // + the precious-metal ETF proxies for the metals tracker (#63): IEX-venue next-day prices, display-permitted with credit
+  const syms = new Set([...FEATURED.map((f) => f.symbol), ...METAL_ETF_SYMBOLS]);
   try {
     const [snap] = await store.select('pred_s10_snapshots', { select: 'd,ranks', d: 'not.is.null' }, { limit: 1, order: 'd.desc' });
     for (const r of snap?.ranks || []) if (r.symbol) syms.add(r.symbol);

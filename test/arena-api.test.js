@@ -116,6 +116,13 @@ test('head-to-head: Original indexed to $10,000 at T0 (display only) beside its 
   assert.ok(div.holdings.every((h) => h.weight == null || h.weight <= 0.10 + 0.01), 'Diversified holdings near/below the 10% cap at the first mark');
   assert.equal(a.comparators.SPY[0].indexed, 10000);
   assert.equal(tech.metrics.sharpe, null, `no Sharpe before ${SHARPE_MIN_OBS} observations`);
+  // re-review N2/N3: member payloads never carry a source price or a share-count/value pair
+  const leak = JSON.stringify(a.strategies.map((s) => s.holdings));
+  assert.doesNotMatch(leak, /"qty"|"value_cents"|"cost_cents"|"close"|"price"/);
+  const mm = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true });
+  assert.ok(mm.diversified_sleeve.candidates.length === 3);
+  assert.doesNotMatch(JSON.stringify(mm.diversified_sleeve), /"adj"|"sma200"|"close"|"f":/);
+  assert.ok(mm.diversified_sleeve.candidates.every((c) => 'above_sma200' in c && 'verified' in c));
   const proof = await arenaProof(store);
   assert.equal(proof.t0, '2026-09-03');
   assert.ok(proof.strategies.every((s) => s.status === 'RUNNING' && /^[0-9a-f]{64}$/.test(s.ledger_head_hash)));

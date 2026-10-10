@@ -241,6 +241,7 @@ export function sitemapXml(entries, insights = []) {
     { loc: `${SITE}/models/`, changefreq: 'daily', priority: '0.6' },
     { loc: `${SITE}/methodology/`, changefreq: 'monthly', priority: '0.5' },
     { loc: `${SITE}/about/`, changefreq: 'monthly', priority: '0.6' },
+    { loc: `${SITE}/markets/metals/`, changefreq: 'daily', priority: '0.6' },
     ...entries.map((e) => ({ loc: `${SITE}/events/${e.slug}`, lastmod: (e.updated_at || '').slice(0, 10), changefreq: 'hourly', priority: '0.7' })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;

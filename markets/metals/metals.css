@@ -1,0 +1,28 @@
+/* Precious metals tracker (issue #63). Signal 10 warm tokens; metal identity = a restrained ring per metal, no motion. */
+html.s10:root{--mt-gold:#b8860b;--mt-gold-bg:#f6ecd0;--mt-silver:#6f7780;--mt-silver-bg:#eceef0;--mt-plat:#5f6f7a;--mt-plat-bg:#e6ebee}
+html.s10[data-theme="dark"]:root{--mt-gold:#e2c25a;--mt-gold-bg:#2a2312;--mt-silver:#c3c9cf;--mt-silver-bg:#24262a;--mt-plat:#a9b8c2;--mt-plat-bg:#1f2428}
+@media (prefers-color-scheme:dark){html.s10[data-theme="system"]:root{--mt-gold:#e2c25a;--mt-gold-bg:#2a2312;--mt-silver:#c3c9cf;--mt-silver-bg:#24262a;--mt-plat:#a9b8c2;--mt-plat-bg:#1f2428}}
+.mt-sec{margin:26px 0}
+.mt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mt-card{--c:var(--mt-gold);--cb:var(--mt-gold-bg);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.mt-silver{--c:var(--mt-silver);--cb:var(--mt-silver-bg)}.mt-platinum{--c:var(--mt-plat);--cb:var(--mt-plat-bg)}
+.mt-card header{display:flex;gap:12px;align-items:center}
+.mt-orb{flex:0 0 46px;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--cb);color:var(--c);border:2px solid var(--c);font:600 12px/1 var(--mono);letter-spacing:.02em}
+.mt-etf .mt-orb{border-radius:10px;font-size:11px}
+.mt-card h3{margin:0;font:600 18px/1.2 var(--serif);color:var(--ink)}
+.mt-sym{display:block;margin-top:3px;font:500 11.5px/1.3 var(--mono);color:var(--muted)}
+.mt-hold{margin:4px 0 0;padding:8px 10px;border-radius:8px;background:var(--mkt-bg);font:600 11.5px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-2)}
+.mt-price{margin:2px 0 0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.mt-price b{font:600 28px/1 var(--mono);color:var(--ink)}
+.mt-price span{font:500 13px/1 var(--mono)}.mt-price .pos{color:var(--pos)}.mt-price .neg{color:var(--neg)}
+.mt-dim{color:var(--faint)!important}
+.mt-state{margin:0;font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;color:var(--muted)}
+.mt-note{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mt-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;margin:6px 0 0;padding-top:10px;border-top:1px solid var(--line-2);font-size:12.5px}
+.mt-kv dt{color:var(--faint)}.mt-kv dd{margin:0;color:var(--ink-2);overflow-wrap:anywhere}
+.mt-learn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mt-learn article{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.mt-learn h3{margin:0 0 6px;font:600 16px/1.3 var(--serif)}
+.mt-learn p,.mt-learn li{font-size:14px;line-height:1.55;color:var(--ink-2)}
+.mt-learn ul{margin:6px 0 0;padding-left:18px}
+@media (max-width:980px){.mt-grid{grid-template-columns:1fr}.mt-learn{grid-template-columns:1fr}}

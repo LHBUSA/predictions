@@ -91,6 +91,8 @@ export function openSession(st, D, prepared) {
     if (o.full) o.qty = st.positions[o.symbol]?.qty ?? o.qty;
     else if (ratio !== 1 && o.qty != null) { const q = Math.floor(o.qty * ratio + 1e-9); emit(st, { type: 'ORDER_SPLIT_ADJUSTED', d: D, symbol: o.symbol, orderSeq: o.seq, qtyBefore: o.qty, qtyAfter: q, ratio }); o.qty = q; }
   }
+  for (const o of st.pending.filter((x) => x.side === 'SELL' && x.qty === 0)) emit(st, { type: 'ORDER_EXPIRED', d: D, symbol: o.symbol, side: 'SELL', reason: 'zero_shares_after_split_adjustment', orderSeq: o.seq });
+  st.pending = st.pending.filter((x) => !(x.side === 'SELL' && x.qty === 0));
   execute(st, D, prepared);
   for (const [sym, pos] of Object.entries(st.positions)) if (st.meta[sym]) Object.assign(pos, { sector: st.meta[sym].sector, kind: st.meta[sym].kind });
   for (const sym of Object.keys(st.meta)) if (!st.positions[sym]) delete st.meta[sym];
@@ -130,7 +132,7 @@ export function decideTech(st, D, snap, { regime, prepared, m }) {
     if (!r) why = 'NOT_RANKED: left the technology universe or failed eligibility';
     else if (r.rank > M.exitRank) why = `RANK_EXIT: rank ${r.rank} > ${M.exitRank}`;
     else if (p.adj[i] / pos.peakAdj - 1 <= M.trailingStop) { why = `TRAILING_STOP: ${((p.adj[i] / pos.peakAdj - 1) * 100).toFixed(1)}% from peak`; cool = true; }
-    else if (st.riskOffStreak >= M.deriskAfterRiskOffCloses && s200 != null && p.adj[i] < s200) { why = `DERISK: QQQ below its 200-day average for ${st.riskOffStreak} closes and the holding is below its own 200-day average`; cool = true; }
+    else if (!regime.reason && st.riskOffStreak >= M.deriskAfterRiskOffCloses && s200 != null && p.adj[i] < s200) { why = `DERISK: QQQ below its 200-day average for ${st.riskOffStreak} closes and the holding is below its own 200-day average`; cool = true; }
     if (why) {
       exiting.add(sym); if (cool) st.cooldown[sym] = M.cooldownSessions;
       order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: pos.qty, full: true, reason: why, rank: r?.rank ?? null, score: r?.score ?? null });

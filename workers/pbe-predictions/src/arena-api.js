@@ -34,6 +34,10 @@ const sectorOfTicker = (sym) => { const r = CLASSIFICATION.rows[sym] || CLASSIFI
 const slimEvent = (e) => { const p = e.payload || {}; return { seq: e.seq, type: e.type, d: e.d, action: p.action || (e.type === 'ORDER' ? p.side : null), symbol: p.symbol ?? null, qty: p.qty ?? null, targetCents: p.targetCents ?? null, reason: p.reason ?? null, rank: p.rank ?? null, score: p.score ?? null }; };
 
 async function challengerHead(store, account) {
+  try { return await challengerHeadRaw(store, account); } catch { return { state: null, seq: 0, head: null, headAt: null, funding: null, unavailable: true }; }
+}
+// before sql/018 is applied (or if the table read fails) the challengers read as not started — never an error page
+async function challengerHeadRaw(store, account) {
   const [state] = await store.select(T.events, { account: `eq.${account}`, type: 'eq.STATE', select: 'seq,d,payload,hash' }, { limit: 1, order: 'seq.desc' });
   const [last] = await store.select(T.events, { account: `eq.${account}`, select: 'seq,hash,inserted_at' }, { limit: 1, order: 'seq.desc' });
   const [fund] = await store.select(T.events, { account: `eq.${account}`, type: 'eq.FUNDING', select: 'd,hash,inserted_at,policy_sha256' }, { limit: 1, order: 'seq.asc' });
@@ -62,10 +66,11 @@ function holdingsFrom(positions, navCents, stPositions, sectorFn) {
   return (positions || []).map((x) => {
     const pos = stPositions?.[x.symbol] || {};
     const value = x.valueCents ?? null;
-    return { symbol: x.symbol, name: pos.name || null, sector: pos.kind === 'METAL_ETF' ? 'PRECIOUS_METALS' : (pos.sector || sectorFn(x.symbol)), kind: pos.kind || 'EQUITY', qty: x.qty,
-      weight: navCents && value != null ? value / navCents : null, cost_cents: x.costCents ?? pos.costCents ?? null, value_cents: value,
+    // weights and returns only (re-review N3): no share count + value pair from which a source price could be recovered
+    return { symbol: x.symbol, name: pos.name || null, sector: pos.kind === 'METAL_ETF' ? 'PRECIOUS_METALS' : (pos.sector || sectorFn(x.symbol)), kind: pos.kind || 'EQUITY',
+      weight: navCents && value != null ? value / navCents : null,
       pnl_pct: value != null && (x.costCents ?? pos.costCents) ? value / (x.costCents ?? pos.costCents) - 1 : null, entry_date: pos.entryDate || null };
-  }).sort((a, b) => (b.value_cents || 0) - (a.value_cents || 0));
+  }).sort((a, b) => (b.weight || 0) - (a.weight || 0));
 }
 function exposureOf(holdings, navCents, cashCents) {
   const sectors = {}; let metals = 0; let maxPos = 0;
@@ -103,7 +108,7 @@ export async function arenaPayload(store) {
       ledger: { events: h.seq, head_hash: h.head } };
     if (!h.state) { out.strategies.push({ ...base, series: [], metrics: seriesMetrics([]), holdings: [], exposure: null, decisions: [], pending: [] }); continue; }
     const { st } = restore(h.state.payload);
-    const marks = await store.select(T.marks, { account: `eq.${S.account}`, select: 'd,nav_cents,cash_cents,coverage,positions,exposures,benchmarks' }, { order: 'd.asc' });
+    const marks = await store.select(T.marks, { account: `eq.${S.account}`, select: 'd,nav_cents,cash_cents,coverage,positions,exposures,benchmarks' }, { order: 'd.asc' }).catch(() => []);
     const pts = marks.map((m) => ({ d: m.d, nav: m.nav_cents }));
     const last = marks.at(-1) || null;
     const hold = holdingsFrom(last?.positions, last?.nav_cents, st.positions, (s) => st.positions[s]?.sector || 'UNCLASSIFIED');
@@ -160,7 +165,11 @@ export async function metalsPayload({ env, store, member, now = new Date().toISO
   if (member) {
     const [snap] = await store.select(T.snapshots, { account: `eq.${DIVERSIFIED.account}`, select: 'd,metals' }, { limit: 1, order: 'd.desc' }).catch(() => []);
     const [mk] = await store.select(T.marks, { account: `eq.${DIVERSIFIED.account}`, select: 'd,exposures' }, { limit: 1, order: 'd.desc' }).catch(() => []);
-    out.diversified_sleeve = { cap: DIVERSIFIED.manager.maxMetalsWeight, as_of: snap?.d ?? null, candidates: snap?.metals ?? [], weight: mk?.exposures?.metals ?? null,
+    // re-review N2 (rights): derived states only — never the source's adjusted close or moving average
+    const candidates = (snap?.metals ?? []).map((c) => ({ symbol: c.symbol, verified: !!c.verified, hold: c.hold ?? null,
+      above_sma200: c.f?.adj != null && c.f?.sma200 != null ? c.f.adj > c.f.sma200 : null, momentum_6m_positive: c.f?.mom6 != null ? c.f.mom6 > 0 : null,
+      inverse_vol_weight: c.f?.vol63 > 0 ? Math.min(DIVERSIFIED.manager.maxHoldingWeight, DIVERSIFIED.manager.volBudget / c.f.vol63) : null }));
+    out.diversified_sleeve = { cap: DIVERSIFIED.manager.maxMetalsWeight, as_of: snap?.d ?? null, candidates, weight: mk?.exposures?.metals ?? null,
       holdings: mk ? Object.entries(mk.exposures?.holdings || {}).filter(([s]) => METAL_ETFS.some((e) => e.symbol === s)).map(([symbol, weight]) => ({ symbol, weight })) : [] };
   }
   return out;
@@ -176,7 +185,7 @@ export async function handleArena({ req, env, p, url, store, requireAllAccess, p
     const now = url.searchParams.get('now') || new Date().toISOString();
     const args = { store, now, workerVersion: env.CF_VERSION_METADATA?.id ?? null, t0: env.SIGNAL10_ARENA_T0 };
     const kind = url.searchParams.get('kind');
-    const r = kind === 'EOD' ? await runArenaEod({ ...args, rerun: url.searchParams.get('rerun') }) : kind === 'OPEN' ? await runArenaOpen(args) : { error: 'kind must be OPEN|EOD' };
+    const r = kind === 'EOD' ? await runArenaEod({ ...args, rerun: url.searchParams.get('rerun') }).catch((e) => ({ error: e.message })) : kind === 'OPEN' ? await runArenaOpen(args).catch((e) => ({ error: e.message })) : { error: 'kind must be OPEN|EOD' };
     return json(r, 200, 'no-store');
   }
   if (p === '/v1/signal10/arena/proof') {
