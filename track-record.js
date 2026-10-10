@@ -11,15 +11,26 @@ let board = null;
 const state = { tab: urlState.get('tab', 'temperature'), result: urlState.get('result', 'ALL'), page: Math.max(1, Number(urlState.get('page', 1)) || 1) };
 const go = (patch) => { Object.assign(state, patch); urlState.set({ tab: state.tab === 'temperature' ? null : state.tab, result: state.result, page: state.page }); };
 
+const f3 = (x) => (x === null || x === undefined ? '—' : Number(x).toFixed(3));
+const VERDICT = { PBE_AHEAD: 'PBE ahead (95% range excludes zero)', MARKET_AHEAD: 'Market ahead (95% range excludes zero)', NOT_ESTABLISHED: 'No difference established', TOO_FEW_DAYS: 'Too few days for a verdict' };
+// Paired = PBE and market on the same contracts. pbe_mean (every contract) is never set against a market mean taken
+// over a different subset; lanes are never blended into one verdict.
 function scoring(t) {
   const g = (d, m) => t.groups.find((x) => x.designation === d && x.method === m);
   const b = g('FINAL_PRE_RESOLUTION', 'brier'); const l = g('FINAL_PRE_RESOLUTION', 'log_loss');
   const enough = t.resolved_contracts >= t.min_for_claims;
+  const pair = (x, name) => (x && enough && x.paired_pbe_mean != null ? `<div class="stat"><span>${name} · same contracts</span><strong class="num">PBE ${f3(x.paired_pbe_mean)}</strong><small>market ${f3(x.market_mean)} on the same ${x.market_n} contracts · PBE ${f3(x.pbe_mean)} on all ${x.n}</small></div>`
+    : `<div class="stat"><span>${name}</span><strong class="num">Pending</strong><small>${enough ? 'no contracts with a same-time market price yet' : `scores start at ${t.min_for_claims} resolved`}</small></div>`);
+  const by = (v) => (t.lanes || []).filter((x) => x.brier?.paired?.verdict === v).map((x) => x.label);
+  const ahead = by('PBE_AHEAD'); const behind = by('MARKET_AHEAD');
   $('tr').innerHTML = `
     <div class="stat"><span>Resolved contracts</span><strong class="num">${t.resolved_contracts ? t.resolved_contracts : 'Building'}</strong><small>${t.resolved_contracts ? 'contracts scored (not wins)' : 'first settlements pending'}</small></div>
-    <div class="stat"><span>Forecast accuracy score (Brier)</span><strong class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${b ? `market ${b.market_mean?.toFixed(3) ?? '—'} · n=${b.n}${enough ? '' : ` (needs ${t.min_for_claims})`}` : 'Lower is better; not win percentage'}</small></div>
-    <div class="stat"><span>Log loss</span><strong class="num">${l && enough ? l.pbe_mean.toFixed(3) : 'Pending'}</strong><small>${l ? `market ${l.market_mean?.toFixed(3) ?? '—'}` : 'lower is better'}</small></div>
-    <div class="stat"><span>Statistical evidence</span><strong>${enough ? 'Measurable' : 'Pending'}</strong><small>${enough ? 'see the research board' : `claims start at ${t.min_for_claims} resolved`}</small></div>`;
+    ${pair(b, 'Brier')}${pair(l, 'Log loss')}
+    <div class="stat"><span>Evidence of an edge</span><strong>${ahead.length ? 'PBE ahead' : enough ? 'Not established' : 'Pending'}</strong><small>${[ahead.length ? `PBE ahead: ${esc(ahead.join(' · '))}` : '', behind.length ? `market ahead: ${esc(behind.join(' · '))}` : '', !ahead.length && enough ? 'enough to score · not evidence of an edge' : '', enough ? '' : `scores start at ${t.min_for_claims} resolved`].filter(Boolean).join(' · ')}</small></div>`;
+  const lanes = (t.lanes || []).filter((x) => x.brier?.paired);
+  $('tr-lanes').innerHTML = lanes.map((x) => { const p = x.brier.paired;
+    return `<div class="stat"><span>${esc(x.label)}</span><strong class="num">PBE ${f3(p.pbe_mean)} · mkt ${f3(p.market_mean)}</strong><small>Brier on the same ${p.n} contracts · ${p.clusters} ${p.clusters === 1 ? 'day/event' : 'days/events'} · difference ${p.diff >= 0 ? '+' : ''}${f3(p.diff)} [${f3(p.ci95[0])}, ${f3(p.ci95[1])}] · ${esc(VERDICT[p.verdict] || p.verdict)}</small></div>`; }).join('')
+    || '<p class="note">Lane scores appear once a lane has contracts with a same-time market price.</p>';
 }
 
 function overview(data) {

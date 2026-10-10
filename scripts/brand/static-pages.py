@@ -26,7 +26,7 @@ def ld(title, desc, path):
 
 CRUMB = {'/about/': 'About', '/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
 PAGE_KEY = {'/about/': 'about', '/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261010nav1'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+ASSET_V = '20261010tr64'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 
@@ -112,8 +112,10 @@ record = head('Track Record — Forecast Results, Wins, Misses & Scoring | PropB
 <main class="wrap section page-main">
 <header class="page-head"><span class="overline">TRACK RECORD</span><h1>What we predicted. What actually happened.</h1>
 <p class="page-lede">Records that are never mixed: contracts scored against the market, retrospective event outcomes, research calls, and Official PBE Picks (rain YES/NO, active since Oct 9, 2026), each tracked RIGHT, MISSED, PENDING or VOID.</p></header>
-<section class="rec-block"><h2>Contracts scored</h2><p class="note">Accuracy across every resolved contract (lower is better). A scored contract is not a win, and nothing here is a trading return.</p>
-<div class="stats stats-4" id="tr"><div class="card skel" style="height:96px"></div></div></section>
+<section class="rec-block"><h2>Contracts scored</h2><p class="note">Accuracy against the market on the same contracts, at the same moment (lower is better). A scored contract is not a win, and nothing here is a trading return.</p>
+<div class="stats stats-4" id="tr"><div class="card skel" style="height:96px"></div></div>
+<h3 class="tr-lanes-h">By forecast lane</h3><p class="note">Each lane is scored on its own. Contracts on the same day share the weather, so the 95% range resamples whole days.</p>
+<div class="stats stats-4" id="tr-lanes" aria-live="polite"></div></section>
 <section class="rec-block" id="rec-top"><h2>Results ledger</h2>
 <div id="results-overview" class="result-overview" aria-live="polite"></div>
 <div id="rec-members" hidden>

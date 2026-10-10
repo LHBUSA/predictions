@@ -184,14 +184,14 @@ function scoring(t) {
   const g = (d, m) => t.groups.find((x) => x.designation === d && x.method === m);
   const b = g('FINAL_PRE_RESOLUTION', 'brier'); const l = g('FINAL_PRE_RESOLUTION', 'log_loss'); const enough = t.resolved_contracts >= t.min_for_claims;
   if (member) {
-    if ($('sb-n')) { $('sb-n').textContent = t.resolved_contracts.toLocaleString(); $('sb-brier').textContent = b && enough ? `Brier ${b.pbe_mean.toFixed(3)} vs market ${b.market_mean?.toFixed(3) ?? '—'} · lower is better · not wins` : 'stored scores · not wins'; }
+    if ($('sb-n')) { $('sb-n').textContent = t.resolved_contracts.toLocaleString(); $('sb-brier').textContent = b && enough && b.paired_pbe_mean != null ? `Brier ${b.paired_pbe_mean.toFixed(3)} vs market ${b.market_mean.toFixed(3)} on the same ${b.market_n} contracts · lower is better · not wins` : 'stored scores · not wins'; }
     return;
   }
   const el = $('scoreboard'); if (!el) return;
   el.innerHTML = `<div class="sb-grid">
     <div class="sb-tile"><span>Contracts scored</span><b class="num">${t.resolved_contracts.toLocaleString()}</b><small>every resolved contract with a stored forecast · not a win count</small></div>
-    <div class="sb-tile"><span>Brier score · final forecast</span><b class="num">${b && enough ? b.pbe_mean.toFixed(3) : 'Pending'}</b><small>${b?.market_mean != null ? `market ${b.market_mean.toFixed(3)} on the ${b.market_n} with a quote · lower is better` : 'lower is better'}</small></div>
-    <div class="sb-tile"><span>Log loss · final forecast</span><b class="num">${l && enough ? l.pbe_mean.toFixed(3) : 'Pending'}</b><small>${l?.market_mean != null ? `market ${l.market_mean.toFixed(3)} · lower is better` : 'lower is better'}</small></div>
+    <div class="sb-tile"><span>Brier · same contracts as the market</span><b class="num">${b && enough && b.paired_pbe_mean != null ? b.paired_pbe_mean.toFixed(3) : 'Pending'}</b><small>${b?.paired_pbe_mean != null ? `market ${b.market_mean.toFixed(3)} on the same ${b.market_n} contracts · lower is better` : 'lower is better'}</small></div>
+    <div class="sb-tile"><span>Log loss · same contracts</span><b class="num">${l && enough && l.paired_pbe_mean != null ? l.paired_pbe_mean.toFixed(3) : 'Pending'}</b><small>${l?.paired_pbe_mean != null ? `market ${l.market_mean.toFixed(3)} on the same ${l.market_n} · lower is better` : 'lower is better'}</small></div>
     <div class="sb-tile"><span>Official picks · rain YES/NO</span><b>Active</b><small>activated Oct 9, 2026 · tracked RIGHT / MISSED / PENDING / VOID · picks and results for All Access members</small></div></div>
     <p class="rp-lock">Members see every settled result: temperature event outcomes and research calls, wins and losses, with the evidence behind each. <a href="${AA_URL}" data-purchase-cta data-pbe-placement="predictions_home_results">Get All Access →</a></p>`;
 }
