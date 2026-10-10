@@ -69,6 +69,12 @@
             "/about/#monitor",
             null,
             "Weather, rates, macro, crypto, equities and more"
+          ],
+          [
+            "Precious metals tracker",
+            "/markets/metals/",
+            "metals",
+            "Gold, silver and platinum: spot rights and ETF proxies"
           ]
         ]
       },
@@ -136,6 +142,11 @@
         "About",
         "/about/",
         "about"
+      ],
+      [
+        "Metals",
+        "/markets/metals/",
+        "metals"
       ],
       [
         "Calendar",
@@ -321,6 +332,10 @@
     [
       "Crypto market intelligence",
       "/crypto/"
+    ],
+    [
+      "Precious metals tracker",
+      "/markets/metals/"
     ],
     [
       "Equities & market structure",

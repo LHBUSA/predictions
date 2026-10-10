@@ -22,6 +22,7 @@ const TABS = [
   ['live', '/markets/signal-10/live/', 'Live $10k Portfolio'],
   ['ledger', '/markets/signal-10/ledger/', 'Trade Ledger'],
   ['methodology', '/markets/signal-10/methodology/', 'Methodology'],
+  ['arena', '/markets/signal-10/arena/', 'Strategy Arena'],
   ['backtest', '/markets/signal-10/backtest/', 'Backtest (research)'],
 ];
 // U.S. stock tape (issue #54): featured links are static (work without JS, no layout shift); tape.js fills prices.
@@ -35,7 +36,7 @@ ${FEATURED.map((f) => `    <a class="s10-tq${f.pinned ? ' pin' : ''}" data-sym="
 </div></section>`;
 const tabs = (cur) => `<nav class="s10-tabs" aria-label="Signal 10 sections">${TABS.map(([k, h, t]) => `<a href="${h}"${k === cur ? ' aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
 
-function page({ key, title, desc, h1, dek, body }) {
+function page({ key, title, desc, h1, dek, body, css = null, js = null }) {
   const path = TABS.find((t) => t[0] === key)[1];
   return `<!doctype html>
 <html lang="en" class="s10">
@@ -51,7 +52,7 @@ function page({ key, title, desc, h1, dek, body }) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
-<link rel="stylesheet" href="/markets/signal-10/signal10.css?v=${V}">
+<link rel="stylesheet" href="/markets/signal-10/signal10.css?v=${V}">${css ? `\n<link rel="stylesheet" href="${css}?v=${V}">` : ''}
 </head>
 <body class="s10-page" data-page="${key}">
 ${header}
@@ -73,7 +74,7 @@ ${body}
 ${footer}
 <script type="module" src="/markets/signal-10/signal10-core.js?v=${V}"></script>
 <script src="/markets/signal-10/signal10.js?v=${V}" defer></script>
-<script src="/markets/signal-10/tape.js?v=${V}" defer></script>
+<script src="/markets/signal-10/tape.js?v=${V}" defer></script>${js ? `\n<script src="${js}?v=${V}" defer></script>` : ''}
 </body></html>
 `;
 }
@@ -98,6 +99,29 @@ const pages = [
     desc: 'PBE Signal 10 ledgers: every simulated fill, dividend, split and decision for the historical backtest and the forward paper account, kept separate.',
     dek: 'Every live paper-account event, append-only and hash-chained: fills, orders, waits, holds, dividends and daily marks. The backtest ledger is a separate research record and is never combined with it.',
     body: APP },
+  { key: 'arena', title: 'Strategy Arena', h1: 'The Strategy Arena',
+    desc: 'PBE Signal 10 Strategy Arena: three brand-new $10,000 simulated paper accounts — the original Signal 10 rules, Tech Conviction and Diversified Risk Discipline — launched together on the same market. Hypothetical; not actual trading.',
+    dek: 'Three philosophies. One market. A permanent record. Three brand-new $10,000 simulated accounts — the original Signal 10 rules and two new algorithms, all frozen before their first decision — start from cash on the same day and are compared on the same closes.',
+    css: '/markets/signal-10/arena.css', js: '/markets/signal-10/arena.js',
+    body: `<section class="ar-sec" aria-labelledby="ar-who-h"><h2 id="ar-who-h" class="s10-h2">The contenders</h2>
+<div class="ar-intro">
+<article class="orig"><span class="ar-sub">V1 rules · new account</span><h3>Original</h3><p>The original Signal 10 rules exactly as pre-registered on Oct 9, 2026, on a brand-new account.</p>
+<ul><li>S&amp;P 500, momentum with a low-volatility tilt</li><li>Dip and persistence entries, 10 slots</li><li>SPY 200-day regime, 20% trailing stop</li></ul></article>
+<article class="tech"><span class="ar-sub">New algorithm</span><h3>Tech Conviction</h3><p>Concentrated momentum in technology leaders. Buys strength, holds up to 8 names.</p>
+<ul><li>Technology, chips, software, cloud (SEC SIC)</li><li>No volatility penalty; QQQ 200-day regime</li><li>25% trailing stop, 10-session re-entry cooldown</li></ul></article>
+<article class="div"><span class="ar-sub">New algorithm</span><h3>Diversified Risk Discipline</h3><p>Cross-sector, risk-sized, with hard limits and an optional precious-metals ETF sleeve.</p>
+<ul><li>≤ 10% per holding, ≤ 25% per sector, ≤ 20% metals</li><li>Inverse-volatility sizing; cash allowed</li><li>GLD / SLV / PPLT only when verified</li></ul></article>
+</div></section>
+<section class="ar-sec" aria-labelledby="ar-proof-h"><h2 id="ar-proof-h" class="s10-h2">Public proof record</h2><div id="arena-proof" data-state="loading"><p class="s10-note" role="status">Loading the proof record…</p></div></section>
+<div id="arena-app" data-state="loading"><div class="s10-loading" aria-hidden="true"></div><p class="sr-only" role="status">Loading the Arena standings…</p></div>
+<section class="ar-sec" aria-labelledby="ar-rules-h"><h2 id="ar-rules-h" class="s10-h2">How the comparison is kept fair</h2>
+<ul class="s10-list"><li>Same market, same closes, same fills: every account trades at the next regular-session open with 10 bps slippage, whole shares and $0 commission.</li>
+<li>Pre-registered: each account's rules are frozen by SHA-256 before its first decision; any change is a new version with its own record.</li>
+<li>Same start: all three accounts begin with $10,000 cash and zero positions at the same close (T0). No record exists before it and nothing is backfilled.</li>
+<li>Separate history: the first Signal 10 paper account (Oct 9, 2026) continues as historical research and is not part of the competition.</li>
+<li>Honest marks: a holding without an observed close is NOT AVAILABLE, never estimated. Sharpe ratios appear only after 60 daily observations, and no winner is declared early.</li>
+<li>Precious metals: the Diversified sleeve may hold the GLD, SLV and PPLT exchange-traded trusts, never spot metal. See the <a href="/markets/metals/">precious-metals tracker</a>.</li></ul>
+<p class="s10-note">Full rules: <a href="https://github.com/LHBUSA/predictions/blob/main/docs/signal10/strategy-arena/PREREGISTRATION.md" target="_blank" rel="noopener">Strategy Arena pre-registration</a> · <a href="/markets/signal-10/methodology/">Original methodology</a>.</p></section>` },
   { key: 'methodology', title: 'Methodology', h1: 'Methodology',
     desc: 'How PBE Signal 10 works: universe, features and weights, portfolio-manager rules, fills and costs, data sources, coverage, survivorship bias and pre-registration.',
     dek: 'Every rule, number and known limitation of the Signal 10 model and its paper portfolio manager — written down before any result was computed.',
