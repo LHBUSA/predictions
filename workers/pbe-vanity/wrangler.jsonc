@@ -12,7 +12,7 @@
     { "pattern": "crypto.propbetedge.ai", "custom_domain": true }
   ],
   "vars": {
-    // "307" while proving a newly added route; "308" (permanent) once verified over HTTPS
-    "REDIRECT_STATUS": "307"
+    // "308" permanent (crypto verified over HTTPS 2026-10-10); use "307" only while proving a newly added host
+    "REDIRECT_STATUS": "308"
   }
 }
