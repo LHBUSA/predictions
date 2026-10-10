@@ -22,6 +22,8 @@ function buildTable(lengths, n) {
   const count = new Uint16Array(16);
   for (let i = 0; i < n; i++) count[lengths[i]]++;
   count[0] = 0;
+  let left = 1;
+  for (let b = 1; b <= max; b++) { left = (left << 1) - count[b]; if (left < 0) throw new Error('inflate: oversubscribed Huffman code'); }
   const next = new Uint16Array(16);
   let code = 0;
   for (let b = 1; b <= max; b++) { code = (code + count[b - 1]) << 1; next[b] = code; }
@@ -49,14 +51,18 @@ function fixedTables() {
   return FIXED;
 }
 
+export class GzipHeaderIncomplete extends Error {}
 export function parseGzipHeader(b) {
+  const need = (n) => { if (b.length < n) throw new GzipHeaderIncomplete('inflate: gzip header incomplete'); };
+  need(10);
   if (b[0] !== 0x1f || b[1] !== 0x8b || b[2] !== 8) throw new Error('inflate: not a gzip/deflate stream');
   const flg = b[3];
   let o = 10;
-  if (flg & 4) o += 2 + (b[o] | (b[o + 1] << 8));
-  if (flg & 8) { while (b[o] !== 0) o++; o++; }
-  if (flg & 16) { while (b[o] !== 0) o++; o++; }
+  if (flg & 4) { need(o + 2); o += 2 + (b[o] | (b[o + 1] << 8)); }
+  if (flg & 8) { while (true) { need(o + 1); if (b[o++] === 0) break; } }
+  if (flg & 16) { while (true) { need(o + 1); if (b[o++] === 0) break; } }
   if (flg & 2) o += 2;
+  need(o);
   return o;
 }
 
@@ -119,12 +125,14 @@ export function createInflater({ window = null, bitOffset = 0, onOutput, outChun
     for (let i = 0; i < hlit + hdist;) {
       if (!need(clt.bits) && avail() < 1) return fail();
       need(clt.bits);
+      if ((clt.table[bitBuf & ((1 << clt.bits) - 1)] & 15) === 0 && bitCnt >= clt.bits) throw new Error('inflate: invalid code-length code');
       const s = decodeSym(clt);
       if (s < 0) return fail();
+      const total = hlit + hdist;
       if (s < 16) lens[i++] = s;
-      else if (s === 16) { if (!need(2)) return fail(); const r = 3 + bits(2); const p = lens[i - 1]; for (let k = 0; k < r; k++) lens[i++] = p; }
-      else if (s === 17) { if (!need(3)) return fail(); i += 3 + bits(3); }
-      else { if (!need(7)) return fail(); i += 11 + bits(7); }
+      else if (s === 16) { if (i === 0) throw new Error('inflate: repeat with no previous length'); if (!need(2)) return fail(); const r = 3 + bits(2); if (i + r > total) throw new Error('inflate: code lengths overrun'); const p = lens[i - 1]; for (let k = 0; k < r; k++) lens[i++] = p; }
+      else if (s === 17) { if (!need(3)) return fail(); const r = 3 + bits(3); if (i + r > total) throw new Error('inflate: code lengths overrun'); i += r; }
+      else { if (!need(7)) return fail(); const r = 11 + bits(7); if (i + r > total) throw new Error('inflate: code lengths overrun'); i += r; }
     }
     lit = buildTable(lens.subarray(0, hlit), hlit);
     dist = buildTable(lens.subarray(hlit), hdist);

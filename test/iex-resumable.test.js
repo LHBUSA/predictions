@@ -52,7 +52,10 @@ test('inflate: checkpoint + resume at block boundaries in many steps equals one 
 });
 
 test('inflate: corrupt input fails loudly', () => {
-  assert.throws(() => parseGzipHeader(new Uint8Array([1, 2, 3])), /not a gzip/);
+  assert.throws(() => parseGzipHeader(new Uint8Array([1, 2, 3])), /incomplete/);
+  assert.throws(() => parseGzipHeader(new Uint8Array(12)), /not a gzip/);
+  // FNAME cut mid-header: a recognisable incomplete error, never an infinite loop
+  assert.throws(() => parseGzipHeader(new Uint8Array([0x1f, 0x8b, 8, 8, 0, 0, 0, 0, 0, 3, 65, 66])), /incomplete/);
   const gz = zlib.gzipSync(Buffer.from('hello world '.repeat(1000)));
   const bad = Buffer.from(gz); bad[12] ^= 0xff; bad[13] ^= 0xff;
   assert.throws(() => inflateAll(bad));
@@ -128,7 +131,9 @@ function fakeStore(seedJobs = []) {
       }
       if (init?.method === 'PATCH') {
         const s = u.searchParams.get('session_date').slice(3);
-        Object.assign(tables.pred_market_tape_jobs.find((x) => x.session_date === s), JSON.parse(init.body));
+        const holder = u.searchParams.get('lease_holder')?.slice(3);
+        const j = tables.pred_market_tape_jobs.find((x) => x.session_date === s && (!holder || x.lease_holder === holder));
+        if (j) Object.assign(j, JSON.parse(init.body));
         return new Response(null, { status: 204 });
       }
       return new Response('not found', { status: 404 });
@@ -202,4 +207,52 @@ test('schedule: every minute 03:30-13:29 UTC only', () => {
   assert.equal(iexDue('2026-10-13T09:41:00Z'), true);
   assert.equal(iexDue('2026-10-13T13:29:00Z'), true);
   assert.equal(iexDue('2026-10-13T13:30:00Z'), false);
+});
+
+test('P1 regression: large, highly compressible chunks through inflate -> parser equal the single pass (no aliasing of the decoder buffer)', () => {
+  // heartbeat-like repetition compresses ~100x+, so one 1 MiB input push decodes far past the 1 MiB output ring
+  const cap = capture();
+  const big = new Uint8Array(cap.length * 12); for (let k = 0; k < 12; k++) big.set(cap, k * cap.length);
+  // keep it a valid pcapng: only the first copy has the section header; strip SHB/IDB from later copies is unnecessary for
+  // the parser (SHB is a valid block anywhere) - each copy simply repeats blocks
+  const opts = { sessionCloseNs: Date.parse('2026-10-09T20:00:00Z') * 1e6, sessionOpenNs: Date.parse('2026-10-09T13:30:00Z') * 1e6 };
+  const one = createTopsParser(['SPCX', 'NVDA'], opts); one.feed(big);
+  const gz = zlib.gzipSync(big, { level: 9 });
+  for (const chunk of [1 << 16, 1 << 20, gz.length]) {
+    const p = createTopsParser(['SPCX', 'NVDA'], opts);
+    const d = createInflater({ onOutput: (c) => p.feed(c) });
+    let fed = parseGzipHeader(gz);
+    while (fed < gz.length && !d.done) { d.push(gz.subarray(fed, Math.min(gz.length, fed + chunk))); fed += chunk; }
+    assert.ok(d.done);
+    assert.deepEqual(p.finish(), one.finish(), `chunk ${chunk}`);
+    assert.equal(p.stats.blocks, one.stats.blocks);
+  }
+});
+
+test('P2/P3: interrupted steps count at claim and escalate to FAILED; a DONE job never blocks the lane; stale holders cannot write', async () => {
+  const gz = zlib.gzipSync(capture(), { level: 6, memLevel: 1 });
+  const st = fakeStore();
+  const v = vendor(gz);
+  await iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000 });
+  const job = st.tables.pred_market_tape_jobs[0];
+  assert.equal(job.attempts, 0, 'a successful step resets attempts');
+  // simulate 6 runtime-killed steps: claimed (attempts++) but never finished; lease expires each time
+  for (let i = 0; i < 6; i++) { job.attempts += 1; job.lease_until = null; }
+  const r = await iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000 });
+  assert.equal(r.status, 'FAILED'); assert.equal(job.status, 'FAILED');
+  // DONE with zero rows: skipped, the lane moves on (older sessions unpublished here -> UP_TO_DATE, not LEASE_HELD forever)
+  job.status = 'DONE'; job.rows_written = 0;
+  const after = await iexHistStep({ store: st, nowIso: NOW, fetchImpl: vendor(gz, { published: false }) });
+  assert.equal(after.status, 'UP_TO_DATE');
+});
+
+test('integrity: a gzip trailer that disagrees with the decoded length fails the job instead of writing rows', async () => {
+  const gz = Buffer.from(zlib.gzipSync(capture(), { level: 6, memLevel: 1 }));
+  gz[gz.length - 1] ^= 0x01; // corrupt ISIZE
+  const st = fakeStore();
+  const v = vendor(gz);
+  let last;
+  for (let i = 0; i < 400; i++) { try { last = await iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000 }); } catch (e) { last = { error: e.message }; break; } if (last.status !== 'STEP') break; }
+  assert.match(last.error, /ISIZE/);
+  assert.equal(st.tables.pred_source_observations.length, 0, 'no rows on an integrity failure');
 });

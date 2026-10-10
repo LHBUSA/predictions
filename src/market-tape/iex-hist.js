@@ -130,7 +130,8 @@ export function createTopsParser(symbols, { sessionCloseNs = null, sessionOpenNs
       }
       o += blen;
     }
-    buf = buf.subarray(o);
+    // COPY the unfinished block: `chunk` may be a view into a reused decoder buffer that is overwritten after we return
+    buf = o < buf.length ? buf.slice(o) : new Uint8Array(0);
   }
 
   function finish() {
