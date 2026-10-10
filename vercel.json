@@ -25,6 +25,26 @@
       "source": "/calendar",
       "destination": "/calendar/",
       "permanent": true
+    },
+    {
+      "source": "/commodities/gold",
+      "destination": "/commodities/gold/",
+      "permanent": true
+    },
+    {
+      "source": "/commodities/silver",
+      "destination": "/commodities/silver/",
+      "permanent": true
+    },
+    {
+      "source": "/commodities/platinum",
+      "destination": "/commodities/platinum/",
+      "permanent": true
+    },
+    {
+      "source": "/markets/metals",
+      "destination": "/markets/metals/",
+      "permanent": true
     }
   ],
   "rewrites": [
