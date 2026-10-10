@@ -89,7 +89,7 @@ export function marketSession(nowIso) {
   }
   const today = sessionOf(c.date);
   const close = closeMinutes(c.date);
-  if (c.minutes < OPEN_MIN) return { ...base, state: 'PRE_MARKET', label: 'MARKET CLOSED · OPENS 9:30 AM ET', ...today, next_open_at: today.opens_at, ...lastBefore(c.date) };
+  if (c.minutes < OPEN_MIN) return { ...base, state: 'PRE_MARKET', label: 'MARKET CLOSED', ...today, next_open_at: today.opens_at, ...lastBefore(c.date) };
   if (c.minutes < close) return { ...base, state: 'OPEN', label: base.early_close ? 'MARKET OPEN · EARLY CLOSE 1:00 PM ET' : 'MARKET OPEN', ...today, next_open_at: sessionOf(nextTradingDay(c.date)).opens_at, ...lastBefore(c.date) };
   return { ...base, state: 'AFTER_CLOSE', label: 'MARKET CLOSED', ...today, next_open_at: sessionOf(nextTradingDay(c.date)).opens_at, last_session: c.date, last_close_at: today.closes_at };
 }

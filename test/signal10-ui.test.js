@@ -51,7 +51,7 @@ test('freshness + session badge: LIVE pulse only when OPEN and a quote is fresh'
   assert.equal(C.sessionBadge({ state: 'CLOSED' }, [fresh], NOW).text, 'MARKET CLOSED');
   assert.equal(C.sessionBadge({ state: 'CLOSED' }, [fresh], NOW).live, false);
   assert.equal(C.sessionBadge({ state: 'CLOSED_WEEKEND' }, [], NOW).live, false);
-  assert.match(C.sessionBadge({ state: 'PRE_MARKET' }, [fresh], NOW).text, /MARKET CLOSED · OPENS 9:30 AM ET/);
+  assert.match(C.sessionBadge({ state: 'PRE_MARKET' }, [fresh], NOW).text, /^MARKET CLOSED$/);
 });
 
 test('polling cadence: 20 s open+visible, 120 s otherwise, paused when hidden', () => {

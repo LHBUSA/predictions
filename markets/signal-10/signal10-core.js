@@ -103,7 +103,7 @@ export function sessionBadge(session, quoteTimes = [], nowMs = Date.now()) {
   if (state === 'OPEN') return { live: false, cls: 'stale', text: 'SESSION OPEN · QUOTES DELAYED' };
   if (state === 'CLOSED' || state === 'CLOSED_WEEKEND') return { live: false, cls: 'closed', text: 'MARKET CLOSED' };
   if (state === 'CLOSED_HOLIDAY') return { live: false, cls: 'closed', text: 'MARKET HOLIDAY' };
-  if (state === 'PRE_MARKET') return { live: false, cls: 'closed', text: 'MARKET CLOSED · OPENS 9:30 AM ET' };
+  if (state === 'PRE_MARKET') return { live: false, cls: 'closed', text: 'MARKET CLOSED' };
   return { live: false, cls: 'closed', text: session?.label || 'SESSION UNKNOWN' };
 }
 
@@ -325,8 +325,8 @@ export function tapeStatus(session, rows = []) {
     return { cls: 'stale', live: false, text: 'MARKET OPEN · SOURCE UNAVAILABLE' };
   }
   if (st === 'AFTER_CLOSE' && has('PRIOR_SESSION')) return { cls: 'closed', live: false, text: 'MARKET CLOSED · PRIOR-SESSION PRICES' };
-  const closed = st === 'CLOSED_HOLIDAY' ? 'MARKET HOLIDAY' : st === 'PRE_MARKET' ? 'MARKET CLOSED · OPENS 9:30 AM ET'
-    : st === 'CLOSED_WEEKEND' || st === 'AFTER_CLOSE' ? 'MARKET CLOSED' : 'MARKET HOURS UNVERIFIED';
+  const closed = st === 'CLOSED_HOLIDAY' ? 'MARKET HOLIDAY'
+    : st === 'PRE_MARKET' || st === 'CLOSED_WEEKEND' || st === 'AFTER_CLOSE' ? 'MARKET CLOSED' : 'MARKET HOURS UNVERIFIED';
   return { cls: 'closed', live: false, text: closed };
 }
 // "Monday, October 12" for a date or instant in New York

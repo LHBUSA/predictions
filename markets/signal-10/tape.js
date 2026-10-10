@@ -203,6 +203,7 @@
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
         parts.push(`<span>${esc(when)}</span>`);
+        if (d.session.state !== 'OPEN' && d.session.next_open_at) parts.push(`<span>${esc(C.reopenText(d.session))}</span>`);
       } else if (!d.t1 && d.session.state !== 'OPEN' && d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
       if (!d.t1 && d.session.state === 'OPEN' && d.session.closes_at && !(d.quotes.shown && C.quoteSpan(rows))) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
       if (d.quotes.shown && !d.t1) parts.push(`<span>Source: ${esc(d.source?.name || '')}</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
