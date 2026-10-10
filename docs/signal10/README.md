@@ -66,3 +66,7 @@ DB: `sql/016_signal10_forward_ROLLBACK.sql` (export pred_s10_* first — it is p
   lower than under pure momentum.
 Any fix is a new version (v1.1+) whose backtest is IN-SAMPLE for 2018–2026 and must be labelled so; the forward account
 keeps running the version it started with unless the owner approves a documented version change (recorded in the ledger).
+
+## U.S. stock tape (issue #54)
+
+SPCX-first LINK-FIRST watchline (no quotes for any audience: SOURCE_RIGHTS_HOLD) with Robinhood stock-page handoffs and the NYSE calendar. Rights audit, data contract, activation switch and rollback: [TAPE.md](TAPE.md).

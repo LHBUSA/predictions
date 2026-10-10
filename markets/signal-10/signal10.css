@@ -291,3 +291,44 @@ table.s10-tbl{width:100%;border-collapse:collapse;font-size:13px;background:var(
 .s10-tbl .s10-hash{word-break:normal;white-space:nowrap}
 #s10-app>*+*{margin-top:22px}
 .s10-term .flat{color:var(--term-ink)}
+
+/* U.S. stock tape (issue #54): one slim scrollable strip under the masthead. Static links reserve their size, so prices
+   arriving never move the page. No marquee: the reader scrolls; nothing moves on its own. */
+.s10-tape{border-bottom:1px solid var(--line);background:var(--panel-2)}
+.s10-tape .wrap{padding-top:8px;padding-bottom:6px}
+.s10-tape-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-height:38px;font:500 11.5px/1.4 var(--mono);color:var(--muted)}
+.s10-tape-h{flex:0 0 auto;margin:0;font:600 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink)}
+.s10-tape-status{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 10.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.s10-tape-status.open{color:var(--pos)}.s10-tape-status.delayed,.s10-tape-status.stale{color:var(--amber)}
+.s10-tape-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 0 var(--pos);animation:s10-tape-pulse 2s ease-out infinite}
+@keyframes s10-tape-pulse{0%{box-shadow:0 0 0 0 rgba(23,112,58,.45)}70%{box-shadow:0 0 0 6px rgba(23,112,58,0)}100%{box-shadow:0 0 0 0 rgba(23,112,58,0)}}
+.s10-tape-meta{flex-basis:100%;min-height:16px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} /* own line, reserved: filling it never shifts the page */
+.s10-tape-meta a{color:var(--gold-ink)}
+.s10-tape-track{position:relative;display:flex;align-items:stretch;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;margin:6px -4px 0;padding:2px 4px 6px}
+.s10-tape-grp{display:contents}
+.s10-tg{flex:0 0 auto;align-self:center;writing-mode:horizontal-tb;padding:0 4px 0 8px;font:600 10px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-left:1px solid var(--line);max-width:9.5em;white-space:normal}
+.s10-tape-track>.s10-tg:first-child{border-left:0;padding-left:0}
+/* fixed box: a price arriving or changing never moves its neighbours; position:relative keeps the sr-only text inside the scroller */
+.s10-tq{position:relative;flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:2px;width:118px;height:46px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);text-decoration:none!important;scroll-snap-align:start;transition:border-color .15s,background-color .15s}
+.s10-tq:hover{border-color:var(--gold);background:var(--blue-bg)}
+.s10-tq:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.s10-tq.pin{border-color:#d9bd6a;background:linear-gradient(180deg,#fffaf0,var(--panel))}
+html.s10[data-theme="dark"] .s10-tq.pin{border-color:#6b5520;background:linear-gradient(180deg,#221d14,var(--panel))}
+.s10-tq-top,.s10-tq-bot{display:flex;align-items:baseline;justify-content:space-between;gap:6px;white-space:nowrap;min-width:0}
+.s10-tq-sym{font:600 12.5px/1.2 var(--mono);letter-spacing:.03em}
+.s10-tq-rk{margin-right:4px;font:600 10px/1 var(--mono);color:var(--gold-ink)}
+.s10-tq-rk::before{content:"#"}
+.s10-tq-go{flex:0 0 auto;font-size:11px;color:var(--faint)}
+.s10-tq:hover .s10-tq-go{color:var(--gold-ink)}
+.s10-tq-px{min-width:0;font:500 12.5px/1.2 var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis}
+.s10-tq[data-px] .s10-tq-px{color:var(--ink);font-weight:600}
+.s10-tq-ch{flex:0 0 auto;font:600 11px/1.2 var(--mono)}
+.s10-tq-dim{color:var(--faint);font-weight:500}
+.s10-tq.tick-up{animation:s10-tick-up 1.2s ease-out}.s10-tq.tick-dn{animation:s10-tick-dn 1.2s ease-out}
+@keyframes s10-tick-up{0%{background:var(--pos-bg)}100%{background:var(--panel)}}
+@keyframes s10-tick-dn{0%{background:var(--neg-bg)}100%{background:var(--panel)}}
+.s10-tape-fine{margin:0;font:500 11px/1.45 var(--mono);color:var(--faint)}
+@media (max-width:640px){
+  .s10-tape-fine{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){.s10-tape-dot{animation:none}.s10-tq.tick-up,.s10-tq.tick-dn{animation:none}.s10-tq{transition:none}}

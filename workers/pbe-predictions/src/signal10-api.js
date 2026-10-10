@@ -10,6 +10,7 @@ import RANKS from '../../../data/signal10/backtest-ranks.json' with { type: 'jso
 import VARIANTS from '../../../data/signal10/research-variants.json' with { type: 'json' };
 import { ACCOUNT, fetchChart, quoteFromChart, navFromQuotes, nyClock, isWeekday, restoreState, runOpen, runEod, runMark, due } from '../../../src/signal10/forward.js';
 import { MODEL_VERSION, POLICY_VERSION, MANAGER, RANK, DISCLOSURE } from '../../../src/signal10/policy.js';
+import { FEATURED, marketSession, quoteFromBars, tapeRow, quoteTtlSeconds } from '../../../src/signal10/tape.js';
 
 const QUOTE_TTL_S = 15;
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
@@ -71,6 +72,14 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
         latest_snapshot: snap ? { d: snap.d, model: snap.model_version, content_sha256: snap.content_sha256, frozen_at: snap.frozen_at, eligible: snap.eligible } : null };
     } catch (e) { fwd = { status: 'UNAVAILABLE' }; }
     return json({ product: 'PBE Signal 10', model: MODEL_VERSION, policy: POLICY_VERSION, disclosure: DISCLOSURE, forward: fwd, backtest: backtestHeadline(), generated_at: new Date().toISOString() }, 200, 'public, max-age=60');
+  }
+
+  if (p === '/v1/signal10/tape') return tape({ req, env, ctx, store, requireAllAccess, privateJson });
+  // admin: the member view of the tape (production verification without a member session). Same handler, same caches.
+  if (p === '/admin/signal10/tape' && req.method === 'GET') {
+    // read-only view: the admin token or the read-only DIAGNOSTICS_TOKEN
+    if (!(await tokenMatches(req, env.ADMIN_TOKEN)) && !(await tokenMatches(req, env.DIAGNOSTICS_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+    return tape({ req, env, ctx, store, requireAllAccess: async () => ({ ok: true, m: { membership: { state: 'admin' } } }), privateJson });
   }
 
   // ---------------- member routes ----------------
@@ -163,4 +172,109 @@ export async function signal10Tick(env, minuteAt) {
   if (d.mark) out.mark = await runMark(args).catch((e) => ({ error: e.message }));
   if (d.eod && d.minutes % 2 === 0) out.eod = await runEod(args).catch((e) => ({ error: e.message }));
   return out;
+}
+
+// ---------------- U.S. stock tape (issue #54) ----------------
+// GET /v1/signal10/tape. One fixed symbol list (no caller-supplied symbols, so no request amplification); each symbol's
+// parsed quote is edge-cached per colo for every viewer (quoteTtlSeconds: 45 s while open, held to the next open when
+// closed). Quote display is gated by SIGNAL10_TAPE_QUOTES:
+//   "public"   everyone sees prices (ONLY after the quote source's public-redistribution rights are documented)
+//   "members"  All Access members see prices; everyone else gets the symbols, session and Robinhood links, no prices
+//   otherwise  nobody sees prices (links + session only); the source is never called
+// The featured watchline is editorial. Paper holdings and the frozen Top 10 are separate groups, members only.
+export const TAPE_SOURCE = {
+  name: 'Yahoo Finance chart endpoint',
+  rights: 'UNLICENSED_FOR_PUBLIC_REDISTRIBUTION',
+  delay: 'Not documented by the source; every price shows its own source trade time',
+  sessions: 'U.S. regular session only (09:30-16:00 ET; 13:00 on NYSE early-close days). No pre-market or after-hours prices.',
+};
+export const TAPE_REFRESH_S = 90;
+const TAPE_NOTE = 'Featured stocks are an editorial watchline, not Signal 10 picks, and never enter the model or the simulated $10,000 account.';
+const HANDOFF = 'Robinhood links open Robinhood’s public stock page in a new tab. Prices, eligibility and any order happen entirely at Robinhood; PropBetEdge places no orders and is not affiliated with Robinhood.';
+
+// Three layers, because the Worker is served on *.workers.dev where caches.default may be a no-op:
+//   1. per-isolate memo of PLAIN quote data with an expiry (never a Response or a promise shared across requests);
+//   2. caches.default (effective once the Worker sits behind a zone route/custom domain);
+//   3. the vendor subrequest itself, edge-cached via cf.cacheTtlByStatus (2xx only).
+// A hard per-isolate budget caps vendor calls; over budget a symbol shows SOURCE_UNAVAILABLE rather than piling on.
+const MEMO = new Map();
+export const TAPE_BUDGET = { perMinute: 40 };
+const budget = { minute: 0, used: 0 };
+export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; }
+function spend(nowMs) {
+  const m = Math.floor(nowMs / 60000);
+  if (m !== budget.minute) { budget.minute = m; budget.used = 0; }
+  if (budget.used >= TAPE_BUDGET.perMinute) return false;
+  budget.used += 1;
+  return true;
+}
+async function tapeQuote(symbol, session, now, ctx, fetchImpl) {
+  const nowMs = Date.parse(now);
+  const m = MEMO.get(symbol);
+  if (m && m.exp > nowMs) return m.rec ? { ...m.rec } : null;
+  let cache = null, key = null;
+  try {
+    cache = caches.default; key = new Request(`https://signal10.tape.cache/v2/${encodeURIComponent(symbol)}`);
+    const hit = await cache.match(key);
+    if (hit) return hit.json();
+  } catch { cache = null; }
+  // over budget: the last known record (tapeRow still judges its age), else nothing
+  if (!spend(nowMs)) return m?.rec ? { ...m.rec } : null;
+  const ttl = quoteTtlSeconds(session, now);
+  const edgeFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtlByStatus: { '200-299': Math.min(ttl, 300), '300-599': 0 }, cacheEverything: true } });
+  const c = await fetchChart(symbol, { range: '5d', interval: '1d', fetchImpl: edgeFetch });
+  const q = c.status === 200 ? quoteFromBars(symbol, c.json) : null;
+  const rec = q ? { ...q, fetched_at: c.retrieved_at } : null;
+  // failures are held for 60 s too (never a retry storm)
+  const life = rec ? ttl : 60;
+  MEMO.set(symbol, { rec, exp: nowMs + life * 1000 });
+  if (cache) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(rec), { headers: { 'cache-control': `max-age=${life}`, 'content-type': 'application/json' } })).catch(() => {}));
+  return rec ? { ...rec } : null;
+}
+async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
+
+// Members-only groups: what the paper account holds now and the latest frozen Top 10 (both straight from the ledger).
+async function memberGroups(store) {
+  const groups = [];
+  const h = await forwardHead(store);
+  if (h.state) {
+    const { st } = restoreState(h.state.payload);
+    const held = Object.entries(st.positions).map(([symbol, pos]) => ({ symbol, name: pos.name || symbol, group: 'HOLDINGS' }));
+    if (held.length) groups.push({ key: 'HOLDINGS', label: 'Paper holdings', note: 'Positions in the simulated $10,000 account.', rows: held });
+  }
+  const [snap] = await store.select('pred_s10_snapshots', { select: 'd,ranks', d: 'not.is.null' }, { limit: 1, order: 'd.desc' });
+  if (snap?.ranks?.length) groups.push({ key: 'TOP10', label: `Top 10 · frozen ${snap.d}`, note: 'The algorithm’s ranking, frozen after the close.', rows: snap.ranks.slice(0, 10).filter((r) => r.symbol).map((r) => ({ symbol: r.symbol, name: r.name || r.symbol, group: 'TOP10', rank: r.rank })) });
+  return groups;
+}
+
+export async function tape({ req, env, ctx, store, requireAllAccess, privateJson, now = new Date().toISOString(), fetchImpl = fetch }) {
+  const session = marketSession(now);
+  const mode = ['public', 'members'].includes(env.SIGNAL10_TAPE_QUOTES) ? env.SIGNAL10_TAPE_QUOTES : 'off';
+  // soft membership check: not entitled / unverifiable -> the public tape (never an error for this strip)
+  const g = await requireAllAccess(req, env).catch(() => ({ ok: false }));
+  const member = !!g.ok, access = member ? g.m.membership.state : 'public';
+  const showQuotes = mode === 'public' || (mode === 'members' && member);
+  const groups = [{ key: 'FEATURED', label: 'Featured', note: TAPE_NOTE, rows: FEATURED.map((f) => ({ ...f, group: 'FEATURED' })) }];
+  if (member) { try { groups.push(...await memberGroups(store)); } catch { /* ledger read failed: featured tape still renders */ } }
+  const symbols = [...new Set(groups.flatMap((g) => g.rows.map((r) => r.symbol)))];
+  const quotes = new Map();
+  if (showQuotes) {
+    const got = await pooled(symbols, 6, (s) => tapeQuote(s, session, now, ctx, fetchImpl).catch(() => null));
+    symbols.forEach((s, i) => quotes.set(s, got[i]));
+  }
+  const withheld = showQuotes ? null : mode === 'off' ? 'SOURCE_RIGHTS_HOLD' : 'MEMBERS_ONLY';
+  const out = groups.map((g) => ({ ...g, rows: g.rows.map((r) => {
+    const row = tapeRow(r, showQuotes ? quotes.get(r.symbol) : null, session, now);
+    if (r.rank) row.rank = r.rank;
+    if (r.listed) row.listed = r.listed;
+    if (withheld) row.status = withheld;
+    if (showQuotes) row.fetched_at = quotes.get(r.symbol)?.fetched_at || null;
+    return row;
+  }) }));
+  return privateJson({
+    product: 'PBE Signal 10 · U.S. stock tape', generated_at: now, session,
+    quotes: { mode: mode.toUpperCase(), shown: showQuotes, withheld },
+    source: showQuotes ? TAPE_SOURCE : null, refresh_seconds: TAPE_REFRESH_S,
+    groups: out, note: TAPE_NOTE, handoff: HANDOFF, access: { tier: access },
+  });
 }
