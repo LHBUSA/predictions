@@ -53,7 +53,7 @@ try {
   });
   page.on('pageerror', (e) => fail(`pageerror ${page.url()} ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|404/.test(m.text())) fail(`console ${page.url()} ${m.text()}`); });
-  for (const path of ['/markets/signal-10/arena/', '/markets/metals/']) {
+  for (const path of ['/markets/signal-10/arena/', '/markets/metals/', '/commodities/gold/', '/commodities/silver/', '/commodities/platinum/']) {
     for (const w of [320, 360, 390, 430, 768, 1440]) {
       await page.setViewport({ width: w, height: 900 });
       await page.goto(origin + path, { waitUntil: 'networkidle2' });

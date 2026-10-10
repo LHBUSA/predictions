@@ -10,13 +10,18 @@
   const usd = (v) => (Number.isFinite(v) ? `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
   const pct = (v) => (Number.isFinite(v) ? `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v * 100).toFixed(2)}%` : '—');
   const METAL = { GOLD: 'gold', SILVER: 'silver', PLATINUM: 'platinum' };
+  // One controller for the overview (/markets/metals/) and the per-metal pages (/commodities/<metal>/, issue #66):
+  // <body data-metal="GOLD|SILVER|PLATINUM"> narrows every section to that metal; no attribute = all three.
+  const ONLY = document.body.dataset.metal || null;
+  const PAGE = { GOLD: '/commodities/gold/', SILVER: '/commodities/silver/', PLATINUM: '/commodities/platinum/' };
 
   function spotCard(x, hold) {
     return `<article class="mt-card mt-${METAL[x.metal]}" aria-labelledby="mt-${x.code}-h">
 <header><span class="mt-orb" aria-hidden="true">${esc(x.code)}</span><div><h3 id="mt-${x.code}-h">${esc(x.label)}</h3><span class="mt-sym">${esc(x.code)}/USD · spot · ${esc(x.unit)}</span></div></header>
 <p class="mt-hold" role="status"><b>${esc(x.quote.label || 'QUOTE UNAVAILABLE')}</b></p>
 <p class="mt-note">${esc(hold.note)}</p>
-<dl class="mt-kv"><dt>Last legitimate observation</dt><dd>none on file</dd><dt>Instrument id</dt><dd><code>${esc(x.id)}</code></dd></dl></article>`;
+<dl class="mt-kv"><dt>Last legitimate observation</dt><dd>none on file</dd><dt>Instrument id</dt><dd><code>${esc(x.id)}</code></dd></dl>
+${ONLY ? '' : `<a class="mt-more" href="${PAGE[x.metal]}">${esc(x.label)} page <span aria-hidden="true">→</span></a>`}</article>`;
   }
   function etfCard(e, attribution) {
     const q = e.quote; const has = Number.isFinite(q.value);
@@ -32,24 +37,29 @@ ${has ? `<p class="mt-note">Last sale on the IEX exchange for that session (IEX 
   }
   function sleeve(sv) {
     if (!sv) return '';
-    const rows = (sv.candidates || []).map((c) => `<tr><th scope="row">${esc(c.symbol)}</th><td>${c.verified ? 'Verified' : `Hold · ${esc(c.hold || 'pending')}`}</td><td class="num">${c.above_sma200 == null ? '—' : c.above_sma200 ? 'Above' : 'Below'}</td><td class="num">${Number.isFinite(sv.holdings?.find((h) => h.symbol === c.symbol)?.weight) ? `${(sv.holdings.find((h) => h.symbol === c.symbol).weight * 100).toFixed(1)}%` : '0%'}</td></tr>`).join('');
+    const rows = (sv.candidates || []).filter((c) => !ONLY || ETF_METAL[c.symbol] === ONLY).map((c) => `<tr><th scope="row">${esc(c.symbol)}</th><td>${c.verified ? 'Verified' : `Hold · ${esc(c.hold || 'pending')}`}</td><td class="num">${c.above_sma200 == null ? '—' : c.above_sma200 ? 'Above' : 'Below'}</td><td class="num">${Number.isFinite(sv.holdings?.find((h) => h.symbol === c.symbol)?.weight) ? `${(sv.holdings.find((h) => h.symbol === c.symbol).weight * 100).toFixed(1)}%` : '0%'}</td></tr>`).join('');
     return `<section class="mt-sec" aria-labelledby="mt-sleeve-h"><h2 id="mt-sleeve-h" class="s10-h2">Signal 10 Diversified · metals sleeve</h2>
-<p class="s10-sub">${sv.as_of ? `As of the ${esc(day(sv.as_of))} close: the sleeve is <b class="num">${Number.isFinite(sv.weight) ? `${(sv.weight * 100).toFixed(1)}%` : '0%'}</b> of the simulated account (cap ${(sv.cap * 100).toFixed(0)}%).` : 'The Diversified challenger has not started yet. Its metals sleeve can stay at zero whenever an ETF is unverified or not in an uptrend.'}</p>
+<p class="s10-sub">${sv.as_of ? `As of the ${esc(day(sv.as_of))} close: ${ONLY ? 'the whole metals sleeve (all three ETFs) is' : 'the sleeve is'} <b class="num">${Number.isFinite(sv.weight) ? `${(sv.weight * 100).toFixed(1)}%` : '0%'}</b> of the simulated account (cap ${(sv.cap * 100).toFixed(0)}%).` : 'The Diversified challenger has not started yet. Its metals sleeve can stay at zero whenever an ETF is unverified or not in an uptrend.'}</p>
 ${rows ? `<div class="tbl-wrap"><table class="s10-tbl"><thead><tr><th scope="col">ETF</th><th scope="col">Registry</th><th scope="col" class="num">vs 200-day</th><th scope="col" class="num">Weight</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
 <p class="s10-note">Simulated paper portfolio, not advice. <a href="/markets/signal-10/arena/">Open the Strategy Arena</a>.</p></section>`;
   }
 
+  const ETF_METAL = {};
   async function load() {
     const box = $('mt-app');
     let r; try { r = await fetch('/api/metals', { credentials: 'same-origin', cache: 'no-store', headers: { accept: 'application/json' } }); } catch { r = null; }
     const d = r && r.ok ? await r.json().catch(() => null) : null;
     if (!d) { box.innerHTML = '<p class="s10-statusline" role="status"><b>DATA UNAVAILABLE</b> The metals record could not be loaded. Retrying in 60 s.</p>'; setTimeout(load, 60000); return; }
     box.dataset.state = 'ready';
-    box.innerHTML = `<section class="mt-sec" aria-labelledby="mt-spot-h"><h2 id="mt-spot-h" class="s10-h2">Spot metal · USD per troy ounce</h2>
-<div class="mt-grid">${d.spot.map((x) => spotCard(x, d.rights.spot)).join('')}</div></section>
-<section class="mt-sec" aria-labelledby="mt-etf-h"><h2 id="mt-etf-h" class="s10-h2">Listed ETF proxies</h2>
+    for (const e of d.etfs) ETF_METAL[e.symbol] = e.metal;
+    const spot = d.spot.filter((x) => !ONLY || x.metal === ONLY);
+    const etfs = d.etfs.filter((e) => !ONLY || e.metal === ONLY);
+    const one = ONLY ? spot[0]?.label?.toLowerCase() : null;
+    box.innerHTML = `<section class="mt-sec" aria-labelledby="mt-spot-h"><h2 id="mt-spot-h" class="s10-h2">${one ? `Spot ${esc(one)}` : 'Spot metal'} · USD per troy ounce</h2>
+<div class="mt-grid${ONLY ? ' mt-one' : ''}">${spot.map((x) => spotCard(x, d.rights.spot)).join('')}</div></section>
+<section class="mt-sec" aria-labelledby="mt-etf-h"><h2 id="mt-etf-h" class="s10-h2">${ONLY ? 'Listed ETF proxy' : 'Listed ETF proxies'}</h2>
 <p class="s10-sub">Shares of trusts that hold physical metal. Their prices follow the metal less fees and tracking differences, trade only during U.S. equity sessions, and are never a spot price.</p>
-<div class="mt-grid">${d.etfs.map((e) => etfCard(e, d.attribution)).join('')}</div></section>
+<div class="mt-grid${ONLY ? ' mt-one' : ''}">${etfs.map((e) => etfCard(e, d.attribution)).join('')}</div></section>
 ${sleeve(d.diversified_sleeve)}
 <section class="mt-sec" aria-labelledby="mt-src-h"><h2 id="mt-src-h" class="s10-h2">Sources and display rights</h2>
 <div class="tbl-wrap"><table class="s10-tbl"><caption class="sr-only">Precious-metal price sources and what each permits</caption><thead><tr><th scope="col">Source</th><th scope="col">Research use</th><th scope="col">Members</th><th scope="col">Public</th><th scope="col">Used</th></tr></thead><tbody>
