@@ -283,7 +283,7 @@ test('tape API: SIGNAL10_TAPE_QUOTES off (or unset) shows no prices to anyone an
   for (const mode of ['off', undefined, 'yes']) {
     const h = harness({ member: true, mode });
     const { d } = await h.run();
-    assert.equal(h.calls.length, 0); assert.equal(d.quotes.shown, false); assert.equal(d.quotes.withheld, 'QUOTES_OFF');
+    assert.equal(h.calls.length, 0); assert.equal(d.quotes.shown, false); assert.equal(d.quotes.withheld, 'SOURCE_RIGHTS_HOLD');
   }
   const pub = harness({ member: false, mode: 'public' });
   const { d } = await pub.run();

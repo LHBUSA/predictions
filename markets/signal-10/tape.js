@@ -25,7 +25,7 @@
       return /[1-9]/.test(t) ? t : t.replace(/^[+−]/, '');
     };
     const title = (r) => {
-      const px = r.price != null ? `${fmtPrice(r.price)}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous close ${fmtPrice(r.previous_close)})` : ''} · source trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'QUOTES_OFF' ? 'Prices are not shown' : 'Quote source unavailable';
+      const px = r.price != null ? `${fmtPrice(r.price)}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous close ${fmtPrice(r.previous_close)})` : ''} · source trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'SOURCE_RIGHTS_HOLD' ? 'Prices are not shown (quote source rights hold)' : 'Quote source unavailable';
       return `${r.symbol} · ${r.name} — ${px}. Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
     };
     const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" role="listitem" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
@@ -35,7 +35,7 @@
     function pxText(r) {
       if (r.price != null) return esc(fmtPrice(r.price));
       // no price for this reader: the company name (exactly what the static page already shows, so nothing flickers)
-      if (r.status === 'MEMBERS_ONLY' || r.status === 'QUOTES_OFF') return esc(r.name);
+      if (r.status === 'MEMBERS_ONLY' || r.status === 'SOURCE_RIGHTS_HOLD') return esc(r.name);
       if (r.status === 'STALE') return '<span class="s10-tq-dim">Stale</span>';
       return '<span class="s10-tq-dim">No quote</span>';
     }
@@ -89,6 +89,7 @@
     }
     function metaHTML(d, rows) {
       const parts = [];
+      if (!d.quotes.shown && d.quotes.withheld === 'SOURCE_RIGHTS_HOLD') parts.push('<span title="No licensed quote source yet: symbols, market hours and Robinhood links only">Prices: source rights hold</span>');
       if (!d.quotes.shown && d.quotes.withheld === 'MEMBERS_ONLY') parts.push('<span>Prices for <a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_signal10_tape">All Access</a> members · <a href="#" data-pbe-signin>Sign in</a></span>');
       const span = C.quoteSpan(rows);
       if (d.quotes.shown && span) {

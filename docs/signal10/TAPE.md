@@ -40,7 +40,7 @@ How the fields are built:
   - LAST_CLOSE: closed, and the quote is from the last session.
   - STALE: the row carries **no price**.
   - SOURCE_UNAVAILABLE: the source returned nothing usable.
-  - MEMBERS_ONLY or QUOTES_OFF: prices are withheld for this reader.
+  - MEMBERS_ONLY or SOURCE_RIGHTS_HOLD: prices are withheld for this reader.
 - The source response's `meta.symbol` must match the requested symbol, otherwise the quote is rejected. This means no other security's history is ever joined. SPCX `firstTradeDate` = 2026-06-12 13:30Z, which matches the Nasdaq listing.
 
 Sample source receipt, fetched from this machine 2026-10-10:

@@ -262,7 +262,7 @@ export async function tape({ req, env, ctx, store, requireAllAccess, privateJson
     const got = await pooled(symbols, 6, (s) => tapeQuote(s, session, now, ctx, fetchImpl).catch(() => null));
     symbols.forEach((s, i) => quotes.set(s, got[i]));
   }
-  const withheld = showQuotes ? null : mode === 'off' ? 'QUOTES_OFF' : 'MEMBERS_ONLY';
+  const withheld = showQuotes ? null : mode === 'off' ? 'SOURCE_RIGHTS_HOLD' : 'MEMBERS_ONLY';
   const out = groups.map((g) => ({ ...g, rows: g.rows.map((r) => {
     const row = tapeRow(r, showQuotes ? quotes.get(r.symbol) : null, session, now);
     if (r.rank) row.rank = r.rank;
