@@ -293,10 +293,50 @@ export function axisUSD(cents, stepCents = 0) {
   return `$${Math.round(v)}`;
 }
 
+// ---------- U.S. stock tape (issue #54) ----------
+// Next tape fetch in ms, or null (paused while hidden). Open regular session: every 90 s. The first 30 min after the bell:
+// 120 s (the official closing print). Otherwise closed: wait for the next open (+30 s), min 60 s, max 6 h. No calendar: 15 min.
+export function tapePollMs(session, visible, nowMs = Date.now()) {
+  if (!visible) return null;
+  const st = session?.state;
+  if (st === 'OPEN') return 90000;
+  if (st === 'AFTER_CLOSE' && nowMs - Date.parse(session.closes_at || '') < 30 * 60000) return 120000;
+  const next = Date.parse(session?.next_open_at || '');
+  if (Number.isNaN(next)) return 15 * 60000;
+  return Math.max(60000, Math.min(6 * 3600000, next - nowMs + 30000));
+}
+const ET_DAY = (iso, o) => new Intl.DateTimeFormat('en-US', { timeZone: ET, ...o }).format(new Date(iso));
+// "Fri Oct 9, 4:00 PM ET"
+export function etShort(iso) {
+  if (!iso || Number.isNaN(Date.parse(iso))) return DASH;
+  return `${ET_DAY(iso, { weekday: 'short', month: 'short', day: 'numeric' })}, ${ET_DAY(iso, { hour: 'numeric', minute: '2-digit' })} ET`;
+}
+// Head status for the tape. Never "LIVE" unless the session is open AND at least one quote is CURRENT (source time <= 2 min).
+export function tapeStatus(session, rows = []) {
+  const st = session?.state || 'CALENDAR_UNKNOWN';
+  const has = (s) => rows.some((r) => r.status === s);
+  if (st === 'OPEN') {
+    if (has('CURRENT')) return { cls: 'open', live: true, text: session.early_close ? 'LIVE · MARKET OPEN · CLOSES 1:00 PM ET' : 'LIVE · MARKET OPEN' };
+    if (has('DELAYED')) return { cls: 'delayed', live: false, text: 'MARKET OPEN · QUOTES DELAYED' };
+    if (has('MEMBERS_ONLY') || has('QUOTES_OFF')) return { cls: 'open-idle', live: false, text: 'MARKET OPEN' };
+    return { cls: 'stale', live: false, text: 'MARKET OPEN · SOURCE UNAVAILABLE' };
+  }
+  const closed = st === 'CLOSED_WEEKEND' ? 'MARKET CLOSED · WEEKEND' : st === 'CLOSED_HOLIDAY' ? 'MARKET CLOSED · EXCHANGE HOLIDAY'
+    : st === 'PRE_MARKET' ? 'PRE-MARKET · LAST CLOSE' : st === 'AFTER_CLOSE' ? 'MARKET CLOSED · LAST CLOSE' : 'MARKET HOURS UNVERIFIED';
+  return { cls: 'closed', live: false, text: closed };
+}
+// Source trade-time span across priced rows: { min, max } ISO or null.
+export function quoteSpan(rows = []) {
+  const t = rows.filter((r) => r.price != null && r.price_observed_at).map((r) => Date.parse(r.price_observed_at)).filter((x) => !Number.isNaN(x));
+  if (!t.length) return null;
+  return { min: new Date(Math.min(...t)).toISOString(), max: new Date(Math.max(...t)).toISOString() };
+}
+
 const API = {
   MINUS, DASH, esc, fmtUSD, fmtPrice, fmtPct, fmtInt, fmtQty, signCls, etDateTime, etTime, fmtDate, relTime, isFresh, gateFor, retryAfterMs, pollMs, sessionBadge,
   navView, pnl, investedPct, windowLabel, positionRow, changedQuotes, rankMove, flattenEvent, filterEvents, paginate, eventDetail, monthlyGrid, heat, verdict,
-  extent, niceStep, niceTicks, logTicks, scale, linePath, drawdowns, nearest, dayMs, axisUSD
+  extent, niceStep, niceTicks, logTicks, scale, linePath, drawdowns, nearest, dayMs, axisUSD,
+  tapePollMs, etShort, tapeStatus, quoteSpan
 };
 if (typeof window !== 'undefined') {
   window.S10Core = API;

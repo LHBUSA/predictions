@@ -2,9 +2,10 @@
 // node scripts/signal10/pages/gen-pages.mjs   (run from the repo root; writes markets/signal-10/**/index.html)
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { FEATURED, robinhoodUrl } from '../../../src/signal10/tape.js';
 
 const ROOT = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const V = '20261009s10b';
+const V = '20261010tape1';
 const crypto = readFileSync(join(ROOT, 'crypto/index.html'), 'utf8');
 const cut = (a, b) => { const i = crypto.indexOf(a); const j = crypto.indexOf(b) + b.length; if (i < 0 || j < b.length) throw new Error(`marker ${a}`); return crypto.slice(i, j); };
 let header = cut('<!-- network:header -->', '<!-- /network:header -->');
@@ -24,6 +25,16 @@ const TABS = [
   ['methodology', '/markets/signal-10/methodology/', 'Methodology'],
   ['backtest', '/markets/signal-10/backtest/', 'Backtest (research)'],
 ];
+// U.S. stock tape (issue #54): featured links are static (work without JS, no layout shift); tape.js fills prices.
+const escA = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const TAPE = `<section class="s10-tape" id="s10-tape" data-state="loading" aria-labelledby="s10-tape-h"><div class="wrap">
+  <div class="s10-tape-head"><h2 id="s10-tape-h" class="s10-tape-h">U.S. Stocks</h2><span class="s10-tape-status" data-tape-status role="status" aria-live="polite">U.S. regular session</span><span class="s10-tape-meta" data-tape-meta></span></div>
+  <div class="s10-tape-track" data-tape-track role="list" tabindex="-1" aria-label="Featured U.S. stocks — each opens its Robinhood page in a new tab">
+    <span class="s10-tg" role="listitem">Featured</span>
+${FEATURED.map((f) => `    <a class="s10-tq${f.pinned ? ' pin' : ''}" role="listitem" data-sym="${f.symbol}" href="${robinhoodUrl(f.symbol)}" target="_blank" rel="noopener noreferrer external" title="${escA(`${f.symbol} · ${f.name}. Opens Robinhood’s ${f.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`)}"><span class="s10-tq-top"><b class="s10-tq-sym">${f.symbol}</b><span class="s10-tq-ch num flat"></span></span><span class="s10-tq-bot"><span class="s10-tq-px num">${escA(f.name)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span><span class="sr-only"> ${escA(f.name)}. View ${f.symbol} on Robinhood (opens in a new tab)</span></a>`).join(String.fromCharCode(10))}
+  </div>
+  <p class="s10-tape-fine">Featured = editorial watchline, not Signal 10 picks; never in the model or the simulated account. ↗ opens Robinhood. PropBetEdge places no orders and is not affiliated with Robinhood.</p>
+</div></section>`;
 const tabs = (cur) => `<nav class="s10-tabs" aria-label="Signal 10 sections">${TABS.map(([k, h, t]) => `<a href="${h}"${k === cur ? ' aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
 
 function page({ key, title, desc, h1, dek, body }) {
@@ -55,6 +66,7 @@ ${header}
   <p class="s10-disclosure" role="note"><b>HYPOTHETICAL / SIMULATED</b><span>Paper results only. Not actual trading. Not investment advice. Scores are a 0–100 rank index, not a probability.</span></p>
   ${tabs(key)}
 </div></section>
+${TAPE}
 <div class="wrap s10-body">
 ${body}
 </div>
@@ -63,6 +75,7 @@ ${body}
 ${footer}
 <script type="module" src="/markets/signal-10/signal10-core.js?v=${V}"></script>
 <script src="/markets/signal-10/signal10.js?v=${V}" defer></script>
+<script src="/markets/signal-10/tape.js?v=${V}" defer></script>
 </body></html>
 `;
 }

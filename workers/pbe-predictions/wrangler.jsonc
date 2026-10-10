@@ -56,7 +56,11 @@
     // PBE Signal 10 paper account (issue #52, sql/016 applied 2026-10-09): OPEN fills / EOD freeze / 5-min marks on the
     // one-minute cron. SIMULATED ONLY, no brokerage. Kill switch: anything but "true". SIGNAL10_START = first eligible EOD.
     "SIGNAL10": "true",
-    "SIGNAL10_START": "2026-10-09"
+    "SIGNAL10_START": "2026-10-09",
+    // Signal 10 U.S. stock tape (issue #54): "members" = All Access members see source-timestamped prices; the public sees
+    // symbols, session and Robinhood links only. "public" ONLY after the quote source's public-redistribution rights are
+    // documented (docs/signal10/TAPE.md). Anything else = no prices for anyone and no vendor calls.
+    "SIGNAL10_TAPE_QUOTES": "members"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
   // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),
