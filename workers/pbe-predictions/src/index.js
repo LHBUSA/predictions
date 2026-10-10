@@ -29,6 +29,7 @@ import { cachedInsightsDesk } from './insights/page-cache.js';
 import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from './insights/render.js';
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { handleSignal10, signal10Tick } from './signal10-api.js';
+import { handleMarketTape } from './market-tape-api.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
 import { runIntradayScoring, intradayReport, intradayScoringDue, shadowCompareReport } from './intraday-scoring.js';
@@ -460,6 +461,10 @@ export default {
         const exclude = new Set(st.events);
         const related = d.events.filter((e) => e.category === live?.event.category && !exclude.has(e.slug) && e.state !== 'MARKET_MONITORING').sort((x, y) => y.max_abs_divergence - x.max_abs_divergence).slice(0, 4);
         return html(renderArticle(st, item.built, { live, related, model: FAMILIES.find((f) => f.id === live?.event.model_family) || null, words: item.words }).replace('content="index,follow,max-image-preview:large"', 'content="noindex"'), 200, 'no-store');
+      }
+      if (p === '/v1/market-tape' || p === '/admin/market-tape') {
+        const r = await handleMarketTape({ req, env, p, store: storeFor(env), requireAllAccess, privateJson, json, tokenMatches });
+        if (r) return r;
       }
       if (p.startsWith('/v1/signal10') || p.startsWith('/admin/signal10')) {
         const r = await handleSignal10({ req, env, ctx, p, url, store: storeFor(env), requireAllAccess, privateJson, json, tokenMatches });

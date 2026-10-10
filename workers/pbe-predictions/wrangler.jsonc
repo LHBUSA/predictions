@@ -57,11 +57,11 @@
     // one-minute cron. SIMULATED ONLY, no brokerage. Kill switch: anything but "true". SIGNAL10_START = first eligible EOD.
     "SIGNAL10": "true",
     "SIGNAL10_START": "2026-10-09",
-    // Signal 10 / PBE Market Tape quotes (issues #54, #56). OWNER: "off" until a source's written terms permit the specific
-    // display (a paywall is NOT redistribution permission). "off" = link-first tape: symbols, sessions, Robinhood links and
-    // member research groups, ZERO quote-vendor calls, every price field null for every audience. "members"/"public" may be
-    // set only after docs/signal10/TAPE.md records rights for that exact audience.
-    "SIGNAL10_TAPE_QUOTES": "off"
+    // PBE Market Tape (market-tape/1, issues #54/#56). Prices need BOTH MARKET_TAPE_QUOTES="on" AND a provider whose RIGHTS
+    // record in src/market-tape/contract.js permits the audience (a paywall is NOT redistribution permission). Today no
+    // provider has rights: every price field is null for every audience and no quote vendor is called. Owner: keep "off".
+    "MARKET_TAPE_QUOTES": "off",
+    "MARKET_TAPE_PROVIDER": "yahoo-chart"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
   // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),

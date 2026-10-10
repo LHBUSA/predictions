@@ -10,7 +10,7 @@ import RANKS from '../../../data/signal10/backtest-ranks.json' with { type: 'jso
 import VARIANTS from '../../../data/signal10/research-variants.json' with { type: 'json' };
 import { ACCOUNT, fetchChart, quoteFromChart, navFromQuotes, nyClock, isWeekday, restoreState, runOpen, runEod, runMark, due } from '../../../src/signal10/forward.js';
 import { MODEL_VERSION, POLICY_VERSION, MANAGER, RANK, DISCLOSURE } from '../../../src/signal10/policy.js';
-import { FEATURED, marketSession, quoteFromBars, tapeRow, quoteTtlSeconds } from '../../../src/signal10/tape.js';
+import { marketTape } from './market-tape-api.js';
 
 const QUOTE_TTL_S = 15;
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
@@ -174,107 +174,30 @@ export async function signal10Tick(env, minuteAt) {
   return out;
 }
 
-// ---------------- U.S. stock tape (issue #54) ----------------
-// GET /v1/signal10/tape. One fixed symbol list (no caller-supplied symbols, so no request amplification); each symbol's
-// parsed quote is edge-cached per colo for every viewer (quoteTtlSeconds: 45 s while open, held to the next open when
-// closed). Quote display is gated by SIGNAL10_TAPE_QUOTES:
-//   "public"   everyone sees prices (ONLY after the quote source's public-redistribution rights are documented)
-//   "members"  All Access members see prices; everyone else gets the symbols, session and Robinhood links, no prices
-//   otherwise  nobody sees prices (links + session only); the source is never called
-// The featured watchline is editorial. Paper holdings and the frozen Top 10 are separate groups, members only.
-export const TAPE_SOURCE = {
-  name: 'Yahoo Finance chart endpoint',
-  rights: 'UNLICENSED_FOR_PUBLIC_REDISTRIBUTION',
-  delay: 'Not documented by the source; every price shows its own source trade time',
-  sessions: 'U.S. regular session only (09:30-16:00 ET; 13:00 on NYSE early-close days). No pre-market or after-hours prices.',
-};
+// ---------------- legacy /v1/signal10/tape (issue #54) ----------------
+// Thin mapping over the ONE market-tape/1 backend (market-tape-api.js), kept for pages released before the Signal 10 UI
+// switched to /api/market-tape. Same entitlement rule, same rights gate, no quote logic of its own.
 export const TAPE_REFRESH_S = 90;
 const TAPE_NOTE = 'Featured stocks are an editorial watchline, not Signal 10 picks, and never enter the model or the simulated $10,000 account.';
 const HANDOFF = 'Robinhood links open Robinhood’s public stock page in a new tab. Prices, eligibility and any order happen entirely at Robinhood; PropBetEdge places no orders and is not affiliated with Robinhood.';
+const LEGACY_STATUS = { LIVE_QUOTES: 'CURRENT' };
+const LEGACY_GROUP = { FEATURED: 'FEATURED', SIGNAL10_TOP10: 'TOP10', SIGNAL10_PAPER: 'HOLDINGS' };
 
-// Three layers, because the Worker is served on *.workers.dev where caches.default may be a no-op:
-//   1. per-isolate memo of PLAIN quote data with an expiry (never a Response or a promise shared across requests);
-//   2. caches.default (effective once the Worker sits behind a zone route/custom domain);
-//   3. the vendor subrequest itself, edge-cached via cf.cacheTtlByStatus (2xx only).
-// A hard per-isolate budget caps vendor calls; over budget a symbol shows SOURCE_UNAVAILABLE rather than piling on.
-const MEMO = new Map();
-export const TAPE_BUDGET = { perMinute: 40 };
-const budget = { minute: 0, used: 0 };
-export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; }
-function spend(nowMs) {
-  const m = Math.floor(nowMs / 60000);
-  if (m !== budget.minute) { budget.minute = m; budget.used = 0; }
-  if (budget.used >= TAPE_BUDGET.perMinute) return false;
-  budget.used += 1;
-  return true;
-}
-async function tapeQuote(symbol, session, now, ctx, fetchImpl) {
-  const nowMs = Date.parse(now);
-  const m = MEMO.get(symbol);
-  if (m && m.exp > nowMs) return m.rec ? { ...m.rec } : null;
-  let cache = null, key = null;
-  try {
-    cache = caches.default; key = new Request(`https://signal10.tape.cache/v2/${encodeURIComponent(symbol)}`);
-    const hit = await cache.match(key);
-    if (hit) return hit.json();
-  } catch { cache = null; }
-  // over budget: the last known record (tapeRow still judges its age), else nothing
-  if (!spend(nowMs)) return m?.rec ? { ...m.rec } : null;
-  const ttl = quoteTtlSeconds(session, now);
-  const edgeFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtlByStatus: { '200-299': Math.min(ttl, 300), '300-599': 0 }, cacheEverything: true } });
-  const c = await fetchChart(symbol, { range: '5d', interval: '1d', fetchImpl: edgeFetch });
-  const q = c.status === 200 ? quoteFromBars(symbol, c.json) : null;
-  const rec = q ? { ...q, fetched_at: c.retrieved_at } : null;
-  // failures are held for 60 s too (never a retry storm)
-  const life = rec ? ttl : 60;
-  MEMO.set(symbol, { rec, exp: nowMs + life * 1000 });
-  if (cache) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(rec), { headers: { 'cache-control': `max-age=${life}`, 'content-type': 'application/json' } })).catch(() => {}));
-  return rec ? { ...rec } : null;
-}
-async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
-
-// Members-only groups: what the paper account holds now and the latest frozen Top 10 (both straight from the ledger).
-async function memberGroups(store) {
-  const groups = [];
-  const h = await forwardHead(store);
-  if (h.state) {
-    const { st } = restoreState(h.state.payload);
-    const held = Object.entries(st.positions).map(([symbol, pos]) => ({ symbol, name: pos.name || symbol, group: 'HOLDINGS' }));
-    if (held.length) groups.push({ key: 'HOLDINGS', label: 'Paper holdings', note: 'Positions in the simulated $10,000 account.', rows: held });
-  }
-  const [snap] = await store.select('pred_s10_snapshots', { select: 'd,ranks', d: 'not.is.null' }, { limit: 1, order: 'd.desc' });
-  if (snap?.ranks?.length) groups.push({ key: 'TOP10', label: `Top 10 · frozen ${snap.d}`, note: 'The algorithm’s ranking, frozen after the close.', rows: snap.ranks.slice(0, 10).filter((r) => r.symbol).map((r) => ({ symbol: r.symbol, name: r.name || r.symbol, group: 'TOP10', rank: r.rank })) });
-  return groups;
-}
-
-export async function tape({ req, env, ctx, store, requireAllAccess, privateJson, now = new Date().toISOString(), fetchImpl = fetch }) {
-  const session = marketSession(now);
-  const mode = ['public', 'members'].includes(env.SIGNAL10_TAPE_QUOTES) ? env.SIGNAL10_TAPE_QUOTES : 'off';
-  // soft membership check: not entitled / unverifiable -> the public tape (never an error for this strip)
+export async function tape({ req, env, ctx, store, requireAllAccess, privateJson, now = new Date().toISOString(), fetchImpl = fetch, providers }) {
   const g = await requireAllAccess(req, env).catch(() => ({ ok: false }));
-  const member = !!g.ok, access = member ? g.m.membership.state : 'public';
-  const showQuotes = mode === 'public' || (mode === 'members' && member);
-  const groups = [{ key: 'FEATURED', label: 'Featured', note: TAPE_NOTE, rows: FEATURED.map((f) => ({ ...f, group: 'FEATURED' })) }];
-  if (member) { try { groups.push(...await memberGroups(store)); } catch { /* ledger read failed: featured tape still renders */ } }
-  const symbols = [...new Set(groups.flatMap((g) => g.rows.map((r) => r.symbol)))];
-  const quotes = new Map();
-  if (showQuotes) {
-    const got = await pooled(symbols, 6, (s) => tapeQuote(s, session, now, ctx, fetchImpl).catch(() => null));
-    symbols.forEach((s, i) => quotes.set(s, got[i]));
-  }
-  const withheld = showQuotes ? null : mode === 'off' ? 'SOURCE_RIGHTS_HOLD' : 'MEMBERS_ONLY';
-  const out = groups.map((g) => ({ ...g, rows: g.rows.map((r) => {
-    const row = tapeRow(r, showQuotes ? quotes.get(r.symbol) : null, session, now);
-    if (r.rank) row.rank = r.rank;
-    if (r.listed) row.listed = r.listed;
-    if (withheld) row.status = withheld;
-    if (showQuotes) row.fetched_at = quotes.get(r.symbol)?.fetched_at || null;
-    return row;
-  }) }));
+  const member = !!g.ok;
+  const mt = await marketTape({ env, store, member, now, fetchImpl, ...(providers ? { providers } : {}) });
+  const shown = mt.rights.state === 'CLEARED';
+  const s = mt.session;
   return privateJson({
-    product: 'PBE Signal 10 · U.S. stock tape', generated_at: now, session,
-    quotes: { mode: mode.toUpperCase(), shown: showQuotes, withheld },
-    source: showQuotes ? TAPE_SOURCE : null, refresh_seconds: TAPE_REFRESH_S,
-    groups: out, note: TAPE_NOTE, handoff: HANDOFF, access: { tier: access },
+    product: 'PBE Signal 10 · U.S. stock tape', contract: `${mt.contract} (legacy view)`, generated_at: now,
+    session: { date: s.date, early_close: s.early_close, state: s.state, label: s.label, opens_at: s.session_open_at, closes_at: s.session_close_at, next_open_at: s.next_open_at, last_session: s.last_session, last_close_at: s.last_close_at },
+    quotes: { mode: shown ? 'ON' : 'OFF', shown, withheld: shown ? null : 'SOURCE_RIGHTS_HOLD' },
+    source: shown ? { name: mt.rights.provider } : null, refresh_seconds: TAPE_REFRESH_S,
+    groups: mt.lists.map((l) => ({ key: LEGACY_GROUP[l.key] || l.key, label: l.label, note: l.note, rows: l.securities.map((x) => ({
+      symbol: x.symbol, name: x.name, robinhood_url: x.robinhood_url, group: LEGACY_GROUP[l.key] || l.key, pinned: x.pinned,
+      price: x.last_price, previous_close: x.previous_regular_close, change_abs: x.change_abs, change_pct: x.change_pct, price_observed_at: x.observed_at, fetched_at: x.retrieved_at,
+      status: LEGACY_STATUS[x.state] || x.state, ...(l.key === 'SIGNAL10_TOP10' && x.research?.rank ? { rank: x.research.rank } : {}), ...(x.listed_on ? { listed: x.listed_on } : {}) })) })),
+    note: TAPE_NOTE, handoff: HANDOFF, access: { tier: member ? g.m.membership.state : 'public' },
   });
 }

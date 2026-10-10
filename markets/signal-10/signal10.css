@@ -304,17 +304,32 @@ table.s10-tbl{width:100%;border-collapse:collapse;font-size:13px;background:var(
 @keyframes s10-tape-pulse{0%{box-shadow:0 0 0 0 rgba(23,112,58,.45)}70%{box-shadow:0 0 0 6px rgba(23,112,58,0)}100%{box-shadow:0 0 0 0 rgba(23,112,58,0)}}
 .s10-tape-meta{flex-basis:100%;min-height:16px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} /* own line, reserved: filling it never shifts the page */
 .s10-tape-meta a{color:var(--gold-ink)}
-.s10-tape-track{position:relative;display:flex;align-items:stretch;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;margin:6px -4px 0;padding:2px 4px 6px}
+/* scrolling ticker: no scroll bars. Before JS (and in manual/reduced-motion mode) the strip is swipeable with a hidden bar. */
+.s10-tape-track{position:relative;display:flex;align-items:stretch;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-ms-overflow-style:none;margin:6px -4px 0;padding:2px 4px 6px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
+.s10-tape-track::-webkit-scrollbar{display:none}
+.s10-tape-loop{display:flex;width:max-content;flex:0 0 auto}
+.s10-tape-rail{display:flex;align-items:stretch;gap:6px;padding-right:6px;flex:0 0 auto}
+.s10-tape-rail[aria-hidden]{display:none}
+.s10-tape-moving .s10-tape-track{overflow:hidden}
+.s10-tape-moving .s10-tape-rail[aria-hidden]{display:flex}
+.s10-tape-moving .s10-tape-loop{animation:s10-tape-run var(--tape-dur,60s) linear infinite;will-change:transform}
+.s10-tape-moving .s10-tape-track:hover .s10-tape-loop{animation-play-state:paused}
+.s10-tape-manual .s10-tape-track{overflow-x:auto}
+.s10-tape-manual .s10-tape-loop{animation:none}
+.s10-tape-manual .s10-tape-rail[aria-hidden]{display:none}
+@keyframes s10-tape-run{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
 .s10-tape-grp{display:contents}
 .s10-tg{flex:0 0 auto;align-self:center;writing-mode:horizontal-tb;padding:0 4px 0 8px;font:600 10px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-left:1px solid var(--line);max-width:9.5em;white-space:normal}
-.s10-tape-track>.s10-tg:first-child{border-left:0;padding-left:0}
+.s10-tape-rail>.s10-tg:first-child{border-left:0;padding-left:0}
 /* fixed box: a price arriving or changing never moves its neighbours; position:relative keeps the sr-only text inside the scroller */
 .s10-tq{position:relative;flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:2px;width:118px;height:46px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);text-decoration:none!important;scroll-snap-align:start;transition:border-color .15s,background-color .15s}
 .s10-tq:hover{border-color:var(--gold);background:var(--blue-bg)}
 .s10-tq:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
 .s10-tq.pin{border-color:#d9bd6a;background:linear-gradient(180deg,#fffaf0,var(--panel))}
 html.s10[data-theme="dark"] .s10-tq.pin{border-color:#6b5520;background:linear-gradient(180deg,#221d14,var(--panel))}
-.s10-tq-top,.s10-tq-bot{display:flex;align-items:baseline;justify-content:space-between;gap:6px;white-space:nowrap;min-width:0}
+.s10-tq-top,.s10-tq-bot{display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:0}
+.s10-tq-top .s10-tq-ch{margin-left:auto}.s10-tq-bot .s10-tq-px{flex:1 1 auto}
 .s10-tq-sym{font:600 12.5px/1.2 var(--mono);letter-spacing:.03em}
 .s10-tq-rk{margin-right:4px;font:600 10px/1 var(--mono);color:var(--gold-ink)}
 .s10-tq-rk::before{content:"#"}
@@ -324,6 +339,12 @@ html.s10[data-theme="dark"] .s10-tq.pin{border-color:#6b5520;background:linear-g
 .s10-tq[data-px] .s10-tq-px{color:var(--ink);font-weight:600}
 .s10-tq-ch{flex:0 0 auto;font:600 11px/1.2 var(--mono)}
 .s10-tq-dim{color:var(--faint);font-weight:500}
+/* PBE SIGNAL 10 RESEARCH badge (members): frozen-snapshot rank / move / simulated paper flag */
+.s10-tq-rs{flex:0 0 auto;margin-left:auto;font:600 9.5px/1.2 var(--mono);letter-spacing:.04em;color:var(--gold-ink)}
+.s10-tq-rs:empty{display:none}
+.s10-tq-ch:not(:empty)+.s10-tq-rs{margin-left:0}
+.s10-tq-rs.up{color:var(--pos)}.s10-tq-rs.dn{color:var(--neg)}
+.s10-tq-rs.paper{padding:0 4px;border:1px solid var(--line);border-radius:3px;color:var(--muted)}
 .s10-tq.tick-up{animation:s10-tick-up 1.2s ease-out}.s10-tq.tick-dn{animation:s10-tick-dn 1.2s ease-out}
 @keyframes s10-tick-up{0%{background:var(--pos-bg)}100%{background:var(--panel)}}
 @keyframes s10-tick-dn{0%{background:var(--neg-bg)}100%{background:var(--panel)}}
@@ -331,4 +352,4 @@ html.s10[data-theme="dark"] .s10-tq.pin{border-color:#6b5520;background:linear-g
 @media (max-width:640px){
   .s10-tape-fine{font-size:10.5px}
 }
-@media (prefers-reduced-motion:reduce){.s10-tape-dot{animation:none}.s10-tq.tick-up,.s10-tq.tick-dn{animation:none}.s10-tq{transition:none}}
+@media (prefers-reduced-motion:reduce){.s10-tape-moving .s10-tape-loop{animation:none}.s10-tape-moving .s10-tape-track{overflow-x:auto}.s10-tape-moving .s10-tape-rail[aria-hidden]{display:none}.s10-tape-dot{animation:none}.s10-tq.tick-up,.s10-tq.tick-dn{animation:none}.s10-tq{transition:none}}

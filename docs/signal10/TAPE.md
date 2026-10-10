@@ -20,14 +20,18 @@ The tape is editorial. It is not the Signal 10 model, its Top 10, the simulated 
 
 Further existing sources from the repo inventory are recorded in the Market Tape contract docs (issue #56). **No existing source permits display. Every price field is null for every audience.**
 
-## Switch: `SIGNAL10_TAPE_QUOTES` = `off` (deployed)
+## Switch: `MARKET_TAPE_QUOTES` = `off` plus a provider rights gate in code
 
-| Value | Who sees prices | Vendor calls |
+Since `market-tape/1`, prices need **both** `MARKET_TAPE_QUOTES="on"` **and** a provider whose rights record in `src/market-tape/contract.js` permits the audience. The `yahoo-chart` record is `{ public: false, paid: false }`, so an environment flag alone can never show Yahoo prices. The contract is described in `docs/market-tape/CONTRACT.md`.
+
+| State | Who sees prices | Vendor calls |
 |---|---|---|
-| **`off` (owner order, deployed Worker 8b954eb7)** | **Nobody.** The tape shows symbols, session, last close and next open, Robinhood links, and member research groups. | **Zero** |
-| `members` / `public` | May be set only after this file records written rights for that exact audience | Yes |
+| **Deployed:** `MARKET_TAPE_QUOTES="off"` (owner order) | **Nobody.** The tape shows symbols, session, last close and next open, Robinhood links, and member research groups. | **Zero** |
+| `on` + a provider whose rights cover the audience | That audience only | Through the collector (see CONTRACT.md) |
 
-In OFF mode the response carries `quotes.withheld = "SOURCE_RIGHTS_HOLD"`, and every row has `status = SOURCE_RIGHTS_HOLD` with price, previous_close, change, price_observed_at and fetched_at all null. The UI says "Prices: source rights hold". It never shows a fake price or a green LIVE badge.
+The first OFF deploy used `SIGNAL10_TAPE_QUOTES="off"` (Worker 8b954eb7). That variable has been replaced.
+
+In OFF mode every security has `state = SOURCE_RIGHTS_HOLD` with last_price, previous_regular_close, change, observed_at and retrieved_at all null. The legacy view reports `quotes.withheld = "SOURCE_RIGHTS_HOLD"`. The UI says "Prices: source rights hold". It never shows a fake price or a green LIVE badge.
 
 Production proof (2026-10-10, Worker 8b954eb7):
 - the member view (read-only diagnostics route) returned 21 rows and 0 rows with any price, timestamp or fetch field, with the groups FEATURED and TOP10;
