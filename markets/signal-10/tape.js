@@ -180,7 +180,8 @@
         if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
         else if (d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
         // compact source credit (IEX's required attribution text in the tooltip); no fine-print paragraph (owner)
-        parts.push(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data: IEX</a>`);
+        // first in the line so the (ellipsized) meta row can never truncate it away
+        parts.unshift(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data: IEX</a>`);
       } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
