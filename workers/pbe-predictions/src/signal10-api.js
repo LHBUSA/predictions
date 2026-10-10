@@ -75,6 +75,11 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
   }
 
   if (p === '/v1/signal10/tape') return tape({ req, env, ctx, store, requireAllAccess, privateJson });
+  // admin: the member view of the tape (production verification without a member session). Same handler, same caches.
+  if (p === '/admin/signal10/tape' && req.method === 'GET') {
+    if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+    return tape({ req, env, ctx, store, requireAllAccess: async () => ({ ok: true, m: { membership: { state: 'admin' } } }), privateJson });
+  }
 
   // ---------------- member routes ----------------
   const g = await requireAllAccess(req, env); if (!g.ok) return g.res;
@@ -186,18 +191,44 @@ export const TAPE_REFRESH_S = 90;
 const TAPE_NOTE = 'Featured stocks are an editorial watchline, not Signal 10 picks, and never enter the model or the simulated $10,000 account.';
 const HANDOFF = 'Robinhood links open Robinhood’s public stock page in a new tab. Prices, eligibility and any order happen entirely at Robinhood; PropBetEdge places no orders and is not affiliated with Robinhood.';
 
+// Three layers, because the Worker is served on *.workers.dev where caches.default may be a no-op:
+//   1. per-isolate memo of PLAIN quote data with an expiry (never a Response or a promise shared across requests);
+//   2. caches.default (effective once the Worker sits behind a zone route/custom domain);
+//   3. the vendor subrequest itself, edge-cached via cf.cacheTtlByStatus (2xx only).
+// A hard per-isolate budget caps vendor calls; over budget a symbol shows SOURCE_UNAVAILABLE rather than piling on.
+const MEMO = new Map();
+export const TAPE_BUDGET = { perMinute: 40 };
+const budget = { minute: 0, used: 0 };
+export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; }
+function spend(nowMs) {
+  const m = Math.floor(nowMs / 60000);
+  if (m !== budget.minute) { budget.minute = m; budget.used = 0; }
+  if (budget.used >= TAPE_BUDGET.perMinute) return false;
+  budget.used += 1;
+  return true;
+}
 async function tapeQuote(symbol, session, now, ctx, fetchImpl) {
-  const cache = caches.default;
-  const key = new Request(`https://signal10.tape.cache/v1/${encodeURIComponent(symbol)}`);
-  const hit = await cache.match(key);
-  if (hit) return hit.json();
-  const c = await fetchChart(symbol, { range: '5d', interval: '1d', fetchImpl });
+  const nowMs = Date.parse(now);
+  const m = MEMO.get(symbol);
+  if (m && m.exp > nowMs) return m.rec ? { ...m.rec } : null;
+  let cache = null, key = null;
+  try {
+    cache = caches.default; key = new Request(`https://signal10.tape.cache/v2/${encodeURIComponent(symbol)}`);
+    const hit = await cache.match(key);
+    if (hit) return hit.json();
+  } catch { cache = null; }
+  // over budget: the last known record (tapeRow still judges its age), else nothing
+  if (!spend(nowMs)) return m?.rec ? { ...m.rec } : null;
+  const ttl = quoteTtlSeconds(session, now);
+  const edgeFetch = (url, init) => fetchImpl(url, { ...init, cf: { cacheTtlByStatus: { '200-299': Math.min(ttl, 300), '300-599': 0 }, cacheEverything: true } });
+  const c = await fetchChart(symbol, { range: '5d', interval: '1d', fetchImpl: edgeFetch });
   const q = c.status === 200 ? quoteFromBars(symbol, c.json) : null;
   const rec = q ? { ...q, fetched_at: c.retrieved_at } : null;
-  // failures are cached briefly too (one vendor attempt per colo per minute, never a retry storm)
-  const ttl = rec ? quoteTtlSeconds(session, now) : 60;
-  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(rec), { headers: { 'cache-control': `max-age=${ttl}`, 'content-type': 'application/json' } })));
-  return rec;
+  // failures are held for 60 s too (never a retry storm)
+  const life = rec ? ttl : 60;
+  MEMO.set(symbol, { rec, exp: nowMs + life * 1000 });
+  if (cache) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(rec), { headers: { 'cache-control': `max-age=${life}`, 'content-type': 'application/json' } })).catch(() => {}));
+  return rec ? { ...rec } : null;
 }
 async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
 

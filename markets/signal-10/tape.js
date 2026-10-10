@@ -29,7 +29,7 @@
       return `${r.symbol} · ${r.name} — ${px}. Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
     };
     const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" role="listitem" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
-      + `<span class="s10-tq-top"><b class="s10-tq-sym">${r.rank ? `<span class="s10-tq-rk">${r.rank}</span>` : ''}${esc(r.symbol)}</b><span class="s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}">${esc(chg(r))}</span></span>`
+      + `<span class="s10-tq-top"><b class="s10-tq-sym">${r.rank ? `<span class="s10-tq-rk">${esc(r.rank)}</span>` : ''}${esc(r.symbol)}</b><span class="s10-tq-ch num ${r.change_pct == null ? 'flat' : sign(r.change_pct)}">${esc(chg(r))}</span></span>`
       + `<span class="s10-tq-bot"><span class="s10-tq-px num">${pxText(r)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span>`
       + `<span class="sr-only"> ${esc(r.name)}. View ${esc(r.symbol)} on Robinhood (opens in a new tab)</span></a>`;
     function pxText(r) {
@@ -116,7 +116,8 @@
     function interval() { return C.tapePollMs(last?.session, document.visibilityState === 'visible') ?? null; }
     function schedule() {
       clearTimeout(timer);
-      const ms = root.dataset.state === 'error' ? (document.visibilityState === 'visible' ? 120000 : null) : interval();
+      // errors: retry in 2 min while the market is open (or unknown), otherwise in 15 min (never a tight loop)
+      const ms = root.dataset.state === 'error' ? (document.visibilityState !== 'visible' ? null : !last || last.session.state === 'OPEN' ? 120000 : 15 * 60000) : interval();
       if (ms) timer = setTimeout(load, ms);
     }
     document.addEventListener('visibilitychange', () => {

@@ -294,16 +294,18 @@ export function axisUSD(cents, stepCents = 0) {
 }
 
 // ---------- U.S. stock tape (issue #54) ----------
-// Next tape fetch in ms, or null (paused while hidden). Open regular session: every 90 s. The first 30 min after the bell:
-// 120 s (the official closing print). Otherwise closed: wait for the next open (+30 s), min 60 s, max 6 h. No calendar: 15 min.
+// Next tape fetch in ms, or null (paused while hidden). Open regular session: every 90 s. Just after the bell: ONE more
+// read at close + 5 min (the official closing print). Otherwise closed: one wake-up at the next open + 60 s (min 60 s,
+// max 6 h). No calendar: 15 min.
 export function tapePollMs(session, visible, nowMs = Date.now()) {
   if (!visible) return null;
   const st = session?.state;
   if (st === 'OPEN') return 90000;
-  if (st === 'AFTER_CLOSE' && nowMs - Date.parse(session.closes_at || '') < 30 * 60000) return 120000;
+  const settle = Date.parse(session?.closes_at || '') + 5 * 60000;
+  if (st === 'AFTER_CLOSE' && nowMs < settle) return Math.max(60000, settle - nowMs);
   const next = Date.parse(session?.next_open_at || '');
   if (Number.isNaN(next)) return 15 * 60000;
-  return Math.max(60000, Math.min(6 * 3600000, next - nowMs + 30000));
+  return Math.max(60000, Math.min(6 * 3600000, next - nowMs + 60000));
 }
 const ET_DAY = (iso, o) => new Intl.DateTimeFormat('en-US', { timeZone: ET, ...o }).format(new Date(iso));
 // "Fri Oct 9, 4:00 PM ET"

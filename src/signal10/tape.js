@@ -69,7 +69,7 @@ export const covered = (date) => date >= '2026-01-01' && date <= CALENDAR_THROUG
 export function isTradingDay(date) { return !weekend(date) && !HOLIDAYS.has(date); }
 export function closeMinutes(date) { return EARLY_CLOSES.has(date) ? EARLY_MIN : CLOSE_MIN; }
 const nextTradingDay = (date) => { let d = addDays(date, 1); for (let i = 0; i < 10 && !isTradingDay(d); i++) d = addDays(d, 1); return d; };
-const prevTradingDay = (date) => { let d = addDays(date, -1); for (let i = 0; i < 10 && !isTradingDay(d); i++) d = addDays(d, -1); return d; };
+export const prevTradingDay = (date) => { let d = addDays(date, -1); for (let i = 0; i < 10 && !isTradingDay(d); i++) d = addDays(d, -1); return d; };
 const iso = (ms) => new Date(ms).toISOString();
 
 // The regular session at an instant. state: OPEN | PRE_MARKET | AFTER_CLOSE | CLOSED_WEEKEND | CLOSED_HOLIDAY | CALENDAR_UNKNOWN.
@@ -79,7 +79,8 @@ export function marketSession(nowIso) {
   const c = nyParts(now);
   const base = { date: c.date, early_close: EARLY_CLOSES.has(c.date) };
   if (!covered(c.date)) return { ...base, state: 'CALENDAR_UNKNOWN', label: 'MARKET HOURS UNVERIFIED', opens_at: null, closes_at: null, next_open_at: null, last_session: null, last_close_at: null };
-  const sessionOf = (d) => ({ opens_at: iso(nyInstant(d, OPEN_MIN)), closes_at: iso(nyInstant(d, closeMinutes(d))) });
+  // beyond the published calendar a date is never claimed as a session (fail closed: null)
+  const sessionOf = (d) => (covered(d) ? { opens_at: iso(nyInstant(d, OPEN_MIN)), closes_at: iso(nyInstant(d, closeMinutes(d))) } : { opens_at: null, closes_at: null });
   const lastBefore = (d) => { const p = prevTradingDay(d); return { last_session: p, last_close_at: sessionOf(p).closes_at }; };
   if (!isTradingDay(c.date)) {
     const n = nextTradingDay(c.date);
@@ -111,6 +112,8 @@ export function quoteFromBars(symbol, json) {
     const d = nyParts(ts[i] * 1000).date;
     if (d < session && Number.isFinite(closes[i]) && closes[i] > 0) prev = { d, close: closes[i] };
   }
+  // only the immediately preceding regular session counts (a missing bar never silently falls back to an older close)
+  if (prev && covered(session) && prev.d !== prevTradingDay(session)) prev = null;
   return { symbol, price: m.regularMarketPrice, price_observed_at: iso(observedMs), session_date: session,
     previous_close: prev ? prev.close : null, previous_close_date: prev ? prev.d : null, exchange: m.fullExchangeName || m.exchangeName || null,
     long_name: m.longName || m.shortName || null, first_trade_at: Number.isFinite(m.firstTradeDate) ? iso(m.firstTradeDate * 1000) : null };
@@ -146,9 +149,10 @@ export function tapeRow(meta, q, session, nowIso) {
 // until shortly after the next open so a closed market causes no repeated vendor requests (capped at 6 h).
 export function quoteTtlSeconds(session, nowIso) {
   if (session.state === 'OPEN') return 45;
-  // the first half hour after the bell: the official closing print can arrive after the last in-session trade
-  if (session.state === 'AFTER_CLOSE' && Date.parse(nowIso) - Date.parse(session.closes_at) < 30 * 60000) return 120;
+  // the first ten minutes after the bell: the official closing print can arrive after the last in-session trade
+  if (session.state === 'AFTER_CLOSE' && Date.parse(nowIso) - Date.parse(session.closes_at) < 10 * 60000) return 60;
   if (!session.next_open_at) return 900;
-  const s = Math.floor((Date.parse(session.next_open_at) - Date.parse(nowIso)) / 1000) + 60;
+  // expires AT the next open, so the first in-session read is a new source quote
+  const s = Math.floor((Date.parse(session.next_open_at) - Date.parse(nowIso)) / 1000);
   return Math.max(60, Math.min(6 * 3600, s));
 }

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../src/signal10/tape.js';
 import * as C from '../markets/signal-10/signal10-core.js';
 import { LATEST_MEMBERS } from '../src/signal10/members-latest.js';
-import { tape, TAPE_REFRESH_S } from '../workers/pbe-predictions/src/signal10-api.js';
+import { tape, TAPE_REFRESH_S, TAPE_BUDGET, _tapeReset } from '../workers/pbe-predictions/src/signal10-api.js';
 
 const S = (iso) => T.marketSession(iso);
 
@@ -73,6 +73,10 @@ test('calendar: outside the published calendar fails closed', () => {
   const s = S('2029-01-03T15:00:00Z');
   assert.equal(s.state, 'CALENDAR_UNKNOWN');
   assert.equal(s.last_session, null);
+  // last covered trading day: the next open would be beyond the calendar -> null, never a guessed date
+  const e = S('2028-12-29T22:00:00Z');
+  assert.equal(e.state, 'AFTER_CLOSE');
+  assert.equal(e.next_open_at, null);
 });
 
 // ---------- quotes ----------
@@ -101,6 +105,11 @@ test('quoteFromBars: malformed, empty, wrong symbol and zero prices are rejected
   assert.equal(T.quoteFromBars('BRK.B', bars('BRK-B', 480, '2026-10-09T20:00:00Z', [['2026-10-08', 470]])).previous_close, 470);
   const q = T.quoteFromBars('SPCX', bars('SPCX', 10, '2026-10-09T20:00:00Z', [['2026-10-09', 10]]));
   assert.equal(q.previous_close, null, 'no earlier bar -> no invented previous close');
+  // the previous session's bar is missing (null close): never fall back to an older close
+  const gap = T.quoteFromBars('SPCX', bars('SPCX', 10, '2026-10-09T20:00:00Z', [['2026-10-07', 9], ['2026-10-08', null], ['2026-10-09', 10]]));
+  assert.equal(gap.previous_close, null);
+  // across a holiday the previous trading session is the right one (Thanksgiving -> Wednesday)
+  assert.equal(T.quoteFromBars('SPCX', bars('SPCX', 10, '2026-11-27T18:00:00Z', [['2026-11-25', 9.5], ['2026-11-27', 10]])).previous_close, 9.5);
 });
 
 const META = { symbol: 'SPCX', name: 'SpaceX', pinned: true };
@@ -163,11 +172,15 @@ test('SPCX is pinned first, featured symbols are all linkable, and featured neve
   }
 });
 
-test('edge-cache TTL: 45 s open, 120 s just after the bell, held to the next open when closed (max 6 h)', () => {
+test('cache TTL: 45 s open, 60 s in the 10 min after the bell, otherwise expires exactly at the next open (max 6 h)', () => {
   assert.equal(T.quoteTtlSeconds(S('2026-10-13T15:00:00Z'), '2026-10-13T15:00:00Z'), 45);
-  assert.equal(T.quoteTtlSeconds(S('2026-10-13T20:05:00Z'), '2026-10-13T20:05:00Z'), 120);
+  assert.equal(T.quoteTtlSeconds(S('2026-10-13T20:05:00Z'), '2026-10-13T20:05:00Z'), 60);
+  assert.equal(T.quoteTtlSeconds(S('2026-10-13T20:30:00Z'), '2026-10-13T20:30:00Z'), 6 * 3600);
   assert.equal(T.quoteTtlSeconds(S('2026-10-10T16:00:00Z'), '2026-10-10T16:00:00Z'), 6 * 3600);
-  assert.equal(T.quoteTtlSeconds(S('2026-10-13T13:20:00Z'), '2026-10-13T13:20:00Z'), 660, 'pre-market: until just after the open');
+  assert.equal(T.quoteTtlSeconds(S('2026-10-13T13:20:00Z'), '2026-10-13T13:20:00Z'), 600, 'pre-market: expires at 09:30');
+  // browser wakes at open + 60 s, after the closed-market cache has expired -> first in-session read is a new quote
+  const pre = S('2026-10-13T13:20:00Z'), nowMs = Date.parse('2026-10-13T13:20:00Z');
+  assert.ok(nowMs + C.tapePollMs(pre, true, nowMs) > nowMs + T.quoteTtlSeconds(pre, '2026-10-13T13:20:00Z') * 1000);
 });
 
 test('browser cadence: 90 s while open, paused when hidden, no polling while closed until the next open', () => {
@@ -176,9 +189,14 @@ test('browser cadence: 90 s while open, paused when hidden, no polling while clo
   assert.ok(C.tapePollMs(S('2026-10-13T15:00:00Z'), true, now) >= 90000 && C.tapePollMs(S('2026-10-13T15:00:00Z'), true, now) <= 120000);
   assert.equal(C.tapePollMs(S('2026-10-13T15:00:00Z'), false, now), null);
   const pre = Date.parse('2026-10-13T13:25:00Z');
-  assert.equal(C.tapePollMs(S('2026-10-13T13:25:00Z'), true, pre), 5 * 60000 + 30000);
-  const ac = Date.parse('2026-10-13T20:10:00Z');
-  assert.equal(C.tapePollMs(S('2026-10-13T20:10:00Z'), true, ac), 120000);
+  assert.equal(C.tapePollMs(S('2026-10-13T13:25:00Z'), true, pre), 5 * 60000 + 60000);
+  // after the bell: exactly one read at close + 5 min, then nothing until the next open
+  assert.equal(C.tapePollMs(S('2026-10-13T20:01:00Z'), true, Date.parse('2026-10-13T20:01:00Z')), 4 * 60000);
+  assert.equal(C.tapePollMs(S('2026-10-13T20:04:30Z'), true, Date.parse('2026-10-13T20:04:30Z')), 60000);
+  const after = Date.parse('2026-10-13T20:05:30Z');
+  assert.equal(C.tapePollMs(S('2026-10-13T20:05:30Z'), true, after), 6 * 3600000, 'next open is 17 h away: one capped wake-up');
+  const fri = Date.parse('2026-10-14T09:00:00Z');
+  assert.equal(C.tapePollMs(S('2026-10-14T09:00:00Z'), true, fri), Date.parse('2026-10-14T13:30:00Z') - fri + 60000);
   const late = Date.parse('2026-10-13T23:00:00Z');
   assert.equal(C.tapePollMs(S('2026-10-13T23:00:00Z'), true, late), 6 * 3600000);
   assert.equal(C.tapePollMs({ state: 'CALENDAR_UNKNOWN' }, true, late), 15 * 60000);
@@ -201,6 +219,7 @@ test('head status: LIVE only with a CURRENT quote in an open session; closed nev
 
 // ---------- /v1/signal10/tape ----------
 function harness(opts = {}) {
+  _tapeReset();
   const { member = false, now = '2026-10-13T15:00:00Z', state = null, snap = null } = opts;
   const env = 'mode' in opts ? (opts.mode === undefined ? {} : { SIGNAL10_TAPE_QUOTES: opts.mode }) : { SIGNAL10_TAPE_QUOTES: 'members' };
   return harnessWith({ member, env, now, state, snap });
@@ -284,4 +303,40 @@ test('static pages: the featured tape (SPCX first) is server-rendered on all fiv
     assert.match(html, /not Signal 10 picks/);
     assert.match(html, /not affiliated with Robinhood/);
   }
+});
+
+test('tape API: with a no-op edge cache (*.workers.dev) the isolate memo still serves repeat viewers without new vendor calls', async () => {
+  const h = harness({ member: true });
+  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
+  await h.run();
+  const n = h.calls.length;
+  assert.equal(n, 11);
+  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
+  await h.run();
+  assert.equal(h.calls.length, n, 'memo hit: no second fetch inside the TTL');
+});
+
+test('tape API: a hard per-isolate vendor budget; over budget a symbol fails closed instead of piling on', async () => {
+  const h = harness({ member: true, snap: { d: '2026-10-12', ranks: Array.from({ length: 10 }, (_, i) => ({ rank: i + 1, symbol: `Z${i}`, name: `Z${i}` })) } });
+  const prev = TAPE_BUDGET.perMinute;
+  TAPE_BUDGET.perMinute = 15;
+  try {
+    const { d } = await h.run();
+    assert.equal(h.calls.length, 15);
+    const rows = d.groups.flatMap((g) => g.rows);
+    assert.equal(rows.filter((r) => r.status === 'SOURCE_UNAVAILABLE').length, rows.length - 15);
+  } finally { TAPE_BUDGET.perMinute = prev; }
+});
+
+test('tape API: vendor subrequests ask the edge to cache 2xx only', async () => {
+  const seen = [];
+  _tapeReset();
+  globalThis.caches = { default: { async match() { return undefined; }, async put() {} } };
+  const fetchImpl = async (url, init) => { seen.push(init?.cf); return new Response('{}', { status: 500 }); };
+  const r = await tape({ req: new Request('https://x/'), env: { SIGNAL10_TAPE_QUOTES: 'public' }, ctx: { waitUntil() {} }, store: { async select() { return []; } },
+    requireAllAccess: async () => ({ ok: false }), privateJson: (d) => new Response(JSON.stringify(d)), now: '2026-10-13T15:00:00Z', fetchImpl });
+  const d = await r.json();
+  assert.equal(seen.length, 11);
+  assert.deepEqual(seen[0].cacheTtlByStatus, { '200-299': 45, '300-599': 0 });
+  assert.ok(d.groups[0].rows.every((x) => x.status === 'SOURCE_UNAVAILABLE' && x.price === null), 'vendor 500 -> no price');
 });

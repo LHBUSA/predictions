@@ -53,17 +53,23 @@ Sample source receipt, fetched from this machine 2026-10-10:
 
 ## Load, quota and cadence
 - **Symbols:** one fixed list with no caller-supplied symbols, so a request cannot amplify vendor calls. That is 11 featured symbols plus up to 20 member symbols, fetched with 6 in parallel.
-- **Cache:** each parsed quote is edge-cached per colo and shared by every viewer. TTLs:
+- **Caching:** the Worker is reached only through `*.workers.dev`, where Cloudflare documents working Cache API operations only for custom domains. Quotes are therefore cached in three layers:
+  1. a per-isolate memo that holds **plain quote data** with an expiry. It never holds a Response or a promise shared across requests.
+  2. `caches.default`, which takes effect once the Worker is behind a zone route or custom domain.
+  3. the Yahoo subrequest itself, with `cf.cacheTtlByStatus` set to cache 2xx responses only, for at most 300 s.
+- **Cache lifetimes:**
   - 45 s while the session is open;
-  - 120 s for the first 30 minutes after the bell, so the closing print arrives;
-  - otherwise held until just after the next open, capped at 6 h;
-  - failures are cached for 60 s, so there is no retry storm.
-- **Quota math:** the worst case is about 31 symbols × (3600 / 45) ≈ 2.5k vendor requests per hour per active colo, and only while the market is open. Weekends and holidays need about one fetch per symbol per colo every 6 h.
+  - 60 s for the first 10 minutes after the bell, so the closing print arrives;
+  - otherwise the cache expires **at** the next open, capped at 6 h;
+  - failures are held for 60 s.
+- **Hard budget:** at most 40 vendor fetches per isolate per minute (`TAPE_BUDGET`). Over budget, a symbol shows its last known record (its age is still judged) or SOURCE_UNAVAILABLE. This protects the paper account's own Yahoo reads in the same Worker.
 - **Browser polling** (`tapePollMs`):
   - every **90 s** while the regular session is open;
-  - every 120 s for 30 minutes after the close;
-  - otherwise one wake-up just after the next open;
+  - **one** more read at close + 5 min;
+  - otherwise one wake-up at the next open + 60 s, capped at 6 h;
+  - errors retry after 2 min while open and 15 min while closed;
   - paused while the tab is hidden, with an immediate refresh on return if the data is older than 90 s.
+- **Production verification without a member session:** `GET /admin/signal10/tape` with `ADMIN_TOKEN` returns the member view through the same handler and caches.
 
 ## Calendar (America/New_York)
 
