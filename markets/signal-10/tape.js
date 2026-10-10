@@ -53,12 +53,14 @@
       const s = mt.session || {};
       return {
         generated_at: mt.generated_at, research: mt.research_snapshot || null, source: shown ? { name: mt.rights.provider } : null,
+        // next-day exchange prices (IEX HIST): session date + credit line travel with every value
+        t1: (mt.lists || []).flatMap((l) => l.securities).find((x) => x.price_basis && x.attribution) || null,
         quotes: { shown, withheld: shown ? null : 'SOURCE_RIGHTS_HOLD' },
         session: { ...s, opens_at: s.session_open_at, closes_at: s.session_close_at },
         groups: (mt.lists || []).map((l) => ({ key: l.key, kind: l.kind, label: l.label, note: l.note, rows: l.securities.map((x) => ({
           symbol: x.symbol, name: x.name, robinhood_url: x.robinhood_url, pinned: x.pinned, group: l.key, kind: l.kind,
           price: x.last_price, previous_close: x.previous_regular_close, change_abs: x.change_abs, change_pct: x.change_pct, price_observed_at: x.observed_at,
-          status: STATUS[x.state] || x.state, research: x.research || null,
+          status: STATUS[x.state] || x.state, research: x.research || null, price_session_date: x.price_session_date || null, price_basis: x.price_basis || null,
           rank: l.kind === 'MODEL_RESEARCH' ? x.research?.rank ?? null : null })) })),
       };
     }
@@ -87,7 +89,7 @@
       return /[1-9]/.test(t) ? t : t.replace(/^[+−]/, '');
     };
     const title = (r) => {
-      const px = r.price != null ? `${fmtPrice(r.price)}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous close ${fmtPrice(r.previous_close)})` : ''} · source trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'SOURCE_RIGHTS_HOLD' ? 'Prices are not shown (quote source rights hold)' : 'Quote source unavailable';
+      const px = r.price != null ? `${fmtPrice(r.price)}${r.price_basis === 'IEX_LAST_SALE' ? ` — IEX last sale ${C.fmtDate(r.price_session_date)} (IEX venue only, next-day)` : ''}${r.change_abs != null ? ` (${r.change_abs >= 0 ? '+' : '−'}${fmtPrice(Math.abs(r.change_abs)).slice(1)} vs previous session ${fmtPrice(r.previous_close)})` : ''} · exchange trade time ${etShort(r.price_observed_at)}` : r.status === 'MEMBERS_ONLY' ? 'Prices are shown to PropBetEdge All Access members' : r.status === 'STALE' ? 'No current quote from the source' : r.status === 'SOURCE_RIGHTS_HOLD' ? 'Prices are not shown (quote source rights hold)' : 'Quote source unavailable';
       return `${r.symbol} · ${r.name} — ${px}.${rsTitle(r)} Opens Robinhood’s ${r.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`;
     };
     const itemHTML = (r) => `<a class="s10-tq${r.pinned ? ' pin' : ''}" role="listitem" data-sym="${esc(r.symbol)}" href="${esc(r.robinhood_url)}" target="_blank" rel="noopener noreferrer external" title="${esc(title(r))}">`
@@ -99,7 +101,8 @@
       // no price for this reader: the company name (exactly what the static page already shows, so nothing flickers)
       if (r.status === 'MEMBERS_ONLY' || r.status === 'SOURCE_RIGHTS_HOLD') return esc(r.name);
       if (r.status === 'STALE') return '<span class="s10-tq-dim">Stale</span>';
-      return '<span class="s10-tq-dim">No quote</span>';
+      // no observation yet for this symbol: keep the name (nothing invented, nothing flickers)
+      return esc(r.name);
     }
 
     // Update one existing item in place (only the nodes whose text changed).
@@ -170,14 +173,21 @@
       if (!d.quotes.shown && d.quotes.withheld === 'SOURCE_RIGHTS_HOLD') parts.push('<span title="No licensed quote source yet: symbols, market hours and Robinhood links only">Prices: source rights hold</span>');
       if (!d.quotes.shown && d.quotes.withheld === 'MEMBERS_ONLY') parts.push('<span>Prices for <a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_signal10_tape">All Access</a> members · <a href="#" data-pbe-signin>Sign in</a></span>');
       const span = C.quoteSpan(rows);
-      if (d.quotes.shown && span) {
+      if (d.quotes.shown && d.t1) {
+        const days = [...new Set(rows.filter((r) => r.price != null).map((r) => r.price_session_date))].sort();
+        if (days.length) parts.push(`<span title="Last regular-session sale on IEX for that day (not the consolidated close); published by IEX the next morning">IEX last sale · ${esc(days.map((x) => C.fmtDate(x)).join(' / '))} · IEX venue only · next-day</span>`);
+        else parts.push('<span>IEX next-day prices pending</span>');
+        if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
+        else if (d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
+        parts.push(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data provided for free by IEX ↗</a>`);
+      } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
         parts.push(`<span>${esc(when)}</span>`);
       } else if (d.session.state !== 'OPEN' && d.session.last_close_at) parts.push(`<span>Last close ${esc(etShort(d.session.last_close_at))}</span>`);
       if (d.session.state === 'OPEN' && d.session.closes_at && !(d.quotes.shown && C.quoteSpan(rows))) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
       if (d.session.state !== 'OPEN' && d.session.next_open_at) parts.push(`<span>Opens ${esc(etShort(d.session.next_open_at))}</span>`);
-      if (d.quotes.shown) parts.push(`<span>Source: ${esc(d.source?.name || '')}</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
+      if (d.quotes.shown && !d.t1) parts.push(`<span>Source: ${esc(d.source?.name || '')}</span>`, `<span>Updated <span data-rel="${esc(d.generated_at)}">${esc(relTime(d.generated_at))}</span></span>`);
       if (d.research) parts.push(`<a href="/markets/signal-10/methodology/" title="Frozen end-of-day ranks from the pre-registered Signal 10 model; research, not advice">Signal 10 research · frozen ${esc(C.fmtDate(d.research.d))}</a>`);
       return parts.join('<span aria-hidden="true"> · </span>');
     }

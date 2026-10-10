@@ -320,6 +320,7 @@ export function tapeStatus(session, rows = []) {
   if (st === 'OPEN') {
     if (has('CURRENT')) return { cls: 'open', live: true, text: session.early_close ? 'LIVE · MARKET OPEN · CLOSES 1:00 PM ET' : 'LIVE · MARKET OPEN' };
     if (has('DELAYED')) return { cls: 'delayed', live: false, text: 'MARKET OPEN · QUOTES DELAYED' };
+    if (has('PRIOR_SESSION')) return { cls: 'open-idle', live: false, text: 'MARKET OPEN · PRIOR-SESSION PRICES' };
     if (has('MEMBERS_ONLY') || has('SOURCE_RIGHTS_HOLD')) return { cls: 'open-idle', live: false, text: 'MARKET OPEN' };
     return { cls: 'stale', live: false, text: 'MARKET OPEN · SOURCE UNAVAILABLE' };
   }

@@ -47,6 +47,25 @@ async function quoteFor(provider, symbol, session, now, fetchImpl) {
   MEMO.set(key, { rec, exp: nowMs + (rec ? ttl : 60) * 1000 });
   return rec ? { ...rec } : null;
 }
+// Next-day providers read our own canonical snapshot (written by the collector lane), never the vendor, per request.
+async function sessionCloses(store, providerId, symbols, now) {
+  if (providerId !== 'iex-hist') return new Map();
+  const since = new Date(Date.parse(now) - 12 * 86400000).toISOString();
+  const rows = await store.select('pred_source_observations', { select: 'observation_key,source_id,observed_at,captured_at,value,data', provider: 'eq.iex', source_id: 'like.iex:TOPS:*', observed_at: `gte.${since}` }, { order: 'observed_at.desc', limit: 2000 });
+  const by = new Map();
+  for (const r of rows) {
+    const sym = r.source_id.slice('iex:TOPS:'.length);
+    if (!symbols.includes(sym)) continue;
+    const list = by.get(sym) || []; list.push(r); by.set(sym, list);
+  }
+  const out = new Map();
+  for (const [sym, list] of by) {
+    const [cur, prev] = list.sort((a, b) => String(b.data?.session_date).localeCompare(String(a.data?.session_date)));
+    out.set(sym, { session_date: cur.data?.session_date, last_price: Number(cur.value), observed_at: cur.observed_at, retrieved_at: cur.captured_at,
+      previous_close: prev ? Number(prev.value) : null, previous_session_date: prev?.data?.session_date || null });
+  }
+  return out;
+}
 async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
 
 // ---------- research (members only; read-only from the immutable Signal 10 tables) ----------
@@ -74,8 +93,10 @@ export async function marketTape({ env, store, member, now = new Date().toISOStr
       if (r.held.length) lists.push({ key: 'SIGNAL10_PAPER', kind: LIST_KINDS.SIMULATED_PAPER, label: 'Paper holdings · simulated', note: 'Positions in the SIMULATED $10,000 paper account. Not brokerage holdings.', items: r.held });
     } catch { /* research unavailable: the featured tape still renders, without research */ }
   }
-  const quotes = new Map();
-  if (provider) {
+  let quotes = new Map();
+  if (provider?.kind === 'SESSION_CLOSE_T1') {
+    try { quotes = await sessionCloses(store, provider.id, [...new Set(lists.flatMap((l) => l.items.map((i) => i.symbol)))], now); } catch { quotes = new Map(); }
+  } else if (provider) {
     const session = marketSession(now);
     const symbols = [...new Set(lists.flatMap((l) => l.items.map((i) => i.symbol)))];
     const got = await pooled(symbols, 6, (s) => quoteFor(provider, s, session, now, fetchImpl));

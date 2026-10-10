@@ -60,8 +60,14 @@
     // PBE Market Tape (market-tape/1, issues #54/#56). Prices need BOTH MARKET_TAPE_QUOTES="on" AND a provider whose RIGHTS
     // record in src/market-tape/contract.js permits the audience (a paywall is NOT redistribution permission). Today no
     // provider has rights: every price field is null for every audience and no quote vendor is called. Owner: keep "off".
-    "MARKET_TAPE_QUOTES": "off",
-    "MARKET_TAPE_PROVIDER": "yahoo-chart"
+    "MARKET_TAPE_QUOTES": "on",
+    // iex-hist = IEX Historical Data (TOPS, T+1): exchange-originated, display permitted to public + paid with the IEX credit
+    // line (contract.js rights record). Served from our own snapshot in pred_source_observations, never per request.
+    "MARKET_TAPE_PROVIDER": "iex-hist",
+    // first-party collector (IEX HIST -> pred_source_observations). OFF: a full session is ~40 GB of decompressed pcapng
+    // (~410 s CPU measured in workerd), over one invocation's 300 s cap; the resumable multi-step collector replaces this.
+    // Sessions are loaded by the same parser code until then. Kill switch: anything but "true".
+    "IEX_HIST_COLLECTOR": "false"
   }
   // secrets: SUPABASE_SERVICE_KEY (tkmln service role), MARKETS_READ_TOKEN (propsports-markets admin read), ADMIN_TOKEN,
   // DIAGNOSTICS_TOKEN (read-only GET /admin/intraday/scores + /admin/intraday/shadow-compare),
