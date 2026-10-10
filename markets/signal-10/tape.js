@@ -173,8 +173,8 @@
       if (!fine) return;
       let c = fine.querySelector('[data-tape-credit]');
       if (!text) { c?.remove(); return; }
-      if (!c) { c = document.createElement('a'); c.dataset.tapeCredit = '1'; c.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; c.target = '_blank'; c.rel = 'noopener noreferrer'; fine.prepend(c, ' '); }
-      if (c.textContent !== text) c.textContent = text;
+      if (!c) { c = document.createElement('a'); c.dataset.tapeCredit = '1'; c.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; c.target = '_blank'; c.rel = 'noopener noreferrer'; fine.prepend(c); }
+      if (c.textContent !== `${text} `) c.textContent = `${text} `;
     }
     function metaHTML(d, rows) {
       if (!(d.quotes.shown && d.t1)) setCredit(null);
