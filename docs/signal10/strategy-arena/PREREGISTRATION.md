@@ -43,7 +43,8 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   A snapshot never classifies a date before its effective date. Refreshes are new dated files (old hashes stay in the
   ledger snapshots); never edited in place.
 - **Out of coverage:** a member with no SEC ticker match or no SIC is UNCLASSIFIED: listed in every snapshot, never
-  traded by either challenger (2026-10-10: PSKY).
+  traded by either challenger (2026-10-10: PSKY). A company added to the index after the snapshot is UNCLASSIFIED
+  until a new dated snapshot is published; a held position keeps the sector it had when bought.
 
 ## 3. TECH / Technology Conviction (`S10-ARENA-TECH-1`)
 - **Universe:** members whose SIC is in the technology ranges (computers/storage 3570–3579, semiconductor equipment 3559,
@@ -76,13 +77,16 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
 - **Sizing:** inverse volatility: weight = min(10%, 1.5% ÷ annualized 63-day vol), further limited by the sector cap
   and available cash.
 - **Metal entries:** ETF above its 200-day average with positive 6-month momentum; same inverse-vol size; sleeve ≤ 20%.
+  A metal ETF must also pass the Diversified eligibility screen (≥ 253 bars, close ≥ $5, median dollar volume ≥ $25M,
+  ≤ 5 missing sessions).
 - **HARD limits:** ≤ 10% of NAV per holding; ≤ 25% per equity sector; ≤ 20% aggregate precious-metal ETFs. New orders
   never create a breach. **Post-drift (every EOD, sold at the next open):** holding > 10% → trimmed to 9%; sector > 25%
   → largest holdings in it trimmed until ≤ 24%; metals > 20% → each metal ETF trimmed pro rata to 19%. An excess smaller
   than the $100 minimum order is recorded (CAP_DRIFT_BELOW_MIN_ORDER) and enforced once it is tradable. Prices can move
   between the decision close and the next open; the limits are enforced at decision closes, which is disclosed.
-- **Exits:** rank > 60; close below the 200-day average; trailing stop −15%; metal ETF below its 200-day average or no
-  longer verified. **Re-entry:** stops and trend exits cool down **15 sessions**.
+- **Exits (equities):** rank > 60; close below the 200-day average; trailing stop −15%. **Exits (metal ETFs):** below
+  its 200-day average, no longer verified, or the same −15% trailing stop. **Re-entry:** stops and trend exits cool
+  down **15 sessions**.
 
 ## 5. Shared execution, data and edge cases
 - **Fills:** next regular-session **open** after the decision close (daily-bar open, unadjusted); no bar = order
@@ -91,7 +95,15 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   fetch per session serves both challengers (control 1× + arena 1×; never one read per account).
 - **Missing / stale data:** no bar for a holding on D = HOLD with `NO_BAR_TODAY`, marked at its last observed close and
   flagged stale; the EOD mark then stores **NOT AVAILABLE** (`nav_cents` NULL, coverage < 1) — never an invented mark.
-  A holding with no series at all stops the EOD before any claim (fail closed). Universe coverage < 90% skips the run.
+  A holding whose series disappears entirely is held at the close in its last persisted mark (SERIES_UNAVAILABLE) and
+  liquidated by the delist rule after 3 missing sessions; with no persisted close that account (only) skips the day
+  before any claim. Universe coverage < 90% skips that account's run. A missing regime series is never treated as
+  risk-off: no new buys that day and the risk-off streak is frozen.
+- **Split on a fill date:** a full exit sells the whole post-split position; a partial trim is scaled by the split ratio
+  (ORDER_SPLIT_ADJUSTED event).
+- **Failed runs:** a run that fails after its claim leaves the claim; the day is re-run manually with a new claim key
+  (`<ACCOUNT>:EOD:<date>#2`, admin route) and the gap is visible in the ledger. The ledger is written before the snapshot
+  and mark rows.
 - **Holidays / early closes:** no SPY bar dated D = no session. The final-close gate uses the NYSE calendar
   (`market-tape/core.js`): 16:00 ET, or 13:00 ET on early-close days.
 - **Corporate actions:** splits (cash in lieu), dividends credited on the ex-date, a series that ends is liquidated at
@@ -100,8 +112,8 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   control's EOD runs on even minutes). Kill switch `SIGNAL10_ARENA`; cohort start `SIGNAL10_ARENA_T0`.
 
 ## 6. Fair head-to-head
-- **T0** = the first EOD on or after `SIGNAL10_ARENA_T0` whose gates pass; both challengers fund $10,000 that day and
-  their first fills are at the next open. No challenger record is written for any date before T0.
+- **T0** = the first EOD on or after `SIGNAL10_ARENA_T0` whose gates pass **for both challengers**; both fund $10,000
+  that day (if either fails a gate, neither funds) and their first fills are at the next open. No challenger record is written for any date before T0.
 - **Original** is displayed **indexed to $10,000 at T0** (display-only normalization of its own EOD marks) beside its
   real lifetime NAV and inception (2026-10-09). Its pre-existing positions at T0 are disclosed.
 - **Comparisons since T0:** total return, max drawdown, volatility, turnover and trading cost, max position, sector and
@@ -118,8 +130,17 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   REITs) and some technology-coded names are unusual (e.g. First Solar SIC 3674). Rule-based, verifiable, disclosed.
 - **Survivorship:** forward-only records have no survivorship bias; the universe is the live index.
 
-## 8. Change log (pre-T0 implementation fixes)
+## 8. Change log (pre-T0 implementation fixes; policy parameters and policy hashes unchanged)
 - 2026-10-10: preregistration frozen. EOD final-close gate uses the NYSE early-close calendar (found while writing §5).
+- 2026-10-10, independent adversarial review (before any forward record):
+  - ledger payloads are normalised through JSON before hashing (undefined values broke verification after storage);
+    STATE is nested under `payload.state` (seq/origin survived no restore); FILL.orderSeq links to ORDER.local_seq;
+  - full exits on a split date sell the whole post-split position; partial trims scale by the split ratio;
+  - post-drift caps are measured after the day's exits (exiting positions no longer trigger trims);
+  - a missing held series blocks only its own account, with the delist fallback above; the cohort funds together;
+  - a missing regime series is not risk-off; rotation respects the $100 minimum and never sells a trimmed name twice;
+  - the fill check reads the ledger's FILL rows; the kill switch is enforced inside the lane; OPEN needs a T0;
+  - FUNDING records the classification snapshot hash and the metal-ETF registry hash.
 
 ## 9. Activation record
 Filled at activation: T0, worker version, ledger FUNDING hashes, engine source hashes at T0.

@@ -98,7 +98,7 @@ test('head-to-head: Original indexed to $10,000 at T0 (display only) beside its 
   store.rows('pred_s10_events').push({ account: 'S10-FWD-1', seq: 1, type: 'FUNDING', d: '2026-09-01', payload: {} });
   for (const [d, nav] of [['2026-09-01', 1_000_000], ['2026-09-02', 1_040_000], ['2026-09-03', 1_092_000], ['2026-09-04', 1_146_600]]) store.rows('pred_s10_marks').push({ account: 'S10-FWD-1', kind: 'EOD_CLOSE', d, nav_cents: nav, cash_cents: 1000, positions: [], benchmarks: {} });
   await runArenaEod({ store, now: '2026-09-03T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-03', at: '2026-09-03T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: CLS });
-  await runArenaOpen({ store, now: '2026-09-04T13:50:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T13:50:00Z', shock: BULL }) });
+  await runArenaOpen({ store, now: '2026-09-04T13:50:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T13:50:00Z', shock: BULL }), t0: '2026-09-03' });
   await runArenaEod({ store, now: '2026-09-04T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: CLS });
   const a = await arenaPayload(store);
   assert.equal(a.t0, '2026-09-03'); assert.equal(a.status, 'RUNNING');
@@ -131,4 +131,12 @@ test('metrics: gaps never interpolated; drawdown, vol and Sharpe gating', () => 
   assert.deepEqual(indexSeries(pts).map((p) => p.indexed), [10000, 11000, null, 9900, 10500]);
   const long = Array.from({ length: SHARPE_MIN_OBS + 1 }, (_, i) => ({ d: String(i), nav: 100 * (1 + 0.001 * i + 0.01 * Math.sin(i)) }));
   assert.equal(typeof seriesMetrics(long).sharpe, 'number');
+});
+
+test('admin arena run: admin token required; kill switch off = no run', async () => {
+  const env = { ADMIN_TOKEN: 'secret', SUPABASE_URL: 'https://db.invalid', SUPABASE_SERVICE_KEY: 'x', SIGNAL10_ARENA: 'false' };
+  const r1 = await worker.fetch(new Request('https://x/admin/signal10/arena/run?kind=EOD', { method: 'POST' }), env, { waitUntil() {} });
+  assert.equal(r1.status, 401);
+  const r2 = await worker.fetch(new Request('https://x/admin/signal10/arena/run?kind=EOD', { method: 'POST', headers: { authorization: 'Bearer secret' } }), env, { waitUntil() {} });
+  assert.deepEqual(await r2.json(), { skipped: 'kill_switch_off' });
 });

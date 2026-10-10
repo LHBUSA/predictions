@@ -10,7 +10,7 @@
 import { ACCOUNT as CONTROL_ACCOUNT, restoreState } from '../../../src/signal10/forward.js';
 import { MODEL_VERSION as CONTROL_MODEL, POLICY_VERSION as CONTROL_POLICY } from '../../../src/signal10/policy.js';
 import { CHALLENGERS, TECH, DIVERSIFIED, ARENA_VERSION, DISCLOSURE } from '../../../src/signal10/arena/policies.js';
-import { T, restore, policyHash } from '../../../src/signal10/arena/forward.js';
+import { T, restore, policyHash, runArenaEod, runArenaOpen } from '../../../src/signal10/arena/forward.js';
 import { indexSeries, seriesMetrics, turnover, SHARPE_MIN_OBS } from '../../../src/signal10/arena/metrics.js';
 import { SECTOR_LABEL, TAXONOMY_VERSION } from '../../../src/signal10/arena/taxonomy.js';
 import { METALS_CONTRACT, SPOT, METAL_ETFS, SPOT_HOLD, observation } from '../../../src/market-tape/metals.js';
@@ -167,7 +167,18 @@ export async function metalsPayload({ env, store, member, now = new Date().toISO
 }
 
 // ---------------- router ----------------
-export async function handleArena({ req, env, p, url, store, requireAllAccess, privateJson, json }) {
+export async function handleArena({ req, env, p, url, store, requireAllAccess, privateJson, json, tokenMatches }) {
+  // admin: manual run / rerun after a failed claimed run (?rerun=2 claims <ACCOUNT>:EOD:<date>#2). Never bypasses the kill
+  // switch or T0, never touches the control.
+  if (p === '/admin/signal10/arena/run' && req.method === 'POST') {
+    if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+    if (env.SIGNAL10_ARENA !== 'true') return json({ skipped: 'kill_switch_off' }, 200, 'no-store');
+    const now = url.searchParams.get('now') || new Date().toISOString();
+    const args = { store, now, workerVersion: env.CF_VERSION_METADATA?.id ?? null, t0: env.SIGNAL10_ARENA_T0 };
+    const kind = url.searchParams.get('kind');
+    const r = kind === 'EOD' ? await runArenaEod({ ...args, rerun: url.searchParams.get('rerun') }) : kind === 'OPEN' ? await runArenaOpen(args) : { error: 'kind must be OPEN|EOD' };
+    return json(r, 200, 'no-store');
+  }
   if (p === '/v1/signal10/arena/proof') {
     try { return json(await arenaProof(store), 200, 'public, max-age=60'); } catch { return json({ product: 'PBE Signal 10 · Strategy Arena', status: 'UNAVAILABLE', disclosure: DISCLOSURE }, 503, 'no-store'); }
   }

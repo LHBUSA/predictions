@@ -24,7 +24,8 @@ export class FakeStore {
     for (const row of [].concat(rows)) {
       this.writes.push(table);
       if (conflictColumn && this.rows(table).some((x) => x[conflictColumn] === row[conflictColumn])) continue;
-      this.rows(table).push(structuredClone(row)); out.push(row);
+      // JSON round trip like PostgREST/jsonb: undefined values disappear (hashes must cover exactly what is stored)
+      this.rows(table).push(JSON.parse(JSON.stringify(row))); out.push(row);
     }
     return returnRepresentation ? out : null;
   }

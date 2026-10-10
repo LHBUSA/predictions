@@ -139,7 +139,7 @@ test('reruns, duplicate claims and concurrent EODs never double-write', async ()
   assert.deepEqual(await runEod(store, D0), { skipped: 'eod_done' });
   assert.equal(store.rows(T.events).length, n);
   // next session: open, then two concurrent EODs
-  const o = await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1) });
+  const o = await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1), t0: D0 });
   assert.ok(o.TECH.ok && o.DIVERSIFIED.ok, JSON.stringify(o));
   const [a, b] = await Promise.all([runEod(store, D1), runEod(store, D1)]);
   for (const S of CHALLENGERS) {
@@ -154,7 +154,7 @@ test('reruns, duplicate claims and concurrent EODs never double-write', async ()
 test('OPEN fills only at the next session open; benchmarks bought at the same open; Tech holds technology only', async () => {
   const store = new FakeStore();
   await runEod(store, D0);
-  await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1) });
+  await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1), t0: D0 });
   const tech = await events(store, TECH.account);
   const fills = tech.filter((e) => e.type === 'FILL');
   assert.ok(fills.length >= 1 && fills.length <= TECH.manager.maxNewBuysPerSession);
@@ -163,7 +163,7 @@ test('OPEN fills only at the next session open; benchmarks bought at the same op
   assert.equal(tech.filter((e) => e.type === 'BENCHMARK_FILL').length, 2);
   const st = restore(tech.filter((e) => e.type === 'STATE').at(-1).payload).st;
   assert.ok(st.cashCents >= 0); assert.equal(st.fillSessions, 1);
-  assert.deepEqual(await runArenaOpen({ store, now: `${D1}T14:10:00Z`, fetchImpl: fakeSource({ today: D1, at: `${D1}T14:10:00Z`, shock: BULL }) }), { skipped: 'nothing_due' });
+  assert.deepEqual(await runArenaOpen({ store, now: `${D1}T14:10:00Z`, fetchImpl: fakeSource({ today: D1, at: `${D1}T14:10:00Z`, shock: BULL }), t0: D0 }), { skipped: 'nothing_due' });
 });
 
 test('EOD after a missed OPEN books the fills once (no duplicate ledger events)', async () => {
@@ -178,15 +178,35 @@ test('EOD after a missed OPEN books the fills once (no duplicate ledger events)'
   assert.equal((await verifyChain(ev)).ok, true);
 });
 
-test('fail closed: a held symbol without a series stops the EOD before any claim (never an invented mark)', async () => {
+const heldOf = async (store, S) => restore((await events(store, S.account)).filter((e) => e.type === 'STATE').at(-1).payload).st.positions;
+test('per-account fail closed: a missing held series with no persisted close blocks ONLY that account (no claim, no invented mark)', async () => {
   const store = new FakeStore();
   await runEod(store, D0);
-  await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1) });
-  const held = Object.keys(restore((await events(store, TECH.account)).filter((e) => e.type === 'STATE').at(-1).payload).st.positions);
-  const runs0 = store.rows(T.runs).length;
-  const r = await runEod(store, D1, { drop: new Set([held[0]]) });
-  assert.equal(r.skipped, 'held_symbol_unavailable'); assert.deepEqual(r.missingHeld, [held[0]]);
-  assert.equal(store.rows(T.runs).length, runs0, 'no claim written');
+  await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1), t0: D0 });
+  const techHeld = Object.keys(await heldOf(store, TECH)); const divHeld = new Set(Object.keys(await heldOf(store, DIVERSIFIED)));
+  const sym = techHeld.find((s) => !divHeld.has(s));
+  assert.ok(sym, 'fixture: a Tech-only holding');
+  const r = await runEod(store, D1, { drop: new Set([sym]) });
+  assert.equal(r.TECH.skipped, 'held_symbol_unavailable'); assert.deepEqual(r.TECH.missingHeld, [sym]);
+  assert.equal(r.DIVERSIFIED.ok, true, 'the other challenger is not blocked');
+  assert.ok(!store.rows(T.runs).some((x) => x.run_key === `${TECH.account}:EOD:${D1}`), 'no Tech claim');
+});
+
+test('a held series that disappears after a persisted mark: held stale at its last close (NOT AVAILABLE NAV), then delisted after 3 sessions', async () => {
+  const store = new FakeStore();
+  await runEod(store, D0);
+  await runArenaOpen({ store, now: `${D1}T13:50:00Z`, fetchImpl: openSrc(D1), t0: D0 });
+  await runEod(store, D1);
+  const sym = Object.keys(await heldOf(store, TECH))[0];
+  const days = CAL.filter((d) => d > D1).slice(0, 4);
+  for (const d of days) await runEod(store, d, { drop: new Set([sym]) });
+  const ev = await events(store, TECH.account);
+  assert.ok(ev.some((e) => e.type === 'SERIES_UNAVAILABLE' && e.payload.symbol === sym));
+  const marks = store.rows(T.marks).filter((m) => m.account === TECH.account && m.d > D1);
+  assert.equal(marks[0].nav_cents, null, 'NOT AVAILABLE while the holding has no observed close');
+  const liq = ev.find((e) => e.type === 'DELIST_LIQUIDATION' && e.payload.symbol === sym);
+  assert.ok(liq, 'liquidated at the last observed close after 3 missing sessions'); assert.match(liq.payload.flag, /ESTIMATE/);
+  assert.equal((await verifyChain(ev)).ok, true);
 });
 
 test('holiday / non-final close: no claim, no events', async () => {
@@ -297,4 +317,93 @@ test('universes: Tech = technology names only; Diversified = every classified na
   assert.deepEqual(U.tech.map((u) => u.ticker), ['NVDA']);
   assert.deepEqual(U.div.map((u) => u.ticker).sort(), ['JPM', 'NVDA']);
   assert.deepEqual(U.unclassified.sort(), ['PSKY', 'ZZZZ']);
+});
+
+// ---------------- 7. regressions from the independent review (2026-10-10) ----------------
+test('review #1/#2: five sessions through a JSON store — chains verify, STATE keeps seq/origin, every FILL links to its ORDER', async () => {
+  const store = new FakeStore(); // JSON round trip, like PostgREST + jsonb
+  await runEod(store, D0);
+  const days = CAL.filter((d) => d > D0).slice(0, 5);
+  for (const [k, d] of days.entries()) {
+    if (k % 2 === 0) await runArenaOpen({ store, now: `${d}T13:50:00Z`, fetchImpl: openSrc(d), t0: D0 }); // odd days: late open at EOD
+    await runEod(store, d);
+  }
+  for (const S of CHALLENGERS) {
+    const ev = await events(store, S.account);
+    assert.deepEqual(await verifyChain(ev), { ok: true, events: ev.length, head: ev.at(-1).hash }, S.strategy);
+    const st = restore(ev.filter((e) => e.type === 'STATE').at(-1).payload).st;
+    assert.ok(Number.isInteger(st.seq) && st.seq > 0 && st.origin === 'ARENA_FORWARD_PAPER', 'STATE round-trips seq/origin');
+    const orders = new Map(ev.filter((e) => e.type === 'ORDER').map((e) => [e.payload.local_seq, e]));
+    const fills = ev.filter((e) => e.type === 'FILL');
+    assert.ok(fills.length > 0);
+    for (const f of fills) { const o = orders.get(f.payload.orderSeq); assert.ok(o, `fill ${f.seq} links to an order`); assert.equal(o.payload.symbol, f.payload.symbol); assert.ok(o.d < f.d, 'order frozen before its fill'); }
+    assert.ok(ev.filter((e) => e.type === 'BENCHMARK_FILL').every((e) => Number.isInteger(e.payload.orderSeq)));
+  }
+});
+
+test('review #4: a full exit filling on a split date sells the whole post-split position; a trim scales by the ratio', async () => {
+  const { openSession } = await import('../src/signal10/arena/engine.js');
+  const { prepared } = market(['AAA', 'BBB'], D1);
+  for (const s of ['AAA', 'BBB']) prepared.get(s).splits.push({ d: D1, ratio: 2 });
+  const st = newChallenger(TECH, D0, 'x');
+  st.positions.AAA = { qty: 10, costCents: 100000, peakAdj: 1, ticker: 'AAA' }; st.positions.BBB = { qty: 10, costCents: 100000, peakAdj: 1, ticker: 'BBB' };
+  st.pending = [{ seq: 50, side: 'SELL', symbol: 'AAA', qty: 10, full: true, reason: 'RANK_EXIT' }, { seq: 51, side: 'SELL', symbol: 'BBB', qty: 4, reason: 'TRIM' }];
+  const evs = openSession(st, D1, prepared);
+  assert.equal(st.positions.AAA, undefined, 'nothing left of a full exit');
+  assert.equal(st.positions.BBB.qty, 12, '20 post-split shares minus a trim of 8');
+  assert.ok(evs.some((e) => e.type === 'ORDER_SPLIT_ADJUSTED' && e.symbol === 'BBB' && e.qtyAfter === 8));
+});
+
+test('review #3: positions that are exiting never trigger trims of the holdings that stay', () => {
+  const { prepared } = market(['AAA', 'BBB', 'CCC', 'GLD', 'SLV', 'SPY'], D0);
+  const px = (s) => prepared.get(s).c[prepared.get(s).idx.get(D0)];
+  const st = newChallenger(DIVERSIFIED, D0, 'x'); const nav = 1_000_000; const positions = []; let mv = 0;
+  const want = { AAA: [0.09, 'TECHNOLOGY', 'EQUITY'], BBB: [0.09, 'TECHNOLOGY', 'EQUITY'], CCC: [0.09, 'TECHNOLOGY', 'EQUITY'], GLD: [0.17, 'PRECIOUS_METALS', 'METAL_ETF'], SLV: [0.09, 'PRECIOUS_METALS', 'METAL_ETF'] };
+  for (const [s, [w, sector, kind]] of Object.entries(want)) { const qty = Math.floor(w * nav / (px(s) * 100)); const v = Math.round(qty * px(s) * 100); mv += v; st.positions[s] = { qty, costCents: v, peakAdj: px(s), ticker: s, sector, kind }; positions.push({ symbol: s, qty, close: px(s), valueCents: v }); }
+  st.cashCents = nav - mv;
+  const m = { navCents: nav, cashCents: st.cashCents, marketValueCents: mv, positions, stale: [] };
+  // AAA leaves the ranking (RANK_EXIT, full sale) and GLD is no longer verified (full sale): sector 27% -> ~18%, metals 26% -> ~9%
+  const ranks = ['BBB', 'CCC'].map((s, i) => ({ symbol: s, ticker: s, rank: i + 1, score: 99, sector: 'TECHNOLOGY', f: { adj: px(s), sma200: 0, sma50: 0, ret1: 0, vol63: 0.2 } }));
+  const metals = [{ symbol: 'GLD', verified: false, hold: 'test' }, { symbol: 'SLV', verified: true, f: { eligible: true, adj: px('SLV'), sma200: 0, mom6: 0.1, vol63: 0.1 } }];
+  const { orders } = decideDiversified(st, D0, { ranks }, metals, { regime: { riskOn: false }, prepared, m });
+  const sells = Object.fromEntries(orders.filter((o) => o.side === 'SELL').map((o) => [o.symbol, o]));
+  assert.ok(sells.AAA?.full && sells.GLD?.full, 'the exits are full sales');
+  assert.equal(sells.BBB, undefined); assert.equal(sells.CCC, undefined); assert.equal(sells.SLV, undefined);
+});
+
+test('review #6: the cohort funds together — if one challenger fails its gate on day one, neither is funded', async () => {
+  const store = new FakeStore();
+  const techSyms = Object.entries(FIX_CLS.rows).filter(([, r]) => r.tech).map(([t]) => t.replace(/\./g, '-'));
+  const r = await runEod(store, D0, { drop: new Set(techSyms.slice(0, Math.ceil(techSyms.length * 0.2))) });
+  assert.equal(r.skipped, 'cohort_not_ready');
+  assert.equal(store.writes.length, 0, 'no claim, no funding for either');
+  const r2 = await runEod(store, D0);
+  assert.ok(r2.TECH.funded && r2.DIVERSIFIED.funded);
+});
+
+test('review #7: a missing regime series never counts as risk-off and never buys', () => {
+  const syms = LATEST_MEMBERS.tickers.slice(0, 40).map((t) => t.replace(/\./g, '-'));
+  const { prepared } = market(syms, D0);
+  const snap = rankStrategy(TECH, D0, syms.map((s) => ({ ticker: s, symbol: s, sector: 'TECHNOLOGY' })), prepared);
+  const st = newChallenger(TECH, D0, 'x'); st.riskOffStreak = 9;
+  const m = { navCents: 1_000_000, cashCents: 1_000_000, marketValueCents: 0, positions: [], stale: [] };
+  const r = decideTech(st, D0, snap, { regime: { symbol: 'QQQ', riskOn: false, reason: 'insufficient_history' }, prepared, m });
+  assert.equal(st.riskOffStreak, 9, 'streak frozen');
+  assert.equal(r.orders.length, 0);
+  assert.match(r.decisions[0].reason, /regime unavailable/);
+});
+
+test('review #12: the metals sleeve really enters (risk-off for equities) and stays within 20% / 10% per ETF; cooldown expires', () => {
+  const { prepared } = market(['SPY', 'GLD', 'SLV', 'PPLT'], D0);
+  const st = newChallenger(DIVERSIFIED, D0, 'x');
+  const metals = ['GLD', 'SLV', 'PPLT'].map((s) => ({ symbol: s, verified: true, hold: null, f: { eligible: true, adj: 2, sma200: 1, mom6: 0.1, vol63: 0.04 } }));
+  const m = { navCents: 1_000_000, cashCents: 1_000_000, marketValueCents: 0, positions: [], stale: [] };
+  const { orders } = decideDiversified(st, D0, { ranks: [] }, metals, { regime: { riskOn: false }, prepared, m });
+  const buys = orders.filter((o) => o.side === 'BUY');
+  assert.equal(buys.length, 2, 'two ETFs at 10% fill the 20% sleeve; the third waits on the cap');
+  assert.ok(buys.every((o) => o.kind === 'METAL_ETF' && o.targetCents <= 100_000));
+  assert.ok(buys.reduce((s, o) => s + o.targetCents, 0) <= 200_000);
+  st.cooldown.GLD = DIVERSIFIED.manager.cooldownSessions;
+  for (let k = 0; k < DIVERSIFIED.manager.cooldownSessions; k++) decideDiversified(st, D0, { ranks: [] }, [], { regime: { riskOn: false }, prepared, m });
+  assert.equal(st.cooldown.GLD, undefined);
 });

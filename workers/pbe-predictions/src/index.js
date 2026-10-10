@@ -477,8 +477,8 @@ export default {
         if (r) return r;
       }
       // Strategy Arena + precious metals (issues #62/#63): before the control's /v1/signal10 handler, which owns the prefix.
-      if (p.startsWith('/v1/signal10/arena') || p === '/v1/metals') {
-        const r = await handleArena({ req, env, p, url, store: storeFor(env), requireAllAccess, privateJson, json });
+      if (p.startsWith('/v1/signal10/arena') || p.startsWith('/admin/signal10/arena') || p === '/v1/metals') {
+        const r = await handleArena({ req, env, p, url, store: storeFor(env), requireAllAccess, privateJson, json, tokenMatches });
         if (r) return r;
       }
       if (p.startsWith('/v1/signal10') || p.startsWith('/admin/signal10')) {

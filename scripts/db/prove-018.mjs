@@ -43,7 +43,7 @@ const S11 = ['COMMUNICATION', 'CONSUMER_DISCRETIONARY', 'CONSUMER_STAPLES', 'ENE
 const cls = { effective_from: '2025-01-01', content_sha256: 'f'.repeat(64), rows: Object.fromEntries(LATEST_MEMBERS.tickers.map((t, i) => [t, { sector: i % 4 === 0 ? 'TECHNOLOGY' : S11[i % 10], tech: i % 4 === 0 }])) };
 const store = new FakeStore(); const BULL = { QQQ: { from: 400, factor: 1.3 } };
 await runArenaEod({ store, now: '2026-09-03T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-03', at: '2026-09-03T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: cls });
-await runArenaOpen({ store, now: '2026-09-04T13:50:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T13:50:00Z', shock: BULL }) });
+await runArenaOpen({ store, now: '2026-09-04T13:50:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T13:50:00Z', shock: BULL }), t0: '2026-09-03' });
 await runArenaEod({ store, now: '2026-09-04T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: cls });
 let realRows = 0;
 await db.exec('begin');

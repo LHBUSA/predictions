@@ -7,6 +7,7 @@
 //   OPEN (>= 09:45 ET)  fills for orders frozen at the previous close, at D's regular-session open
 //   EOD  (>= 16:31 ET, odd minutes, after the control's EOD window opens) freeze ranks, mark, enforce caps, decide D+1
 import { parseYahooChart } from '../data.js';
+import { emit } from '../portfolio.js';
 import { loadComponents } from '../universe.js';
 import { resolveSymbol } from '../aliases.js';
 import { LATEST_MEMBERS } from '../members-latest.js';
@@ -35,8 +36,10 @@ export function serialize(st, bench) {
   const { events, ...rest } = st; // eslint-disable-line no-unused-vars
   return { ...rest, bench: Object.fromEntries(Object.entries(bench || {}).map(([k, v]) => { const { events: _e, ...r } = v; return [k, r]; })) };
 }
+// STATE events carry the whole account under payload.state (review fix: a flat payload lost st.seq / st.origin, because
+// the ledger row keeps seq and origin as its own columns).
 export function restore(payload) {
-  const { bench, ...st } = structuredClone(payload); st.events = [];
+  const { bench, ...st } = structuredClone(payload.state ?? payload); st.events = [];
   return { st, bench: Object.fromEntries(Object.entries(bench || {}).map(([k, v]) => [k, { ...v, events: [] }])) };
 }
 export async function loadHead(store, account) {
@@ -45,11 +48,16 @@ export async function loadHead(store, account) {
   return { state: state || null, lastSeq: last?.seq || 0, lastHash: last?.hash || '0'.repeat(64) };
 }
 export function eventHashBody(r) { return { account: r.account, origin: r.origin, strategy: r.strategy, seq: r.seq, type: r.type, d: r.d, payload: r.payload, model_version: r.model_version, policy_version: r.policy_version, policy_sha256: r.policy_sha256 }; }
+// The payload is normalised through JSON BEFORE hashing (review fix): the store persists JSON, which drops undefined
+// values, so the hash must cover exactly the bytes a verifier will read back. `local_seq` is the account-local event
+// number that ORDER/FILL events use to link (FILL.orderSeq = ORDER.local_seq).
+const stored = (v) => JSON.parse(JSON.stringify(v));
 async function appendEvents(store, head, S, pSha, events) {
   let prev = head.lastHash, seq = head.lastSeq; const rows = [];
   for (const e of events) {
     seq += 1;
-    const { seq: _s, origin: _o, type, d, ...payload } = e;
+    const { seq: localSeq, origin: _o, type, d, ...rest } = e;
+    const payload = stored(localSeq ? { local_seq: localSeq, ...rest } : rest);
     const body = { account: S.account, origin: ORIGIN, strategy: S.strategy, seq, type, d, payload, model_version: S.model, policy_version: S.policy, policy_sha256: pSha };
     const hash = await sha256Hex(prev + canonical(body));
     rows.push({ event_key: `${S.account}:${seq}`, ...body, prev_hash: prev, hash }); prev = hash;
@@ -127,8 +135,9 @@ function openBoth(states, D, mkt, late) {
   return out;
 }
 
-export async function runArenaOpen({ store, now, fetchImpl = fetch, workerVersion = null }) {
+export async function runArenaOpen({ store, now, fetchImpl = fetch, workerVersion = null, t0 }) {
   const D = nyClock(now).date;
+  if (!t0) return { skipped: 'no_t0' };
   const states = {}; const heads = {};
   for (const S of CHALLENGERS) {
     const h = await loadHead(store, S.account); if (!h.state) continue;
@@ -149,14 +158,15 @@ export async function runArenaOpen({ store, now, fetchImpl = fetch, workerVersio
     if (!(await claim(store, `${S.account}:OPEN:${D}`, S.account, 'OPEN', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
     const { st, bench } = states[S.account];
     const evs = openBoth({ [S.account]: states[S.account] }, D, mkt, false)[S.account];
-    const w = await appendEvents(store, heads[S.account], S, st.policySha256, [...evs, { type: 'STATE', d: D, phase: 'OPEN', ...serialize(st, bench) }]);
+    const w = await appendEvents(store, heads[S.account], S, st.policySha256, [...evs, { type: 'STATE', d: D, phase: 'OPEN', state: serialize(st, bench) }]);
     result[S.strategy] = { ok: true, events: w.rows.length, fills: evs.filter((e) => e.type === 'FILL').length };
   }
   return { d: D, ...result };
 }
 
 // EOD for both challengers from ONE market build. t0 = earliest date a challenger may be funded (SIGNAL10_ARENA_T0).
-export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion = null, t0, classification = CLASSIFICATION }) {
+export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion = null, t0, classification = CLASSIFICATION, rerun = null }) {
+  const keySuffix = rerun ? `#${Number.parseInt(rerun, 10)}` : '';
   const D = nyClock(now).date;
   if (!t0 || D < t0) return { skipped: 'before_t0' };
   const cls = classificationFor(D, classification);
@@ -182,23 +192,46 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' };
   const spyTime = mkt.digest.SPY.regularMarketTime;
   if (!spyTime || nyClock(new Date(spyTime * 1000).toISOString()).minutes < closeMinutes(D)) return { skipped: 'close_not_final' };
-  // fail closed: a held symbol without a series cannot be marked (never invent a mark)
-  const missingHeld = [...new Set(held)].filter((s) => !mkt.prepared.has(s));
-  if (missingHeld.length) return { skipped: 'held_symbol_unavailable', missingHeld };
+  // A held symbol without any series: per account (review fix: one account's data gap never blocks the other). The last
+  // persisted EOD mark supplies its last observed close so the shared delist rule can liquidate it after 3 missing
+  // sessions (flagged ESTIMATE); with no persisted close the account fails closed for the day (never an invented mark).
+  const blocked = {};
+  for (const S of due) {
+    const s0 = states[S.account]; if (!s0) continue;
+    const mine = [s0.st, ...Object.values(s0.bench)].flatMap((a) => [...Object.keys(a.positions), ...a.pending.map((o) => o.symbol)]);
+    const missing = [...new Set(mine)].filter((x) => !mkt.prepared.has(x));
+    if (!missing.length) continue;
+    const [lastMark] = await store.select(T.marks, { account: `eq.${S.account}`, select: 'd,positions' }, { limit: 1, order: 'd.desc' });
+    const unresolved = [];
+    for (const sym of missing) {
+      const pm = lastMark?.positions?.find((x) => x.symbol === sym);
+      if (!pm || !(pm.close > 0) || !mkt.calIndex.has(pm.closeDate)) { unresolved.push(sym); continue; }
+      mkt.prepared.set(sym, { symbol: sym, name: sym, n: 1, d: [pm.closeDate], c: [pm.close], o: [pm.close], adj: [pm.close], idx: new Map([[pm.closeDate, 0]]), splits: [], dividends: [], seriesUnavailable: true });
+    }
+    if (unresolved.length) blocked[S.strategy] = unresolved;
+  }
   const cover = (list) => list.filter((u) => u.symbol && mkt.prepared.get(u.symbol)?.idx.has(D)).length / Math.max(1, list.length);
   const coverage = { TECH: cover(U.tech), DIVERSIFIED: cover(U.div) };
   const metals = metalCandidates(mkt.prepared, D, mkt.calIndex);
   const regimes = { QQQ: regimeOf(mkt.prepared, 'QQQ', D), SPY: regimeOf(mkt.prepared, 'SPY', D) };
   const result = {};
+  // The cohort funds TOGETHER (preregistration §6): while neither challenger is funded, both gates must pass the same day.
+  const funding = due.filter((S) => !states[S.account]);
+  if (funding.length && funding.length === CHALLENGERS.length && funding.some((S) => coverage[S.strategy] < 0.9 || blocked[S.strategy])) {
+    return { d: D, skipped: 'cohort_not_ready', coverage };
+  }
   for (const S of due) {
+    if (blocked[S.strategy]) { result[S.strategy] = { skipped: 'held_symbol_unavailable', missingHeld: blocked[S.strategy] }; continue; }
     if (coverage[S.strategy] < 0.9) { result[S.strategy] = { skipped: 'coverage_below_90pct', coverage: coverage[S.strategy] }; continue; }
-    if (!(await claim(store, `${S.account}:EOD:${D}`, S.account, 'EOD', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
+    if (!(await claim(store, `${S.account}:EOD:${D}${keySuffix}`, S.account, 'EOD', D, workerVersion))) { result[S.strategy] = { skipped: 'claimed' }; continue; }
     const pSha = await policyHash(S);
     let st, bench;
     if (!states[S.account]) {
       st = newChallenger(S, D, pSha);
+      Object.assign(st.events[0], { classification: { taxonomy: TAXONOMY_VERSION, effective_from: cls.effective_from, content_sha256: cls.content_sha256 },
+        metalsRegistrySha256: await sha256Hex(canonical(METAL_ETFS)), arena: ARENA_VERSION });
       bench = { SPY: newChallenger({ ...S, account: `${S.account}:SPY`, strategy: 'BENCHMARK_SPY' }, D, null), QQQ: newChallenger({ ...S, account: `${S.account}:QQQ`, strategy: 'BENCHMARK_QQQ' }, D, null) };
-      for (const [sym, b] of Object.entries(bench)) { b.events = []; b.pending = [{ side: 'BUY', symbol: sym, ticker: sym, targetCents: b.cashCents, reason: 'BENCHMARK buy-and-hold at the first fill-session open' }]; b.meta[sym] = { sector: 'BENCHMARK', kind: 'ETF' }; }
+      for (const [sym, b] of Object.entries(bench)) { b.pending = [emit(b, { type: 'ORDER', d: D, side: 'BUY', symbol: sym, ticker: sym, targetCents: b.cashCents, reason: 'BENCHMARK buy-and-hold at the first fill-session open' })]; b.events = []; b.meta[sym] = { sector: 'BENCHMARK', kind: 'ETF' }; }
       st.lastOpen = D;
     } else {
       ({ st, bench } = states[S.account]);
@@ -206,10 +239,13 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
       // events into st.events; only the benchmark + SESSION events are new here (never push an event twice).
       if (st.lastOpen < D) for (const e of openBoth({ [S.account]: states[S.account] }, D, mkt, true)[S.account]) if (!st.events.includes(e)) st.events.push({ seq: 0, origin: ORIGIN, ...e });
     }
-    for (const e of st.events) if (e.type === 'FILL' && e.d === D) {
-      const p = mkt.prepared.get(e.symbol); const i = p?.idx.get(D);
-      if (i != null && Math.abs(p.o[i] / e.open - 1) > 0.001) st.events.push({ seq: 0, origin: ORIGIN, type: 'FILL_OPEN_DISCREPANCY', d: D, symbol: e.symbol, fillOpen: e.open, finalBarOpen: p.o[i] });
+    // intraday OPEN fills vs the final daily-bar open (review fix: read the ledger's FILL rows; never restated)
+    const fillsToday = states[S.account] ? await store.select(T.events, { account: `eq.${S.account}`, type: 'eq.FILL', d: `eq.${D}`, select: 'payload' }) : [];
+    for (const { payload: f } of fillsToday) {
+      const p = mkt.prepared.get(f.symbol); const i = p?.idx.get(D);
+      if (i != null && f.open > 0 && Math.abs(p.o[i] / f.open - 1) > 0.001) st.events.push({ seq: 0, origin: ORIGIN, type: 'FILL_OPEN_DISCREPANCY', d: D, symbol: f.symbol, fillOpen: f.open, finalBarOpen: p.o[i] });
     }
+    for (const [sym, p] of mkt.prepared) if (p.seriesUnavailable && st.positions[sym]) st.events.push({ seq: 0, origin: ORIGIN, type: 'SERIES_UNAVAILABLE', d: D, symbol: sym, lastClose: p.c[0], lastCloseDate: p.d[0], note: 'source series missing; held at the last observed close (stale) until the delist rule applies' });
     delistings(st, D, mkt.calIndex, mkt.prepared);
     const universe = S === TECH ? U.tech : U.div;
     const snap = rankStrategy(S, D, universe, mkt.prepared);
@@ -228,10 +264,10 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
       source_digest: Object.fromEntries(Object.entries(mkt.digest).filter(([k]) => universe.some((u) => u.symbol === k) || ['SPY', 'QQQ', ...METAL_ETFS.map((x) => x.symbol)].includes(k) || st.positions[k])),
       data_cutoff: `${D} regular-session close` };
     snapRow.content_sha256 = await sha256Hex(canonical({ d: D, model: S.model, ranks: top }));
-    await store.insertMany(T.snapshots, [snapRow], 'snapshot_key');
     st.events.push({ seq: 0, origin: ORIGIN, type: 'RANK_SNAPSHOT', d: D, model: S.model, snapshotKey: snapRow.snapshot_key, contentSha256: snapRow.content_sha256, top: top.slice(0, 10).map((r) => [r.symbol, r.score]), eligible: snap.eligible, coverage: coverage[S.strategy] });
     st.events.push({ seq: 0, origin: ORIGIN, type: 'EOD_MARK', d: D, navCents: m.navCents, cashCents: m.cashCents, marketValueCents: m.marketValueCents, positions: m.positions, exposures: exp, benchmarks: bm, stale: m.stale });
-    const w = await appendEvents(store, heads[S.account], S, pSha, [...st.events, { type: 'STATE', d: D, phase: 'EOD', ...serialize(st, bench) }]);
+    const w = await appendEvents(store, heads[S.account], S, pSha, [...st.events, { type: 'STATE', d: D, phase: 'EOD', state: serialize(st, bench) }]);
+    await store.insertMany(T.snapshots, [snapRow], 'snapshot_key');
     await store.insertMany(T.marks, [{ mark_key: `${S.account}:EOD:${D}`, account: S.account, d: D, kind: 'EOD_CLOSE', observed_at: new Date(spyTime * 1000).toISOString(),
       nav_cents: m.stale.length ? null : m.navCents, cash_cents: m.cashCents, coverage: m.stale.length ? 1 - m.stale.length / Math.max(1, m.positions.length) : 1,
       positions: m.positions, exposures: exp, benchmarks: bm }], 'mark_key');
@@ -241,6 +277,7 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
 }
 
 export async function arenaTick(env, minuteAt) {
+  if (env.SIGNAL10_ARENA !== 'true') return {}; // kill switch (also checked by the caller): challenger writes only
   const store = env.__store; const d = arenaDue(minuteAt); const out = {};
   const args = { store, now: minuteAt, workerVersion: env.CF_VERSION_METADATA?.id ?? null, t0: env.SIGNAL10_ARENA_T0 };
   if (d.open) out.open = await runArenaOpen(args).catch((e) => ({ error: e.message }));

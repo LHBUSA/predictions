@@ -80,11 +80,20 @@ export function newChallenger(S, inception, policySha256) {
 }
 
 // Fills at D's open for orders frozen at the previous close (shared accounting), then tag new positions with their meta.
+// Review fix (pre-T0): SELL quantities were set at the decision close; a split effective at this open changes the share
+// count first. Full exits (order.full) sell the whole post-split position; partial trims scale by the split ratio.
 export function openSession(st, D, prepared) {
   const n0 = st.events.length;
   corporateActions(st, D, prepared);
+  for (const o of st.pending) {
+    if (o.side !== 'SELL') continue;
+    const ratio = (prepared.get(o.symbol)?.splits || []).filter((x) => x.d === D).reduce((f, x) => f * x.ratio, 1);
+    if (o.full) o.qty = st.positions[o.symbol]?.qty ?? o.qty;
+    else if (ratio !== 1 && o.qty != null) { const q = Math.floor(o.qty * ratio + 1e-9); emit(st, { type: 'ORDER_SPLIT_ADJUSTED', d: D, symbol: o.symbol, orderSeq: o.seq, qtyBefore: o.qty, qtyAfter: q, ratio }); o.qty = q; }
+  }
   execute(st, D, prepared);
   for (const [sym, pos] of Object.entries(st.positions)) if (st.meta[sym]) Object.assign(pos, { sector: st.meta[sym].sector, kind: st.meta[sym].kind });
+  for (const sym of Object.keys(st.meta)) if (!st.positions[sym]) delete st.meta[sym];
   st.fillSessions += 1; st.lastOpen = D;
   return st.events.slice(n0);
 }
@@ -106,10 +115,11 @@ function common(st, D, m) {
 export function decideTech(st, D, snap, { regime, prepared, m }) {
   const M = TECH.manager;
   tickCooldowns(st); st.eodSessions += 1;
-  st.riskOffStreak = regime.riskOn ? 0 : st.riskOffStreak + 1;
+  // a missing / short regime series is NOT a risk-off close: the streak is frozen (no new buys that session either)
+  if (!regime.reason) st.riskOffStreak = regime.riskOn ? 0 : st.riskOffStreak + 1;
   const { nav, valueOf, orders, decisions, order, decision } = common(st, D, m);
   const byS = new Map(snap.ranks.map((r) => [r.symbol, r]));
-  const exiting = new Set();
+  const exiting = new Set(); const trimmed = new Set();
   for (const [sym, pos] of Object.entries(st.positions)) {
     const p = prepared.get(sym); const i = p?.idx.get(D);
     if (i == null) { decision({ action: 'HOLD', symbol: sym, reason: 'NO_BAR_TODAY: no observed close; no decision on missing data' }); continue; }
@@ -123,13 +133,13 @@ export function decideTech(st, D, snap, { regime, prepared, m }) {
     else if (st.riskOffStreak >= M.deriskAfterRiskOffCloses && s200 != null && p.adj[i] < s200) { why = `DERISK: QQQ below its 200-day average for ${st.riskOffStreak} closes and the holding is below its own 200-day average`; cool = true; }
     if (why) {
       exiting.add(sym); if (cool) st.cooldown[sym] = M.cooldownSessions;
-      order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: pos.qty, reason: why, rank: r?.rank ?? null, score: r?.score ?? null });
+      order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: pos.qty, full: true, reason: why, rank: r?.rank ?? null, score: r?.score ?? null });
       continue;
     }
     const value = valueOf(sym);
     if (value / nav > M.trimAboveWeight) {
       const qty = Math.ceil((value - M.trimToWeight * nav) / (p.c[i] * 100));
-      if (qty > 0 && qty < pos.qty) { order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty, reason: `TRIM: weight ${(value / nav * 100).toFixed(1)}% > ${M.trimAboveWeight * 100}%`, rank: r.rank, score: r.score }); continue; }
+      if (qty > 0 && qty < pos.qty) { trimmed.add(sym); order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty, reason: `TRIM: weight ${(value / nav * 100).toFixed(1)}% > ${M.trimAboveWeight * 100}%`, rank: r.rank, score: r.score }); continue; }
     }
     decision({ action: 'HOLD', symbol: sym, rank: r.rank, score: r.score, reason: r.rank <= M.entryMaxRank ? 'HOLD: still a top-8 technology name' : `HOLD: rank ${r.rank} inside the ${M.exitRank} exit band` });
   }
@@ -141,7 +151,8 @@ export function decideTech(st, D, snap, { regime, prepared, m }) {
   for (const r of snap.ranks.slice(0, M.entryMaxRank)) {
     if (st.positions[r.symbol]) continue;
     let why = null;
-    if (!regime.riskOn) why = 'WAIT: technology regime risk-off (QQQ below its 200-day average); no new names';
+    if (regime.reason) why = `WAIT: technology regime unavailable (${regime.reason}); no new names on missing data`;
+    else if (!regime.riskOn) why = 'WAIT: technology regime risk-off (QQQ below its 200-day average); no new names';
     else if (st.cooldown[r.symbol]) why = `WAIT_COOLDOWN: stopped out recently; ${st.cooldown[r.symbol]} sessions left`;
     else if (!(r.f.adj > r.f.sma50)) why = 'WAIT: below its 50-day average (no short-term uptrend)';
     else if (r.f.ret1 <= M.brokenDayDrop) why = `WAIT: ${(r.f.ret1 * 100).toFixed(1)}% one-day drop treated as a possible broken thesis`;
@@ -150,9 +161,9 @@ export function decideTech(st, D, snap, { regime, prepared, m }) {
   }
   if (slots <= 0 && qualified.length) {
     const best = qualified[0];
-    const weakest = heldAfter.map((s) => byS.get(s)).filter(Boolean).sort((a, b) => b.rank - a.rank)[0];
-    if (best.rank <= M.rotateCandidateMaxRank && weakest && weakest.rank > M.rotateWeakestMinRank) {
-      order({ side: 'SELL', symbol: weakest.symbol, ticker: weakest.ticker, qty: st.positions[weakest.symbol].qty, reason: `ROTATE_OUT: rank ${weakest.rank} replaced by rank ${best.rank} ${best.symbol}`, rank: weakest.rank, score: weakest.score });
+    const weakest = heldAfter.filter((s) => !trimmed.has(s)).map((s) => byS.get(s)).filter(Boolean).sort((a, b) => b.rank - a.rank)[0];
+    if (best.rank <= M.rotateCandidateMaxRank && weakest && weakest.rank > M.rotateWeakestMinRank && Math.min(target, budget + valueOf(weakest.symbol)) >= M.minTradeCents) {
+      order({ side: 'SELL', symbol: weakest.symbol, ticker: weakest.ticker, qty: st.positions[weakest.symbol].qty, full: true, reason: `ROTATE_OUT: rank ${weakest.rank} replaced by rank ${best.rank} ${best.symbol}`, rank: weakest.rank, score: weakest.score });
       budget += valueOf(weakest.symbol);
       const amt = Math.min(target, budget);
       order({ side: 'BUY', symbol: best.symbol, ticker: best.ticker, sector: best.sector, targetCents: amt, reason: `ROTATE_IN: rank ${best.rank}, momentum leader in an uptrend`, rank: best.rank, score: best.score });
@@ -186,7 +197,7 @@ export function exposures(st, m) {
 export function decideDiversified(st, D, snap, metals, { regime, prepared, m }) {
   const M = DIVERSIFIED.manager;
   tickCooldowns(st); st.eodSessions += 1;
-  st.riskOffStreak = regime.riskOn ? 0 : st.riskOffStreak + 1;
+  if (!regime.reason) st.riskOffStreak = regime.riskOn ? 0 : st.riskOffStreak + 1;
   const { nav, valueOf, orders, decisions, order, decision } = common(st, D, m);
   const byS = new Map(snap.ranks.map((r) => [r.symbol, r]));
   const metalBy = new Map(metals.map((x) => [x.symbol, x]));
@@ -213,18 +224,20 @@ export function decideDiversified(st, D, snap, metals, { regime, prepared, m }) 
       else if (p.adj[i] / pos.peakAdj - 1 <= M.trailingStop) { why = `TRAILING_STOP: ${((p.adj[i] / pos.peakAdj - 1) * 100).toFixed(1)}% from peak`; cool = true; }
     }
     if (why) {
-      exiting.add(sym); if (cool) st.cooldown[sym] = M.cooldownSessions; sellQty[sym] = { qty: pos.qty, reason: why, rank: r?.rank ?? null, score: r?.score ?? null };
+      exiting.add(sym); if (cool) st.cooldown[sym] = M.cooldownSessions; sellQty[sym] = { qty: pos.qty, full: true, reason: why, rank: r?.rank ?? null, score: r?.score ?? null };
     }
   }
 
-  // 2. post-drift cap enforcement on what remains (deterministic; trims sell at the next open)
-  const ex = exposures(st, m);
+  // 2. post-drift cap enforcement on what remains AFTER the exits above (review fix: exiting positions no longer count
+  // toward a sector or the metals sleeve, so they never trigger trims of the holdings that stay)
   const keep = Object.keys(st.positions).filter((s) => !exiting.has(s) && closeOf(s) != null);
+  const ex = exposures(st, { ...m, positions: m.positions.filter((x) => keep.includes(x.symbol)) });
+  const noted = new Set();
   const trim = (sym, valueToSell, why) => {
     const px = closeOf(sym); const pos = st.positions[sym];
     const qty = Math.min(pos.qty, Math.ceil(valueToSell / (px * 100)));
     if (qty <= 0) return;
-    if (qty * px * 100 < M.minTradeCents) { decision({ action: 'HOLD', symbol: sym, reason: `CAP_DRIFT_BELOW_MIN_ORDER: ${why} (excess under the $100 minimum order)` }); return; }
+    if (qty * px * 100 < M.minTradeCents) { if (!noted.has(sym)) decision({ action: 'HOLD', symbol: sym, reason: `CAP_DRIFT_BELOW_MIN_ORDER: ${why} (excess under the $100 minimum order)` }); noted.add(sym); return; }
     if (!sellQty[sym] || sellQty[sym].qty < qty) sellQty[sym] = { qty, reason: why };
   };
   for (const sym of keep) {
@@ -243,9 +256,9 @@ export function decideDiversified(st, D, snap, metals, { regime, prepared, m }) 
   }
   for (const [sym, s] of Object.entries(sellQty).sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     const pos = st.positions[sym];
-    order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: s.qty, reason: s.reason, rank: s.rank ?? byS.get(sym)?.rank ?? null, score: s.score ?? byS.get(sym)?.score ?? null });
+    order({ side: 'SELL', symbol: sym, ticker: pos.ticker, qty: s.qty, ...(s.full || s.qty >= pos.qty ? { full: true } : {}), reason: s.reason, rank: s.rank ?? byS.get(sym)?.rank ?? null, score: s.score ?? byS.get(sym)?.score ?? null });
   }
-  for (const sym of keep) if (!sellQty[sym]) { const r = byS.get(sym); decision({ action: 'HOLD', symbol: sym, rank: r?.rank ?? null, score: r?.score ?? null, reason: st.positions[sym].kind === 'METAL_ETF' ? 'HOLD: metal ETF trend intact' : `HOLD: rank ${r?.rank} inside the ${M.exitRank} exit band and above its 200-day average` }); }
+  for (const sym of keep) if (!sellQty[sym] && !noted.has(sym)) { const r = byS.get(sym); decision({ action: 'HOLD', symbol: sym, rank: r?.rank ?? null, score: r?.score ?? null, reason: st.positions[sym].kind === 'METAL_ETF' ? 'HOLD: metal ETF trend intact' : `HOLD: rank ${r?.rank} inside the ${M.exitRank} exit band and above its 200-day average` }); }
 
   // 3. projected book after sells (valued at today's close)
   const projVal = {};
@@ -269,7 +282,8 @@ export function decideDiversified(st, D, snap, metals, { regime, prepared, m }) 
     if (st.positions[r.symbol]) continue;
     const s = r.sector || 'UNCLASSIFIED';
     let why = null;
-    if (!regime.riskOn) why = 'WAIT: market regime risk-off (SPY below its 200-day average); no new equity names';
+    if (regime.reason) why = `WAIT: market regime unavailable (${regime.reason}); no new equity names on missing data`;
+    else if (!regime.riskOn) why = 'WAIT: market regime risk-off (SPY below its 200-day average); no new equity names';
     else if (st.cooldown[r.symbol]) why = `WAIT_COOLDOWN: exited on a stop or trend break; ${st.cooldown[r.symbol]} sessions left`;
     else if (!(r.f.adj > r.f.sma200)) why = 'WAIT: below its 200-day average';
     else if (r.f.ret1 <= M.brokenDayDrop) why = `WAIT: ${(r.f.ret1 * 100).toFixed(1)}% one-day drop treated as a possible broken thesis`;
