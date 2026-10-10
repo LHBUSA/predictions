@@ -1,5 +1,5 @@
 // PGlite proof for sql/018_signal10_arena.sql: applies the ledger chain 001..017, seeds one CONTROL (pred_s10_*) event,
-// applies 018, runs 018_PROOF.sql (aborts with PROOF_RESULT 15 of 15), checks nothing persisted and the control row is
+// applies 018, runs 018_PROOF.sql (aborts with PROOF_RESULT 17 of 17), checks nothing persisted and the control row is
 // byte-identical, then ROLLBACK (arena tables gone, control untouched) and re-apply.
 //   node scripts/db/prove-018.mjs [path-to-a-package.json that resolves @electric-sql/pglite]
 import { readFileSync, readdirSync } from 'node:fs';
@@ -54,7 +54,7 @@ for (const t of Object.values(T)) for (const row of store.rows(t)) {
 }
 await db.exec('rollback');
 console.log('real lane rows accepted by 018 constraints:', realRows);
-const ok = realRows > 50 && result && result[1] === '15' && result[2] === '15' && persisted === 0 && before === after && schemaBefore === schemaAfter && left === 0
+const ok = realRows > 50 && result && result[1] === '17' && result[2] === '17' && persisted === 0 && before === after && schemaBefore === schemaAfter && left === 0
   && rls === 'pred_s10a_events=true,pred_s10a_marks=true,pred_s10a_runs=true,pred_s10a_snapshots=true';
 if (!ok) { console.error('PROOF FAILED'); process.exit(1); }
 console.log('PROOF PASSED');

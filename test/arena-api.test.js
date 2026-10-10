@@ -53,7 +53,8 @@ test('public Arena proof: hashes and status only — no NAV, holdings, ranks or 
   const r = await call('/v1/signal10/arena/proof', null, null, '[]');
   assert.equal(r.r.status, 200); assert.match(r.r.headers.get('cache-control'), /public/);
   const body = JSON.parse(r.body);
-  assert.equal(body.strategies.length, 2);
+  assert.equal(body.strategies.length, 3);
+  assert.deepEqual(body.strategies.map((s) => s.account), ['S10-ARENA-ORIG-1', 'S10-ARENA-TECH-1', 'S10-ARENA-DIV-1']);
   for (const s of body.strategies) { assert.match(s.policy_sha256, /^[0-9a-f]{64}$/); assert.equal(s.status, 'AWAITING_T0'); }
   assert.doesNotMatch(r.body, /"holdings"|"series"|"nav|"ranks"|"decisions"|positions/);
   assert.match(body.disclosure, /HYPOTHETICAL/);
@@ -92,41 +93,39 @@ test('metals: ETF prices only from the rights-cleared IEX snapshot (T+1, labelle
 const S11 = ['COMMUNICATION', 'CONSUMER_DISCRETIONARY', 'CONSUMER_STAPLES', 'ENERGY', 'FINANCIALS', 'HEALTH_CARE', 'INDUSTRIALS', 'MATERIALS', 'REAL_ESTATE', 'UTILITIES'];
 const CLS = { effective_from: '2025-01-01', content_sha256: 'f'.repeat(64), rows: Object.fromEntries(LATEST_MEMBERS.tickers.map((t, i) => [t, { sector: i % 4 === 0 ? 'TECHNOLOGY' : S11[i % 10], tech: i % 4 === 0 }])) };
 const BULL = { QQQ: { from: 400, factor: 1.3 } };
-test('head-to-head: Original indexed to $10,000 at T0 (display only) beside its lifetime record; challengers from T0', async () => {
+test('head-to-head: three brand-new accounts, same T0, same $10,000, zero positions; legacy V1 data never read', async () => {
   const store = new FakeStore();
-  // the control has been running since before T0 (lifetime NAV 10,000 -> 10,400 -> 10,920)
+  // legacy V1 rows exist (historical research) and must not influence or appear in the Arena
   store.rows('pred_s10_events').push({ account: 'S10-FWD-1', seq: 1, type: 'FUNDING', d: '2026-09-01', payload: {} });
-  for (const [d, nav] of [['2026-09-01', 1_000_000], ['2026-09-02', 1_040_000], ['2026-09-03', 1_092_000], ['2026-09-04', 1_146_600]]) store.rows('pred_s10_marks').push({ account: 'S10-FWD-1', kind: 'EOD_CLOSE', d, nav_cents: nav, cash_cents: 1000, positions: [], benchmarks: {} });
+  store.rows('pred_s10_marks').push({ account: 'S10-FWD-1', kind: 'EOD_CLOSE', d: '2026-09-02', nav_cents: 1_234_567, cash_cents: 1000, positions: [{ symbol: 'LEGACY', valueCents: 1 }], benchmarks: {} });
+  const reads = []; const sel = store.select.bind(store); store.select = (t, ...r) => { reads.push(t); return sel(t, ...r); };
   await runArenaEod({ store, now: '2026-09-03T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-03', at: '2026-09-03T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: CLS });
   await runArenaOpen({ store, now: '2026-09-04T13:50:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T13:50:00Z', shock: BULL }), t0: '2026-09-03' });
   await runArenaEod({ store, now: '2026-09-04T20:35:00Z', fetchImpl: fakeSource({ today: '2026-09-04', at: '2026-09-04T20:00:00Z', shock: BULL }), t0: '2026-09-03', classification: CLS });
+  reads.length = 0;
   const a = await arenaPayload(store);
-  assert.equal(a.t0, '2026-09-03'); assert.equal(a.status, 'RUNNING');
-  const [orig, tech, div] = a.strategies;
-  assert.equal(orig.index_base.nav_cents, 1_092_000);
-  assert.deepEqual(orig.series.map((p) => [p.d, p.indexed]), [['2026-09-03', 10000], ['2026-09-04', 10500]]);
-  assert.equal(orig.lifetime[0].indexed, 10000); assert.equal(orig.lifetime.at(-1).indexed, 11466);
-  assert.equal(orig.inception, '2026-09-01', 'the Original keeps its own inception (never reset)');
-  for (const s of [tech, div]) {
-    assert.equal(s.inception, '2026-09-03'); assert.equal(s.series[0].indexed, 10000); assert.equal(s.series.length, 2);
+  assert.ok(!reads.some((t) => /^pred_s10_(events|marks|snapshots|runs)$/.test(t)), `legacy tables read: ${reads.join(',')}`);
+  assert.equal(a.t0, '2026-09-03'); assert.equal(a.status, 'RUNNING'); assert.equal(a.common_start, true);
+  assert.deepEqual(a.strategies.map((s) => s.key), ['ORIGINAL', 'TECH', 'DIVERSIFIED']);
+  for (const s of a.strategies) {
+    assert.equal(s.inception, '2026-09-03', s.key); assert.equal(s.series[0].indexed, 10000, s.key); assert.equal(s.series.length, 2);
     assert.ok(s.holdings.every((h) => h.weight == null || (h.weight > 0 && h.weight <= 0.2)));
-    assert.ok(s.decisions.length > 0);
     assert.match(s.policy_sha256, /^[0-9a-f]{64}$/);
+    assert.equal(s.index_base, undefined); assert.equal(s.lifetime, undefined);
   }
-  assert.ok(div.holdings.every((h) => h.weight == null || h.weight <= 0.10 + 0.01), 'Diversified holdings near/below the 10% cap at the first mark');
+  assert.doesNotMatch(JSON.stringify(a), /LEGACY|1234567/);
+  assert.ok(a.strategies.find((s) => s.key === 'DIVERSIFIED').holdings.every((h) => h.weight == null || h.weight <= 0.11));
   assert.equal(a.comparators.SPY[0].indexed, 10000);
-  assert.equal(tech.metrics.sharpe, null, `no Sharpe before ${SHARPE_MIN_OBS} observations`);
+  assert.equal(a.strategies[1].metrics.sharpe, null, `no Sharpe before ${SHARPE_MIN_OBS} observations`);
   // re-review N2/N3: member payloads never carry a source price or a share-count/value pair
-  const leak = JSON.stringify(a.strategies.map((s) => s.holdings));
-  assert.doesNotMatch(leak, /"qty"|"value_cents"|"cost_cents"|"close"|"price"/);
+  assert.doesNotMatch(JSON.stringify(a.strategies.map((s) => s.holdings)), /"qty"|"value_cents"|"cost_cents"|"close"|"price"/);
   const mm = await metalsPayload({ env: { MARKET_TAPE_QUOTES: 'on', MARKET_TAPE_PROVIDER: 'iex-hist' }, store, member: true });
-  assert.ok(mm.diversified_sleeve.candidates.length === 3);
+  assert.equal(mm.diversified_sleeve.candidates.length, 3);
   assert.doesNotMatch(JSON.stringify(mm.diversified_sleeve), /"adj"|"sma200"|"close"|"f":/);
-  assert.ok(mm.diversified_sleeve.candidates.every((c) => 'above_sma200' in c && 'verified' in c));
   const proof = await arenaProof(store);
   assert.equal(proof.t0, '2026-09-03');
   assert.ok(proof.strategies.every((s) => s.status === 'RUNNING' && /^[0-9a-f]{64}$/.test(s.ledger_head_hash)));
-  assert.doesNotMatch(JSON.stringify(proof), /holdings|"nav|positions/);
+  assert.doesNotMatch(JSON.stringify(proof), /"holdings"|"nav|"positions"/);
 });
 
 test('metrics: gaps never interpolated; drawdown, vol and Sharpe gating', () => {

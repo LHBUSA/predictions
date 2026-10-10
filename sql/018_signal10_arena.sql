@@ -1,4 +1,4 @@
--- 018: PBE Signal 10 STRATEGY ARENA challenger paper accounts (issue #62). ADDITIVE ONLY: new tables; nothing in
+-- 018: PBE Signal 10 STRATEGY ARENA paper accounts (issue #62): ORIGINAL (V1 rules, new account), TECH, DIVERSIFIED. ADDITIVE ONLY: new tables; nothing in
 -- pred_s10_* (the ORIGINAL / CONTROL account, sql/016) is altered, constrained or read by these objects.
 -- Simulated $10,000 paper accounts. No real money, no brokerage, no orders anywhere. RLS on with no policies: service role
 -- only; the Worker serves members through requireAllAccess.
@@ -11,8 +11,8 @@
 begin;
 
 create table pred_s10a_runs (
-  run_key text primary key check (run_key ~ '^S10-ARENA-(TECH|DIV)-\d+:(OPEN|EOD):\d{4}-\d{2}-\d{2}(#\d+)?$'),
-  account text not null check (account ~ '^S10-ARENA-(TECH|DIV)-\d+$'),
+  run_key text primary key check (run_key ~ '^S10-ARENA-(ORIG|TECH|DIV)-\d+:(OPEN|EOD):\d{4}-\d{2}-\d{2}(#\d+)?$'),
+  account text not null check (account ~ '^S10-ARENA-(ORIG|TECH|DIV)-\d+$'),
   kind text not null check (kind in ('OPEN', 'EOD')),
   d date not null,
   worker_version text,
@@ -22,9 +22,9 @@ create table pred_s10a_runs (
 
 create table pred_s10a_events (
   event_key text primary key,
-  account text not null check (account ~ '^S10-ARENA-(TECH|DIV)-\d+$'),
+  account text not null check (account ~ '^S10-ARENA-(ORIG|TECH|DIV)-\d+$'),
   origin text not null check (origin = 'ARENA_FORWARD_PAPER'),
-  strategy text not null check (strategy in ('TECH', 'DIVERSIFIED')),
+  strategy text not null check (strategy in ('ORIGINAL', 'TECH', 'DIVERSIFIED')),
   seq integer not null check (seq > 0),
   type text not null,
   d date not null,
@@ -37,14 +37,15 @@ create table pred_s10a_events (
   inserted_at timestamptz not null default now(),
   constraint pred_s10a_events_seq unique (account, seq),
   constraint pred_s10a_events_key check (event_key = account || ':' || seq::text),
-  constraint pred_s10a_events_strategy check ((strategy = 'TECH') = (account like 'S10-ARENA-TECH-%'))
+  constraint pred_s10a_events_strategy check ((strategy = 'ORIGINAL') = (account like 'S10-ARENA-ORIG-%')
+    and (strategy = 'TECH') = (account like 'S10-ARENA-TECH-%') and (strategy = 'DIVERSIFIED') = (account like 'S10-ARENA-DIV-%'))
 );
 create index pred_s10a_events_type_idx on pred_s10a_events (account, type, seq desc);
 create index pred_s10a_events_d_idx on pred_s10a_events (account, d);
 
 create table pred_s10a_snapshots (
   snapshot_key text primary key,
-  account text not null check (account ~ '^S10-ARENA-(TECH|DIV)-\d+$'),
+  account text not null check (account ~ '^S10-ARENA-(ORIG|TECH|DIV)-\d+$'),
   d date not null,
   model_version text not null,
   origin text not null check (origin = 'ARENA_FORWARD_PAPER'),
@@ -65,7 +66,7 @@ create table pred_s10a_snapshots (
 
 create table pred_s10a_marks (
   mark_key text primary key,
-  account text not null check (account ~ '^S10-ARENA-(TECH|DIV)-\d+$'),
+  account text not null check (account ~ '^S10-ARENA-(ORIG|TECH|DIV)-\d+$'),
   d date not null,
   kind text not null check (kind = 'EOD_CLOSE'),
   observed_at timestamptz not null,

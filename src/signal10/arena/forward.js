@@ -12,8 +12,8 @@ import { loadComponents } from '../universe.js';
 import { resolveSymbol } from '../aliases.js';
 import { LATEST_MEMBERS } from '../members-latest.js';
 import { nyClock, fetchChart, quoteFromChart, sha256Hex, canonical, COMPONENTS_URL } from '../forward.js';
-import { TECH, DIVERSIFIED, CHALLENGERS, ARENA_VERSION } from './policies.js';
-import { prepareSeries, rankStrategy, regimeOf, newChallenger, openSession, decideTech, decideDiversified, exposures, arenaFeatures, mark, delistings, ORIGIN } from './engine.js';
+import { ORIGINAL, TECH, DIVERSIFIED, CHALLENGERS, ARENA_VERSION } from './policies.js';
+import { prepareSeries, rankStrategy, rankOriginal, decideOriginal, regimeOf, newChallenger, openSession, decideTech, decideDiversified, exposures, arenaFeatures, mark, delistings, ORIGIN } from './engine.js';
 import { TAXONOMY_VERSION } from './taxonomy.js';
 import { METAL_ETFS, etfEligibility } from '../../market-tape/metals.js';
 import { closeMinutes } from '../../market-tape/core.js';
@@ -87,7 +87,9 @@ export function classificationFor(D, snapshot = CLASSIFICATION) {
 }
 export function universes(tickers, D, cls) {
   const all = tickers.map((t) => { const c = cls.rows[t]; return { ticker: t, symbol: resolveSymbol(t, D), sector: c?.sector || 'UNCLASSIFIED', tech: !!c?.tech }; });
-  return { tech: all.filter((u) => u.tech), div: all.filter((u) => u.sector !== 'UNCLASSIFIED'), unclassified: all.filter((u) => u.sector === 'UNCLASSIFIED').map((u) => u.ticker) };
+  // orig = the V1 universe: every member, classified or not (V1 has no taxonomy)
+  return { orig: all.map(({ ticker, symbol }) => ({ ticker, symbol })), sectorOf: Object.fromEntries(all.filter((u) => u.symbol).map((u) => [u.symbol, u.sector])),
+    tech: all.filter((u) => u.tech), div: all.filter((u) => u.sector !== 'UNCLASSIFIED'), unclassified: all.filter((u) => u.sector === 'UNCLASSIFIED').map((u) => u.ticker) };
 }
 async function pool(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; }
 export async function buildMarket(symbols, D, fetchImpl, range) {
@@ -192,7 +194,7 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   const members = await currentMembers(fetchImpl);
   const U = universes(members.tickers, D, cls);
   const held = Object.values(states).flatMap(({ st, bench }) => [st, ...Object.values(bench)].flatMap((a) => [...Object.keys(a.positions), ...a.pending.map((o) => o.symbol)])); // fetched; only positions can block
-  const mkt = await buildMarket(['SPY', 'QQQ', ...U.div.map((u) => u.symbol).filter(Boolean), ...METAL_ETFS.map((x) => x.symbol), ...held], D, fetchImpl, '2y');
+  const mkt = await buildMarket(['SPY', 'QQQ', ...U.orig.map((u) => u.symbol).filter(Boolean), ...METAL_ETFS.map((x) => x.symbol), ...held], D, fetchImpl, '2y');
   if (!mkt.ok) return { skipped: mkt.reason };
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' };
   const spyTime = mkt.digest.SPY.regularMarketTime;
@@ -217,7 +219,7 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
     if (unresolved.length) blocked[S.strategy] = unresolved;
   }
   const cover = (list) => list.filter((u) => u.symbol && mkt.prepared.get(u.symbol)?.idx.has(D)).length / Math.max(1, list.length);
-  const coverage = { TECH: cover(U.tech), DIVERSIFIED: cover(U.div) };
+  const coverage = { ORIGINAL: cover(U.orig), TECH: cover(U.tech), DIVERSIFIED: cover(U.div) };
   const metals = metalCandidates(mkt.prepared, D, mkt.calIndex);
   const regimes = { QQQ: regimeOf(mkt.prepared, 'QQQ', D), SPY: regimeOf(mkt.prepared, 'SPY', D) };
   const result = {};
@@ -258,12 +260,16 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
     }
     for (const [sym, p] of mkt.prepared) if (p.seriesUnavailable && st.positions[sym]) st.events.push({ seq: 0, origin: ORIGIN, type: 'SERIES_UNAVAILABLE', d: D, symbol: sym, lastClose: p.c[0], lastCloseDate: p.d[0], note: 'source series missing; held at the last observed close (stale) until the delist rule applies' });
     delistings(st, D, mkt.calIndex, mkt.prepared);
-    const universe = S === TECH ? U.tech : U.div;
-    const snap = rankStrategy(S, D, universe, mkt.prepared);
+    const universe = S === ORIGINAL ? U.orig : S === TECH ? U.tech : U.div;
+    const snap = S === ORIGINAL ? rankOriginal(D, universe, mkt.prepared) : rankStrategy(S, D, universe, mkt.prepared);
     const m = mark(st, D, mkt.prepared);
-    const regime = S === TECH ? regimes.QQQ : regimes.SPY;
-    if (S === TECH) decideTech(st, D, snap, { regime, prepared: mkt.prepared, m });
-    else decideDiversified(st, D, snap, metals, { regime, prepared: mkt.prepared, m });
+    let regime;
+    if (S === ORIGINAL) {
+      ({ regime } = decideOriginal(st, D, snap, { prepared: mkt.prepared, m }));
+      // display metadata only (sector for the exposure view); never an input to the V1 rules
+      for (const o of st.pending) if (o.side === 'BUY' && !st.meta[o.symbol]) st.meta[o.symbol] = { sector: U.sectorOf[o.symbol] || 'UNCLASSIFIED', kind: 'EQUITY' };
+    } else if (S === TECH) { regime = regimes.QQQ; decideTech(st, D, snap, { regime, prepared: mkt.prepared, m }); }
+    else { regime = regimes.SPY; decideDiversified(st, D, snap, metals, { regime, prepared: mkt.prepared, m }); }
     st.lastEod = D;
     const exp = exposures(st, m);
     const bm = Object.fromEntries(Object.entries(bench).map(([k, b]) => [k, mark(b, D, mkt.prepared).navCents]));

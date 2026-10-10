@@ -54,7 +54,34 @@ test('PREREGISTRATION.md carries the exact policy hashes, versions and classific
   assert.ok(doc.includes(TAXONOMY_VERSION));
 });
 
-test('challengers are genuinely distinct algorithms (not relabelled copies of the control)', async () => {
+test('ORIGINAL is the V1 algorithm itself (imported objects, not a copy) on a brand-new account', async () => {
+  const V1 = await import('../src/signal10/policy.js');
+  const { ORIGINAL } = await import('../src/signal10/arena/policies.js');
+  assert.equal(ORIGINAL.rank, V1.RANK, 'same object'); assert.equal(ORIGINAL.manager, V1.MANAGER, 'same object');
+  assert.equal(ORIGINAL.model, V1.MODEL_VERSION); assert.equal(ORIGINAL.policy, V1.POLICY_VERSION);
+  assert.equal(ORIGINAL.account, 'S10-ARENA-ORIG-1'); assert.notEqual(ORIGINAL.account, 'S10-FWD-1');
+});
+
+test('ORIGINAL decides exactly like the legacy V1 lane on identical inputs (every ORDER and DECISION over 8 sessions)', async () => {
+  const { runEod: v1Eod, runOpen: v1Open } = await import('../src/signal10/forward.js');
+  const { ORIGINAL } = await import('../src/signal10/arena/policies.js');
+  const SH = { QQQ: { from: 400, factor: 1.3 }, SPY: { from: 400, factor: 1.3 } };
+  const v1Store = new FakeStore(); const arStore = new FakeStore();
+  const days = CAL.filter((d) => d >= D0).slice(0, 8);
+  for (const [k, d] of days.entries()) {
+    const at = (t) => fakeSource({ today: d, at: `${d}T${t}`, shock: SH });
+    if (k) { await v1Open({ store: v1Store, now: `${d}T13:50:00Z`, fetchImpl: at('13:50:00Z') }); await runArenaOpen({ store: arStore, now: `${d}T13:50:00Z`, fetchImpl: at('13:50:00Z'), t0: D0 }); }
+    await v1Eod({ store: v1Store, now: `${d}T20:25:00Z`, fetchImpl: at('20:00:00Z'), startDate: D0 });
+    await runArenaEod({ store: arStore, now: eodAt(d), fetchImpl: at('20:00:00Z'), t0: D0, classification: FIX_CLS });
+  }
+  const pick = (rows) => rows.filter((e) => ['ORDER', 'DECISION', 'FILL'].includes(e.type)).map((e) => ({ d: e.d, type: e.type, side: e.payload.side ?? null, action: e.payload.action ?? null, symbol: e.payload.symbol, qty: e.type === 'FILL' ? e.payload.qty : null, targetCents: e.payload.targetCents ?? null, reason: e.payload.reason ?? null }));
+  const v1 = pick(v1Store.rows('pred_s10_events').sort((a, b) => a.seq - b.seq));
+  const ar = pick(await events(arStore, ORIGINAL.account));
+  assert.ok(v1.filter((x) => x.type === 'FILL').length >= 1, 'fixture: V1 trades within 8 sessions');
+  assert.deepEqual(ar, v1);
+});
+
+test('TECH and DIVERSIFIED are genuinely distinct algorithms (not relabelled copies of the V1 rules)', async () => {
   const { RANK: V1R, MANAGER: V1M } = await import('../src/signal10/policy.js');
   assert.notDeepEqual(Object.keys(TECH.rank.weights).sort(), Object.keys(V1R.weights).sort());
   assert.notDeepEqual(Object.keys(DIVERSIFIED.rank.weights).sort(), Object.keys(V1R.weights).sort());
@@ -65,7 +92,8 @@ test('challengers are genuinely distinct algorithms (not relabelled copies of th
   assert.equal(DIVERSIFIED.manager.maxSectorWeight, 0.25);
   assert.equal(DIVERSIFIED.manager.maxMetalsWeight, 0.20);
   assert.notEqual(await policyHash(TECH), await policyHash(DIVERSIFIED));
-  assert.equal(new Set(CHALLENGERS.map((S) => S.account)).size, 2);
+  assert.equal(new Set(CHALLENGERS.map((S) => S.account)).size, 3);
+  assert.equal(new Set(await Promise.all(CHALLENGERS.map((S) => policyHash(S)))).size, 3);
 });
 
 // ---------------- 3. taxonomy + classification snapshot ----------------
@@ -120,8 +148,9 @@ test('no challenger record before T0; funding at the first eligible EOD; control
     assert.equal((await verifyChain(ev)).ok, true);
   }
   assert.ok(store.writes.every((t) => t.startsWith('pred_s10a_')), 'only challenger tables written');
-  assert.equal(store.rows(T.snapshots).length, 2);
-  assert.equal(store.rows(T.marks).length, 2);
+  assert.equal(store.rows(T.snapshots).length, CHALLENGERS.length);
+  assert.equal(store.rows(T.marks).length, CHALLENGERS.length);
+  assert.equal(CHALLENGERS.length, 3);
 });
 
 test('one shared market fetch serves both challengers (no per-account upstream fan-out)', async () => {

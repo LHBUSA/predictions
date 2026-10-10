@@ -2,9 +2,9 @@
 // Accounting (fills at the open, splits, dividends, delist liquidation, EOD mark) reuses the control's pure functions from
 // ../portfolio.js BY IMPORT ONLY: those conventions are shared on purpose so the head-to-head is fair. Selection, sizing,
 // regime, exits and caps are challenger-specific and live here. Every feature at decision date D reads bars dated <= D.
-import { prepareSeries, percentiles } from '../rank.js';
-import { corporateActions, execute, mark, delistings, emit } from '../portfolio.js';
-import { TECH, DIVERSIFIED, STARTING_CASH_CENTS } from './policies.js';
+import { prepareSeries, percentiles, rankUniverse } from '../rank.js';
+import { corporateActions, execute, mark, delistings, emit, decide as v1Decide } from '../portfolio.js';
+import { TECH, DIVERSIFIED, ORIGINAL, STARTING_CASH_CENTS } from './policies.js';
 
 export { prepareSeries };
 export const ORIGIN = 'ARENA_FORWARD_PAPER';
@@ -72,7 +72,7 @@ export function regimeOf(prepared, symbol, D) {
 // ---------------- account ----------------
 export function newChallenger(S, inception, policySha256) {
   const st = { account: S.account, strategy: S.strategy, origin: ORIGIN, policy: S.policy, model: S.model, policySha256, inception,
-    slippageBps: S.manager.slippageBps, cashCents: STARTING_CASH_CENTS, positions: {}, meta: {}, cooldown: {}, riskOffStreak: 0,
+    slippageBps: S.manager.slippageBps, cashCents: STARTING_CASH_CENTS, positions: {}, meta: {}, cooldown: {}, riskOffStreak: 0, streak: {},
     realizedCents: 0, dividendsCents: 0, slippageCents: 0, tradedCents: 0, fillSessions: 0, eodSessions: 0, pending: [], seq: 0, events: [] };
   emit(st, { type: 'FUNDING', d: inception, cashCents: STARTING_CASH_CENTS, strategy: S.strategy, model: S.model, policy: S.policy, policySha256,
     note: '$10,000.00 simulated cash. No real money. Prospective Strategy Arena cohort start (T0).' });
@@ -112,6 +112,24 @@ function common(st, D, m) {
   const decision = (x) => decisions.push(emit(st, { type: 'DECISION', d: D, ...x }));
   return { nav, valueOf, orders, decisions, order, decision };
 }
+
+// ---------------- ORIGINAL (unchanged V1 algorithm on a new account) ----------------
+// Ranking = V1 rankUniverse (V1 eligibility + weights); decisions = V1 decide() with mode MANAGER; regime = V1's SPY rule
+// replicated exactly (the V1 lane keeps that function private): fewer than 200 bars or no SPY bar = risk-off.
+export function v1Regime(prepared, D) {
+  const p = prepared.get('SPY'); const i = p?.idx.get(D);
+  if (i == null || i < 199) return { riskOn: false };
+  const s200 = (p.ps[i + 1] - p.ps[i - 199]) / 200;
+  return { riskOn: p.adj[i] >= s200, spyAdj: p.adj[i], spySma200: s200 };
+}
+export const rankOriginal = (D, universe, prepared) => rankUniverse(D, universe, prepared);
+export function decideOriginal(st, D, snap, { prepared, m }) {
+  st.eodSessions += 1;
+  const regime = v1Regime(prepared, D);
+  const out = v1Decide(st, D, snap, regime, m, prepared);
+  return { ...out, regime };
+}
+export { ORIGINAL };
 
 // ---------------- TECH manager ----------------
 export function decideTech(st, D, snap, { regime, prepared, m }) {

@@ -5,11 +5,10 @@
 //   GET /v1/signal10/arena/ledger  ALL ACCESS  ?account=S10-ARENA-TECH-1|S10-ARENA-DIV-1 every row (recompute the chain)
 //   GET /v1/metals                 PUBLIC + member extras  metals/1: spot identity + rights state, ETF proxies with
 //                                  rights-cleared IEX next-day observations only, Diversified sleeve state for members.
-// Reads only. The control tables (pred_s10_*) are read, never written. Raw source prices from the paper-account data
-// source are never returned: members see derived portfolio values (weights, NAV, returns), as for the control.
-import { ACCOUNT as CONTROL_ACCOUNT, restoreState } from '../../../src/signal10/forward.js';
-import { MODEL_VERSION as CONTROL_MODEL, POLICY_VERSION as CONTROL_POLICY } from '../../../src/signal10/policy.js';
-import { CHALLENGERS, TECH, DIVERSIFIED, ARENA_VERSION, DISCLOSURE } from '../../../src/signal10/arena/policies.js';
+// Reads only. THREE brand-new Arena accounts (ORIGINAL = unchanged V1 rules, TECH, DIVERSIFIED) funded at the same T0.
+// The legacy V1 paper account (S10-FWD-1) is separate historical research: never read or shown here as a competitor.
+// Source prices are never returned: members see weights, returns and NAV.
+import { CHALLENGERS, ORIGINAL, TECH, DIVERSIFIED, ARENA_VERSION, DISCLOSURE } from '../../../src/signal10/arena/policies.js';
 import { T, restore, policyHash, runArenaEod, runArenaOpen } from '../../../src/signal10/arena/forward.js';
 import { indexSeries, seriesMetrics, turnover, SHARPE_MIN_OBS } from '../../../src/signal10/arena/metrics.js';
 import { SECTOR_LABEL, TAXONOMY_VERSION } from '../../../src/signal10/arena/taxonomy.js';
@@ -20,15 +19,12 @@ import { marketSession } from '../../../src/market-tape/core.js';
 import CLASSIFICATION from '../../../data/signal10/arena/classification.json' with { type: 'json' };
 
 export const THESIS = {
-  ORIGINAL: 'The control. S&P 500 momentum with a low-volatility tilt, dip and persistence entries, 10 slots. Pre-registered 2026-10-09 and never changed.',
+  ORIGINAL: 'The original Signal 10 rules, unchanged, on a brand-new $10,000 account: S&P 500 momentum with a low-volatility tilt, dip and persistence entries, 10 slots.',
   TECH: 'Concentrated conviction in technology leaders: pure momentum, buys strength, 8 slots, a QQQ regime filter and a stop cooldown.',
   DIVERSIFIED: 'Cross-sector risk discipline: risk-adjusted trend, inverse-volatility sizing, hard caps of 10% per holding, 25% per sector and 20% in precious-metal ETFs. Cash allowed.',
 };
-const CARD = [
-  { key: 'ORIGINAL', label: 'Original', sub: 'Control', account: CONTROL_ACCOUNT, model: CONTROL_MODEL, policy: CONTROL_POLICY },
-  { key: 'TECH', label: TECH.label, sub: 'Challenger', account: TECH.account, model: TECH.model, policy: TECH.policy },
-  { key: 'DIVERSIFIED', label: DIVERSIFIED.label, sub: 'Challenger', account: DIVERSIFIED.account, model: DIVERSIFIED.model, policy: DIVERSIFIED.policy },
-];
+const CARD = [ORIGINAL, TECH, DIVERSIFIED].map((S) => ({ key: S.strategy, label: S.label, sub: S === ORIGINAL ? 'V1 rules · new account' : 'New algorithm', account: S.account, model: S.model, policy: S.policy }));
+export const LEGACY_V1 = Object.freeze({ account: 'S10-FWD-1', url: '/markets/signal-10/live/', note: 'The first Signal 10 paper account (funded 2026-10-09) continues separately as historical research. It is not an Arena competitor; its holdings and NAV are never used here.' });
 
 const sectorOfTicker = (sym) => { const r = CLASSIFICATION.rows[sym] || CLASSIFICATION.rows[String(sym).replace(/-/g, '.')]; return r?.sector || 'UNCLASSIFIED'; };
 const slimEvent = (e) => { const p = e.payload || {}; return { seq: e.seq, type: e.type, d: e.d, action: p.action || (e.type === 'ORDER' ? p.side : null), symbol: p.symbol ?? null, qty: p.qty ?? null, targetCents: p.targetCents ?? null, reason: p.reason ?? null, rank: p.rank ?? null, score: p.score ?? null }; };
@@ -57,7 +53,7 @@ export async function arenaProof(store) {
   }
   const t0 = strategies.map((s) => s.inception).filter(Boolean).sort()[0] || null;
   return { product: 'PBE Signal 10 · Strategy Arena', arena: ARENA_VERSION, t0, preregistration: 'https://github.com/LHBUSA/predictions/blob/main/docs/signal10/strategy-arena/PREREGISTRATION.md',
-    control: { key: 'ORIGINAL', account: CONTROL_ACCOUNT, model: CONTROL_MODEL, policy: CONTROL_POLICY, note: 'Unchanged and never reset; compared indexed to $10,000 at T0.' },
+    legacy_v1: LEGACY_V1,
     strategies, taxonomy: { version: TAXONOMY_VERSION, effective_from: CLASSIFICATION.effective_from, content_sha256: CLASSIFICATION.content_sha256 }, disclosure: DISCLOSURE };
 }
 
@@ -80,27 +76,10 @@ function exposureOf(holdings, navCents, cashCents) {
 
 export async function arenaPayload(store) {
   const heads = Object.fromEntries(await Promise.all(CHALLENGERS.map(async (S) => [S.strategy, await challengerHead(store, S.account)])));
-  const t0 = [heads.TECH.funding?.d, heads.DIVERSIFIED.funding?.d].filter(Boolean).sort()[0] || null;
-  const out = { product: 'PBE Signal 10 · Strategy Arena', arena: ARENA_VERSION, t0, status: t0 ? 'RUNNING' : 'AWAITING_T0', sharpe_min_observations: SHARPE_MIN_OBS, strategies: [], comparators: null, disclosure: DISCLOSURE };
-
-  // ORIGINAL / CONTROL (read-only)
-  const cMarks = await store.select('pred_s10_marks', { account: `eq.${CONTROL_ACCOUNT}`, kind: 'eq.EOD_CLOSE', select: 'd,nav_cents,cash_cents,positions,benchmarks' }, { order: 'd.asc' });
-  const [cState] = await store.select('pred_s10_events', { account: `eq.${CONTROL_ACCOUNT}`, type: 'eq.STATE', select: 'seq,d,payload' }, { limit: 1, order: 'seq.desc' });
-  const [cFund] = await store.select('pred_s10_events', { account: `eq.${CONTROL_ACCOUNT}`, type: 'eq.FUNDING', select: 'd' }, { limit: 1, order: 'seq.asc' });
-  const cSt = cState ? restoreState(cState.payload).st : null;
-  const cLife = cMarks.map((m) => ({ d: m.d, nav: m.nav_cents }));
-  const cSince = t0 ? cLife.filter((p) => p.d >= t0) : [];
-  const cBase = t0 ? (cLife.filter((p) => p.d <= t0 && p.nav != null).at(-1)?.nav ?? null) : null;
-  const cLast = cMarks.at(-1) || null;
-  const cHold = holdingsFrom(cLast?.positions, cLast?.nav_cents, cSt?.positions, sectorOfTicker);
-  out.strategies.push({ ...CARD[0], thesis: THESIS.ORIGINAL, status: cFund ? 'RUNNING' : 'NOT_STARTED', inception: cFund?.d ?? null,
-    index_base: t0 ? { d: t0, nav_cents: cBase, note: 'Display-only normalization: Original NAV ÷ its NAV at T0 × $10,000. Its real ledger is unchanged.' } : null,
-    series: t0 ? indexSeries(cSince, cBase) : [], lifetime: indexSeries(cLife, 1_000_000), metrics: seriesMetrics(cSince), metrics_lifetime: seriesMetrics(cLife),
-    nav: { cents: cLast?.nav_cents ?? null, d: cLast?.d ?? null }, cash_cents: cLast?.cash_cents ?? null, holdings: cHold, exposure: exposureOf(cHold, cLast?.nav_cents, cLast?.cash_cents ?? 0),
-    turnover: turnover(cSt, cLife), pre_existing_at_t0: t0 ? { note: 'The Original was already invested when the cohort started; its positions at T0 are part of its comparison.' } : null,
-    pending: (cSt?.pending || []).map((o) => ({ side: o.side, symbol: o.symbol, qty: o.qty ?? null, targetCents: o.targetCents ?? null, reason: o.reason })), decisions: [] });
-
-  // challengers
+  const fundDates = CHALLENGERS.map((S) => heads[S.strategy].funding?.d).filter(Boolean);
+  const t0 = fundDates.sort()[0] || null;
+  const out = { product: 'PBE Signal 10 · Strategy Arena', arena: ARENA_VERSION, t0, status: t0 ? 'RUNNING' : 'AWAITING_T0', sharpe_min_observations: SHARPE_MIN_OBS,
+    common_start: fundDates.length === CHALLENGERS.length && new Set(fundDates).size === 1, strategies: [], comparators: null, legacy_v1: LEGACY_V1, disclosure: DISCLOSURE };
   for (const S of CHALLENGERS) {
     const h = heads[S.strategy];
     const card = CARD.find((c) => c.key === S.strategy);
@@ -111,19 +90,19 @@ export async function arenaPayload(store) {
     const marks = await store.select(T.marks, { account: `eq.${S.account}`, select: 'd,nav_cents,cash_cents,coverage,positions,exposures,benchmarks' }, { order: 'd.asc' }).catch(() => []);
     const pts = marks.map((m) => ({ d: m.d, nav: m.nav_cents }));
     const last = marks.at(-1) || null;
-    const hold = holdingsFrom(last?.positions, last?.nav_cents, st.positions, (s) => st.positions[s]?.sector || 'UNCLASSIFIED');
+    const hold = holdingsFrom(last?.positions, last?.nav_cents, st.positions, (s) => st.positions[s]?.sector || st.meta?.[s]?.sector || sectorOfTicker(s));
     const lastD = last?.d || null;
     const evs = lastD ? await store.select(T.events, { account: `eq.${S.account}`, d: `eq.${lastD}`, select: 'seq,type,d,payload' }, { order: 'seq.asc' }) : [];
     out.strategies.push({ ...base, series: indexSeries(pts), metrics: seriesMetrics(pts), nav: { cents: last?.nav_cents ?? null, d: lastD, coverage: last?.coverage ?? null },
       cash_cents: st.cashCents, holdings: hold, exposure: exposureOf(hold, last?.nav_cents, last?.cash_cents ?? st.cashCents), turnover: turnover(st, pts),
       decisions: evs.filter((e) => e.type === 'ORDER' || e.type === 'DECISION').map(slimEvent), pending: st.pending.map((o) => ({ side: o.side, symbol: o.symbol, qty: o.qty ?? null, targetCents: o.targetCents ?? null, reason: o.reason })),
       cooldown: st.cooldown || {} });
-    if (S === TECH && marks.length) {
+    if (S === ORIGINAL && marks.length) {
       const bench = (k) => indexSeries(marks.map((m) => ({ d: m.d, nav: m.benchmarks?.[k] ?? null })), 1_000_000);
-      out.comparators = { note: 'SPY and QQQ buy-and-hold, $10,000 each, bought at the same first open as the challengers (dividends reinvested as cash).', SPY: bench('SPY'), QQQ: bench('QQQ') };
+      out.comparators = { note: 'SPY and QQQ buy-and-hold, $10,000 each, bought at the same first open as the three Arena accounts (dividends kept as cash).', SPY: bench('SPY'), QQQ: bench('QQQ') };
     }
   }
-  out.sample = { first_d: t0, last_d: out.strategies.map((s) => s.nav?.d).filter(Boolean).sort().at(-1) || null, sessions: out.strategies.find((s) => s.key === 'TECH')?.series?.length || 0 };
+  out.sample = { first_d: t0, last_d: out.strategies.map((s) => s.nav?.d).filter(Boolean).sort().at(-1) || null, sessions: out.strategies.find((s) => s.key === 'ORIGINAL')?.series?.length || 0 };
   return out;
 }
 

@@ -1,7 +1,10 @@
 # PBE Signal 10 Strategy Arena — PRE-REGISTRATION (issue #62)
 
-**Frozen 2026-10-10, before any challenger decision, backtest or forward result exists.** Three philosophies, one market,
-a permanent record. Simulated paper accounts only: no brokerage connection, no real orders, no margin, shorting, options
+**Frozen 2026-10-10, before any Arena decision, backtest or forward result exists.** Three philosophies, one market,
+a permanent record. **Owner correction (2026-10-10): the competition is THREE brand-new $10,000 accounts launched
+together** — ORIGINAL (the unchanged V1 rules on a new, empty account), TECH and DIVERSIFIED — with the same cash, zero
+positions, the same market snapshot and the same T0. The legacy V1 account (`S10-FWD-1`, funded 2026-10-09) continues
+separately as historical research and is not a competitor; its holdings and NAV are never used in the Arena. Simulated paper accounts only: no brokerage connection, no real orders, no margin, shorting, options
 or futures.
 
 The binding record is the **policy sha256** of each challenger: `sha256(canonical({arena, strategy, account, model,
@@ -12,15 +15,23 @@ a version keep that version forever. No parameter is tuned on observed returns.
 
 | Strategy | Account | Rank model | Manager policy | Policy sha256 |
 |---|---|---|---|---|
-| ORIGINAL / CONTROL | `S10-FWD-1` (unchanged, live since 2026-10-09) | `signal10-rank/1.0.0` | `signal10-manager/1.0.0` | see docs/signal10/README.md (pre-registered bd75be9) |
-| TECH / Technology Conviction | `S10-ARENA-TECH-1` | `signal10-tech-rank/1.0.0` | `signal10-tech-manager/1.0.0` | `5d0cb7c8b64b5b5dc5e1482092796ad8f11c7689c2c949904f0af398dc2eb928` |
-| DIVERSIFIED / Risk Discipline | `S10-ARENA-DIV-1` | `signal10-div-rank/1.0.0` | `signal10-div-manager/1.0.0` | `207732ba7d6a6299d6281e3b48850d68b9b1ae1dc2389f6894f81e89d36654a6` |
+| ORIGINAL (V1 rules, new account) | `S10-ARENA-ORIG-1` | `signal10-rank/1.0.0` | `signal10-manager/1.0.0` | `1d6401f651ed37309889dc34dd11592cc55fca32d11b27a0505ca3e335cf280e` |
+| TECH / Technology Conviction | `S10-ARENA-TECH-1` | `signal10-tech-rank/1.0.0` | `signal10-tech-manager/1.0.0` | `7832d3cbf7756752e0e1c623a2eb83a1a11f93632659029063e41251749f571a` |
+| DIVERSIFIED / Risk Discipline | `S10-ARENA-DIV-1` | `signal10-div-rank/1.0.0` | `signal10-div-manager/1.0.0` | `00f38b93e2c69a3e6bb15ca6cccd4dcfe8071bab7756b374e9e3c3268ae12b02` |
 
-Arena version `signal10-arena/1.0.0`. Implementation at preregistration (source sha256, informative; the engine may
+Arena version `signal10-arena/1.1.0` (1.0.0 = the two-challenger design superseded on 2026-10-10 before any record). Implementation at preregistration (source sha256, informative; the engine may
 receive reviewed bug fixes **before** T0, each recorded below; after T0 any behaviour change is a new version):
 `policies.js 044206fe…`, `engine.js 712adee0…`, `taxonomy.js 45e74cbd…`, `market-tape/metals.js aea80e9a…`.
 
-## 1. The control is not touched
+## 1. ORIGINAL = the unchanged V1 algorithm on a new account; the legacy V1 account is not touched
+ORIGINAL imports `RANK` and `MANAGER` from `src/signal10/policy.js` (not a copy), ranks with V1's `rankUniverse`
+(`src/signal10/rank.js`) on the full S&P 500 member list, decides with V1's `decide()` (`src/signal10/portfolio.js`) and
+uses V1's SPY 200-day regime rule (fewer than 200 bars = risk-off, as in V1). A test proves its funding-day orders and
+decisions equal the legacy V1 lane's on identical inputs. The only differences are Arena-wide execution conventions shared
+by all three accounts (split-adjusted sells on a split day, per-account fail-closed handling, NYSE early closes); sector
+labels on its holdings are display metadata, never a rule input.
+
+### The legacy account is not touched
 `S10-FWD-1`, `signal10-rank/1.0.0`, `signal10-manager/1.0.0`, its ledger, holdings, fills, scheduler, frozen ranks and
 history stay byte-for-byte and behaviour-for-behaviour as deployed. Golden proof: `test/signal10-arena.test.js` pins the
 sha256 of every control engine file and `sql/016` (captured from main 2026-10-10); a second test proves the arena code
@@ -112,10 +123,10 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   control's lane, `signal10Tick` in signal10-api.js, attempts its EOD on even minutes from 16:20 ET). Kill switch `SIGNAL10_ARENA`; cohort start `SIGNAL10_ARENA_T0`.
 
 ## 6. Fair head-to-head
-- **T0** = the first EOD on or after `SIGNAL10_ARENA_T0` whose gates pass **for both challengers**; both fund $10,000
-  that day (if either fails a gate, neither funds) and their first fills are at the next open. No challenger record is written for any date before T0.
-- **Original** is displayed **indexed to $10,000 at T0** (display-only normalization of its own EOD marks) beside its
-  real lifetime NAV and inception (2026-10-09). Its pre-existing positions at T0 are disclosed.
+- **T0** = the first EOD on or after `SIGNAL10_ARENA_T0` whose gates pass **for all three accounts**; all three fund
+  $10,000 that day from zero positions (if any one fails a gate, none funds) and their first fills are at the next open.
+  No Arena record is written for any date before T0.
+- No indexing or normalization is needed: every account starts from the same $10,000 and the same snapshot.
 - **Comparisons since T0:** total return, max drawdown, volatility, turnover and trading cost, max position, sector and
   metal exposure, cash; SPY/QQQ buy-and-hold comparators funded at the same T0. Sharpe only after **≥ 60** daily
   observations. No early winner is declared. Any retrospective research is labelled POST-HOC / IN-SAMPLE and never
@@ -146,6 +157,11 @@ The control is **not reset**: it keeps its own inception and lifetime ledger.
   positions can block a run); member metals and Arena payloads carry no source prices; admin reruns require an integer
   ≥ 2 and an original claim older than 20 minutes; a zero-share split-adjusted trim expires; DERISK never fires on a day
   the regime series is unavailable; benchmark events carry no account-local sequence number.
+
+- 2026-10-10, owner correction (still before any record): three brand-new accounts instead of two challengers versus the
+  legacy account. Added ORIGINAL (`S10-ARENA-ORIG-1`, V1 rules imported, not copied); arena version 1.0.0 → 1.1.0, so the
+  TECH and DIVERSIFIED policy hashes changed (their parameters did not); sql/018 admits the ORIG account; the API,
+  scoreboard and pages compare three symmetric accounts; the legacy account is shown only as separate history.
 
 ## 9. Activation record
 Filled at activation: T0, worker version, ledger FUNDING hashes, engine source hashes at T0.

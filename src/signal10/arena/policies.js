@@ -1,8 +1,10 @@
 // PBE Signal 10 STRATEGY ARENA — PRE-REGISTERED challenger policies (issue #62). Written 2026-10-10 BEFORE any
 // challenger decision, backtest or forward result exists. Parameters are a-priori textbook conventions, NOT fitted to any
 // observed return. Any change = a new version string; records made under an old version keep that version forever.
-// The ORIGINAL / CONTROL strategy is src/signal10/policy.js (signal10-rank/1.0.0 + signal10-manager/1.0.0) and is never
-// imported for its parameters here: the challengers are independent algorithms, not relabelled copies.
+// ORIGINAL (owner correction 2026-10-10): a BRAND-NEW arena account running the unchanged V1 investment algorithm —
+// its rank + manager parameters are IMPORTED from src/signal10/policy.js (signal10-rank/1.0.0, signal10-manager/1.0.0),
+// never copied, so they cannot drift. The legacy V1 paper account is separate historical research and is
+// not a competitor. TECH and DIVERSIFIED are independent algorithms, not relabelled copies.
 //
 // Shared execution conventions (identical to the control so the head-to-head is fair):
 //   fills at the NEXT regular-session OPEN after the decision close (daily-bar open, unadjusted); no bar = order EXPIRES;
@@ -10,8 +12,24 @@
 //   options or futures; dividends credited on the ex-date; splits with cash-in-lieu; a series that ends is liquidated at
 //   its last observed close (flagged ESTIMATE). SIMULATED PAPER ONLY: no brokerage connection, no orders anywhere.
 
-export const ARENA_VERSION = 'signal10-arena/1.0.0';
+import { RANK as V1_RANK, MANAGER as V1_MANAGER, MODEL_VERSION as V1_MODEL, POLICY_VERSION as V1_POLICY } from '../policy.js';
+
+export const ARENA_VERSION = 'signal10-arena/1.1.0';
 export const STARTING_CASH_CENTS = 1_000_000;
+
+// ---------------- ORIGINAL (V1 rules, new account) ----------------
+export const ORIGINAL = Object.freeze({
+  strategy: 'ORIGINAL', label: 'Original', account: 'S10-ARENA-ORIG-1',
+  model: V1_MODEL, policy: V1_POLICY,
+  universe: Object.freeze({
+    base: 'S&P 500 point-in-time members (fja05680/sp500, read at each EOD) — the V1 universe',
+    filter: 'none beyond V1 eligibility (src/signal10/rank.js features())',
+    excludes: 'nothing added; no taxonomy, no metals (V1 has neither)',
+  }),
+  rank: V1_RANK,
+  manager: V1_MANAGER,
+  regime: 'SPY adj >= SPY SMA200 (V1 rule; fewer than 200 bars = risk-off, exactly as V1)',
+});
 
 // ---------------- TECH / TECHNOLOGY CONVICTION ----------------
 // Thesis: concentrated, momentum-led conviction in technology leaders. Deliberately the opposite of the control's
@@ -79,5 +97,7 @@ export const DIVERSIFIED = Object.freeze({
   }),
 });
 
-export const CHALLENGERS = Object.freeze([TECH, DIVERSIFIED]);
+// The three Arena accounts (all brand-new, all funded at the same T0). Name kept for compatibility.
+export const CHALLENGERS = Object.freeze([ORIGINAL, TECH, DIVERSIFIED]);
+export const ARENA_ACCOUNTS = CHALLENGERS;
 export const DISCLOSURE = 'HYPOTHETICAL / SIMULATED PAPER RESULTS. Not actual trading. Not investment advice.';

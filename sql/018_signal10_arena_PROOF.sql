@@ -42,5 +42,11 @@ declare ok int := 0; h text := repeat('a', 64); z text := repeat('0', 64); begin
   ok := ok + 1;                                                                                                        -- 14 (NOT AVAILABLE mark accepted)
   begin truncate pred_s10a_runs; raise exception 'truncate allowed';
   exception when others then if sqlerrm = 'truncate allowed' then raise; end if; ok := ok + 1; end;                    -- 15
-  raise exception 'PROOF_RESULT % of 15 checks passed', ok;
+  insert into pred_s10a_events(event_key, account, origin, strategy, seq, type, d, payload, model_version, policy_version, policy_sha256, prev_hash, hash)
+    values ('S10-ARENA-ORIG-1:1', 'S10-ARENA-ORIG-1', 'ARENA_FORWARD_PAPER', 'ORIGINAL', 1, 'FUNDING', current_date, '{}', 'signal10-rank/1.0.0', 'signal10-manager/1.0.0', h, z, h);
+  ok := ok + 1;                                                                                                        -- 16 (ORIGINAL arena account accepted)
+  begin insert into pred_s10a_events(event_key, account, origin, strategy, seq, type, d, payload, model_version, policy_version, policy_sha256, prev_hash, hash)
+    values ('S10-ARENA-TECH-1:3', 'S10-ARENA-TECH-1', 'ARENA_FORWARD_PAPER', 'ORIGINAL', 3, 'FILL', current_date, '{}', 'm', 'p', h, z, h); raise exception 'original on tech account allowed';
+  exception when others then if sqlerrm = 'original on tech account allowed' then raise; end if; ok := ok + 1; end;   -- 17
+  raise exception 'PROOF_RESULT % of 17 checks passed', ok;
 end $$;

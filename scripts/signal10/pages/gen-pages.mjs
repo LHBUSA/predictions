@@ -100,24 +100,25 @@ const pages = [
     dek: 'Every live paper-account event, append-only and hash-chained: fills, orders, waits, holds, dividends and daily marks. The backtest ledger is a separate research record and is never combined with it.',
     body: APP },
   { key: 'arena', title: 'Strategy Arena', h1: 'The Strategy Arena',
-    desc: 'PBE Signal 10 Strategy Arena: the Original algorithm versus two pre-registered challengers, Tech Conviction and Diversified Risk Discipline, each a $10,000 simulated paper account on the same market. Hypothetical; not actual trading.',
-    dek: 'Three philosophies. One market. A permanent record. The Original keeps running untouched; two new algorithms, frozen before their first decision, start with $10,000 of simulated cash on the same day and are compared on the same closes.',
+    desc: 'PBE Signal 10 Strategy Arena: three brand-new $10,000 simulated paper accounts — the original Signal 10 rules, Tech Conviction and Diversified Risk Discipline — launched together on the same market. Hypothetical; not actual trading.',
+    dek: 'Three philosophies. One market. A permanent record. Three brand-new $10,000 simulated accounts — the original Signal 10 rules and two new algorithms, all frozen before their first decision — start from cash on the same day and are compared on the same closes.',
     css: '/markets/signal-10/arena.css', js: '/markets/signal-10/arena.js',
     body: `<section class="ar-sec" aria-labelledby="ar-who-h"><h2 id="ar-who-h" class="s10-h2">The contenders</h2>
 <div class="ar-intro">
-<article class="orig"><span class="ar-sub">Control</span><h3>Original</h3><p>The live Signal 10 algorithm, pre-registered on Oct 9, 2026 and never changed or reset.</p>
+<article class="orig"><span class="ar-sub">V1 rules · new account</span><h3>Original</h3><p>The original Signal 10 rules exactly as pre-registered on Oct 9, 2026, on a brand-new account.</p>
 <ul><li>S&amp;P 500, momentum with a low-volatility tilt</li><li>Dip and persistence entries, 10 slots</li><li>SPY 200-day regime, 20% trailing stop</li></ul></article>
-<article class="tech"><span class="ar-sub">Challenger</span><h3>Tech Conviction</h3><p>Concentrated momentum in technology leaders. Buys strength, holds up to 8 names.</p>
+<article class="tech"><span class="ar-sub">New algorithm</span><h3>Tech Conviction</h3><p>Concentrated momentum in technology leaders. Buys strength, holds up to 8 names.</p>
 <ul><li>Technology, chips, software, cloud (SEC SIC)</li><li>No volatility penalty; QQQ 200-day regime</li><li>25% trailing stop, 10-session re-entry cooldown</li></ul></article>
-<article class="div"><span class="ar-sub">Challenger</span><h3>Diversified Risk Discipline</h3><p>Cross-sector, risk-sized, with hard limits and an optional precious-metals ETF sleeve.</p>
+<article class="div"><span class="ar-sub">New algorithm</span><h3>Diversified Risk Discipline</h3><p>Cross-sector, risk-sized, with hard limits and an optional precious-metals ETF sleeve.</p>
 <ul><li>≤ 10% per holding, ≤ 25% per sector, ≤ 20% metals</li><li>Inverse-volatility sizing; cash allowed</li><li>GLD / SLV / PPLT only when verified</li></ul></article>
 </div></section>
 <section class="ar-sec" aria-labelledby="ar-proof-h"><h2 id="ar-proof-h" class="s10-h2">Public proof record</h2><div id="arena-proof" data-state="loading"><p class="s10-note" role="status">Loading the proof record…</p></div></section>
 <div id="arena-app" data-state="loading"><div class="s10-loading" aria-hidden="true"></div><p class="sr-only" role="status">Loading the Arena standings…</p></div>
 <section class="ar-sec" aria-labelledby="ar-rules-h"><h2 id="ar-rules-h" class="s10-h2">How the comparison is kept fair</h2>
 <ul class="s10-list"><li>Same market, same closes, same fills: every account trades at the next regular-session open with 10 bps slippage, whole shares and $0 commission.</li>
-<li>Pre-registered: each challenger's rules are frozen by SHA-256 before its first decision; any change is a new version with its own record.</li>
-<li>No backfill: no challenger record exists before the common start (T0). The Original is shown indexed to $10,000 at T0 for display only; its own ledger is unchanged.</li>
+<li>Pre-registered: each account's rules are frozen by SHA-256 before its first decision; any change is a new version with its own record.</li>
+<li>Same start: all three accounts begin with $10,000 cash and zero positions at the same close (T0). No record exists before it and nothing is backfilled.</li>
+<li>Separate history: the first Signal 10 paper account (Oct 9, 2026) continues as historical research and is not part of the competition.</li>
 <li>Honest marks: a holding without an observed close is NOT AVAILABLE, never estimated. Sharpe ratios appear only after 60 daily observations, and no winner is declared early.</li>
 <li>Precious metals: the Diversified sleeve may hold the GLD, SLV and PPLT exchange-traded trusts, never spot metal. See the <a href="/markets/metals/">precious-metals tracker</a>.</li></ul>
 <p class="s10-note">Full rules: <a href="https://github.com/LHBUSA/predictions/blob/main/docs/signal10/strategy-arena/PREREGISTRATION.md" target="_blank" rel="noopener">Strategy Arena pre-registration</a> · <a href="/markets/signal-10/methodology/">Original methodology</a>.</p></section>` },

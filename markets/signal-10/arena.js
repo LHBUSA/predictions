@@ -31,10 +31,10 @@
       if (r.status !== 200 || !r.data) { pub.innerHTML = '<p class="s10-statusline" role="status"><b>PROOF RECORD UNAVAILABLE</b> Retrying in 60 s.</p>'; setTimeout(proof, 60000); return; }
       const p = r.data;
       const rows = p.strategies.map((s) => `<tr><th scope="row">${esc(s.label)}</th><td>${esc(s.account)}</td><td><span class="ar-status ar-${s.status === 'RUNNING' ? 'run' : 'wait'}">${esc(s.status.replace(/_/g, ' '))}</span></td><td class="num">${s.inception ? esc(fmtDate(s.inception)) : '—'}</td><td class="num">${esc(String(s.ledger_events))}</td><td><span class="s10-hash" title="${esc(s.policy_sha256)}">${esc(short(s.policy_sha256))}</span></td><td><span class="s10-hash" title="${esc(s.ledger_head_hash || '')}">${esc(short(s.ledger_head_hash))}</span></td></tr>`).join('');
-      pub.innerHTML = `<p class="ar-t0">${p.t0 ? `Cohort start <b>T0 = ${esc(fmtDate(p.t0))}</b> · both challengers funded with $10,000 simulated that day; first fills at the next open.` : '<b>Cohort not started.</b> T0 is set at the first U.S. close after activation. No challenger record exists before it, and nothing is backfilled.'}</p>
+      pub.innerHTML = `<p class="ar-t0">${p.t0 ? `Cohort start <b>T0 = ${esc(fmtDate(p.t0))}</b> · all three accounts funded with $10,000 simulated that day, from zero positions; first fills at the next open.` : '<b>Cohort not started.</b> T0 is set at the first U.S. close after activation. No Arena record exists before it, and nothing is backfilled.'}</p>
 <div class="tbl-wrap"><table class="s10-tbl ar-proof"><caption class="sr-only">Challenger proof record</caption><thead><tr><th scope="col">Strategy</th><th scope="col">Account</th><th scope="col">Status</th><th scope="col" class="num">Inception</th><th scope="col" class="num">Ledger events</th><th scope="col">Policy SHA-256</th><th scope="col">Ledger head</th></tr></thead><tbody>
-<tr><th scope="row">Original</th><td>${esc(p.control.account)}</td><td><span class="ar-status ar-run">CONTROL</span></td><td class="num">Oct 9, 2026</td><td class="num">—</td><td><a href="/markets/signal-10/methodology/">pre-registered 1.0.0</a></td><td><a href="/markets/signal-10/ledger/">control ledger</a></td></tr>${rows}</tbody></table></div>
-<p class="s10-note">Policy hashes are frozen in the <a href="${esc(p.preregistration)}" target="_blank" rel="noopener">pre-registration</a> and stamped on every ledger row. Sector taxonomy ${esc(p.taxonomy.version)}, snapshot ${esc(fmtDate(p.taxonomy.effective_from))} <span class="s10-hash">${esc(short(p.taxonomy.content_sha256))}</span>.</p>`;
+${rows}</tbody></table></div>
+<p class="s10-note">${esc(p.legacy_v1?.note || '')} Policy hashes are frozen in the <a href="${esc(p.preregistration)}" target="_blank" rel="noopener">pre-registration</a> and stamped on every ledger row. Sector taxonomy ${esc(p.taxonomy.version)}, snapshot ${esc(fmtDate(p.taxonomy.effective_from))} <span class="s10-hash">${esc(short(p.taxonomy.content_sha256))}</span>.</p>`;
     }
 
     // ---------------- member arena ----------------
@@ -57,7 +57,7 @@
     document.addEventListener('pbe:membership', (ev) => { if (gated && ev.detail?.entitled) arena(); });
 
     function chart(a) {
-      const series = a.strategies.map((s) => ({ key: s.key, label: s.label, pts: s.series }));
+      const series = a.strategies.map((s) => ({ key: s.key, label: s.label, pts: s.series || [] }));
       if (a.comparators) for (const k of ['SPY', 'QQQ']) series.push({ key: k, label: `${k} buy & hold`, pts: a.comparators[k] });
       const dates = [...new Set(series.flatMap((s) => s.pts.map((p) => p.d)))].sort();
       if (dates.length < 2) return `<p class="s10-note">The comparison chart starts after the second close since T0 (${dates.length} session${dates.length === 1 ? '' : 's'} recorded so far).</p>`;
@@ -77,7 +77,7 @@
       }
       const legend = series.map((s) => { const last = s.pts.filter((p) => Number.isFinite(p.indexed)).at(-1); return `<li><i class="ar-sw ${CLS[s.key]}" aria-hidden="true"></i>${esc(s.label)} <b class="num">${last ? esc(fmtUSD(Math.round(last.indexed * 100), { dp: 0 })) : '—'}</b></li>`; }).join('');
       const table = `<div class="sr-only"><table><caption>Indexed value, $10,000 at T0</caption><thead><tr><th scope="col">Date</th>${series.map((s) => `<th scope="col">${esc(s.label)}</th>`).join('')}</tr></thead><tbody>${dates.map((d) => `<tr><th scope="row">${esc(d)}</th>${series.map((s) => { const p = s.pts.find((q) => q.d === d); return `<td>${p && Number.isFinite(p.indexed) ? esc(fmtUSD(Math.round(p.indexed * 100))) : 'not available'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
-      return `<figure class="ar-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Value of $10,000 since T0 for the three strategies and SPY/QQQ; the table below has every value">${g}</svg><figcaption><ul class="ar-legend">${legend}</ul><span>$10,000 at T0 · Original indexed for display only · gaps = NOT AVAILABLE marks</span></figcaption>${table}</figure>`;
+      return `<figure class="ar-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Value of $10,000 since T0 for the three strategies and SPY/QQQ; the table below has every value">${g}</svg><figcaption><ul class="ar-legend">${legend}</ul><span>$10,000 each at T0 · gaps = NOT AVAILABLE marks</span></figcaption>${table}</figure>`;
     }
 
     function card(s) {
@@ -85,7 +85,7 @@
       const waiting = s.status !== 'RUNNING';
       return `<article class="ar-card ${CLS[s.key]}" aria-labelledby="ar-${s.key}-h"><header><span class="ar-sub">${esc(s.sub)}</span><h3 id="ar-${s.key}-h">${esc(s.label)}</h3></header>
 <p class="ar-thesis">${esc(s.thesis)}</p>
-${waiting ? `<p class="ar-wait"><b>${esc(s.status.replace(/_/g, ' '))}</b>${s.key === 'ORIGINAL' ? '' : ' · funds $10,000 at T0'}</p>` : `<p class="ar-big num">${last ? esc(fmtUSD(Math.round(last.indexed * 100), { dp: 0 })) : '—'}<small>${pct(m.total_return)} since T0</small></p>`}
+${waiting ? `<p class="ar-wait"><b>${esc(s.status.replace(/_/g, ' '))}</b> · funds $10,000 at T0</p>` : `<p class="ar-big num">${last ? esc(fmtUSD(Math.round(last.indexed * 100), { dp: 0 })) : '—'}<small>${pct(m.total_return)} since T0</small></p>`}
 <dl class="ar-kv"><dt>Max drawdown</dt><dd class="num">${pct(m.max_drawdown)}</dd><dt>Volatility (ann.)</dt><dd class="num">${pct(m.volatility, { sign: false })}</dd>
 <dt>Sharpe</dt><dd class="num" title="${esc(m.sharpe_note || '')}">${Number.isFinite(m.sharpe) ? m.sharpe.toFixed(2) : `<span class="ar-dim">after ${a0.sharpe_min_observations} obs</span>`}</dd>
 <dt>Cash</dt><dd class="num">${pct(s.exposure?.cash, { sign: false })}</dd><dt>Largest position</dt><dd class="num">${pct(s.exposure?.max_position, { sign: false })}</dd>
@@ -119,19 +119,18 @@ ${waiting ? `<p class="ar-wait"><b>${esc(s.status.replace(/_/g, ' '))}</b>${s.ke
       if (r.status !== 200 || !r.data) { app.innerHTML = '<p class="s10-statusline" role="status"><b>DATA UNAVAILABLE</b> Retrying in 60 s.</p>'; setTimeout(arena, 60000); return; }
       gated = false; const a = a0 = r.data; app.dataset.state = 'ready';
       const by = Object.fromEntries(a.strategies.map((s) => [s.key, s]));
-      const orig = by.ORIGINAL;
       const tabs = KEYS.map((k, i) => `<button type="button" role="tab" id="ar-tab-${k}" aria-controls="ar-pane-${k}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" class="ar-tab ${CLS[k]}">${esc(by[k].label)}</button>`).join('');
       const panes = KEYS.map((k, i) => `<div role="tabpanel" id="ar-pane-${k}" aria-labelledby="ar-tab-${k}"${i ? ' hidden' : ''} tabindex="0"><div class="s10-grid2"><section><h4>Holdings${by[k].nav?.d ? ` · ${esc(fmtDate(by[k].nav.d))} close` : ''}</h4>${holdings(by[k])}</section><section><h4>Latest decisions</h4>${decisions(by[k])}</section></div>
 ${k === 'ORIGINAL' ? '' : `<p class="s10-note">Every event of this account, hash-chained: <a href="/api/signal10/arena/ledger?account=${esc(by[k].account)}">ledger JSON</a> (${esc(String(by[k].ledger?.events ?? 0))} events, head <span class="s10-hash">${esc(short(by[k].ledger?.head_hash))}</span>).</p>`}</div>`).join('');
       app.innerHTML = `<section class="ar-sec" aria-labelledby="ar-board-h"><h2 id="ar-board-h" class="s10-h2">Standings since T0</h2>
-${a.status !== 'RUNNING' ? '<p class="s10-statusline" role="status"><b>AWAITING T0</b> The challengers fund $10,000 each at the first U.S. close after activation. Until then only the Original has a record.</p>' : `<p class="s10-sub">Common start <b>${esc(fmtDate(a.t0))}</b> · latest close ${esc(fmtDate(a.sample.last_d))} · ${esc(String(a.sample.sessions))} session${a.sample.sessions === 1 ? '' : 's'}. No winner is declared on a short sample.</p>`}
+${a.status !== 'RUNNING' ? '<p class="s10-statusline" role="status"><b>AWAITING T0</b> All three accounts fund $10,000 each, from zero positions, at the same first U.S. close after activation. Until then there is no Arena record.</p>' : `<p class="s10-sub">Common start <b>${esc(fmtDate(a.t0))}</b> · latest close ${esc(fmtDate(a.sample.last_d))} · ${esc(String(a.sample.sessions))} session${a.sample.sessions === 1 ? '' : 's'}. No winner is declared on a short sample.</p>`}
 <div class="ar-cards">${KEYS.map((k) => card(by[k])).join('')}</div></section>
 ${a.status === 'RUNNING' ? `<section class="ar-sec" aria-labelledby="ar-chart-h"><h2 id="ar-chart-h" class="s10-h2">Value of $10,000 since T0</h2>${chart(a)}</section>` : ''}
 <section class="ar-sec" aria-labelledby="ar-exp-h"><h2 id="ar-exp-h" class="s10-h2">Sector, metal and cash exposure</h2><div class="ar-exps">${KEYS.map((k) => exposure(by[k])).join('')}</div>
 <p class="s10-note">Sectors use the PBE SEC-SIC taxonomy (not GICS). The Diversified caps are 10% per holding, 25% per sector and 20% in precious-metal ETFs; Tech holds technology only by design.</p></section>
 <section class="ar-sec" aria-labelledby="ar-hold-h"><h2 id="ar-hold-h" class="s10-h2">Holdings and decision evidence</h2><div class="ar-tabs" role="tablist" aria-label="Strategy">${tabs}</div>${panes}</section>
-<section class="ar-sec" aria-labelledby="ar-orig-h"><h2 id="ar-orig-h" class="s10-h2">About the Original's record</h2>
-<p class="s10-sub">The Original is the control and is never reset. It started on ${esc(fmtDate(orig.inception))} and was already invested at T0, so it is compared <b>indexed to $10,000 at T0</b> (display only). Its real lifetime paper NAV: <b class="num">${orig.nav?.cents != null ? esc(fmtUSD(orig.nav.cents)) : '—'}</b> at the ${esc(fmtDate(orig.nav?.d))} close, ${pct(orig.metrics_lifetime?.total_return)} since inception. <a href="/markets/signal-10/live/">Open the Original's live portfolio</a>.</p></section>`;
+<section class="ar-sec" aria-labelledby="ar-orig-h"><h2 id="ar-orig-h" class="s10-h2">The first Signal 10 account</h2>
+<p class="s10-sub">The Arena's Original runs the unchanged Signal 10 rules on a brand-new account that started from cash at T0, like the other two. ${esc(a.legacy_v1?.note || '')} <a href="${esc(a.legacy_v1?.url || '/markets/signal-10/live/')}">Open the historical account</a>.</p></section>`;
       const tablist = app.querySelector('[role=tablist]');
       const sel = (btn) => { app.querySelectorAll('[role=tab]').forEach((b) => { const on = b === btn; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; document.getElementById(b.getAttribute('aria-controls')).hidden = !on; }); btn.focus(); };
       tablist.addEventListener('click', (e) => { const b = e.target.closest('[role=tab]'); if (b) sel(b); });
