@@ -592,6 +592,11 @@ button:disabled{cursor:default}
 .pro-px{justify-self:end;font:700 14px/1 var(--mono);color:var(--paper);font-variant-numeric:tabular-nums}
 .pro-px.is-related{color:var(--warn)}
 .pro-px.is-none{color:var(--faint)}
+/* Soccer 3-way: DRAW is its own outcome row; settlement line under the price table; title-only when roles are unverified. */
+.pro-row.is-draw>b{color:var(--muted);letter-spacing:.08em}
+.pro-disc{display:block;margin-top:3px;font:700 8.5px/1.3 var(--mono);letter-spacing:.08em;color:var(--faint);white-space:normal}
+.pro-title{font:700 14px/1.25 var(--mono);color:var(--paper)}
+.lc-pro .pro-name b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pro-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:5px;border-top:1px solid var(--line);min-width:0}
 .pro-state{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
 .pro-state b{font:800 10px/1.2 var(--mono);letter-spacing:.08em;color:var(--up)}

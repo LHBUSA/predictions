@@ -71,3 +71,58 @@ test('key difference: "Cancelled: Polymarket → Draw; Kalshi → fair price." o
   assert.deepEqual(keyDifferences({ ...rt, kalshi: { complete: false, terms: [] } }), [], 'never inferred');
   assert.deepEqual(keyDifferences(null), []);
 });
+
+// LIVE MARKET CARD (2026-10-10, owner P1): proCard() took e.contracts.slice(0, 2) as the two teams, so a desk that
+// lists the draw first (or any order) showed "Draw" as a club and dropped one side. Teams = canonical HOME/AWAY roles.
+import { cardModel, soccerSettlement, SOCCER_SETTLEMENT } from '../core.js';
+import { readFileSync } from 'node:fs';
+const perms = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p])));
+
+test('card model: every contract order -> HOME/AWAY sides by role, DRAW only as the third row', () => {
+  for (const order of perms([0, 1, 2])) {
+    const e = normalizeEvent({ ...EV, contracts: order.map((i) => EV.contracts[i]) });
+    const m = cardModel(e);
+    assert.deepEqual(m.teams.map((c) => c.role), ['home', 'away'], `order ${order}`);
+    assert.deepEqual(m.rows.map((c) => c.role), ['home', 'draw', 'away'], `order ${order}`);
+    assert.equal(m.threeWay, true);
+    assert.deepEqual(m.teams.map((c) => c.label), ['Arsenal', 'Leeds']);
+  }
+});
+
+test('card model: no verified roles -> no guessed sides (title only); other sports keep their two-way card', () => {
+  const unroled = normalizeEvent({ ...EV, contracts: EV.contracts.map(({ role, ...c }) => c) });
+  assert.deepEqual(cardModel(unroled).teams, []);
+  const nhl = { sport: 'nhl', contracts: [{ label: 'BOS', role: 'away' }, { label: 'MIN', role: 'home' }] };
+  assert.deepEqual(cardModel(nhl), { teams: nhl.contracts, rows: nhl.contracts, threeWay: false });
+  const two = normalizeEvent({ ...EV, contracts: [EV.contracts[0], EV.contracts[2]] }); // no draw contract listed
+  assert.deepEqual(cardModel(two).rows.map((c) => c.role), ['home', 'away']);
+  assert.equal(cardModel(two).threeWay, false);
+});
+
+test('settlement line: 90 minutes + stoppage for both venues, related Polymarket quotes flagged', () => {
+  const s = soccerSettlement(normalizeEvent(EV));
+  assert.equal(s.short, '90 MIN + STOPPAGE · NO ET/PENS · * POLY RULES DIFFER');
+  assert.ok(s.full.startsWith(SOCCER_SETTLEMENT));
+  const exact = soccerSettlement(normalizeEvent({ ...EV, contracts: EV.contracts.map((c) => ({ ...c, related: [] })) }));
+  assert.equal(exact.short, '90 MIN + STOPPAGE · NO ET/PENS');
+});
+
+test('live score + crest per side come from the role, so a reordered desk still pairs Leeds with the away score', () => {
+  const e = normalizeEvent({ ...EV, contracts: [EV.contracts[2], EV.contracts[1], EV.contracts[0]] });
+  const score = { away: { name: 'Leeds United', abbr: 'LEE', score: 1, logo: 'https://soccer.propbetedge.ai/api/soccer/media/lee' }, home: { name: 'Arsenal', abbr: 'ARS', score: 2, logo: null } };
+  const side = (c) => score[c.role];
+  const [home, away] = cardModel(e).teams;
+  assert.equal(side(home).score, 2); assert.equal(side(away).score, 1);
+  assert.equal(participantMedia('soccer', away, side(away)).src, 'https://soccer.propbetedge.ai/api/soccer/media/lee');
+  assert.equal(participantMedia('soccer', home, side(home)).src, null, 'incomplete crest data -> initials, never another club\'s crest');
+  assert.equal(participantMedia('soccer', home, side(home)).initials, 'A');
+});
+
+test('markup: proCard renders from cardModel (no positional slice), DRAW row + settlement line present', () => {
+  const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+  const body = app.slice(app.indexOf('function proCard('), app.indexOf('function plainLiveCard('));
+  assert.doesNotMatch(body, /contracts\.slice\(0, 2\)/);
+  assert.match(body, /const model = cardModel\(e\)/);
+  assert.match(body, /c\.role === 'draw' \? 'DRAW'/);
+  assert.match(body, /class="pro-disc"/);
+});

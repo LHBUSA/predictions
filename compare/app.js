@@ -6,7 +6,7 @@ import {
   SPORTS, SPORT_KEYS, BADGES, VIEWS, WHEN, reasonText, fmtCents, fmtPct, ageText, normalizeEvent, rankEvents, scoreIndex,
   moves, fmtMove, WINDOWS, membershipState, screenNotices, boardEmpty, participantMedia, whenOf, inWhen, hubStats,
   CROSS_TOOLTIP, ruleTermsView, ruleTermsSummary, keyDifferences, liveMarketStates, LIVE_MARKET, liveMarketChip, scoreKey, golfBoardRows, golfToPar, golfThru, rankLiveMarkets, featuredLive, liveSummary, boardColumns, ID_JOIN_SPORTS,
-  carryDesk, sourceDiagnostics, loadPartnerConfig, partnerOffer
+  carryDesk, sourceDiagnostics, loadPartnerConfig, partnerOffer, cardModel, soccerSettlement
 } from './core.js';
 import { createLifecycle } from './poller.js';
 
@@ -504,25 +504,34 @@ function venueState(e) {
 }
 function proCard(e, featured = false) {
   const s = e.join.score;
-  const two = e.contracts.slice(0, 2);
+  const soccer = e.sport === 'soccer';
+  const model = cardModel(e); // soccer: HOME/AWAY by canonical role, DRAW a separate row (core.js cardModel)
   const team = (c) => {
     const side = sideFor(e, c);
+    if (soccer) { // club name first (score-feed name, else the market's own label), its crest, its live score
+      const name = side?.name || c.label || '';
+      const abbr = side?.abbr && side.abbr !== name ? side.abbr : '';
+      return `<span class="pro-team">${avatar(e, c, 'md')}<span class="pro-name"><b>${esc(name)}</b>${abbr ? `<small>${esc(abbr)}</small>` : ''}</span><strong>${esc(side?.score ?? '—')}</strong></span>`;
+    }
     const name = side?.name && side.name !== side?.abbr ? side.name : '';
     return `<span class="pro-team">${avatar(e, c, 'md')}<span class="pro-name"><b>${esc(side?.abbr || c.label)}</b>${name ? `<small>${esc(name)}</small>` : ''}</span><strong>${esc(side?.score ?? '—')}</strong></span>`;
   };
   const price = (q, rel) => (q?.mid_bp != null ? `<span class="pro-px${rel ? ' is-related' : ''}">${esc(fmtCents(q.yes_bp ?? q.mid_bp))}${rel ? '*' : ''}</span>` : '<span class="pro-px is-none">—</span>');
-  const rows = two.map((c) => {
+  const rowLabel = (c) => (soccer && c.role === 'draw' ? 'DRAW' : sideFor(e, c)?.abbr || c.label || 'Market');
+  const rows = model.rows.map((c) => {
     const p = pmFor(c), rel = !c.polymarket && !!p;
-    return `<span class="pro-row"><b>${esc(sideFor(e, c)?.abbr || c.label || 'Market')}</b>${price(c.kalshi, false)}${price(p, rel)}</span>`;
+    return `<span class="pro-row${soccer && c.role === 'draw' ? ' is-draw' : ''}"><b>${esc(rowLabel(c))}</b>${price(c.kalshi, false)}${price(p, rel)}</span>`;
   }).join('');
+  const settle = soccer ? soccerSettlement(e) : null;
+  const teams = model.teams.length ? model.teams.map(team).join('') : `<span class="pro-title">${esc(e.title || 'Soccer match')}</span>`;
   const state = venueState(e);
   const crosses = e.contracts.filter((c) => c.cross?.state === 'CROSS').length;
   const gap = e.best_gap != null && state !== 'RULES DIFFER' ? `MAX GAP ${e.best_gap.toFixed(1)}¢` : '';
   const cast = s?.pbecast_url || null;
   return `<div role="button" tabindex="0" class="lc ticker-game lc-market-card lc-pro${featured ? ' is-featured' : ''}" data-open="${esc(e.key)}">
     ${featured ? '<span class="pro-feat">FEATURED LIVE</span>' : ''}<span class="lc-h"><span class="sport">${esc(e.sport.toUpperCase())}</span><span class="st st-live"><i></i>${esc(s?.detail || s?.status_label || 'LIVE')}</span></span>
-    <span class="pro-teams">${two.map(team).join('')}</span>
-    <span class="pro-mkt"><span class="pro-row pro-row-h"><b></b><span><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12">KALSHI</span><span><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12">POLY</span></span>${rows}</span>
+    <span class="pro-teams">${teams}</span>
+    <span class="pro-mkt"><span class="pro-row pro-row-h"><b>${model.threeWay ? '3-WAY' : ''}</b><span><img src="${VENUE.kalshi.icon}" alt="" width="12" height="12">KALSHI</span><span><img src="${VENUE.polymarket.icon}" alt="" width="12" height="12">POLY</span></span>${rows}${settle ? `<small class="pro-disc" title="${esc(settle.full)}">${esc(settle.short)}</small>` : ''}</span>
     <span class="pro-foot"><span class="pro-state"><b>${esc(gap || state)}</b>${gap ? `<em>${esc(state)}</em>` : ''}${crosses ? `<em class="is-cross">${crosses} CROSS${crosses === 1 ? '' : 'ES'}</em>` : ''}</span>${cast ? `<a class="pro-act" href="${esc(cast)}">PBECAST →</a>` : '<span class="pro-act">OPEN →</span>'}</span>
   </div>`;
 }

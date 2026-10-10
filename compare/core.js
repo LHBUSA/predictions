@@ -565,6 +565,29 @@ export function participantMedia(sport, contract, linkedSide = null) {
   return { kind, src, initials, alt: label };
 }
 
+// LIVE MARKET CARD MODEL (command board). Which contracts are the two sides and which are the price rows.
+// Soccer is a 3-way 90-minute result: the sides are the HOME and AWAY contracts by their verified canonical role,
+// never by list position (a reordered or draw-first desk once put "Draw" in a club slot); DRAW stays a third price
+// row, never a side. Without both verified roles a soccer card names no side at all (title only) rather than guess.
+// Every other sport keeps its two-way card exactly as before (first two contracts).
+export const SOCCER_SETTLEMENT = 'Settles on the result after 90 minutes plus stoppage time (no extra time or penalties).';
+export function cardModel(e) {
+  const cs = e?.contracts || [];
+  if (e?.sport !== 'soccer') return { teams: cs.slice(0, 2), rows: cs.slice(0, 2), threeWay: false };
+  const by = (r) => cs.find((c) => c.role === r) || null;
+  const home = by('home'), draw = by('draw'), away = by('away');
+  if (home && away) return { teams: [home, away], rows: [home, draw, away].filter(Boolean), threeWay: !!draw };
+  return { teams: [], rows: cs.filter((c) => c.role === 'draw' || c.role === 'home' || c.role === 'away'), threeWay: false };
+}
+// Settlement line for a soccer card: the venues' own 90-minute disclosure when the desk carries one, else the plain
+// 90-minute rule; a Polymarket quote shown from a related (rules-differ) market is flagged, never presented as identical.
+export function soccerSettlement(e) {
+  const cs = e?.contracts || [];
+  const disc = cs.map((c) => c.comparison?.disclosure || c.polymarket?.disclosure).find(Boolean) || null;
+  const relatedPoly = cs.some((c) => !c.polymarket && (c.related || []).some((r) => r.venue === 'polymarket' && r.mid_bp != null));
+  return { short: `90 MIN + STOPPAGE · NO ET/PENS${relatedPoly ? ' · * POLY RULES DIFFER' : ''}`, full: [SOCCER_SETTLEMENT, disc, relatedPoly ? 'Polymarket prices marked * come from a related market whose settlement rules are not verified as identical: shown at their own price, never compared.' : null].filter(Boolean).join(' ') };
+}
+
 // Date buckets for hub tabs (viewer's local day). Live wins over any date.
 export const WHEN = [
   { key: 'live', label: 'LIVE' }, { key: 'today', label: 'TODAY' }, { key: 'tomorrow', label: 'TOMORROW' },
