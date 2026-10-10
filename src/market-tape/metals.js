@@ -2,10 +2,10 @@
 // market-tape layer: one source/rights model for every PropBetEdge surface, no standalone quote vendor.
 //
 // Two instrument families that NEVER share an id or a price:
-//   SPOT  XAU/USD, XAG/USD, XPT/USD (USD per troy ounce) — the reference metal prices. Every spot benchmark we could find
-//         (LBMA Gold/Silver Price, LBMA Platinum Price via ICE Benchmark Administration; dealer and futures feeds) needs a
-//         paid licence for any use or redistribution; FRED removed the LBMA series on 2022-01-31. Zero-spend rule -> no
-//         spot provider: state SOURCE_RIGHTS_HOLD for every audience. Never substituted by an ETF, a future or a crypto token.
+//   SPOT  XAU/USD, XAG/USD, XPT/USD (USD per troy ounce) — INDICATIVE spot reference prices from Gold-API.com (zero cost;
+//         Terms §9 permit commercial display; src/market-tape/goldapi.js), collected server-side every 5 minutes and
+//         labelled indicative — never the LBMA benchmark/fixing, which stays licence-only (ICE Benchmark Administration).
+//         Never substituted by an ETF, a future or a crypto token.
 //   ETF   GLD, SLV, PPLT — exchange-listed grantor trusts holding physical metal. Investable proxies for the Signal 10
 //         Diversified challenger (next-open equity fills from the same daily-bar source as every Signal 10 account).
 //         Display prices only from a provider whose rights record permits the audience (market-tape contract.js): today
@@ -63,6 +63,7 @@ export function observation({ instrument, value = null, observed_at = null, sess
     unit: instrument.kind === 'SPOT' ? 'USD/ozt' : 'USD/share', currency: 'USD', observed_at, session_date, source, rights_scope: rights, delay, basis };
 }
 
+// Retained for history: the pre-2026-10-10 spot state (no longer displayed).
 export const SPOT_HOLD = Object.freeze({
   state: 'SOURCE_RIGHTS_HOLD', label: 'QUOTE UNAVAILABLE · SOURCE RIGHTS HOLD',
   note: 'No zero-cost source with written display rights for spot gold, silver or platinum is on file. LBMA benchmark prices (ICE Benchmark Administration) require a paid licence for any use or redistribution, including delayed public display.',
