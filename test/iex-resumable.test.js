@@ -256,3 +256,58 @@ test('integrity: a gzip trailer that disagrees with the decoded length fails the
   assert.match(last.error, /ISIZE/);
   assert.equal(st.tables.pred_source_observations.length, 0, 'no rows on an integrity failure');
 });
+
+// ---------- #78 per-symbol completeness ----------
+const stepToEnd = async (st, v) => { let r, n = 0; do { r = await iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000, now: () => 'T' }); n++; } while (r.status === 'STEP' && n < 500); return r; };
+const seedRow = (sym, value) => ({ observation_key: `iex:TOPS:20261009:${sym}`, provider: 'iex', source_id: `iex:TOPS:${sym}`, value, data: { session_date: '2026-10-09' } });
+
+test('#78: a session that already holds OTHER symbols (no job row) gets a job for just its missing symbols; existing rows untouched', async () => {
+  const gz = zlib.gzipSync(capture(), { level: 6, memLevel: 1 });
+  const st = fakeStore();
+  st.tables.pred_source_observations.push(seedRow('SPCX', 999)); // e.g. the manual 61-symbol backfill of 10-08/10-09
+  const r = await stepToEnd(st, vendor(gz));
+  assert.equal(r.status, 'DONE');
+  const job = st.tables.pred_market_tape_jobs.find((j) => j.session_date === '2026-10-09');
+  assert.ok(!job.symbols.includes('SPCX'), 'already-present symbol is not re-targeted');
+  for (const s of ['NVDA', 'GLD', 'SLV', 'PPLT']) assert.ok(job.symbols.includes(s), `missing ${s} targeted`);
+  const rows = st.tables.pred_source_observations.filter((x) => x.observation_key.startsWith('iex:TOPS:20261009:'));
+  assert.equal(rows.find((x) => x.source_id === 'iex:TOPS:SPCX').value, 999, 'existing row never overwritten (append-only)');
+  assert.ok(rows.find((x) => x.source_id === 'iex:TOPS:NVDA'), 'missing symbol with trades now collected');
+  assert.equal(rows.filter((x) => x.source_id === 'iex:TOPS:SPCX').length, 1, 'no duplicate');
+});
+
+test('#78: a DONE job is never re-run, even when the universe later gains symbols; a complete session creates no job', async () => {
+  const gz = zlib.gzipSync(capture(), { level: 6, memLevel: 1 });
+  const st = fakeStore();
+  await stepToEnd(st, vendor(gz));
+  const done = st.tables.pred_market_tape_jobs.find((j) => j.session_date === '2026-10-09');
+  assert.equal(done.status, 'DONE');
+  const before = JSON.stringify(done);
+  st.tables.pred_s10_snapshots.push({ d: '2026-10-09', ranks: [{ symbol: 'NEWSYM' }] }); // universe grows after the job
+  const r = await iexHistStep({ store: st, nowIso: NOW, fetchImpl: vendor(gz, { published: false }) });
+  assert.equal(r.status, 'UP_TO_DATE');
+  assert.equal(JSON.stringify(st.tables.pred_market_tape_jobs.find((j) => j.session_date === '2026-10-09')), before, 'DONE row untouched');
+  // complete session (every universe symbol present) and no job row: nothing to do, no index fetch
+  const st2 = fakeStore();
+  const { tapeUniverse } = await import('../workers/pbe-predictions/src/iex-hist-lane.js');
+  for (const d of ['20261009', '20261008', '20261007']) for (const s of await tapeUniverse(st2)) st2.tables.pred_source_observations.push({ observation_key: `iex:TOPS:${d}:${s}` });
+  let indexCalls = 0;
+  const r2 = await iexHistStep({ store: st2, nowIso: NOW, fetchImpl: async () => { indexCalls++; return new Response('[]'); } });
+  assert.equal(r2.status, 'UP_TO_DATE'); assert.equal(indexCalls, 0); assert.equal(st2.tables.pred_market_tape_jobs.length, 0);
+});
+
+test('#78: a backfill and the scheduled run on the same session serialize on the lease (one job row, one holder)', async () => {
+  const gz = zlib.gzipSync(capture(), { level: 6, memLevel: 1 });
+  const st = fakeStore();
+  st.tables.pred_source_observations.push(seedRow('SPCX', 999));
+  const v = vendor(gz);
+  const [a, b] = await Promise.all([
+    iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000, holder: 'scheduled', now: () => 'T' }),
+    iexHistStep({ store: st, nowIso: NOW, fetchImpl: v, stepOut: 20000, holder: 'backfill', now: () => 'T' }),
+  ]);
+  assert.equal(st.tables.pred_market_tape_jobs.filter((j) => j.session_date === '2026-10-09').length, 1, 'one job row per session');
+  assert.deepEqual([a.status, b.status].sort(), ['LEASE_HELD', 'STEP'], JSON.stringify([a, b]));
+  const r = await stepToEnd(st, v);
+  assert.equal(r.status, 'DONE');
+  assert.equal(st.tables.pred_source_observations.filter((x) => x.source_id === 'iex:TOPS:NVDA' && x.observation_key.includes('20261009')).length, 1);
+});

@@ -5,8 +5,9 @@
 // decode only trade reports for the tape universe (featured + Signal 10 snapshot names + paper holdings), and write one
 // immutable observation per symbol: the last regular-session, last-sale-eligible IEX trade with its own exchange timestamp.
 //
-// Idempotent: observation_key = iex:TOPS:<YYYYMMDD>:<SYMBOL> (insert ignores duplicates); a session with rows is never
-// re-processed. Time-gated (one start per hour), so runs never overlap. Fail loud: a stream/parse error writes nothing.
+// Idempotent: observation_key = iex:TOPS:<YYYYMMDD>:<SYMBOL> (insert ignores duplicates). The production lane is the
+// resumable iexHistStep below, where completeness is per symbol (#78); the legacy single-pass iexHistTick still skips a
+// session with any rows. Time-gated (one start per hour), so runs never overlap. Fail loud: a stream/parse error writes nothing.
 // Not a price feed for trading: IEX venue only (not the consolidated tape), next-day.
 import { createTopsParser, topsEntry, IEX_HIST_INDEX, IEX_ATTRIBUTION, IEX_TERMS_URL, b64e, b64d } from '../../../src/market-tape/iex-hist.js';
 import { createInflater, parseGzipHeader, GzipHeaderIncomplete } from '../../../src/market-tape/inflate.js';
@@ -109,20 +110,33 @@ async function rest(store, path, init = {}) {
 // every write is fenced by the lease holder: a step that outlived its lease can never overwrite a newer checkpoint or a DONE job
 const patchJob = (store, session, holder, fields) => rest(store, `pred_market_tape_jobs?session_date=eq.${session}&lease_holder=eq.${encodeURIComponent(holder)}`, { method: 'PATCH', headers: { prefer: 'return=minimal' }, body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }) });
 
-// newest recent session without observations; creates its job row when the file is published
+// Symbols of `universe` with no iex:TOPS:<session>:<SYMBOL> observation yet (per-symbol completeness, #78).
+export async function missingSymbols(store, session, universe) {
+  const have = await store.select('pred_source_observations', { select: 'observation_key', observation_key: `like.iex:TOPS:${ymd(session)}:*` }, { limit: 5000 });
+  const present = new Set(have.map((r) => r.observation_key.split(':')[3]));
+  return universe.filter((s) => !present.has(s));
+}
+
+// Newest recent session whose collection is incomplete; creates its job row when the file is published.
+// Completeness is PER SYMBOL (#78): a session that already holds rows for other securities (e.g. a manual backfill with no
+// job row) still gets a job for just its missing universe symbols. Invariants kept: a RUNNING job is resumed under the
+// lease; a DONE or FAILED job is never re-run (one job per session_date, sql/017 primary key) — symbols the job covered but
+// that have no row are NO_TRADE, and symbols added to the universe after a DONE job need a separate job key (schema
+// change, not made here). Observations stay append-only (insert ignores duplicates).
 async function targetJob(store, nowIso, fetchImpl) {
+  let universe = null;
   for (const s of recentSessions(nowIso, 3)) {
-    const have = await store.select('pred_source_observations', { select: 'observation_key', observation_key: `like.iex:TOPS:${ymd(s)}:*` }, { limit: 1 });
-    if (have.length) continue;
     const [job] = await store.select('pred_market_tape_jobs', { select: 'session_date,status', session_date: `eq.${s}` }, { limit: 1 });
-    if (job?.status === 'FAILED' || job?.status === 'DONE') continue; // DONE with 0 rows never blocks older sessions
-    if (job) return s;
+    if (job?.status === 'RUNNING') return s;
+    if (job) continue; // DONE or FAILED: never re-run
+    universe ||= await tapeUniverse(store);
+    const missing = await missingSymbols(store, s, universe);
+    if (!missing.length) continue;
     const idx = await fetchImpl(`${IEX_HIST_INDEX}?date=${ymd(s)}`, { headers: { accept: 'application/json' } });
     if (!idx.ok) continue;
     const e = topsEntry(await idx.json());
     if (!e) continue; // not published yet
-    const symbols = await tapeUniverse(store);
-    await store.write('pred_market_tape_jobs', [{ session_date: s, file_link: e.link, file_size: Number(e.size) || 1, file_version: String(e.version || ''), symbols, status: 'RUNNING' }], { conflictColumn: 'session_date' });
+    await store.write('pred_market_tape_jobs', [{ session_date: s, file_link: e.link, file_size: Number(e.size) || 1, file_version: String(e.version || ''), symbols: missing, status: 'RUNNING' }], { conflictColumn: 'session_date' });
     return s;
   }
   return null;
