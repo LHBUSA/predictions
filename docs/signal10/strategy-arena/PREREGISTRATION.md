@@ -89,7 +89,7 @@ history (its writer repair is issue #69).
 - **Universe:** every classified member (all 11 sectors) plus the precious-metal ETF sleeve (GLD, SLV, PPLT) when each
   instrument passes the registry (`src/market-tape/metals.js`): SEC registrant identity (ticker → CIK → exchange),
   ≥ 253 bars, a bar on the decision date on an equity session, and no corporate action unknown to the registry (SLV's
-  2008-07-24 10-for-1 split is registered). Spot XAU/XAG/XPT are **never** used to simulate ETF fills.
+  2008-07-24 and PPLT's 2026-05-18 10-for-1 splits are registered, each from SEC filings). Spot XAU/XAG/XPT are **never** used to simulate ETF fills.
 - **Eligibility:** ≥ 253 bars, close ≥ $5, median dollar volume ≥ $25M, ≤ 5 missing sessions.
 - **Rank:** risk-adjusted momentum (mom12-1 ÷ 252-day vol) 0.35, low 63-day vol 0.20, 52-week resilience 0.15,
   trend200 0.15, mom6 0.15.
@@ -176,6 +176,11 @@ history (its writer repair is issue #69).
 - 2026-10-10, independent review of the three-account design (GO, conditional on disclosure): §1 now lists every
   ORIGINAL vs legacy-lane difference (delist liquidation and NOT AVAILABLE marks were missing); stale control/challenger
   wording fixed; member payloads no longer carry order quantities (a share count with a weight could reveal a price).
+
+- 2026-10-10, real-data pre-flight (in memory, nothing written): all three accounts funded together on the 2026-10-09
+  session; ORIGINAL reproduced the legacy V1 lane's real funding-day decisions (top 5 PSX VLO MPC EXPD MRNA; BUY MU,
+  VTRS). The registry gate held PPLT on an unregistered 2026-05-18 10-for-1 split; the split was verified in SEC 8-K
+  0001999371-26-011013 and registered (metal-ETF registry hash changes; no policy parameter or hash changes).
 
 ## 9. Activation record
 Filled at activation: T0, worker version, ledger FUNDING hashes, engine source hashes at T0.

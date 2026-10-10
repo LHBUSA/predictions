@@ -467,3 +467,11 @@ test('re-review N4: admin rerun needs an integer >= 2 and a dead original run', 
   assert.ok(store.rows(T.runs).some((x) => x.run_key === `${TECH.account}:EOD:${D1}#2`));
   assert.equal((await verifyChain(await events(store, TECH.account))).ok, true);
 });
+
+test('metal ETF registry: PPLT 10-for-1 split of 2026-05-18 (SEC 8-K) is registered, so a real series carrying it verifies', () => {
+  const pplt = METAL_ETFS.find((e) => e.symbol === 'PPLT');
+  assert.deepEqual(pplt.splits, [{ d: '2026-05-18', ratio: 10 }]);
+  const { prepared } = market(['PPLT'], D0);
+  const s = { ...prepared.get('PPLT'), splits: [{ d: CAL[CAL.indexOf(D0) - 60], ratio: 10 }] };
+  assert.match(etfEligibility(pplt, s, D0).hold, /unregistered_corporate_action/, 'an unknown split still holds');
+});
