@@ -30,7 +30,7 @@ import { renderArticle, renderDesk, rssXml, newsSitemapXml, liveUpdate } from '.
 import { VERTICALS, storyBySlug } from './insights/stories.js';
 import { handleSignal10, signal10Tick } from './signal10-api.js';
 import { handleMarketTape } from './market-tape-api.js';
-import { iexHistTick, iexDue } from './iex-hist-lane.js';
+import { iexHistStep, iexDue } from './iex-hist-lane.js';
 import { FAMILIES } from '../../../src/engine/registry.js';
 import { runNewsroom, evidenceView } from './newsroom/engine.js';
 import { runIntradayScoring, intradayReport, intradayScoringDue, shadowCompareReport } from './intraday-scoring.js';
@@ -109,8 +109,8 @@ export default {
       // PBE Signal 10 paper account (issue #52, sql/016): time-gated OPEN/EOD/MARK jobs, own waitUntil. Kill switch SIGNAL10.
       if (env.SIGNAL10 === 'true') ctx.waitUntil(signal10Tick({ ...env, __store: storeFor(env) }, minuteAt)
         .then((r) => { if (Object.keys(r).length) console.log(JSON.stringify({ signal10: r })); }).catch((e) => console.error('signal10 failed', e.stack || e.message)));
-      // PBE Market Tape collector (issue #56): IEX HIST T+1, one missing session per hour (UTC 04-13 at :07), own waitUntil.
-      if (env.IEX_HIST_COLLECTOR === 'true' && iexDue(minuteAt)) ctx.waitUntil(iexHistTick({ store: storeFor(env), nowIso: minuteAt })
+      // PBE Market Tape collector (issue #56, sql/017): IEX HIST T+1, one resumable step per minute overnight, own waitUntil.
+      if (env.IEX_HIST_COLLECTOR === 'true' && iexDue(minuteAt)) ctx.waitUntil(iexHistStep({ store: storeFor(env), nowIso: minuteAt })
         .then((r) => console.log(JSON.stringify({ iex_hist: r }))).catch((e) => console.error('iex hist failed', e.stack || e.message)));
       if (env.CRYPTO_SHADOW !== 'true') return;
       ctx.waitUntil(runBtcShadow({ store: storeFor(env), mkt: new MarketsService({ binding: env.MARKETS, token: env.MARKETS_READ_TOKEN }), settlements: env.CRYPTO_SETTLEMENTS === 'true' })

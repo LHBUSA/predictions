@@ -8,16 +8,19 @@
 // Idempotent: observation_key = iex:TOPS:<YYYYMMDD>:<SYMBOL> (insert ignores duplicates); a session with rows is never
 // re-processed. Time-gated (one start per hour), so runs never overlap. Fail loud: a stream/parse error writes nothing.
 // Not a price feed for trading: IEX venue only (not the consolidated tape), next-day.
-import { createTopsParser, topsEntry, IEX_HIST_INDEX, IEX_ATTRIBUTION, IEX_TERMS_URL } from '../../../src/market-tape/iex-hist.js';
+import { createTopsParser, topsEntry, IEX_HIST_INDEX, IEX_ATTRIBUTION, IEX_TERMS_URL, b64e, b64d } from '../../../src/market-tape/iex-hist.js';
+import { createInflater, parseGzipHeader } from '../../../src/market-tape/inflate.js';
 import { FEATURED, nyParts, nyInstant, isTradingDay, closeMinutes, covered, prevTradingDay } from '../../../src/market-tape/core.js';
 import { restoreState, ACCOUNT } from '../../../src/signal10/forward.js';
 
 export const IEX_PARSER = 'iex-hist-tops/1';
 const OPEN_MIN = 9 * 60 + 30;
 
+// Resumable lane (sql/017): every minute in the overnight window UTC 03:30-13:29 (IEX publishes ~03:30 UTC; done before the open).
 export function iexDue(minuteIso) {
   const d = new Date(minuteIso);
-  return d.getUTCMinutes() === 7 && d.getUTCHours() >= 4 && d.getUTCHours() <= 13;
+  const m = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return m >= 3 * 60 + 30 && m < 13 * 60 + 30;
 }
 // latest `n` completed trading sessions strictly before today's New York date, newest first
 export function recentSessions(nowIso, n = 3) {
@@ -28,6 +31,17 @@ export function recentSessions(nowIso, n = 3) {
   return out;
 }
 const ymd = (d) => d.replaceAll('-', '');
+export function observationRow(session, a, captured, file) {
+  const { recent, ...agg } = a; // the break ring is parser state, not part of the observation
+  return {
+    observation_key: `iex:TOPS:${ymd(session)}:${a.symbol}`,
+    provider: 'iex', source_id: `iex:TOPS:${a.symbol}`, source_class: 'official',
+    observed_at: a.last_regular_at, available_at: captured, captured_at: captured,
+    value: a.last_regular_price, units: 'USD',
+    data: { ...agg, session_date: session, basis: 'IEX_LAST_SALE_REGULAR_SESSION', scope: 'IEX venue only; next-day (T+1)', attribution: IEX_ATTRIBUTION },
+    provenance: { index: `${IEX_HIST_INDEX}?date=${ymd(session)}`, file: file.link, file_size: file.size, feed: 'TOPS', version: file.version, protocol: 'IEXTP1', parser: IEX_PARSER, terms: IEX_TERMS_URL },
+  };
+}
 
 export async function tapeUniverse(store) {
   const syms = new Set(FEATURED.map((f) => f.symbol));
@@ -56,14 +70,7 @@ export async function collectSession({ store, session, symbols, fetchImpl = fetc
   for (;;) { const { done, value } = await reader.read(); if (done) break; parser.feed(value); }
   const aggs = parser.finish();
   const captured = now();
-  const rows = aggs.filter((a) => a.last_regular_price != null && a.last_regular_at).map((a) => ({
-    observation_key: `iex:TOPS:${ymd(session)}:${a.symbol}`,
-    provider: 'iex', source_id: `iex:TOPS:${a.symbol}`, source_class: 'official',
-    observed_at: a.last_regular_at, available_at: captured, captured_at: captured,
-    value: a.last_regular_price, units: 'USD',
-    data: { ...a, session_date: session, basis: 'IEX_LAST_SALE_REGULAR_SESSION', scope: 'IEX venue only; next-day (T+1)', attribution: IEX_ATTRIBUTION },
-    provenance: { index: `${IEX_HIST_INDEX}?date=${ymd(session)}`, file: entry.link, file_size: entry.size, feed: 'TOPS', version: entry.version, protocol: entry.protocol, parser: IEX_PARSER, terms: IEX_TERMS_URL },
-  }));
+  const rows = aggs.filter((a) => a.last_regular_price != null && a.last_regular_at).map((a) => observationRow(session, a, captured, { link: entry.link, size: entry.size, version: entry.version }));
   if (rows.length) await store.write('pred_source_observations', rows, { conflictColumn: 'observation_key' });
   return { session, status: 'WRITTEN', rows: rows.length, symbols: symbols.length, matched_trades: parser.stats.matched, decompressed_mb: Math.round(parser.stats.bytes / 1048576), seconds: Math.round((Date.now() - started) / 1000) };
 }
@@ -81,4 +88,87 @@ export async function iexHistTick({ store, nowIso, fetchImpl = fetch }) {
     if (s === sessions.at(-1)) return r;
   }
   return { status: 'UP_TO_DATE', sessions };
+}
+
+// ---------------- resumable steps (sql/017 pred_market_tape_jobs) ----------------
+// One step per FAST-cron minute: claim the session's job (atomic lease), range-read the gzip from the checkpoint byte,
+// decode ~STEP_OUT bytes with the resumable inflater (pause at a DEFLATE block boundary), feed the TOPS parser, and save
+// the exact resume point. The final block writes the immutable observations (same rows as collectSession) and marks DONE.
+export const STEP_OUT = 1536 * 1048576; // ~1.5 GiB of decompressed pcapng per step (~10-15 s CPU)
+const LEASE_S = 240;
+const MAX_ATTEMPTS = 6;
+
+async function rest(store, path, init = {}) {
+  const r = await store.fetchImpl(`${store.url}/rest/v1/${path}`, { ...init, headers: { apikey: store.serviceKey, authorization: `Bearer ${store.serviceKey}`, 'content-type': 'application/json', accept: 'application/json', ...(init.headers || {}) } });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`iex-hist store ${r.status}: ${text.slice(0, 200)}`);
+  return text ? JSON.parse(text) : null;
+}
+const patchJob = (store, session, fields) => rest(store, `pred_market_tape_jobs?session_date=eq.${session}`, { method: 'PATCH', headers: { prefer: 'return=minimal' }, body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }) });
+
+// newest recent session without observations; creates its job row when the file is published
+async function targetJob(store, nowIso, fetchImpl) {
+  for (const s of recentSessions(nowIso, 3)) {
+    const have = await store.select('pred_source_observations', { select: 'observation_key', observation_key: `like.iex:TOPS:${ymd(s)}:*` }, { limit: 1 });
+    if (have.length) continue;
+    const [job] = await store.select('pred_market_tape_jobs', { select: 'session_date,status', session_date: `eq.${s}` }, { limit: 1 });
+    if (job?.status === 'FAILED') continue;
+    if (job) return s;
+    const idx = await fetchImpl(`${IEX_HIST_INDEX}?date=${ymd(s)}`, { headers: { accept: 'application/json' } });
+    if (!idx.ok) continue;
+    const e = topsEntry(await idx.json());
+    if (!e) continue; // not published yet
+    const symbols = await tapeUniverse(store);
+    await store.write('pred_market_tape_jobs', [{ session_date: s, file_link: e.link, file_size: Number(e.size) || 1, file_version: String(e.version || ''), symbols, status: 'RUNNING' }], { conflictColumn: 'session_date' });
+    return s;
+  }
+  return null;
+}
+
+export async function iexHistStep({ store, nowIso, fetchImpl = fetch, stepOut = STEP_OUT, holder = `step:${nowIso}:${Math.random().toString(36).slice(2, 8)}`, now = () => new Date().toISOString() }) {
+  const session = await targetJob(store, nowIso, fetchImpl);
+  if (!session) return { status: 'UP_TO_DATE' };
+  const claimed = await rest(store, 'rpc/pred_market_tape_claim', { method: 'POST', body: JSON.stringify({ p_session: session, p_holder: holder, p_ttl_seconds: LEASE_S }) });
+  const job = Array.isArray(claimed) ? claimed[0] : null;
+  if (!job) return { status: 'LEASE_HELD', session };
+  try {
+    const closeNs = nyInstant(session, closeMinutes(session)) * 1e6, openNs = nyInstant(session, OPEN_MIN) * 1e6;
+    const parser = createTopsParser(job.symbols, { sessionCloseNs: closeNs, sessionOpenNs: openNs, state: job.parser_state || null });
+    const link = job.file_link.includes('alt=media') ? job.file_link : `${job.file_link}${job.file_link.includes('?') ? '&' : '?'}alt=media`;
+    let byte = Number(job.byte_offset), bit = job.bit_offset;
+    let out = 0;
+    const inf = createInflater({ window: job.window_b64 ? b64d(job.window_b64) : null, bitOffset: bit, onOutput: (c) => { parser.feed(c); out += c.length; if (out >= stepOut) inf.requestStop(); } });
+    let firstChunk = byte === 0;
+    const res = await fetchImpl(link, { headers: { range: `bytes=${byte}-` } });
+    if (!(res.status === 206 || (res.status === 200 && byte === 0)) || !res.body) throw new Error(`iex-hist: range HTTP ${res.status}`);
+    const reader = res.body.getReader();
+    let paused = false;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      let chunk = value;
+      if (firstChunk) { const h = parseGzipHeader(chunk); chunk = chunk.subarray(h); byte += h; firstChunk = false; }
+      inf.push(chunk);
+      if (inf.done) break;
+      if (out >= stepOut && inf.atBoundary) { paused = true; break; }
+    }
+    await reader.cancel().catch(() => {});
+    const decompressed = Number(job.decompressed_bytes) + out;
+    if (inf.done) {
+      const aggs = parser.finish();
+      const captured = now();
+      const rows = aggs.filter((a) => a.last_regular_price != null && a.last_regular_at).map((a) => observationRow(session, a, captured, { link: job.file_link, size: job.file_size, version: job.file_version }));
+      if (rows.length) await store.write('pred_source_observations', rows, { conflictColumn: 'observation_key' });
+      await patchJob(store, session, { status: 'DONE', finished_at: captured, rows_written: rows.length, steps: job.steps + 1, decompressed_bytes: decompressed, window_b64: null, parser_state: null, lease_holder: null, lease_until: null, last_error: null });
+      return { status: 'DONE', session, rows: rows.length, steps: job.steps + 1, decompressed_mb: Math.round(decompressed / 1048576) };
+    }
+    if (!paused) throw new Error('iex-hist: stream ended before the final block');
+    const abs = byte * 8 + inf.consumedBits(); // consumedBits counts from `byte` (including the initial skipped bits)
+    await patchJob(store, session, { byte_offset: Math.floor(abs / 8), bit_offset: abs % 8, window_b64: b64e(inf.window()), parser_state: parser.exportState(), steps: job.steps + 1, attempts: 0, decompressed_bytes: decompressed, lease_holder: null, lease_until: null, last_error: null });
+    return { status: 'STEP', session, steps: job.steps + 1, decompressed_mb: Math.round(decompressed / 1048576), byte_offset: Math.floor(abs / 8) };
+  } catch (e) {
+    const attempts = (job.attempts || 0) + 1;
+    await patchJob(store, session, { attempts, last_error: String(e.message || e).slice(0, 500), lease_holder: null, lease_until: null, ...(attempts >= MAX_ATTEMPTS ? { status: 'FAILED' } : {}) }).catch(() => {});
+    throw e;
+  }
 }
