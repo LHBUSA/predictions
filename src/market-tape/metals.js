@@ -22,6 +22,9 @@ export const SPOT = Object.freeze([
 
 // Identity verified 2026-10-10 against SEC EDGAR company_tickers_exchange.json (ticker -> registrant CIK -> exchange),
 // the trusts' FY2025 10-K filings, and the issuer pages for CUSIPs (PPLT CUSIP: secondary source only, so null).
+// PPLT 10-for-1 forward split effective before the open 2026-05-18: SEC 8-K 0001999371-26-011013 (and the 2026-04-22
+// announcement 8-K 0001999371-26-008747); ticker and CUSIP unchanged. Caught by the registry gate in the 2026-10-10
+// real-data pre-flight (Yahoo split event 2026-05-18 x10), verified against EDGAR before registering.
 export const METAL_ETFS = Object.freeze([
   Object.freeze({ id: 'GLD:ARCX', symbol: 'GLD', metal: 'GOLD', label: 'SPDR Gold Shares', legal_name: 'SPDR Gold Trust', sponsor: 'World Gold Trust Services, LLC',
     sec_cik: '0001222333', exchange: 'NYSE ARCA', mic: 'ARCX', cusip: '78463V107', listed_on: '2004-11-18', structure: 'Grantor trust holding allocated physical gold (not a 1940 Act fund)',
@@ -31,7 +34,7 @@ export const METAL_ETFS = Object.freeze([
     expense_ratio: 0.0050, nav_basis: 'LBMA Silver Price', splits: [{ d: '2008-07-24', ratio: 10 }], kind: 'ETF' }),
   Object.freeze({ id: 'PPLT:ARCX', symbol: 'PPLT', metal: 'PLATINUM', label: 'abrdn Physical Platinum Shares ETF', legal_name: 'abrdn Platinum ETF Trust', sponsor: 'abrdn ETFs Sponsor LLC',
     sec_cik: '0001460235', exchange: 'NYSE ARCA', mic: 'ARCX', cusip: null, listed_on: '2010-01-08', structure: 'Grantor trust holding physical platinum (not a 1940 Act fund)',
-    expense_ratio: 0.0060, nav_basis: 'LBMA Platinum Price PM', splits: [], kind: 'ETF' }),
+    expense_ratio: 0.0060, nav_basis: 'LBMA Platinum Price PM', splits: [{ d: '2026-05-18', ratio: 10 }], kind: 'ETF' }),
 ]);
 export const METAL_ETF_SYMBOLS = Object.freeze(METAL_ETFS.map((x) => x.symbol));
 

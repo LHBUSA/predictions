@@ -467,3 +467,34 @@ test('re-review N4: admin rerun needs an integer >= 2 and a dead original run', 
   assert.ok(store.rows(T.runs).some((x) => x.run_key === `${TECH.account}:EOD:${D1}#2`));
   assert.equal((await verifyChain(await events(store, TECH.account))).ok, true);
 });
+
+test('metal ETF registry: PPLT 10-for-1 split of 2026-05-18 (SEC 8-K) is registered, so a real series carrying it verifies', () => {
+  const pplt = METAL_ETFS.find((e) => e.symbol === 'PPLT');
+  assert.deepEqual(pplt.splits, [{ d: '2026-05-18', ratio: 10 }]);
+  const { prepared } = market(['PPLT'], D0);
+  const s = { ...prepared.get('PPLT'), splits: [{ d: CAL[CAL.indexOf(D0) - 60], ratio: 10 }] };
+  assert.match(etfEligibility(pplt, s, D0).hold, /unregistered_corporate_action/, 'an unknown split still holds');
+});
+
+test('activation review: a failure while computing ANY account on the funding day writes nothing for anyone', async () => {
+  const store = new FakeStore();
+  // fault injection: the classification hash is read while building each account's FUNDING + snapshot (phase 1);
+  // throw on the 5th read = while computing DIVERSIFIED, after ORIGINAL and TECH were fully computed
+  let reads = 0;
+  const faulty = new Proxy(FIX_CLS, { get(t, k) { if (k === 'content_sha256' && ++reads === 5) throw new Error('injected compute fault'); return t[k]; } });
+  await assert.rejects(runArenaEod({ store, now: eodAt(D0), fetchImpl: src(D0), t0: D0, classification: faulty }), /injected compute fault/);
+  assert.equal(store.writes.length, 0, 'no claim, no event, no snapshot, no mark for any account');
+  const r = await runEod(store, D0);
+  assert.ok(CHALLENGERS.every((S) => r[S.strategy]?.funded), 'the next run funds all three together');
+  const inceptions = new Set(); for (const S of CHALLENGERS) inceptions.add((await events(store, S.account))[0].d);
+  assert.deepEqual([...inceptions], [D0]);
+});
+
+test('metal ETF registry: a real-shaped PPLT series carrying the registered 2026-05-18 split verifies', () => {
+  const pplt = METAL_ETFS.find((e) => e.symbol === 'PPLT');
+  const cal = []; let t = Date.parse('2025-06-02T00:00:00Z'); while (cal.length < 300) { const d = new Date(t); if (d.getUTCDay() % 6) cal.push(d.toISOString().slice(0, 10)); t += 864e5; }
+  const D = cal.at(-1); assert.ok(cal.includes('2026-05-18'));
+  const calIndex = new Map(cal.map((d, i) => [d, i]));
+  const s = prepareSeries({ symbol: 'PPLT', name: 'PPLT', bars: cal.map((d) => ({ d, o: 20, h: 20, l: 20, c: 20, adj: 20, v: 1e6 })), splits: [{ d: '2026-05-18', ratio: 10 }], dividends: [] }, calIndex);
+  assert.deepEqual(etfEligibility(pplt, s, D), { symbol: 'PPLT', verified: true, hold: null });
+});
