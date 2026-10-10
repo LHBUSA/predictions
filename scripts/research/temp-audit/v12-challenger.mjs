@@ -124,6 +124,9 @@ if (selected) {
   const halves = [['2025H2', (r) => r.d < TEST_SPLIT], ['2026', (r) => r.d >= TEST_SPLIT]].map(([k, f]) => { const ia = tA.filter((x) => f(x.r)); const ib = e.filter((x) => f(x.r)); return [k, { A: agg(ia), cand: agg(ib) }]; });
   const slice = (key) => { const m = new Map(); tA.forEach((x, i) => { const k = x.r[key]; if (!m.has(k)) m.set(k, { a: [], b: [] }); m.get(k).a.push(x); m.get(k).b.push(e[i]); }); return Object.fromEntries([...m].sort().map(([k, v]) => [k, { n: v.a.length, A: +mean(v.a.map((x) => x.ll)).toFixed(4), cand: +mean(v.b.map((x) => x.ll)).toFixed(4), worse_by: +(mean(v.b.map((x) => x.ll)) - mean(v.a.map((x) => x.ll))).toFixed(4) }])); };
   const st = slice('s'); const mo = slice('month');
+  // PIT deciles (pre-registered secondary metric): mid-bucket PIT on the 7-bucket ladder (coarse); calibrated ~0.10 per decile.
+  const pit = (rows) => { const h = Array(10).fill(0); for (const x of rows) h[Math.min(9, Math.floor(x.pit * 10))] += 1; return h.map((v) => +(v / rows.length).toFixed(4)); };
+  report.pit_deciles_test = { A: pit(tA), candidate: pit(e) };
   const ll = paired(tA, e, (x) => x.ll); const br = paired(tA, e, (x) => x.br); const ca = agg(e);
   const checks = {
     ci_log_loss_above_0: ll.ci[0] > 0, ci_brier_above_0: br.ci[0] > 0,

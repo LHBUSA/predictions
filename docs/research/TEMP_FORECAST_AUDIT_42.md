@@ -46,7 +46,8 @@
 
 **Conclusion:** the denominator is correct. `results-board.js` does count only complete events. In the current data
 every settled event is complete, so its `rows >= 2 && one winner` rule did not hide any partial event. It is still
-weaker than an exhaustiveness check, and the new skill panel uses `orderBuckets` (full partition) instead.
+weaker than an exhaustiveness check. Any future event-level panel should use `orderBuckets` (full partition) from
+`src/weather/temp-skill.js` instead.
 
 ## Top bucket: observed vs expected
 
@@ -55,10 +56,13 @@ weaker than an exhaustiveness check, and the new skill panel uses `orderBuckets`
 | All | 42 | 14 | 16.0 |
 | Modal p 0.30–0.35 | 20 | 5 | 6.5 |
 | Modal p ≥ 0.45 | 9 | 6 | 5.1 |
-| HIGH confidence | 32 | 14 | 12.4 |
-| MEDIUM confidence | 10 | **0** | 3.7 |
 
 - **Mean modal probability:** 0.38.
+- **Confidence tiers:**
+  - HIGH (32 events) met its expectation.
+  - MEDIUM (10 events) fell far short of its expected 3.7 hits: exact one-sided P ≈ 0.01 if calibrated. This is the
+    one group-level calibration warning in the cohort.
+  - Counts at this level are aggregated on purpose: the repo is public and event results are member-only.
 - **How far each miss landed** (buckets from the modal one): 14 hits, 13 off by one, 12 off by two, 3 off by three or
   more.
 
@@ -82,7 +86,8 @@ weaker than an exhaustiveness check, and the new skill panel uses `orderBuckets`
 | Ranked probability score | 0.152 | 0.068 | +0.084 [0.070, 0.104] |
 | Stored-mid-only subset (10 events) | 4 hits | 7 hits | log loss +0.41 [0.01, 0.84] |
 
-With 6 dates the CIs are rough, but the sign holds on every resample.
+With 6 dates these are percentile-bootstrap ranges, not formal 95% intervals (only 462 distinct resamples exist).
+The sign does hold on every date: the per-date log-loss gap ranges from +0.61 to +0.88.
 
 Contract-level FINAL scores from `pred_scores`, paired on contracts with a market mid:
 
@@ -121,31 +126,32 @@ Point-guidance hits (the bucket containing the rounded value):
 
 ## Errors (official CLI − guidance, °F)
 
-| Station | NBM mean | NBM MAE | GFS MAE | NWS MAE | v1.1 table mean / sd | z-RMS | Hits / exp. |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Austin | +1.5 | 3.2 | 1.3 | 2.7 | +0.05 / 2.95 | 1.21 | 1 / 2.2 |
-| Chicago Midway | **+2.8** | 2.8 | 1.3 | 2.3 | +0.60 / 3.04 | 0.79 | 0 / 2.1 |
-| Denver | −0.3 | 0.7 | 1.0 | 0.7 | +0.09 / 3.47 | 0.30 | 3 / 1.9 |
-| Los Angeles | +0.3 | **5.3** | 4.0 | 4.2 | −0.01 / 2.78 | **2.12** | 0 / 2.9 |
-| Miami | +0.2 | 0.2 | 0.3 | 0.2 | +0.03 / 1.61 | 0.25 | 6 / 3.1 |
-| New York | **−1.8** | 1.8 | 2.3 | 2.0 | +0.38 / 2.84 | 0.84 | 2 / 1.9 |
-| Philadelphia | +0.3 | 2.3 | 1.8 | 2.2 | +0.19 / 2.70 | 1.04 | 2 / 2.0 |
-| **All** | +0.4 | 2.3 | 1.7 | 2.0 | | 1.10 | 14 / 16.0 |
+| Station | NBM mean | NBM MAE | GFS MAE | NWS MAE | v1.1 table mean / sd | z-RMS |
+|---|---:|---:|---:|---:|---:|---:|
+| Austin | +1.5 | 3.2 | 1.3 | 2.7 | +0.05 / 2.95 | 1.21 |
+| Chicago Midway | **+2.8** | 2.8 | 1.3 | 2.3 | +0.60 / 3.04 | 0.79 |
+| Denver | −0.3 | 0.7 | 1.0 | 0.7 | +0.09 / 3.47 | 0.30 |
+| Los Angeles | +0.3 | **5.3** | 4.0 | 4.2 | −0.01 / 2.78 | **2.12** |
+| Miami | +0.2 | 0.2 | 0.3 | 0.2 | +0.03 / 1.61 | 0.25 |
+| New York | **−1.8** | 1.8 | 2.3 | 2.0 | +0.38 / 2.84 | 0.84 |
+| Philadelphia | +0.3 | 2.3 | 1.8 | 2.2 | +0.19 / 2.70 | 1.04 |
+| **All** | +0.4 | 2.3 | 1.7 | 2.0 | | 1.10 |
 
 **The owner-visible hypotheses, tested:**
 
-- **Los Angeles "too warm Oct 7–9":** true. NBM errors were −5, −6, −4 on those days. But Oct 4–5 were +7 and +9 (the
-  heat event).
+- **Los Angeles "too warm Oct 7–9":** true for those days. But the heat event earlier in the period was a large
+  too-cool bust in the other direction.
   - LA's problem is size, not sign: MAE 5.3 °F against a table sd of 2.8, so z-RMS is 2.1. That is two regime busts
     (heat, then marine layer), not a fixed bias.
-  - A city offset would have made Oct 4–5 worse.
-- **Chicago "too cool":** true on all 6 days, by +2 to +4 °F, on every NBM run including 12Z, 18Z and 00Z.
+  - A city offset would have made the heat-event days worse.
+- **Chicago "too cool":** true on every day and every NBM run (12Z, 18Z, 00Z); mean +2.8 °F.
   - That is 1.8 standard errors from the table mean: suggestive, not significant on 6 days.
   - GFS had no such bias (MAE 1.3).
-- **Philadelphia "too cool":** not supported. Mean +0.3: Oct 8–9 were too cool (+4, +2), and Oct 4 was too warm (−5).
-- **Miami matched Oct 7–9:** true, and on all 6 days. NBM error was 0 on five days and +1 on one. Miami also has the
-  narrowest table (sd 1.6), so its modal probabilities are the highest (≈0.5).
-- **New York:** too warm by 1 to 3 °F on all 6 days.
+- **Philadelphia "too cool":** not supported. Mean +0.3: the late days were too cool, and one early day was too warm
+  by a similar margin.
+- **Miami matched Oct 7–9:** true across the period: NBM MAE 0.2 °F. Miami also has the narrowest table (sd 1.6), so
+  its modal probabilities are the highest (≈0.5).
+- **New York:** too warm on every day; mean −1.8 °F.
 
 **Dispersion:** pooled z-RMS is 1.10. 27/42 events fall within 1 sd and 3/42 beyond 2 sd. The v1.1 spread is about
 right on average. The misses come from where the distribution is centred, plus LA's outsized busts.
@@ -216,7 +222,8 @@ The settlement source (TWC = NWS CLI) agreed on 252/252.
 
 1. **Not a measurement, settlement or completeness problem.** All 42 events are valid and correctly scored.
 2. **The 14/42 shortfall against expectation (−2.0) is within normal uncertainty** for exact 2 °F outcomes.
-3. **v1.1 is calibrated but uninformative relative to the market at local midnight.**
+3. **No evidence of overall miscalibration (6 dates), except the MEDIUM tier; v1.1 is uninformative relative to the
+   market at local midnight.**
    - Its favourite bucket carries 38% on average; the market's carries 51%, and the market's favourite hit 64% of the
      time.
    - The market prices newer and higher-resolution guidance, plus current conditions.

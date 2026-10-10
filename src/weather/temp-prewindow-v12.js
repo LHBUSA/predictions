@@ -22,10 +22,15 @@ export function v12Center(artifact, stationCli, nbmF, gfsF) {
   return nbmF + v12Beta(artifact, stationCli) * (gfsF - nbmF);
 }
 
-// Bucket probabilities for one exhaustive ladder (contracts: { comparator, threshold_low, threshold_high }).
+// Bucket probabilities for one exhaustive ladder. contracts: { comparator, low, high } (temp-model.js integerRange
+// field names; map pred_contracts threshold_low/threshold_high to low/high). A missing bound throws (never a silent range).
 export function v12Probabilities(artifact, { stationCli, runLeadH, nbmF, gfsF, contracts }) {
   const center = v12Center(artifact, stationCli, nbmF, gfsF);
   if (center === null) return { state: 'NO_GFS', center: null, probabilities: null };
+  for (const c of contracts) {
+    const need = c.comparator === 'less' ? ['high'] : c.comparator === 'greater' ? ['low'] : c.comparator === 'between' ? ['low', 'high'] : null;
+    if (!need || need.some((k) => !Number.isFinite(c[k]))) throw new RangeError(`contract needs ${need ? need.join('+') : 'a known comparator'} (got ${JSON.stringify(c)})`);
+  }
   const table = residualTable(artifact, stationCli, runLeadH);
   return { state: 'OK', center, table: { bucket: table.bucket, source: table.source, n: table.n, mean: table.mean, sd: table.sd },
     probabilities: contracts.map((c) => bucketProbability(artifact, table, center, c)) };

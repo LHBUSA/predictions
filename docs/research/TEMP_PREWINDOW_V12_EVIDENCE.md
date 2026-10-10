@@ -57,6 +57,27 @@ All pre-registered screen checks passed:
 
 Also reported, though not selected: B (recent bias) improved log loss by 0.007 [0.004, 0.010]. C was worse by 0.11.
 
+**PIT deciles** (pre-registered secondary metric):
+
+- **Basis:** mid-bucket PIT on the 7-bucket ladder, test period. It is coarse, because probability mass lumps at
+  bucket midpoints.
+- **v1.1:** 0.10 / 0.13 / 0.00 / 0.29 / 0.02 / 0.00 / 0.21 / 0.09 / 0.09 / 0.08.
+- **D:** 0.09 / 0.10 / 0.07 / 0.18 / 0.09 / 0.08 / 0.14 / 0.10 / 0.08 / 0.08. This is closer to uniform. Both are
+  reported in `pit_deciles_test` of the screen output.
+
+**Process notes (independent review):**
+
+- **Code freeze.** The scoring code (`v12-challenger.mjs`, `cases.mjs`) was first committed with the freeze, after
+  the pre-registration commit.
+  - Timeline: pre-registration pushed 19:11Z; one screen run at 19:15Z; freeze at 19:23Z.
+  - A later re-run is byte-identical. It added only the PIT report.
+  - The repo cannot prove the code was not edited between 19:11Z and 19:23Z. The timestamps are the evidence.
+- **Erratum, candidate B wording.** The pre-registration writes "NBM − λ·b". The code implements NBM + λ·mean(CLI −
+  NBM). These are the same rule if b = NBM − CLI.
+- **gt54h tables.** The pooled table for leads over 54 h has n = 7 in both artifacts. Pre-window FINAL forecasts never
+  use it, but probabilities in that bucket are degenerate.
+- **GFS run age.** Unlike NBM, there is no age cap on the GFS run. This is the v1.1 case rule, kept unchanged.
+
 ### Frozen v1.2
 
 **What changed from v1.1:**
@@ -83,9 +104,11 @@ before the pre-registration.
 | | v1.1 (published) | v1.2 (frozen) | v1.1 − v1.2, 6-date CI |
 |---|---:|---:|---|
 | Top-bucket hits | 14 (exp. 16.0) | 17 (exp. 16.0) | |
-| Multiclass log loss | 1.672 | 1.540 | +0.13 [0.03, 0.24] |
+| Multiclass log loss | 1.672 | 1.540 | +0.13 [0.03, 0.24]* |
 | Multiclass Brier | 0.789 | 0.752 | +0.036 [0.000, 0.077] |
 | RPS | 0.152 | 0.131 | +0.021 [0.005, 0.040] |
+
+\* 6-cluster percentile ranges, not formal 95% intervals.
 
 **What did NOT improve:**
 
@@ -101,17 +124,24 @@ before the pre-registration.
   commit, and both artifacts are frozen.
 - **No production path:** the forward record is computed by point-in-time replay from public archives. There is
   nothing to deploy and no cron.
+- **One run reads the gate.** Pass both `--archive` and `--export` in a single run. With only one half, the scorer
+  reports `forward_gate: INCOMPLETE`, never a fail.
   - **All 31 stations:** refresh the archive into a new directory (`node scripts/research/wx-fetch.mjs <dir> GFS,NBS`;
     it keeps existing files, so use a fresh directory) and run
     `node scripts/research/temp-audit/v12-forward.mjs --archive <dir> --after 2026-10-10`.
   - **Kalshi-7 ladders:** take a fresh `export.ps1` and run
     `node scripts/research/temp-audit/v12-forward.mjs --export <dir> --after 2026-10-10`. v1.2 is applied to v1.1's own
     stored FINAL inputs, so the comparison is exact.
+  - **Gate read:** `node scripts/research/temp-audit/v12-forward.mjs --archive <dir> --export <dir> --after 2026-10-10`.
 - **Gate:**
   - needs ≥ 30 resolved dates and ≥ 25 stations;
   - the date-clustered 95% CI of (v1.1 − v1.2) must be > 0 for exact-degree log loss and for 2 °F Brier;
   - on the Kalshi-7 ladders, v1.2 must be no worse by point estimate;
   - market scores are reported but never gate.
+- **Control (reported, never a gate).** The forward v1.1 artifact was trained on data to 2025-06; v1.2 on data to
+  2026-09. To separate the two effects, `--archive` also scores **the v1.1 recipe refit on v1.2's window**
+  (`control_v11_recipe_refit_to_2026_09`). A v1.2 gain that the control also shows is "more data", not
+  "re-centring". The gate stays as pre-registered, because it compares the product actually published.
 - **Earliest gate read:** 2026-11-10, or later if archive days are missing. The first ready read is the decision of
   record.
 - **Promotion beyond SHADOW needs** a passed gate plus an owner decision. Even then v1.2 would replace v1.1 as the

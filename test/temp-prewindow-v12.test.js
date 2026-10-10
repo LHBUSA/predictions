@@ -55,3 +55,11 @@ test('v1.2 is research only: no Worker or engine path imports it, and temperatur
   assert.equal(DECISION_POLICY.families['pbe-weather-maxtemp'].validated, false);
   assert.equal(DECISION_POLICY.families['pbe-weather-precip'].validated, true); // rain policy untouched
 });
+
+test('v1.2 fails closed on contract fields that would silently mis-range a bucket', () => {
+  const run = (c) => v12Probabilities(v12, { stationCli: 'CLIMDW', runLeadH: 24, nbmF: 72, gfsF: 75, contracts: [c] });
+  assert.throws(() => run({ comparator: 'less', threshold_high: 70 }), /needs high/);
+  assert.throws(() => run({ comparator: 'between', low: 70 }), /needs low\+high/);
+  assert.throws(() => run({ comparator: 'above', low: 70 }), /known comparator/);
+  assert.equal(run({ comparator: 'greater', low: 77 }).state, 'OK');
+});

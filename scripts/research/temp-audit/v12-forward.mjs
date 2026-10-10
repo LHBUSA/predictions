@@ -60,7 +60,15 @@ if (arg('--archive')) {
     const lad = ladder(r.n); const win = lad.findIndex(([lo, hi]) => r.y >= lo && r.y <= hi); const ps = lad.map(([lo, hi]) => P(lo, hi));
     let br = 0; for (let i = 1; i < 6; i += 1) br += (ps[i] - (i === win ? 1 : 0)) ** 2; const s = ps.reduce((a, b) => a + b, 0); const k = modalIndex(ps);
     return { ll: -Math.log(P(r.y, r.y)), br: br / 5, hit: k === win ? 1 : 0, pm: ps[k] / s }; };
-  const pts = cases.map((r) => ({ r, a: score(v11, r.n, r), b: score(v12, v12Center(v12, r.s, r.n, r.g), r) }));
+  // Control (reported, never a gate): the v1.1 recipe (NBM-centred tables) refit on the SAME 2023-01..2026-09 window as
+  // v1.2, so a forward gain can be split into "more training data" vs "the GFS-NBM re-centring".
+  const train = await buildCases(arg('--archive'), { to: '2026-09-30' });
+  const hist = (v) => { const h = {}; for (const e of v) h[e] = (h[e] || 0) + 1; return { n: v.length, counts: h }; };
+  const tt = new Map(); const tp = new Map();
+  for (const r of train) { const e = r.y - r.n; const k = `${r.s}|${r.lb}`; if (!tt.has(k)) tt.set(k, []); tt.get(k).push(e); if (!tp.has(r.lb)) tp.set(r.lb, []); tp.get(r.lb).push(e); }
+  const ctrl = { probability_bounds: v11.probability_bounds, station_residuals: {}, pooled_residuals: Object.fromEntries([...tp].map(([k, v]) => [k, hist(v)])) };
+  for (const [k, v] of tt) { const [st, lb] = k.split('|'); (ctrl.station_residuals[st] ||= {})[lb] = v.length >= 60 ? hist(v) : null; }
+  const pts = cases.map((r) => ({ r, a: score(v11, r.n, r), b: score(v12, v12Center(v12, r.s, r.n, r.g), r), c: score(ctrl, r.n, r) }));
   const dates = new Set(pts.map((x) => x.r.d)); const stations = new Set(pts.map((x) => x.r.s));
   const ll = clusterBootstrap(pts.map((x) => ({ cluster: x.r.d, a: x.a.ll, b: x.b.ll })));
   const br = clusterBootstrap(pts.map((x) => ({ cluster: x.r.d, a: x.a.br, b: x.b.br })));
@@ -68,8 +76,17 @@ if (arg('--archive')) {
   out.replay = { cases: pts.length, resolved_dates: dates.size, stations: stations.size, ready,
     v11: { log_loss: ll.mean_a, brier_2f: br.mean_a, hits: pts.reduce((a, x) => a + x.a.hit, 0), expected: pts.reduce((a, x) => a + x.a.pm, 0) },
     v12: { log_loss: ll.mean_b, brier_2f: br.mean_b, hits: pts.reduce((a, x) => a + x.b.hit, 0), expected: pts.reduce((a, x) => a + x.b.pm, 0) },
-    v11_minus_v12: { log_loss: ll, brier_2f: br } };
-  out.forward_gate_passed = ready && ll.ci[0] > 0 && br.ci[0] > 0 && (out.kalshi ? out.kalshi.not_worse_point_estimate === true : false);
+    v11_minus_v12: { log_loss: ll, brier_2f: br },
+    control_v11_recipe_refit_to_2026_09: { training_cases: train.length,
+      control_minus_v12: { log_loss: clusterBootstrap(pts.map((x) => ({ cluster: x.r.d, a: x.c.ll, b: x.b.ll }))), brier_2f: clusterBootstrap(pts.map((x) => ({ cluster: x.r.d, a: x.c.br, b: x.b.br }))) },
+      note: 'v1.1 recipe on the v1.2 training window: the part of any v1.2 gain due to re-centring rather than 15 more months of tables. Reported, never a gate.' } };
   if (!ready) out.note = 'Descriptive only until the pre-registered sample is reached. Nobody may act on it.';
+}
+// The gate needs BOTH halves from ONE run (all-station replay AND the Kalshi-7 ladders); otherwise it is INCOMPLETE,
+// never a recorded fail.
+if (!out.replay || !out.kalshi) out.forward_gate = 'INCOMPLETE: run --archive and --export together';
+else {
+  const { ready, v11_minus_v12: d } = out.replay;
+  out.forward_gate = !ready ? 'NOT_READY' : d.log_loss.ci[0] > 0 && d.brier_2f.ci[0] > 0 && out.kalshi.not_worse_point_estimate === true ? 'PASSED' : 'FAILED';
 }
 console.log(JSON.stringify(out, null, 1));
