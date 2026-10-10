@@ -12,9 +12,9 @@ export const HOSTS = Object.freeze({
   'crypto.propbetedge.ai': { path: '/crypto/', active: true },
   // activated one by one, each after its canonical destination is live and verified (#66 phase 2;
   // gold/silver/platinum pages live via #75 52f84d7, verified 2026-10-10)
-  'gold.propbetedge.ai': { path: '/commodities/gold/', active: true, proving: true },
-  'silver.propbetedge.ai': { path: '/commodities/silver/', active: true, proving: true },
-  'platinum.propbetedge.ai': { path: '/commodities/platinum/', active: true, proving: true },
+  'gold.propbetedge.ai': { path: '/commodities/gold/', active: true },
+  'silver.propbetedge.ai': { path: '/commodities/silver/', active: true },
+  'platinum.propbetedge.ai': { path: '/commodities/platinum/', active: true },
   'futures.propbetedge.ai': { path: '/markets/futures/', active: false },
 });
 
