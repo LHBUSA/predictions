@@ -168,25 +168,7 @@
       metaEl.innerHTML = metaHTML(d, rows);
       metaEl.title = metaEl.textContent;
     }
-    const fine = root.querySelector('.s10-tape-fine');
-    // Brand + required credit on the always-visible fine-print line: "PBE Markets" is ours (collection, normalization,
-    // display); the IEX sentence is the verbatim credit IEX requires for displaying its Historical Data (never removed).
-    function setCredit(text) {
-      if (!fine) return;
-      let c = fine.querySelector('[data-tape-credit]');
-      if (!text) { c?.remove(); return; }
-      if (!c) {
-        c = document.createElement('span'); c.dataset.tapeCredit = '1';
-        const b = document.createElement('b'); b.className = 's10-tape-brand'; b.textContent = 'PBE Markets';
-        const a = document.createElement('a'); a.href = 'https://exchange.iex.io/products/market-data-connectivity/hist-terms/'; a.target = '_blank'; a.rel = 'noopener noreferrer';
-        c.append(b, document.createTextNode(' — prices collected by PropBetEdge from IEX Historical Data. '), a, document.createTextNode(' '));
-        fine.prepend(c);
-      }
-      const a = c.querySelector('a');
-      if (a.textContent !== text) a.textContent = text;
-    }
     function metaHTML(d, rows) {
-      if (!(d.quotes.shown && d.t1)) setCredit(null);
       const parts = [];
       if (!d.quotes.shown && d.quotes.withheld === 'SOURCE_RIGHTS_HOLD') parts.push('<span title="No licensed quote source yet: symbols, market hours and Robinhood links only">Prices: source rights hold</span>');
       if (!d.quotes.shown && d.quotes.withheld === 'MEMBERS_ONLY') parts.push('<span>Prices for <a href="https://propbetedge.ai/pro" data-pbe-placement="predictions_signal10_tape">All Access</a> members · <a href="#" data-pbe-signin>Sign in</a></span>');
@@ -197,8 +179,8 @@
         else parts.push('<span>IEX next-day prices pending</span>');
         if (d.session.state === 'OPEN' && d.session.closes_at) parts.push(`<span>Closes ${esc(etTime(d.session.closes_at))}</span>`);
         else if (d.session.next_open_at) parts.unshift(`<span>${esc(C.reopenText(d.session))}</span>`);
-        // the full credit line lives on the always-visible fine-print line (the meta line may be ellipsized)
-        setCredit(d.t1.attribution);
+        // compact source credit (IEX's required attribution text in the tooltip); no fine-print paragraph (owner)
+        parts.push(`<a href="https://exchange.iex.io/products/market-data-connectivity/hist-terms/" target="_blank" rel="noopener noreferrer" title="${esc(d.t1.attribution)}">Data: IEX</a>`);
       } else if (d.quotes.shown && span) {
         const same = etTime(span.min) === etTime(span.max);
         const when = d.session.state === 'OPEN' ? `Source trades ${same ? etTime(span.max) : `${etTime(span.min).replace(' ET', '')}–${etTime(span.max)}`}` : `Last close ${etShort(d.session.last_close_at)}`;
