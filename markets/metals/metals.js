@@ -14,6 +14,7 @@
   function spotCard(x, hold) {
     return `<article class="mt-card mt-${METAL[x.metal]}" aria-labelledby="mt-${x.code}-h">
 <header><span class="mt-orb" aria-hidden="true">${esc(x.code)}</span><div><h3 id="mt-${x.code}-h">${esc(x.label)}</h3><span class="mt-sym">${esc(x.code)}/USD · spot · ${esc(x.unit)}</span></div></header>
+<p class="mt-note"><a href="/commodities/${METAL[x.metal]}/">Explore ${esc(x.label)} research →</a></p>
 <p class="mt-hold" role="status"><b>${esc(x.quote.label || 'QUOTE UNAVAILABLE')}</b></p>
 <p class="mt-note">${esc(hold.note)}</p>
 <dl class="mt-kv"><dt>Last legitimate observation</dt><dd>none on file</dd><dt>Instrument id</dt><dd><code>${esc(x.id)}</code></dd></dl></article>`;
