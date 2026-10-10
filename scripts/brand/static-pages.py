@@ -26,7 +26,7 @@ def ld(title, desc, path):
 
 CRUMB = {'/about/': 'About', '/models/': 'Models', '/methodology/': 'Methodology', '/desk/': 'Intelligence Desk', '/track-record/': 'Track Record', '/calendar/': 'Calendar'}
 PAGE_KEY = {'/about/': 'about', '/models/': 'models', '/methodology/': 'methodology', '/desk/': 'desk', '/track-record/': 'record', '/calendar/': 'calendar'}
-ASSET_V = '20261010ts64'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
+ASSET_V = '20261011nav77'  # == workers/pbe-predictions/src/pages.js ASSET_V (test/home-truth.test.js)
 def scripts(name):
     return f'<script src="/core.js?v={ASSET_V}" defer></script><script src="/{name}.js?v={ASSET_V}" defer></script>'
 

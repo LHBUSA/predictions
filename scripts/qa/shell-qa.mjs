@@ -15,6 +15,8 @@ mkdirSync(OUT, { recursive: true });
 
 const PAGES = ['/', '/about/', '/desk/', '/methodology/', '/track-record/', '/markets/signal-10/', '/crypto/'];
 const WIDTHS = [2560, 1920, 1860, 1680, 1679, 1440, 1411, 1410, 1366, 1280, 1181, 1180, 1024, 768, 430, 390, 320];
+import NET from '../../brand/network.json' with { type: 'json' };
+const NAV_ICONS = NET.product.length + 1;
 const fails = [];
 const fail = (m) => { fails.push(m); console.log(`FAIL ${m}`); };
 
@@ -57,7 +59,7 @@ try {
         if (r.collideBrand > -4) fail(`${tag} nav collides with brand (${r.collideBrand}px)`);
         if (r.navWrap) fail(`${tag} a nav item wraps`);
         if (r.wrappedControls.length) fail(`${tag} header controls wrap: ${r.wrappedControls.join(', ')}`);
-        if (r.icons !== 8) fail(`${tag} expected 8 nav icons (7 products + Research), got ${r.icons}`);
+        if (r.icons !== NAV_ICONS) fail(`${tag} expected ${NAV_ICONS} nav icons (products + Research), got ${r.icons}`);
       } else if (!r.stripVisible) fail(`${tag} neither desktop nav nor mobile strip visible`);
       console.log(`${tag} overflow=${r.overflow} nav=${r.navVisible ? `desk gap=${-r.collide}` : 'strip'} h=${r.topbarH}`);
     }

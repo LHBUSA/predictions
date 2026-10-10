@@ -1236,3 +1236,10 @@ html[data-acct=unverified] [data-purchase-cta],html[data-acct=all_access] [data-
 /* the Crypto desk writes long feed states into its header chip: one line, ellipsis, full text in the title + the page status panel */
 #crypto-live{max-width:104px}#crypto-live>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 @media (min-width:1680px){#crypto-live{max-width:150px}}
+
+/* #77/#79 nav fit (2026-10-10): more primary destinations without dropping any. Compact labels and a dot-only live chip
+   below 1860px; full labels on wide screens. Measured by scripts/qa/shell-qa.mjs. */
+.nl-short{display:none}
+@media (max-width:1859px){.nav .nl-long{display:none}.nav .nl-short{display:inline}
+  .top-right .live-dot{padding:6px 8px}.top-right .live-dot #live-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
+.subnav .nl-short{display:none}.subnav .nl-long{display:inline}

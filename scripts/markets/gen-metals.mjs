@@ -7,7 +7,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { siteHeader, siteFooter } from '../../workers/pbe-predictions/src/network.js';
 
 const V = '20261010mt2';
-const SITE_V = '20261010nav1';
+const SITE_V = '20261011nav77';
 const S10_V = '20261010w2';
 const BASE = 'https://predictions.propbetedge.ai';
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -58,7 +58,7 @@ function page({ path, metal, title, desc, kicker, h1, dek, learnTitle, learn }) 
 </head>
 <body class="s10-page" data-page="metals"${metal ? ` data-metal="${metal}"` : ''}>
 <!-- network:header -->
-${siteHeader(metal ? null : 'metals', { live: false })}
+${siteHeader(metal ? 'metals/child' : 'metals', { live: false })}
 <!-- /network:header -->
 
 <main id="main">

@@ -27,12 +27,18 @@
     [
       "Intelligence Desk",
       "/desk/",
-      "desk"
+      "desk",
+      "Desk"
     ],
     [
       "Crypto",
       "/crypto/",
       "crypto"
+    ],
+    [
+      "Metals",
+      "/markets/metals/",
+      "metals"
     ],
     [
       "Markets AI",
@@ -47,7 +53,8 @@
     [
       "Track Record",
       "/track-record/",
-      "record"
+      "record",
+      "Record"
     ]
   ],
   "research": {
@@ -73,7 +80,7 @@
           [
             "Precious metals tracker",
             "/markets/metals/",
-            "metals",
+            null,
             "Gold, silver and platinum: spot rights and ETF proxies"
           ]
         ]
@@ -142,11 +149,6 @@
         "About",
         "/about/",
         "about"
-      ],
-      [
-        "Metals",
-        "/markets/metals/",
-        "metals"
       ],
       [
         "Calendar",
