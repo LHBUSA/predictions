@@ -5,8 +5,8 @@
 //   public visitors   FEATURED (editorial) securities: identity, session, Robinhood link. No research, no holdings.
 //   All Access        + PBE SIGNAL 10 RESEARCH overlay (frozen EOD ranks) + Top 10 (MODEL_RESEARCH) + paper holdings
 //                       (SIMULATED_PAPER). Research comes from the immutable snapshots/ledger; nothing here writes.
-//   prices            only via a provider whose RIGHTS record permits the audience (contract.quoteProvider). Today none
-//                       does, so every price field is null for everyone and no quote vendor is ever called.
+//   prices            only via a provider whose RIGHTS record permits the audience (contract.quoteProvider). Deployed:
+//                       iex-hist (IEX next-day last sales, public + paid, credit line), read from our own snapshot.
 import { buildTape, featuredList, researchIndex, rightsState, quoteProvider, PROVIDERS, LIST_KINDS, CONTRACT } from '../../../src/market-tape/contract.js';
 import { marketSession, quoteFromBars, quoteTtlSeconds } from '../../../src/market-tape/core.js';
 import { fetchChart, restoreState, ACCOUNT } from '../../../src/signal10/forward.js';
@@ -26,7 +26,7 @@ const ADAPTERS = {
 const MEMO = new Map();
 export const TAPE_BUDGET = { perMinute: 40 };
 const budget = { minute: 0, used: 0 };
-export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; }
+export function _tapeReset() { MEMO.clear(); budget.minute = 0; budget.used = 0; CLOSES.at = 0; CLOSES.rows = null; }
 function spend(nowMs) {
   const m = Math.floor(nowMs / 60000);
   if (m !== budget.minute) { budget.minute = m; budget.used = 0; }
@@ -46,6 +46,33 @@ async function quoteFor(provider, symbol, session, now, fetchImpl) {
   const rec = adapter ? await adapter(symbol, edgeFetch).catch(() => null) : null;
   MEMO.set(key, { rec, exp: nowMs + (rec ? ttl : 60) * 1000 });
   return rec ? { ...rec } : null;
+}
+// Next-day providers read our own canonical snapshot (written by the collector lane), never the vendor, per request.
+const CLOSES = { at: 0, rows: null }; // per-isolate cache of the snapshot rows (plain data only), 60 s
+async function sessionCloses(store, providerId, symbols, now) {
+  if (providerId !== 'iex-hist') return new Map();
+  const t = Date.parse(now);
+  if (!(CLOSES.rows && t - CLOSES.at < 60000 && t >= CLOSES.at)) {
+    const since0 = new Date(t - 12 * 86400000).toISOString();
+    CLOSES.rows = await store.select('pred_source_observations', { select: 'observation_key,source_id,observed_at,captured_at,value,data', provider: 'eq.iex', source_id: 'like.iex:TOPS:*', observed_at: `gte.${since0}` }, { order: 'observed_at.desc', limit: 2000 });
+    CLOSES.at = t;
+  }
+  return closesFrom(CLOSES.rows, symbols);
+}
+function closesFrom(rows, symbols) {
+  const by = new Map();
+  for (const r of rows) {
+    const sym = r.source_id.slice('iex:TOPS:'.length);
+    if (!symbols.includes(sym)) continue;
+    const list = by.get(sym) || []; list.push(r); by.set(sym, list);
+  }
+  const out = new Map();
+  for (const [sym, list] of by) {
+    const [cur, prev] = list.sort((a, b) => String(b.data?.session_date).localeCompare(String(a.data?.session_date)));
+    out.set(sym, { session_date: cur.data?.session_date, last_price: Number(cur.value), observed_at: cur.observed_at, retrieved_at: cur.captured_at,
+      previous_close: prev ? Number(prev.value) : null, previous_session_date: prev?.data?.session_date || null });
+  }
+  return out;
 }
 async function pooled(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
 
@@ -74,8 +101,10 @@ export async function marketTape({ env, store, member, now = new Date().toISOStr
       if (r.held.length) lists.push({ key: 'SIGNAL10_PAPER', kind: LIST_KINDS.SIMULATED_PAPER, label: 'Paper holdings · simulated', note: 'Positions in the SIMULATED $10,000 paper account. Not brokerage holdings.', items: r.held });
     } catch { /* research unavailable: the featured tape still renders, without research */ }
   }
-  const quotes = new Map();
-  if (provider) {
+  let quotes = new Map();
+  if (provider?.kind === 'SESSION_CLOSE_T1') {
+    try { quotes = await sessionCloses(store, provider.id, [...new Set(lists.flatMap((l) => l.items.map((i) => i.symbol)))], now); } catch { quotes = new Map(); }
+  } else if (provider) {
     const session = marketSession(now);
     const symbols = [...new Set(lists.flatMap((l) => l.items.map((i) => i.symbol)))];
     const got = await pooled(symbols, 6, (s) => quoteFor(provider, s, session, now, fetchImpl));

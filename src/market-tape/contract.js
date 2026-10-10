@@ -5,7 +5,8 @@
 // Never: price-derived values without rights (null for EVERY audience), our poll/cache time presented as an observation
 // time, a featured/editorial symbol presented as a model pick or a simulated holding, or a security joined to an unrelated
 // earlier use of the same ticker.
-import { FEATURED, robinhoodUrl, tapeRow, marketSession } from './core.js';
+import { FEATURED, robinhoodUrl, tapeRow, marketSession, prevTradingDay } from './core.js';
+import { IEX_ATTRIBUTION } from './iex-hist.js';
 
 export const CONTRACT = 'market-tape/1';
 
@@ -40,6 +41,14 @@ export const PROVIDERS = Object.freeze({
     id: 'yahoo-chart', name: 'Yahoo Finance chart endpoint', rights: Object.freeze({ public: false, paid: false }),
     rights_note: 'Yahoo Finance: no redistribution (help.yahoo.com SLN2310); non-commercial APIs may not be incorporated into paywalled products (legal.yahoo.com YDN guidelines).',
     attribution: null, quote_delay_known: false,
+  }),
+  // IEX Historical Data (TOPS, next-day): exchange-originated, free, display permitted to everyone with the credit line.
+  // "IEX does not require an IEX Data Subscriber Agreement from any Person who receives, uses, or distributes IEX
+  // Historical Data" (IEX Market Data Policies §15). Scope: IEX-venue trades only, published the next morning (T+1).
+  'iex-hist': Object.freeze({
+    id: 'iex-hist', name: 'IEX Historical Data (TOPS)', rights: Object.freeze({ public: true, paid: true }),
+    rights_note: 'IEX Market Data Policies §15: no Data Subscriber Agreement to receive, use or distribute IEX Historical Data; credit line required.',
+    attribution: IEX_ATTRIBUTION, quote_delay_known: true, kind: 'SESSION_CLOSE_T1', delay: 'T+1 (published the next morning)', venue_scope: 'IEX_ONLY', basis: 'IEX_LAST_SALE',
   }),
 });
 // The provider that may serve `audience` ('public' | 'paid') right now, or null. Quotes need BOTH the operator switch
@@ -102,14 +111,39 @@ export function securityRow(item, { session, now, quote = null, provider = null,
     market_session: session.state, session_open_at: session.opens_at, session_close_at: session.closes_at, next_open_at: session.next_open_at, last_close_at: session.last_close_at,
     source: null, observed_at: null, retrieved_at: null, quote_delay_known: false,
     state: 'SOURCE_RIGHTS_HOLD', last_price: null, previous_regular_close: null, change_abs: null, change_pct: null, attribution: null, rights_scope: 'NONE',
+    price_session_date: null, price_basis: null, venue_scope: null,
   };
   if (research) base.research = research;
   if (!provider) return base;
+  if (provider.kind === 'SESSION_CLOSE_T1') return { ...base, ...sessionCloseFields(quote, session, provider) };
   const r = tapeRow({ symbol: item.symbol, name: item.name }, quote, session, now);
   const priced = r.price != null;
   return { ...base, source: provider.id, attribution: provider.attribution, quote_delay_known: provider.quote_delay_known, rights_scope: provider.scope,
     state: STATE_OF[r.status] || 'SOURCE_UNAVAILABLE', observed_at: r.price_observed_at, retrieved_at: quote?.fetched_at || null,
     last_price: priced ? r.price : null, previous_regular_close: priced ? r.previous_close : null, change_abs: priced ? r.change_abs : null, change_pct: priced ? r.change_pct : null };
+}
+
+// ---------- next-day session-close providers (IEX HIST) ----------
+// quote: { session_date, last_price, observed_at, retrieved_at, previous_close, previous_session_date }. The price is the
+// last regular-session sale ON THAT VENUE for `session_date`, never presented as current:
+//   LAST_CLOSE     market closed and the price is from the latest completed session
+//   PRIOR_SESSION  the price is from the latest completed session (market open / pre-market), or one session older while
+//                  the newest day is not yet published
+//   STALE          anything older -> no price
+const round = (v, dp) => Math.round(v * 10 ** dp) / 10 ** dp;
+export function sessionCloseFields(q, session, provider) {
+  const out = { source: provider.id, attribution: provider.attribution, quote_delay_known: true, rights_scope: provider.scope, venue_scope: provider.venue_scope, price_basis: provider.basis,
+    state: 'SOURCE_UNAVAILABLE', observed_at: null, retrieved_at: null, last_price: null, previous_regular_close: null, change_abs: null, change_pct: null, price_session_date: null };
+  if (!q || !(q.last_price > 0) || !q.session_date || !session.last_session) return out;
+  const latest = session.last_session;
+  const closed = session.state !== 'OPEN' && session.state !== 'PRE_MARKET';
+  let state;
+  if (q.session_date === latest) state = closed ? 'LAST_CLOSE' : 'PRIOR_SESSION';
+  else if (q.session_date === prevTradingDay(latest)) state = 'PRIOR_SESSION';
+  else return { ...out, state: 'STALE', observed_at: q.observed_at || null, price_session_date: q.session_date };
+  const pc = q.previous_close > 0 && q.previous_session_date === prevTradingDay(q.session_date) ? q.previous_close : null;
+  return { ...out, state, observed_at: q.observed_at || null, retrieved_at: q.retrieved_at || null, last_price: q.last_price, price_session_date: q.session_date,
+    previous_regular_close: pc, change_abs: pc ? round(q.last_price - pc, 4) : null, change_pct: pc ? round((q.last_price - pc) / pc, 6) : null };
 }
 
 // ---------- the payload ----------
@@ -126,7 +160,8 @@ export function buildTape({ now, lists, audience, rights, provider = null, quote
     session: { state: session.state, label: session.label, date: session.date, early_close: session.early_close, session_open_at: session.opens_at, session_close_at: session.closes_at,
       next_open_at: session.next_open_at, last_session: session.last_session, last_close_at: session.last_close_at, calendar: 'NYSE published holidays + early closes 2026-2028, America/New_York' },
     rights,
-    diagnostics: { securities: all.length, priced: all.filter((s) => s.last_price != null).length, last_observed_at: observed.at(-1) || null, refresh_hint_seconds: session.state === 'OPEN' ? 90 : null },
+    diagnostics: { securities: all.length, priced: all.filter((s) => s.last_price != null).length, last_observed_at: observed.at(-1) || null, refresh_hint_seconds: session.state === 'OPEN' && provider?.kind !== 'SESSION_CLOSE_T1' ? 90 : null,
+      price_sessions: [...new Set(all.map((s) => s.price_session_date).filter(Boolean))].sort() },
     research_snapshot: research ? research.snapshot : null,
     lists: out,
   };

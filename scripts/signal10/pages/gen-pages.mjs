@@ -29,9 +29,9 @@ const TABS = [
 const escA = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const TAPE = `<section class="s10-tape" id="s10-tape" data-state="loading" aria-labelledby="s10-tape-h"><div class="wrap">
   <div class="s10-tape-head"><h2 id="s10-tape-h" class="s10-tape-h">U.S. Stocks</h2><span class="s10-tape-status" data-tape-status role="status" aria-live="polite">U.S. regular session</span><span class="s10-tape-meta" data-tape-meta></span></div>
-  <div class="s10-tape-track" data-tape-track role="list" tabindex="-1" aria-label="Featured U.S. stocks — each opens its Robinhood page in a new tab">
-    <span class="s10-tg" role="listitem">Featured</span>
-${FEATURED.map((f) => `    <a class="s10-tq${f.pinned ? ' pin' : ''}" role="listitem" data-sym="${f.symbol}" href="${robinhoodUrl(f.symbol)}" target="_blank" rel="noopener noreferrer external" title="${escA(`${f.symbol} · ${f.name}. Opens Robinhood’s ${f.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`)}"><span class="s10-tq-top"><b class="s10-tq-sym">${f.symbol}</b><span class="s10-tq-ch num flat"></span></span><span class="s10-tq-bot"><span class="s10-tq-px num">${escA(f.name)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span><span class="sr-only"> ${escA(f.name)}. View ${f.symbol} on Robinhood (opens in a new tab)</span></a>`).join(String.fromCharCode(10))}
+  <div class="s10-tape-track" data-tape-track role="group" aria-label="Featured U.S. stocks — each opens its Robinhood page in a new tab">
+    <span class="s10-tg">Featured</span>
+${FEATURED.map((f) => `    <a class="s10-tq${f.pinned ? ' pin' : ''}" data-sym="${f.symbol}" href="${robinhoodUrl(f.symbol)}" target="_blank" rel="noopener noreferrer external" title="${escA(`${f.symbol} · ${f.name}. Opens Robinhood’s ${f.symbol} page in a new tab; prices, eligibility and any order are handled entirely by Robinhood.`)}"><span class="s10-tq-top"><b class="s10-tq-sym">${f.symbol}</b><span class="s10-tq-ch num flat"></span></span><span class="s10-tq-bot"><span class="s10-tq-px num">${escA(f.name)}</span><span class="s10-tq-go" aria-hidden="true">↗</span></span><span class="sr-only"> ${escA(f.name)}. View ${f.symbol} on Robinhood (opens in a new tab)</span></a>`).join(String.fromCharCode(10))}
   </div>
   <p class="s10-tape-fine">Featured = editorial watchline, not Signal 10 picks; never in the model or the simulated account. ↗ opens Robinhood. PropBetEdge places no orders and is not affiliated with Robinhood.</p>
 </div></section>`;
