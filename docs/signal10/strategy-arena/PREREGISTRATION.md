@@ -125,7 +125,10 @@ history (its writer repair is issue #69).
   (ORDER_SPLIT_ADJUSTED event).
 - **Failed runs:** a run that fails after its claim leaves the claim; the day is re-run manually with a new claim key
   (`<ACCOUNT>:EOD:<date>#2`, admin route) and the gap is visible in the ledger. The ledger is written before the snapshot
-  and mark rows.
+  and mark rows. EOD is two-phase: every account's records are computed in memory before any write; on the funding day a
+  compute error writes nothing for anyone (the cohort retries together). If a database write fails part-way on the
+  funding day, the missing account is completed by a same-day admin rerun so all three keep the same T0; any split
+  inception would be recorded in §9. After funding, a compute error in one account skips only that account.
 - **Holidays / early closes:** no SPY bar dated D = no session. The final-close gate uses the NYSE calendar
   (`market-tape/core.js`): 16:00 ET, or 13:00 ET on early-close days.
 - **Corporate actions:** splits (cash in lieu), dividends credited on the ex-date, a series that ends is liquidated at

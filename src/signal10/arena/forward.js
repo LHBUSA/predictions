@@ -232,9 +232,12 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
   // decisions, snapshot and mark — with NO write. Only when every plan exists does phase 2 claim and write. A compute
   // error therefore writes nothing for anyone, and on the funding day the cohort cannot be split by a mid-loop failure.
   const plans = [];
+  const fundingDay = funding.length === CHALLENGERS.length;
   for (const S of due) {
     if (blocked[S.strategy]) { result[S.strategy] = { skipped: 'held_symbol_unavailable', missingHeld: blocked[S.strategy] }; continue; }
     if (coverage[S.strategy] < 0.9) { result[S.strategy] = { skipped: 'coverage_below_90pct', coverage: coverage[S.strategy] }; continue; }
+    // after funding, one account's compute error only skips that account; on the funding day it aborts the whole cohort
+    try {
     const pSha = await policyHash(S);
     let st, bench;
     if (!states[S.account]) {
@@ -286,6 +289,7 @@ export async function runArenaEod({ store, now, fetchImpl = fetch, workerVersion
         nav_cents: m.stale.length ? null : m.navCents, cash_cents: m.cashCents, coverage: m.stale.length ? 1 - m.stale.length / Math.max(1, m.positions.length) : 1,
         positions: m.positions, exposures: exp, benchmarks: bm },
       summary: { nav: m.navCents, orders: st.pending.length, funded: !states[S.account] } });
+    } catch (e) { if (fundingDay) throw e; result[S.strategy] = { error: String(e?.message || e) }; }
   }
   // funding day: the whole cohort or nobody (a gate failure inside phase 1 left fewer plans than accounts)
   if (funding.length === CHALLENGERS.length && plans.length !== CHALLENGERS.length) return { d: D, skipped: 'cohort_not_ready', ...result };
