@@ -13,10 +13,34 @@
 
   function main(C) {
     const { esc, fmtPrice, fmtPct, etShort, etTime, relTime } = C;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const track = root.querySelector('[data-tape-track]');
+    // ---- scrolling ticker: track > loop > [rail (live items), clone (aria-hidden copy)] translated by CSS; no scroll bars.
+    // Paused on hover, keyboard focus (manual mode scrolls the focused item into view), hidden tab and reduced motion.
+    const loop = document.createElement('div'); loop.className = 's10-tape-loop';
+    const rail = document.createElement('div'); rail.className = 's10-tape-rail'; rail.setAttribute('role', 'presentation');
+    while (track.firstChild) rail.appendChild(track.firstChild);
+    const clone = document.createElement('div'); clone.className = 's10-tape-rail'; clone.setAttribute('aria-hidden', 'true'); clone.inert = true;
+    loop.append(rail, clone); track.appendChild(loop);
+    const PX_PER_S = 38;
+    function syncClone() {
+      clone.innerHTML = rail.innerHTML;
+      for (const a of clone.querySelectorAll('a')) { a.tabIndex = -1; a.removeAttribute('title'); }
+      const w = rail.scrollWidth;
+      root.style.setProperty('--tape-dur', `${Math.max(20, Math.round(w / PX_PER_S))}s`);
+      root.classList.toggle('s10-tape-moving', !reduce && w > track.clientWidth);
+    }
+    let manualTimer = null;
+    track.addEventListener('focusin', (e) => {
+      clearTimeout(manualTimer);
+      root.classList.add('s10-tape-manual');
+      e.target.closest?.('.s10-tq')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    track.addEventListener('focusout', () => { manualTimer = setTimeout(() => { if (!track.contains(document.activeElement)) { root.classList.remove('s10-tape-manual'); track.scrollLeft = 0; } }, 1500); });
+    addEventListener('resize', () => syncClone(), { passive: true });
+    syncClone();
     const statusEl = root.querySelector('[data-tape-status]');
     const metaEl = root.querySelector('[data-tape-meta]');
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let timer = null, last = null, lastAt = 0, inflight = false;
 
     const STATUS = { LIVE_QUOTES: 'CURRENT' };
@@ -104,20 +128,31 @@
       // featured items already exist in the page; members-only groups are rebuilt only when their symbol set changes
       for (const g of d.groups) {
         if (g.key === 'FEATURED') {
-          for (const r of g.rows) { const el = track.querySelector(`.s10-tq[data-sym="${CSS.escape(r.symbol)}"]:not([data-g])`); if (el) patch(el, r); }
+          for (const r of g.rows) { const el = rail.querySelector(`.s10-tq[data-sym="${CSS.escape(r.symbol)}"]:not([data-g])`); if (el) patch(el, r); }
           continue;
         }
         const sig = g.rows.map((r) => r.symbol).join(',');
-        let box = track.querySelector(`[data-tape-group="${g.key}"]`);
+        let box = rail.querySelector(`[data-tape-group="${g.key}"]`);
         if (!box || box.dataset.sig !== sig || box.dataset.label !== g.label) {
           const html = `<span class="s10-tg" role="listitem" title="${esc(g.note)}">${esc(g.label)}</span>${g.rows.map(itemHTML).join('')}`;
-          if (!box) { box = document.createElement('div'); box.className = 's10-tape-grp'; box.dataset.tapeGroup = g.key; box.setAttribute('role', 'presentation'); track.appendChild(box); }
+          if (!box) {
+            box = document.createElement('div'); box.className = 's10-tape-grp'; box.dataset.tapeGroup = g.key; box.setAttribute('role', 'presentation');
+            // order: SpaceX first, then the algorithm's latest frozen Top 10, then the rest of the watchline; paper holdings last
+            const pin = rail.querySelector('.s10-tq.pin:not([data-g])');
+            if (g.kind === 'MODEL_RESEARCH' && pin) pin.after(box); else rail.appendChild(box);
+          }
           box.innerHTML = html; box.dataset.sig = sig; box.dataset.label = g.label;
           for (const el of box.querySelectorAll('.s10-tq')) el.dataset.g = g.key;
         }
         for (const r of g.rows) { const el = box.querySelector(`.s10-tq[data-sym="${CSS.escape(r.symbol)}"]`); if (el) patch(el, r); }
       }
-      for (const box of track.querySelectorAll('[data-tape-group]')) if (!d.groups.some((g) => g.key === box.dataset.tapeGroup)) box.remove();
+      for (const box of rail.querySelectorAll('[data-tape-group]')) if (!d.groups.some((g) => g.key === box.dataset.tapeGroup)) box.remove();
+      // the Top 10 group sits between SPCX and the rest of the featured watchline: label that remainder so it reads apart
+      let rest = rail.querySelector('[data-tape-rest]');
+      const top = rail.querySelector('[data-tape-group="SIGNAL10_TOP10"]');
+      if (top && !rest) { rest = document.createElement('span'); rest.className = 's10-tg'; rest.dataset.tapeRest = '1'; rest.setAttribute('role', 'listitem'); rest.textContent = 'Watchline'; top.after(rest); }
+      if (!top && rest) rest.remove();
+      syncClone();
 
       const s = C.tapeStatus(d.session, rows);
       root.dataset.session = d.session.state; root.dataset.quotes = d.quotes.shown ? 'on' : 'off';
