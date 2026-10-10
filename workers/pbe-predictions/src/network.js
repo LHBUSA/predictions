@@ -23,12 +23,19 @@ const ICON_PATHS = {
   insights: '<rect x="2.5" y="1.8" width="11" height="12.4" rx="1.5"/><path d="M5 5h6M5 7.8h6M5 10.6h3.6"/>',
   record: '<path d="M3 2.2h8.6a1.4 1.4 0 011.4 1.4v10.2H4.4A1.4 1.4 0 013 12.4z"/><path d="M3 11.2a1.4 1.4 0 011.4-1.4H13"/><path d="M5.6 5.6l1.4 1.4 2.8-2.8"/>',
   research: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4M7 5v4"/>',
+  // precious metals: two stacked ingots
+  metals: '<path d="M2 13.2h5.4l-1-3.6H3z"/><path d="M8.6 13.2H14l-1-3.6H9.6z"/><path d="M5.3 8.4h5.4l-1-3.6H6.3z"/>',
 };
 const icon = (key) => ICON_PATHS[key] ? `<svg class="nav-ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">${ICON_PATHS[key]}</svg>` : '';
 
 const BRAND = `<a class="brand" href="/"><img class="brand-mark" src="/brand/predictions-mark.svg" width="32" height="32" alt=""><span>PropBetEdge<small>PREDICTIONS</small></span></a>`;
 // Product link: icon + label. Signal 10 carries a data-signal hook for its pulse accent.
-const link = (current) => ([label, href, key]) => `<a href="${href}"${key === current ? ' aria-current="page"' : ''}${key === 'signal10' ? ' data-signal' : ''}>${icon(key)}<span>${e(label)}</span></a>`;
+// current = a product key (this page IS that product) or '<key>/child' (a page inside that product's section, e.g. a
+// per-metal page under Metals): the section link is then marked aria-current="true", never "page".
+const currentAttr = (key, current) => (key === current ? ' aria-current="page"' : typeof current === 'string' && current === `${key}/child` ? ' aria-current="true"' : '');
+// An optional 4th field is a compact label shown on mid-width desktops (CSS .nl-long / .nl-short); the link's
+// aria-label always carries the full product name.
+const link = (current) => ([label, href, key, short]) => `<a href="${href}"${currentAttr(key, current)}${key === 'signal10' ? ' data-signal' : ''}${short ? ` aria-label="${e(label)}"` : ''}>${icon(key)}${short ? `<span class="nl-long">${e(label)}</span><span class="nl-short" aria-hidden="true">${e(short)}</span>` : `<span>${e(label)}</span>`}</a>`;
 const productLinks = (current) => NET.product.map(link(current)).join('');
 // Research: a grouped mega menu (desktop) in one native <details> (keyboard + screen-reader friendly, no script); the
 // summary carries the active state when the current page lives inside it. In-page anchors (#immutable …) never take
