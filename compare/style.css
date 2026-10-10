@@ -42,6 +42,9 @@ button:disabled{cursor:default}
 .top-nav a:hover{color:var(--paper)}
 .chip{border:1px solid var(--line-2);padding:7px 11px;border-radius:999px;color:var(--paper)!important;font-size:10px;letter-spacing:.1em;white-space:nowrap}
 .chip[data-state=entitled]{border-color:rgba(245,166,35,.5);color:var(--gold)!important;background:var(--gold-soft)}
+/* Small phones (<=420px): the decorative venue pill is dropped and gaps tighten so the header never overflows (320/360 px audit 2026-10-10). */
+.chip .chip-short{display:none}
+@media (max-width:420px){.top-in{gap:10px}.top .venues{display:none}.top-nav{gap:10px}.chip .chip-full{display:none}.chip .chip-short{display:inline}}
 .hubnav{border-top:1px solid var(--line)}
 .hubs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;height:44px;align-items:stretch}
 .hubs::-webkit-scrollbar{display:none}

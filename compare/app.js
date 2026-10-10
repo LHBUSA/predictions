@@ -323,12 +323,14 @@ const tiles = (list, cls = '') => `<div class="tiles${cls ? ` ${cls}` : ''}">${l
 function renderAccount() {
   const a = $('#acct'), st = S.memberState, mm = S.member?.membership || {};
   a.dataset.state = st;
+  // [full label, href, short label for small phones (<=420px header; the full label stays the accessible name)]
   const map = {
-    loading: ['Account', MEMBERS], entitled: [mm.state === 'owner' ? 'VERIFIED OWNER' : '◆ PLATINUM · All Access', MEMBERS],
-    anonymous: ['Sign in', MEMBERS], forbidden: ['Get All Access', PRO], unverified: ['Access Check', '#'], network_error: ['Access Check', '#']
+    loading: ['Account', MEMBERS], entitled: [mm.state === 'owner' ? 'VERIFIED OWNER' : '◆ PLATINUM · All Access', MEMBERS, mm.state === 'owner' ? 'OWNER' : '◆ PLATINUM'],
+    anonymous: ['Sign in', MEMBERS], forbidden: ['Get All Access', PRO, 'All Access'], unverified: ['Access Check', '#'], network_error: ['Access Check', '#']
   };
-  const [t, h] = map[st] || map.loading;
-  a.textContent = t; a.href = h;
+  const [t, h, short] = map[st] || map.loading;
+  a.innerHTML = short ? `<span class="chip-full">${esc(t)}</span><span class="chip-short" aria-hidden="true">${esc(short)}</span>` : esc(t);
+  a.setAttribute('aria-label', t); a.href = h;
 }
 function renderNav() {
   const lane = new Map((S.desk?.lanes || []).map((l) => [l.lane, l]));

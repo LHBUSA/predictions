@@ -35,3 +35,16 @@ test('markup: grid on desktop (no marquee), swipe rail on phones; golf is one ce
   assert.match(app, /if \(ev\.target\.closest\('\[data-open\] a\[href\]'\)\) return;/, 'inner links navigate, they never also open the drawer');
   assert.match(css, /#live-market-cards \.lc-track\{align-items:stretch\}/, 'phone rail: equal card heights, no floor');
 });
+
+test('header fits small phones: the decorative venue pill drops and gaps tighten at <=420px (320/360 overflow fix)', () => {
+  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8')
+  assert.ok(css.includes('@media (max-width:420px){.top-in{gap:10px}.top .venues{display:none}.top-nav{gap:10px}.chip .chip-full{display:none}.chip .chip-short{display:inline}}'))
+  assert.ok(css.includes('.chip .chip-short{display:none}'), 'short label hidden above 420px')
+})
+
+test('account chip: a short label on small phones, the full label stays the accessible name', () => {
+  const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8')
+  assert.ok(app.includes("entitled: [mm.state === 'owner' ? 'VERIFIED OWNER' : '◆ PLATINUM · All Access', MEMBERS, mm.state === 'owner' ? 'OWNER' : '◆ PLATINUM']"))
+  assert.ok(app.includes("a.setAttribute('aria-label', t)"))
+  assert.ok(app.includes('<span class="chip-short" aria-hidden="true">${esc(short)}</span>'), 'escaped, hidden from screen readers')
+})
