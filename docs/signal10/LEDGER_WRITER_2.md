@@ -2,7 +2,8 @@
 
 Persistence-only repair of the forward paper account `S10-FWD-1`. **The model and policy are unchanged:**
 `signal10-rank/1.0.0` and `signal10-manager/1.0.0`, and `policy.js`, `rank.js`, `portfolio.js`, `data.js`, `universe.js`
-and `aliases.js` are byte-identical (pinned in `test/signal10-writer2.test.js`). No stored row is rewritten.
+`aliases.js`, `members-latest.js` and `sql/016` are byte-identical (pinned in `test/signal10-writer2.test.js`). No stored
+row is rewritten.
 
 ## Defect (writer/1, live 2026-10-09 → 10-10)
 - `appendEvents` moves each event's `seq` and `origin` into row columns. For the flat STATE payload that also removed the
@@ -27,6 +28,10 @@ and `aliases.js` are byte-identical (pinned in `test/signal10-writer2.test.js`).
 4. **The first restore of a legacy STATE writes one `LEDGER_WRITER_UPGRADE` event.** It records the from/to writer
    versions and the restored seq/origin. For each pending order it says whether the order's stored seq matches a ledger
    ORDER row with the same symbol and side: `VERIFIED` or `UNVERIFIED`. A link is never invented.
+   An `UNVERIFIED` pending order keeps no sequence number, so its later FILL carries `orderSeq: null` rather than a
+   number that could point at an unrelated row. Benchmark (SPY/QQQ) orders use benchmark-local numbers and were never
+   ledger rows: they are listed in `benchmarkLinks` as `UNVERIFIED` and their numbers cleared.
+5. **The nested state carries no `phase`**; the STATE event's own `phase` is authoritative.
 
 ## Verification formula (unchanged)
 `hash = sha256(prev_hash + canonical({account, origin, seq, type, d, payload, model_version, policy_version}))`.
@@ -39,15 +44,24 @@ and `aliases.js` are byte-identical (pinned in `test/signal10-writer2.test.js`).
 - The EOD window still opens at 16:20 ET, after the official close on every session. Nothing else in scheduling changes.
 
 ## Runbook, 2026-10-12 (first restore)
-- **Preferred:** deploy writer/2 before 09:45 ET. The OPEN run writes the `LEDGER_WRITER_UPGRADE` event.
-- **Then verify:** `GET /api/signal10/ledger?origin=FORWARD_PAPER` (All Access, or the admin view) and recompute the chain
-  with the formula above. Every FILL must reference an ORDER row.
-- **If writer/2 cannot ship safely:** set the wrangler var `SIGNAL10` to anything but `"true"` before 09:45 ET. That pauses
-  every V1 write, and claims and the ledger stay intact. Resume after the deploy. A missed OPEN is booked at EOD from the
-  official open, the same as writer/1.
-- **Rollback:** Worker `pbe-predictions` version **5e7bacf1** (main 2c85084, writer/1). Rows written by writer/2 stay
-  readable by writer/1's API, because `restoreState` in writer/2 reads both shapes. Writer/1 cannot restore a nested STATE,
-  so after a rollback pause V1 with `SIGNAL10` rather than letting writer/1 run on top of writer/2 rows.
+- **Before deploying:** confirm the production ledger head is still seq 14 (STATE seq 14, 2026-10-09) and that the live
+  Worker's source is main, so the deploy diff is exactly this PR. Deploy on the weekend, when no V1 run fires.
+- **After the 2026-10-12 OPEN, verify** (an All Access session on `GET /api/signal10/ledger?origin=FORWARD_PAPER`, or a
+  read-only DB select — there is no admin ledger view):
+  - exactly one `LEDGER_WRITER_UPGRADE` row, at seq 15, with `pendingLinks` MU → 10 and VTRS → 11 `VERIFIED` and
+    `benchmarkLinks` (SPY, QQQ) `UNVERIFIED` (benchmark-local numbers, never ledger rows);
+  - the MU and VTRS `FILL` rows carry `orderSeq` 10 and 11; `BENCHMARK_FILL.orderSeq` is null by design;
+  - the whole chain, legacy rows included, recomputes with the formula above.
+- **If writer/2 cannot ship safely:** set the wrangler var `SIGNAL10` to anything but `"true"` before 09:45 ET (a deploy
+  of the CURRENT code with the var changed). That pauses the cron lane; claims and the ledger stay intact. Note that
+  `POST /admin/signal10/run` is not gated by `SIGNAL10` — do not call it while paused. A missed OPEN is booked at EOD from
+  the official open, the same as writer/1.
+- **Rollback — fix forward only.** Once writer/2 has written its first STATE, **never roll back to 5e7bacf1 (writer/1)**:
+  writer/1's `restoreState` cannot read a nested STATE, so its `/v1/signal10/live` and `/today` throw (member 500s), the
+  market-tape research overlay silently drops the held symbols, and its cron errors every minute (it writes nothing,
+  because each run fails before its claim). A rollback to 5e7bacf1 also restores `SIGNAL10="true"` from that version's
+  vars. To stop V1 safely, deploy the writer/2 code with `SIGNAL10="false"` (one deploy), then fix forward.
+  Before the first writer/2 STATE exists (i.e. before the 2026-10-12 OPEN), rolling back to the previous version is safe.
 
 ## Proofs
 - `test/signal10-writer2.test.js`, using the frozen writer/1 copy `test/fixtures/signal10-forward-writer1.js`:

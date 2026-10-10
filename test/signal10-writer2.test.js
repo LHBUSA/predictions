@@ -235,3 +235,30 @@ function earlySource(day) {
     return new Response(JSON.stringify(body), { status: 200 });
   };
 }
+
+// ---------------- independent review of PR #71 (2026-10-10) ----------------
+test('review F3/F5: benchmark orders are recorded UNVERIFIED (benchmark-local) and cleared; nested state carries no stale phase', async () => {
+  const store = await legacyFunded();
+  await runSessions(W2, store, DAYS.slice(0, 3));
+  const rows = ledger(store);
+  await verify(rows);
+  const up = rows.find((r) => r.type === 'LEDGER_WRITER_UPGRADE');
+  assert.ok(up.payload.benchmarkLinks.length >= 1 && up.payload.benchmarkLinks.every((l) => l.link === 'UNVERIFIED' && /benchmark-local/.test(l.note)));
+  const bf = rows.filter((r) => r.type === 'BENCHMARK_FILL' && r.d > START);
+  assert.ok(bf.length >= 1 && bf.every((r) => r.payload.orderSeq == null), 'a benchmark fill never appears to reference a ledger row');
+  for (const s of rows.filter((r) => r.type === 'STATE' && r.payload.state)) assert.equal(s.payload.state.phase, undefined, 'phase lives on the STATE event only');
+});
+
+test('review F4: an UNVERIFIED legacy link never travels into a FILL', async () => {
+  const store = await legacyFunded();
+  // tamper the in-store legacy STATE so its pending seqs point at nothing (simulates a lost link)
+  const st = ledger(store).find((r) => r.type === 'STATE');
+  for (const o of st.payload.pending) o.seq = 9999;
+  await runSessions(W2, store, DAYS.slice(0, 2));
+  const rows = ledger(store);
+  const up = rows.find((r) => r.type === 'LEDGER_WRITER_UPGRADE');
+  assert.ok(up.payload.pendingLinks.every((l) => l.link === 'UNVERIFIED' && l.ledgerSeq === null));
+  const syms = new Set(up.payload.pendingLinks.map((l) => l.symbol));
+  const fills = rows.filter((r) => r.type === 'FILL' && syms.has(r.payload.symbol) && r.d === DAYS[0]);
+  assert.ok(fills.every((f) => f.payload.orderSeq == null), 'no fabricated order reference');
+});

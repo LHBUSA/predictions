@@ -82,7 +82,7 @@ export function quoteFromChart(c) {
 
 // ---------- state <-> events ----------
 export function serializeState(st, bench) {
-  const { events, ...rest } = st; // eslint-disable-line no-unused-vars
+  const { events, phase: _phase, ...rest } = st; // eslint-disable-line no-unused-vars
   const b = Object.fromEntries(Object.entries(bench || {}).map(([k, v]) => { const { events: _e, ...r } = v; return [k, r]; }));
   return { ...rest, bench: b };
 }
@@ -98,7 +98,7 @@ export const stateEvent = (st, bench, D, phase) => ({ type: 'STATE', d: D, phase
 
 // Re-base a restored account on the ledger head (writer/2): the next emitted event gets local seq lastSeq + 1, which is
 // exactly the ledger seq appendEvents will give it (events are appended in emission order right after the head).
-export async function rebase(store, st, head, legacy, D) {
+export async function rebase(store, st, head, legacy, D, bench = {}) {
   st.seq = head.lastSeq; st.origin = ORIGIN;
   if (!legacy) return;
   const orders = await store.select('pred_s10_events', { account: `eq.${ACCOUNT}`, type: 'eq.ORDER', select: 'seq,d,payload' }, { limit: 500, order: 'seq.desc' });
@@ -108,8 +108,16 @@ export async function rebase(store, st, head, legacy, D) {
     const ok = !!r && r.payload?.symbol === o.symbol && r.payload?.side === o.side;
     return { orderSeq: Number.isInteger(o.seq) ? o.seq : null, symbol: o.symbol, side: o.side, link: ok ? 'VERIFIED' : 'UNVERIFIED', ledgerSeq: ok ? r.seq : null, ledgerD: ok ? r.d : null };
   });
+  // review #71 F4: an UNVERIFIED link never travels on into a FILL (its stored seq could point at an unrelated row)
+  for (const [k, o] of (st.pending || []).entries()) if (links[k].link !== 'VERIFIED') o.seq = null;
+  // review #71 F3: benchmark orders carry benchmark-local numbers and were never ledger rows — recorded as such, then
+  // cleared so a BENCHMARK_FILL can never appear to reference an unrelated ledger row
+  const benchmarkLinks = Object.entries(bench || {}).flatMap(([k, b]) => (b.pending || []).map((o) => {
+    const x = { benchmark: k, symbol: o.symbol, side: o.side, localSeq: Number.isInteger(o.seq) ? o.seq : null, link: 'UNVERIFIED', note: 'benchmark-local sequence; benchmark orders are not ledger rows' };
+    o.seq = null; return x;
+  }));
   emit(st, { type: 'LEDGER_WRITER_UPGRADE', d: D, from: LEGACY_WRITER, to: LEDGER_WRITER, legacyStateSeq: head.state.seq, legacyStateD: head.state.d,
-    restored: { seq: head.lastSeq, origin: ORIGIN }, pendingLinks: links,
+    restored: { seq: head.lastSeq, origin: ORIGIN }, pendingLinks: links, benchmarkLinks,
     note: 'Persistence-only upgrade: model, policy and every economic value are unchanged. Earlier rows are never rewritten.' });
 }
 
@@ -207,7 +215,7 @@ export async function runOpen({ store, now, fetchImpl = fetch, workerVersion = n
   if (!mkt.ok) return { skipped: mkt.reason };
   if (mkt.calendar.at(-1) !== D) return { skipped: 'no_session_today' }; // holiday: SPY has no bar dated today
   if (!(await claim(store, `OPEN:${D}`, 'OPEN', D, workerVersion))) return { skipped: 'claimed' };
-  await rebase(store, st, head, legacy, D);
+  await rebase(store, st, head, legacy, D, bench);
   const pre = st.events.slice(); // LEDGER_WRITER_UPGRADE (first restore of a legacy STATE only)
   const evs = openPhase(st, bench, D, mkt);
   const w = await appendEvents(store, head, [...pre, ...evs, stateEvent(st, bench, D, 'OPEN')]);
@@ -238,7 +246,7 @@ export async function runEod({ store, now, fetchImpl = fetch, workerVersion = nu
   const withBar = universe.filter((u) => u.symbol && mkt.prepared.get(u.symbol)?.idx.has(D)).length;
   if (withBar / universe.length < 0.9) return { skipped: 'coverage_below_90pct', withBar };
   if (!(await claim(store, `EOD:${D}`, 'EOD', D, workerVersion))) return { skipped: 'claimed' };
-  if (st) await rebase(store, st, head, legacy, D);
+  if (st) await rebase(store, st, head, legacy, D, bench);
 
   const out = [];
   if (!st) {

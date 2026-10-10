@@ -177,7 +177,8 @@ export function eventDetail(r) {
   if (r.type === 'DIVIDEND') return `${fmtPrice(r.perShare)}/sh × ${fmtQty(r.qty)} · ${r.basis || ''}`.trim();
   if (r.type === 'SPLIT') return `ratio ${r.ratio} · ${fmtQty(r.qtyBefore)} → ${fmtQty(r.qtyAfter)} sh${r.cashInLieuCents ? ` · cash in lieu ${fmtUSD(r.cashInLieuCents)}` : ''}`;
   if (r.type === 'FUNDING') return r.note || '';
-  if (r.type === 'STATE') return `account checkpoint (${r.phase || ''}) · cash ${fmtUSD(r.cashCents)} · ${Object.keys(r.positions || {}).length} positions · ${(r.pending || []).length} queued orders`;
+  // ledger writer/2 nests the account under `state`; legacy writer/1 rows are flat
+  if (r.type === 'STATE') { const s = r.state || r; return `account checkpoint (${r.phase || ''}) · cash ${fmtUSD(s.cashCents)} · ${Object.keys(s.positions || {}).length} positions · ${(s.pending || []).length} queued orders`; }
   if (r.type === 'SESSION') return [r.window, r.note].filter(Boolean).join(' · ');
   if (r.type === 'EOD_MARK') return `NAV ${fmtUSD(r.navCents)} · cash ${fmtUSD(r.cashCents)}`;
   if (r.type === 'RANK_SNAPSHOT') return `${r.model || ''} · ${fmtInt(r.eligible)} eligible · top 10 ${(r.top10 || []).map((x) => x[0]).join(' ')}`;
