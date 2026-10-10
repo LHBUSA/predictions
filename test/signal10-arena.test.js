@@ -23,7 +23,8 @@ const V1_GOLDEN = {
   'src/signal10/policy.js': '747adcde9094e6db691da4fe5745aca285e894736cfa385e9bd3764dad9ae232',
   'src/signal10/rank.js': '16d329262a39cdd6c62415919e1b57b099060225480411c658e33c537570a836',
   'src/signal10/portfolio.js': 'bc475f4d41365649d2554af5e54ab8f59296c51b0448ed12ca77432bb97e6c96',
-  'src/signal10/forward.js': '0b3314749cd0970e194b8c35c28299e493575f0a944d34b9535728fdae2afff0',
+  // src/signal10/forward.js (the V1 state/ledger writer) is pinned by its own versioned writer tests (#69, PR #71);
+  // the V1 investment algorithm is policy.js + rank.js + portfolio.js and the data layer below.
   'src/signal10/data.js': '6969e6a9c94a05a247837e2b501227db04eee810dc45472fadf0b324da1f35c9',
   'src/signal10/universe.js': '82c258da9dd4de2476e13b9315dd69fbd3cbbb3c7bcd4be696e1e0c0027e91ed',
   'src/signal10/aliases.js': '4a23301e8f3deff157d8c10696381df376fc70c90196444bf7bac3390569bee4',
