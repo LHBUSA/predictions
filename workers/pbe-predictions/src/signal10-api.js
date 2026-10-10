@@ -77,7 +77,8 @@ export async function handleSignal10({ req, env, ctx, p, url, store, requireAllA
   if (p === '/v1/signal10/tape') return tape({ req, env, ctx, store, requireAllAccess, privateJson });
   // admin: the member view of the tape (production verification without a member session). Same handler, same caches.
   if (p === '/admin/signal10/tape' && req.method === 'GET') {
-    if (!(await tokenMatches(req, env.ADMIN_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
+    // read-only view: the admin token or the read-only DIAGNOSTICS_TOKEN
+    if (!(await tokenMatches(req, env.ADMIN_TOKEN)) && !(await tokenMatches(req, env.DIAGNOSTICS_TOKEN))) return json({ error: 'unauthorized' }, 401, 'no-store');
     return tape({ req, env, ctx, store, requireAllAccess: async () => ({ ok: true, m: { membership: { state: 'admin' } } }), privateJson });
   }
 

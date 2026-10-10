@@ -69,7 +69,7 @@ Sample source receipt, fetched from this machine 2026-10-10:
   - otherwise one wake-up at the next open + 60 s, capped at 6 h;
   - errors retry after 2 min while open and 15 min while closed;
   - paused while the tab is hidden, with an immediate refresh on return if the data is older than 90 s.
-- **Production verification without a member session:** `GET /admin/signal10/tape` with `ADMIN_TOKEN` returns the member view through the same handler and caches.
+- **Production verification without a member session:** `GET /admin/signal10/tape` with `ADMIN_TOKEN` or the read-only `DIAGNOSTICS_TOKEN` returns the member view through the same handler and caches.
 
 ## Calendar (America/New_York)
 
