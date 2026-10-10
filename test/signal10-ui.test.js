@@ -129,6 +129,10 @@ test('ledger: forward payload rows flatten, filter by type/symbol, paginate 100/
   assert.equal(C.paginate(rows, 99, 100).page, 3, 'clamped');
   assert.deepEqual(C.paginate([], 1, 100), { rows: [], page: 1, pages: 1, from: 0, to: 0 });
   assert.match(C.eventDetail({ type: 'SPLIT', ratio: 2, qtyBefore: 8, qtyAfter: 16, cashInLieuCents: 0 }), /ratio 2 · 8 → 16 sh/);
+  // ledger writer/2 (#69): nested STATE renders the same as a legacy flat one
+  const acct = { cashCents: 1000000, positions: { MU: {}, VTRS: {} }, pending: [{}] };
+  assert.equal(C.eventDetail({ type: 'STATE', phase: 'OPEN', state: acct }), C.eventDetail({ type: 'STATE', phase: 'OPEN', ...acct }));
+  assert.match(C.eventDetail({ type: 'STATE', phase: 'OPEN', state: acct }), /cash \$10,000\.00 · 2 positions · 1 queued orders/);
   assert.equal(C.eventDetail({ type: 'DECISION', action: 'WAIT', reason: 'WAIT: x' }), 'WAIT: x');
 });
 

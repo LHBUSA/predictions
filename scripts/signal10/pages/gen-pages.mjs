@@ -6,7 +6,7 @@ import { FEATURED, robinhoodUrl } from '../../../src/signal10/tape.js';
 import { siteHeader, siteFooter } from '../../../workers/pbe-predictions/src/network.js';
 
 const ROOT = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const V = '20261010tape1';
+const V = '20261010w2';
 // The ONE network shell (workers/pbe-predictions/src/network.js), current = Signal 10, wrapped in the same markers
 // the other static pages carry. No live chip: these pages do not load core.js, which keeps the engine chip honest.
 const header = `<!-- network:header -->
