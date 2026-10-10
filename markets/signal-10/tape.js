@@ -20,18 +20,21 @@
     const loop = document.createElement('div'); loop.className = 's10-tape-loop';
     const rail = document.createElement('div'); rail.className = 's10-tape-rail'; rail.setAttribute('role', 'presentation');
     while (track.firstChild) rail.appendChild(track.firstChild);
-    const clone = document.createElement('div'); clone.className = 's10-tape-rail'; clone.setAttribute('aria-hidden', 'true'); clone.inert = true;
+    // aria-hidden + untabbable links (NOT inert: the copy must stay clickable while it is the visible half of the loop)
+    const clone = document.createElement('div'); clone.className = 's10-tape-rail'; clone.setAttribute('aria-hidden', 'true');
     loop.append(rail, clone); track.appendChild(loop);
     const PX_PER_S = 38;
     function syncClone() {
       clone.innerHTML = rail.innerHTML;
-      for (const a of clone.querySelectorAll('a')) { a.tabIndex = -1; a.removeAttribute('title'); }
+      for (const a of clone.querySelectorAll('a')) { a.tabIndex = -1; a.removeAttribute('title'); a.setAttribute('role', 'presentation'); a.classList.remove('tick-up', 'tick-dn'); }
       const w = rail.scrollWidth;
       root.style.setProperty('--tape-dur', `${Math.max(20, Math.round(w / PX_PER_S))}s`);
       root.classList.toggle('s10-tape-moving', !reduce && w > track.clientWidth);
     }
     let manualTimer = null;
     track.addEventListener('focusin', (e) => {
+      // keyboard focus only (a mouse click is focus too, but must not stop and reset the loop)
+      if (!e.target.matches?.(':focus-visible')) return;
       clearTimeout(manualTimer);
       root.classList.add('s10-tape-manual');
       e.target.closest?.('.s10-tq')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
